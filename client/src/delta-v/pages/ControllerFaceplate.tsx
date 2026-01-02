@@ -1108,7 +1108,7 @@ const ControllerFaceplatePage = () => {
         {/* Header with Back Button and Python Code Dropdown */}
         <div className="flex items-center justify-between mb-6">
           <Link
-            to="/"
+            href="/settings/controller-outputs/faceplates/temperature-controller"
             className={cn(
               "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
               "text-muted-foreground hover:text-foreground",
