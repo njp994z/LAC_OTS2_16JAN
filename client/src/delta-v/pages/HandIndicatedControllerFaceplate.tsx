@@ -17,7 +17,7 @@ const HandIndicatedControllerFaceplate = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/controller-faceplates"
+          to="/settings/controller-outputs/faceplates/controller-blocks"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -37,9 +37,9 @@ const HandIndicatedControllerFaceplate = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/hand-controller-4030", label: "1540-H-4030 Main Compressor Hand Controller" },
-            { to: "/hand-controller-4282-jug", label: "1540-H-4282 Jug Valve Hand Controller" },
-            { to: "/hand-controller-4283-whb", label: "1540-H-4283 WHB Outlet dP Hand Controller" },
+            { to: "/settings/controller-outputs/faceplates/hand-controller-4030", label: "1540-H-4030 Main Compressor Hand Controller" },
+            { to: "/settings/controller-outputs/faceplates/hand-controller-4282-jug", label: "1540-H-4282 Jug Valve Hand Controller" },
+            { to: "/settings/controller-outputs/faceplates/hand-controller-4283-whb", label: "1540-H-4283 WHB Outlet dP Hand Controller" },
           ].map(({ to, label }) => (
             <Link
               key={to}

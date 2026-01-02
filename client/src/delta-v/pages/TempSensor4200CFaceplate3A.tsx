@@ -289,7 +289,7 @@ const TempSensor4200CFaceplate3A = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <Link
-              to="/temp-sensor/1540-TI-4200C"
+              to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200C"
               className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
             >
               <ArrowLeft size={18} />

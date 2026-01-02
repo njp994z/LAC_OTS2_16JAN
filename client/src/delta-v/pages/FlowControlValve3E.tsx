@@ -171,7 +171,7 @@ const FlowControlValve3E = () => {
       <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Valve Not Found</h1>
-          <Link href="/valve/flow-control" className="text-cyan-400 hover:underline">
+          <Link href="/settings/controller-outputs/faceplates/valve/flow-control" className="text-cyan-400 hover:underline">
             Back to Flow Control Valves
           </Link>
         </div>

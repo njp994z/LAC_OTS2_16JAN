@@ -28,7 +28,7 @@ const TempSensor4820Main = () => {
     <div className="min-h-screen bg-background p-8">
       <div className="fixed inset-0 opacity-5"><div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 1px, transparent 0)`, backgroundSize: '32px 32px' }} /></div>
       <div className="relative max-w-4xl mx-auto">
-        <Link href="/temp-sensor/1540-TI-4820" className="inline-flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground mb-6"><ArrowLeft size={18} />Back</Link>
+        <Link href="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4820" className="inline-flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground mb-6"><ArrowLeft size={18} />Back</Link>
         <header className="mb-8 text-center"><h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent">1540-TI-4820 Pass 1 Inlet Duct</h1></header>
         <div className="flex flex-wrap justify-center gap-8">
           <div className="flex flex-col items-center gap-2"><span className="text-xs text-muted-foreground uppercase">Primary</span><TempSensorPrimaryFaceplate data={controllerData} /></div>

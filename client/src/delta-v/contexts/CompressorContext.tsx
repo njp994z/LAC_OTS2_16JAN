@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { defaultCompressorData, type CompressorData, type CompressorMode } from "@/delta-v/types/compressor";
-import { supabase } from "@/integrations/supabase/client";
 
 interface CompressorContextType {
   compressorData: CompressorData;
@@ -76,26 +75,6 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setCompressorData(prev => ({ ...prev, failAlarm: active }));
   };
 
-  // Fetch VFD settings from database on mount
-  useEffect(() => {
-    const fetchVFDSettings = async () => {
-      const { data, error } = await supabase
-        .from('vfd_settings')
-        .select('tag_name, description')
-        .limit(1)
-        .maybeSingle();
-      
-      if (data && !error) {
-        setCompressorData(prev => ({
-          ...prev,
-          tag: data.tag_name,
-          description: data.description || prev.description,
-        }));
-      }
-    };
-    
-    fetchVFDSettings();
-  }, []);
 
   // Simulate speed PV tracking speed SP when running - always fluctuate
   useEffect(() => {

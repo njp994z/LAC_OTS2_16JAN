@@ -40,12 +40,12 @@ const SulfurFlowControllerFaceplate = () => {
         <div className="flex flex-col gap-4 items-center">
           {[
             { to: "/sulfur-flow-controller-main", label: "1530-F-2602 Sulfur Flow Controller Faceplate" },
-            { to: "/faceplate-3a/1530-F-2602", label: "Faceplate 3A - PID Simulation" },
-            { to: "/faceplate-3b/1530-F-2602", label: "Faceplate 3B - Parameter Tracking" },
-            { to: "/faceplate-3c/1530-F-2602", label: "Faceplate 3C - Trend/Live Data" },
-            { to: "/faceplate-3d/1530-F-2602", label: "Faceplate 3D - Control Studio" },
-            { to: "/faceplate-3e/1530-F-2602", label: "Faceplate 3E - Controller Input GUI" },
-            { to: "/faceplate-3f/1530-F-2602", label: "Faceplate 3F - Acknowledge Alarm" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3a/1530-F-2602", label: "Faceplate 3A - PID Simulation" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3b/1530-F-2602", label: "Faceplate 3B - Parameter Tracking" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3c/1530-F-2602", label: "Faceplate 3C - Trend/Live Data" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3d/1530-F-2602", label: "Faceplate 3D - Control Studio" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3e/1530-F-2602", label: "Faceplate 3E - Controller Input GUI" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3f/1530-F-2602", label: "Faceplate 3F - Acknowledge Alarm" },
           ].map(({ to, label }) => (
             <Link
               key={to}

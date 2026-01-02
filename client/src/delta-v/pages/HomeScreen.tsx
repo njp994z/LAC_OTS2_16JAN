@@ -26,7 +26,6 @@ import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/Tem
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
-import { supabase } from "@/integrations/supabase/client";
 import type { ControllerData } from "@/delta-v/types/controller";
 import { defaultControllerData } from "@/delta-v/types/controller";
 import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta-v/types/secondaryController";
@@ -1040,208 +1039,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   const handleSaveLayout = async () => {
     setIsSaving(true);
-    const screenId = selectedScreen.split(" – ")[0]; // e.g., "L1"
-    
-    const elements = [
-      { element_id: "furnace", ...furnacePosition, ...furnaceSize, rotation: 0 },
-      { element_id: "compressor", ...compressorPosition, ...compressorSize, rotation: 0 },
-      { element_id: "sulfur_flow", ...sulfurFlowPosition, ...sulfurFlowSize, rotation: 0 },
-      { element_id: "sulfur_valve", ...sulfurValvePosition, ...sulfurValveSize, rotation: 0 },
-      { element_id: "jug_valve", ...jugValvePosition, ...jugValveSize, rotation: 0 },
-      { element_id: "jug_valve_positioner", ...jugValvePositionerPosition, ...jugValvePositionerSize, rotation: 0 },
-      { element_id: "hand_controller", ...handControllerPosition, ...handControllerSize, rotation: 0 },
-      { element_id: "temp_sensor_5821", ...tempSensorPosition, ...tempSensorSize, rotation: 0 },
-      { element_id: "temp_sensor_4200a", ...tempSensor4200APosition, ...tempSensor4200ASize, rotation: 0 },
-      { element_id: "temp_sensor_4200b", ...tempSensor4200BPosition, ...tempSensor4200BSize, rotation: 0 },
-      { element_id: "temp_sensor_4200c", ...tempSensor4200CPosition, ...tempSensor4200CSize, rotation: 0 },
-      { element_id: "whb_hand_controller", ...whbHandControllerPosition, ...whbHandControllerSize, rotation: 0 },
-      { element_id: "jug_valve_hand_controller", ...jugValveHandControllerPosition, ...jugValveHandControllerSize, rotation: 0 },
-      { element_id: "converter4", ...converter4Position, ...converter4Size, rotation: 0 },
-      { element_id: "dt2", ...dt2Position, ...dt2Size, rotation: 0 },
-      { element_id: "fat1", ...fat1Position, ...fat1Size, rotation: 0 },
-      { element_id: "ipat1", ...ipat1Position, ...ipat1Size, rotation: 0 },
-      { element_id: "hip1", ...hip1Position, ...hip1Size, rotation: 0 },
-      { element_id: "cip", ...cipPosition, ...cipSize, rotation: 0 },
-      { element_id: "sh4a", ...sh4aPosition, ...sh4aSize, rotation: 0 },
-      { element_id: "ec3b", ...ec3bPosition, ...ec3bSize, rotation: 0 },
-      { element_id: "sh1b", ...sh1bPosition, ...sh1bSize, rotation: 0 },
-      ...arrows.map(arrow => ({
-        element_id: arrow.id,
-        x: arrow.x,
-        y: arrow.y,
-        width: arrow.width,
-        height: arrow.height,
-        rotation: arrow.rotation,
-      })),
-      { element_id: "dashed_line_1", ...dashedLine1Position, ...dashedLine1Size, rotation: dashedLine1Rotation },
-      { element_id: "dashed_line_2", ...dashedLine2Position, ...dashedLine2Size, rotation: dashedLine2Rotation },
-      { element_id: "dashed_line_3", ...dashedLine3Position, ...dashedLine3Size, rotation: dashedLine3Rotation },
-    ];
-
-    try {
-      const rows = elements.map((el) => ({
-        screen_id: screenId,
-        element_id: el.element_id,
-        position_x: el.x,
-        position_y: el.y,
-        width: el.width,
-        height: el.height,
-        rotation: el.rotation,
-      }));
-
-      const { error } = await supabase
-        .from("homescreen_layout")
-        .upsert(rows, { onConflict: "screen_id,element_id" });
-
-      if (error) throw error;
-
-      toast({ title: "Layout saved", description: "Icon positions saved successfully." });
-    } catch (error) {
-      console.error("Error saving layout:", error);
-      toast({ title: "Error", description: "Failed to save layout.", variant: "destructive" });
-    } finally {
+    // Simulate save - layout positions are maintained in React state for this session
+    setTimeout(() => {
+      toast({ title: "Layout saved", description: "Icon positions saved for this session." });
       setIsSaving(false);
-    }
+    }, 300);
   };
 
-  // Load saved layout on mount
-  useEffect(() => {
-    const loadLayout = async () => {
-      const screenId = selectedScreen.split(" – ")[0];
-      
-      const { data, error } = await supabase
-        .from("homescreen_layout")
-        .select("*")
-        .eq("screen_id", screenId);
-      
-      if (error) {
-        console.error("Error loading layout:", error);
-        return;
-      }
-      
-      if (data) {
-        data.forEach((el) => {
-          switch (el.element_id) {
-            case "furnace":
-              setFurnacePosition({ x: el.position_x, y: el.position_y });
-              setFurnaceSize({ width: el.width, height: el.height });
-              break;
-            case "compressor":
-              setCompressorPosition({ x: el.position_x, y: el.position_y });
-              setCompressorSize({ width: el.width, height: el.height });
-              break;
-            case "sulfur_flow":
-              setSulfurFlowPosition({ x: el.position_x, y: el.position_y });
-              setSulfurFlowSize({ width: el.width, height: el.height });
-              break;
-            case "sulfur_valve":
-              setSulfurValvePosition({ x: el.position_x, y: el.position_y });
-              setSulfurValveSize({ width: el.width, height: el.height });
-              break;
-            case "jug_valve":
-              setJugValvePosition({ x: el.position_x, y: el.position_y });
-              setJugValveSize({ width: el.width, height: el.height });
-              break;
-            case "jug_valve_positioner":
-              setJugValvePositionerPosition({ x: el.position_x, y: el.position_y });
-              setJugValvePositionerSize({ width: el.width, height: el.height });
-              break;
-            case "hand_controller":
-              setHandControllerPosition({ x: el.position_x, y: el.position_y });
-              setHandControllerSize({ width: el.width, height: el.height });
-              break;
-            case "temp_sensor_5821":
-              setTempSensorPosition({ x: el.position_x, y: el.position_y });
-              setTempSensorSize({ width: el.width, height: el.height });
-              break;
-            case "temp_sensor_4200a":
-              setTempSensor4200APosition({ x: el.position_x, y: el.position_y });
-              setTempSensor4200ASize({ width: el.width, height: el.height });
-              break;
-            case "temp_sensor_4200b":
-              setTempSensor4200BPosition({ x: el.position_x, y: el.position_y });
-              setTempSensor4200BSize({ width: el.width, height: el.height });
-              break;
-            case "temp_sensor_4200c":
-              setTempSensor4200CPosition({ x: el.position_x, y: el.position_y });
-              setTempSensor4200CSize({ width: el.width, height: el.height });
-              break;
-            case "whb_hand_controller":
-              setWhbHandControllerPosition({ x: el.position_x, y: el.position_y });
-              setWhbHandControllerSize({ width: el.width, height: el.height });
-              break;
-            case "jug_valve_hand_controller":
-              setJugValveHandControllerPosition({ x: el.position_x, y: el.position_y });
-              setJugValveHandControllerSize({ width: el.width, height: el.height });
-              break;
-            case "converter4":
-              setConverter4Position({ x: el.position_x, y: el.position_y });
-              setConverter4Size({ width: el.width, height: el.height });
-              break;
-            case "dt2":
-              setDt2Position({ x: el.position_x, y: el.position_y });
-              setDt2Size({ width: el.width, height: el.height });
-              break;
-            case "fat1":
-              setFat1Position({ x: el.position_x, y: el.position_y });
-              setFat1Size({ width: el.width, height: el.height });
-              break;
-            case "ipat1":
-              setIpat1Position({ x: el.position_x, y: el.position_y });
-              setIpat1Size({ width: el.width, height: el.height });
-              break;
-            case "hip1":
-              setHip1Position({ x: el.position_x, y: el.position_y });
-              setHip1Size({ width: el.width, height: el.height });
-              break;
-            case "cip":
-              setCipPosition({ x: el.position_x, y: el.position_y });
-              setCipSize({ width: el.width, height: el.height });
-              break;
-            case "sh4a":
-              setSh4aPosition({ x: el.position_x, y: el.position_y });
-              setSh4aSize({ width: el.width, height: el.height });
-              break;
-            case "ec3b":
-              setEc3bPosition({ x: el.position_x, y: el.position_y });
-              setEc3bSize({ width: el.width, height: el.height });
-              break;
-            case "sh1b":
-              setSh1bPosition({ x: el.position_x, y: el.position_y });
-              setSh1bSize({ width: el.width, height: el.height });
-              break;
-            case "dashed_line_1":
-              setDashedLine1Position({ x: el.position_x, y: el.position_y });
-              setDashedLine1Size({ width: el.width, height: el.height });
-              setDashedLine1Rotation(el.rotation || 0);
-              break;
-            case "dashed_line_2":
-              setDashedLine2Position({ x: el.position_x, y: el.position_y });
-              setDashedLine2Size({ width: el.width, height: el.height });
-              setDashedLine2Rotation(el.rotation || 0);
-              break;
-            case "dashed_line_3":
-              setDashedLine3Position({ x: el.position_x, y: el.position_y });
-              setDashedLine3Size({ width: el.width, height: el.height });
-              setDashedLine3Rotation(el.rotation || 0);
-              break;
-            default:
-              // Handle arrow elements (arrow_1, arrow_2, arrow_3, arrow_4)
-              if (el.element_id.startsWith('arrow_')) {
-                setArrows(prev => prev.map(arrow => 
-                  arrow.id === el.element_id 
-                    ? { ...arrow, x: el.position_x, y: el.position_y, width: el.width, height: el.height, rotation: el.rotation ?? 0 }
-                    : arrow
-                ));
-              }
-              break;
-          }
-        });
-      }
-    };
-    
-    loadLayout();
-  }, [selectedScreen]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1308,13 +1112,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   className="h-8 w-8 p-0 hover:bg-gray-200"
                   asChild
                 >
-                  <Link href="/">
+                  <Link href="/settings/controller-outputs/faceplates">
                     <Settings className="h-5 w-5 text-blue-600" />
                   </Link>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>DeltaV Utilities</p>
+                <p>Back to Faceplates</p>
               </TooltipContent>
             </Tooltip>
 

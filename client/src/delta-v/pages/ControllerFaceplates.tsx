@@ -44,7 +44,7 @@ const ControllerFaceplates = () => {
             { to: "/level-controller", label: "Delta V Level Controller" },
             { to: "/concentration-controller", label: "Delta V Concentration Controller" },
             { to: "/flow-controller", label: "Delta V Flow Controller" },
-            { to: "/hand-indicated-controller", label: "Delta V Hand-Indicated Controller" },
+            { to: "/settings/controller-outputs/faceplates/hand-indicated-controller", label: "Delta V Hand-Indicated Controller" },
           ].map(({ to, label }) => (
             <Link
               key={to}

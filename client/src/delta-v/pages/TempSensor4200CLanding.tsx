@@ -39,13 +39,13 @@ const TempSensor4200CLanding = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/temp-sensor-4200c-main", label: "1540-TI-4200C Temperature Sensor Faceplate" },
-            { to: "/temp-sensor-4200c-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
-            { to: "/temp-sensor-4200c-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
-            { to: "/temp-sensor-4200c-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
-            { to: "/temp-sensor-4200c-faceplate-3d", label: "Faceplate 3D - Control Studio" },
-            { to: "/faceplate-3e/1540-TI-4200C", label: "Faceplate 3E - Controller Input GUI" },
-            { to: "/temp-sensor-4200c-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4200c-main", label: "1540-TI-4200C Temperature Sensor Faceplate" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3d", label: "Faceplate 3D - Control Studio" },
+            { to: "/settings/controller-outputs/faceplates/faceplate-3e/1540-TI-4200C", label: "Faceplate 3E - Controller Input GUI" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
           ].map(({ to, label }) => (
             <Link
               key={to}

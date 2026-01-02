@@ -290,7 +290,7 @@ const HandController4282Faceplate3A = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <Link
-              to="/hand-controller-4282-jug"
+              to="/settings/controller-outputs/faceplates/hand-controller-4282-jug"
               className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
             >
               <ArrowLeft size={18} />

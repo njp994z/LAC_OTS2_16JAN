@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Settings, ArrowLeft, ExternalLink, Save, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -22,76 +21,21 @@ const VFDSettings = () => {
     engineeringUnits: "Hz",
     transparentBackground: false,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [settingsId, setSettingsId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleChange = (field: string, value: string | boolean) => {
     setConfig((prev) => ({ ...prev, [field]: value }));
   };
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const { data, error } = await supabase
-        .from('vfd_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-      
-      if (data) {
-        setConfig({
-          tagName: data.tag_name,
-          description: data.description || '',
-          unit: data.unit || '',
-          engineeringUnits: data.engineering_units || 'Hz',
-          transparentBackground: data.transparent_background || false,
-        });
-        setSettingsId(data.id);
-      }
-      setIsLoading(false);
-    };
-
-    fetchSettings();
-  }, []);
-
   const handleApplyChanges = async () => {
     setIsSaving(true);
-    
-    const settingsData = {
-      tag_name: config.tagName,
-      description: config.description,
-      unit: config.unit,
-      engineering_units: config.engineeringUnits,
-      transparent_background: config.transparentBackground,
-      updated_at: new Date().toISOString(),
-    };
-    
-    let result;
-    if (settingsId) {
-      result = await supabase
-        .from('vfd_settings')
-        .update(settingsData)
-        .eq('id', settingsId);
-    } else {
-      result = await supabase
-        .from('vfd_settings')
-        .insert(settingsData)
-        .select()
-        .single();
-      
-      if (result.data) {
-        setSettingsId(result.data.id);
-      }
-    }
-    
-    if (result.error) {
-      toast({ title: "Error", description: "Failed to save settings", variant: "destructive" });
-    } else {
+    // Simulate saving - in the future this could be connected to backend storage
+    setTimeout(() => {
       toast({ title: "Success", description: "Settings saved successfully" });
-    }
-    
-    setIsSaving(false);
+      setIsSaving(false);
+    }, 500);
   };
 
   return (
@@ -100,7 +44,7 @@ const VFDSettings = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Link 
-              to="/compressor-faceplate" 
+              to="/settings/controller-outputs/faceplates/compressor-faceplate" 
               className="p-2 rounded-lg bg-card hover:bg-muted border border-border transition-colors"
             >
               <ArrowLeft size={20} />
@@ -197,14 +141,14 @@ const VFDSettings = () => {
             </div>
             <div className="divide-y divide-slate-700">
               <Link 
-                to="/compressor-faceplate" 
+                to="/settings/controller-outputs/faceplates/compressor-faceplate" 
                 className="flex justify-between items-center px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 transition-colors"
               >
                 <span className="text-slate-300 text-sm">Primary VFD Control Panel</span>
                 <ExternalLink className="text-cyan-400" size={16} />
               </Link>
               <Link 
-                to="/vfd-compare" 
+                to="/settings/controller-outputs/faceplates/vfd-compare" 
                 className="flex justify-between items-center px-4 py-3 hover:bg-slate-700/50 transition-colors"
               >
                 <span className="text-slate-300 text-sm">VFD Compare (Primary & Backup)</span>

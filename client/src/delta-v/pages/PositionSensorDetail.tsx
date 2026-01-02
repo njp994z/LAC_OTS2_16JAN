@@ -21,7 +21,7 @@ const PositionSensorDetail = () => {
 
       <div className="relative max-w-4xl mx-auto">
         <Link
-          to="/position-sensors"
+          to="/settings/controller-outputs/faceplates/position-sensors"
           className={cn(
             "inline-flex items-center gap-2 mb-6 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
             "text-muted-foreground hover:text-foreground",

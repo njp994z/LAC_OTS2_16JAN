@@ -17,7 +17,7 @@ const ConcentrationControllerFaceplate = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/controller-faceplates"
+          to="/settings/controller-outputs/faceplates/controller-blocks"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />

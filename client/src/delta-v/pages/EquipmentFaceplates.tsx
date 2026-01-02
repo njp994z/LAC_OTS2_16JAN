@@ -40,7 +40,7 @@ const EquipmentFaceplates = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/compressor-faceplate", label: "1510-GB-001 Main Compressor Faceplate" },
+            { to: "/settings/controller-outputs/faceplates/compressor-faceplate", label: "1510-GB-001 Main Compressor Faceplate" },
           ].map(({ to, label }) => (
             <Link
               key={to}

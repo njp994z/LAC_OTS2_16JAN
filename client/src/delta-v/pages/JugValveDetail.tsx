@@ -113,11 +113,11 @@ const JugValveDetail = () => {
       </div>
       <div className="relative max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Link href="/valve/hand-control" className={cn("inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200", "text-muted-foreground hover:text-foreground", "hover:bg-card/50 active:scale-95")}>
+          <Link href="/settings/controller-outputs/faceplates/valve/hand-control" className={cn("inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200", "text-muted-foreground hover:text-foreground", "hover:bg-card/50 active:scale-95")}>
             <ArrowLeft size={18} />
             Back to Hand Control Valves
           </Link>
-          <Link href="/jug-valve/3e">
+          <Link href="/settings/controller-outputs/faceplates/jug-valve/3e">
             <Button variant="outline" className={cn("gap-2 border-primary/30 hover:border-primary", "bg-card/50 hover:bg-card")}>
               <Settings size={18} />
               Configure (3E)

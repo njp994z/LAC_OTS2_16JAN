@@ -346,12 +346,12 @@ export const VFDFaceplate = ({
 
         {/* Bottom Toolbar - 6 Icons matching reference */}
         <div className="flex items-center justify-center gap-2 pt-2 border-t border-border/50 bg-slate-800 rounded-b px-2 pb-2">
-          <ToolbarButton icon={Settings} to="/vfd-settings" />
-          <ToolbarButton icon={History} to="/vfd-history" />
-          <ToolbarButton icon={TrendingUp} to="/vfd-trends" />
-          <ToolbarButton icon={Link2} to="/vfd-links" />
-          <ToolbarButton icon={ArrowLeftRight} to="/vfd-compare" />
-          <ToolbarButton icon={Bell} to="/vfd-alarms" />
+          <ToolbarButton icon={Settings} to="/settings/controller-outputs/faceplates/vfd-settings" />
+          <ToolbarButton icon={History} to="/settings/controller-outputs/faceplates/vfd-history" />
+          <ToolbarButton icon={TrendingUp} to="/settings/controller-outputs/faceplates/vfd-trends" />
+          <ToolbarButton icon={Link2} to="/settings/controller-outputs/faceplates/vfd-links" />
+          <ToolbarButton icon={ArrowLeftRight} to="/settings/controller-outputs/faceplates/vfd-compare" />
+          <ToolbarButton icon={Bell} to="/settings/controller-outputs/faceplates/vfd-alarms" />
         </div>
       </div>
     </div>

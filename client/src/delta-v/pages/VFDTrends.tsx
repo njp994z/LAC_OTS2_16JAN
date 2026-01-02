@@ -18,7 +18,7 @@ const VFDTrends = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Link 
-            to="/compressor-faceplate" 
+            to="/settings/controller-outputs/faceplates/compressor-faceplate" 
             className="p-2 rounded-lg bg-card hover:bg-muted border border-border transition-colors"
           >
             <ArrowLeft size={20} />

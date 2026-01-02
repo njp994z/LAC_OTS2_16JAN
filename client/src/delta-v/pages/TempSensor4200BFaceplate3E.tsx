@@ -237,7 +237,7 @@ const TempSensor4200BFaceplate3E = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
         <Link
-          to="/temp-sensor/1540-TI-4200B"
+          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200B"
           className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
         >
           <ArrowLeft size={18} />

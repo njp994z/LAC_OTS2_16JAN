@@ -1,19 +1,23 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import { PrimaryCompressorFaceplate } from "@/delta-v/components/faceplate/PrimaryCompressorFaceplate";
 import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const CompressorFaceplate = () => {
-  const [vfdConfig, setVfdConfig] = useState<{
+  const [vfdConfig] = useState<{
     tagName: string;
     description: string;
     unit: string;
     transparentBackground: boolean;
-  } | null>(null);
+  }>({
+    tagName: "VFD-001",
+    description: "Variable Frequency Drive",
+    unit: "U-505",
+    transparentBackground: false,
+  });
 
   // Use shared compressor context
   const {
@@ -26,28 +30,6 @@ const CompressorFaceplate = () => {
     setPermitActive,
     setFailAlarm,
   } = useCompressor();
-
-  // Fetch VFD settings from database
-  useEffect(() => {
-    const fetchVFDSettings = async () => {
-      const { data: settings } = await supabase
-        .from('vfd_settings')
-        .select('tag_name, description, unit, transparent_background')
-        .limit(1)
-        .maybeSingle();
-      
-      if (settings) {
-        setVfdConfig({
-          tagName: settings.tag_name,
-          description: settings.description || '',
-          unit: settings.unit || '',
-          transparentBackground: settings.transparent_background || false,
-        });
-      }
-    };
-    
-    fetchVFDSettings();
-  }, []);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -66,7 +48,7 @@ const CompressorFaceplate = () => {
         {/* Header */}
         <div className="mb-8">
           <Link
-            to="/equipment-faceplates"
+            to="/settings/controller-outputs/faceplates/rotating-equipment"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
