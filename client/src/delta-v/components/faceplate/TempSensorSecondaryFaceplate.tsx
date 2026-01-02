@@ -312,7 +312,7 @@ const ToolbarButton = ({
   to: string;
 }) => (
   <Link 
-    to={to}
+    href={to}
     title={title} 
     className={cn(
       "w-8 h-8 flex items-center justify-center rounded",

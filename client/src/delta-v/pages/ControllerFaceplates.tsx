@@ -18,11 +18,11 @@ const ControllerFaceplates = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/"
+          href="/settings/controller-outputs/faceplates"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Home
+          Back to Faceplates
         </Link>
 
         <h1
@@ -40,15 +40,15 @@ const ControllerFaceplates = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/temperature-controller", label: "Delta V Temperature Controller" },
-            { to: "/level-controller", label: "Delta V Level Controller" },
-            { to: "/concentration-controller", label: "Delta V Concentration Controller" },
-            { to: "/flow-controller", label: "Delta V Flow Controller" },
-            { to: "/settings/controller-outputs/faceplates/hand-indicated-controller", label: "Delta V Hand-Indicated Controller" },
-          ].map(({ to, label }) => (
+            { href: "/settings/controller-outputs/faceplates/temperature-controller", label: "Delta V Temperature Controller" },
+            { href: "/settings/controller-outputs/faceplates/level-controller", label: "Delta V Level Controller" },
+            { href: "/settings/controller-outputs/faceplates/concentration-controller", label: "Delta V Concentration Controller" },
+            { href: "/settings/controller-outputs/faceplates/flow-controller", label: "Delta V Flow Controller" },
+            { href: "/settings/controller-outputs/faceplates/hand-indicated-controller", label: "Delta V Hand-Indicated Controller" },
+          ].map(({ href, label }) => (
             <Link
-              key={to}
-              to={to}
+              key={href}
+              href={href}
               className={cn(
                 "group inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300",
                 "bg-gradient-to-br from-primary/20 to-cyan-600/10",

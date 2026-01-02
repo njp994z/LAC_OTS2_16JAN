@@ -32,16 +32,16 @@ const Landing = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/settings/controller-outputs/faceplates/home-screen", label: "Home Screen" },
-            { to: "/settings/controller-outputs/faceplates/controller-blocks", label: "Delta V Controller Faceplates" },
-            { to: "/settings/controller-outputs/faceplates/rotating-equipment", label: "Compressor / Blower Faceplates" },
-            { to: "/settings/controller-outputs/faceplates/sensor-blocks", label: "Delta V Sensor Faceplates" },
-            { to: "/settings/controller-outputs/faceplates/valve-blocks", label: "Delta V Valve Faceplates" },
-            { to: "/settings/controller-outputs/faceplates/alarm-blocks", label: "Delta V Alarm Faceplates" },
-          ].map(({ to, label }) => (
+            { href: "/settings/controller-outputs/faceplates/home-screen", label: "Home Screen" },
+            { href: "/settings/controller-outputs/faceplates/controller-blocks", label: "Delta V Controller Faceplates" },
+            { href: "/settings/controller-outputs/faceplates/rotating-equipment", label: "Compressor / Blower Faceplates" },
+            { href: "/settings/controller-outputs/faceplates/sensor-blocks", label: "Delta V Sensor Faceplates" },
+            { href: "/settings/controller-outputs/faceplates/valve-blocks", label: "Delta V Valve Faceplates" },
+            { href: "/settings/controller-outputs/faceplates/alarm-blocks", label: "Delta V Alarm Faceplates" },
+          ].map(({ href, label }) => (
             <Link
-              key={to}
-              to={to}
+              key={href}
+              href={href}
               className={cn(
                 "group inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300",
                 "bg-gradient-to-br from-primary/20 to-cyan-600/10",
