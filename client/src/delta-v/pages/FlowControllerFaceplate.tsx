@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 
 const flowControllers = [
-  { id: "1530-F-2602", name: "Sulfur Flow Controller", to: "/sulfur-flow-controller" },
-  { id: "1520-F-5870", name: "DT SA Inlet Flow Controller", to: null },
-  { id: "1520-F-6770", name: "IPAT SA Inlet Controller", to: null },
-  { id: "1520-F-6670", name: "FAT SA Inlet Controller", to: null },
+  { id: "1530-F-2602", name: "Sulfur Flow Controller", href: "/settings/controller-outputs/faceplates/sulfur-flow-controller" },
+  { id: "1520-F-5870", name: "DT SA Inlet Flow Controller", href: null },
+  { id: "1520-F-6770", name: "IPAT SA Inlet Controller", href: null },
+  { id: "1520-F-6670", name: "FAT SA Inlet Controller", href: null },
 ];
 
 const FlowControllerFaceplate = () => {
@@ -24,7 +24,7 @@ const FlowControllerFaceplate = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/settings/controller-outputs/faceplates/controller-blocks"
+          href="/settings/controller-outputs/faceplates/controller-blocks"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -46,10 +46,10 @@ const FlowControllerFaceplate = () => {
 
         <div className="flex flex-col items-center gap-4">
           {flowControllers.map((controller) => 
-            controller.to ? (
+            controller.href ? (
               <Link
                 key={controller.id}
-                to={controller.to}
+                href={controller.href}
                 className={cn(
                   "w-full max-w-md px-6 py-4 rounded-lg border-2 border-blue-600",
                   "bg-blue-700 hover:bg-blue-600 transition-colors",
