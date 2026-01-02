@@ -14,7 +14,7 @@ interface ControllerSubpage {
 const subpages: ControllerSubpage[] = [
   {
     id: "deltav-faceplates",
-    title: "Delta V Faceplates",
+    title: "UI and Instrument Faceplates",
     description: "Interactive operator interface panels for real-time process control. Includes PID controller faceplates, valve control interfaces, and alarm management displays with DeltaV-style graphics.",
     path: "/settings/controller-outputs/faceplates",
     icon: LayoutGrid
