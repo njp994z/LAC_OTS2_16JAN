@@ -1,7 +1,7 @@
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, LayoutGrid, Gauge, Radio, GitBranch, Bell } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, Gauge, Radio, GitBranch, Bell, Monitor, Fan } from 'lucide-react';
 
 interface FaceplateCategory {
   id: string;
@@ -12,6 +12,20 @@ interface FaceplateCategory {
 }
 
 const faceplateCategories: FaceplateCategory[] = [
+  {
+    id: 'home-screen',
+    title: 'Home Screen',
+    description: 'Main operator interface overview displaying plant-wide status, key process variables, and navigation to all process areas. Provides at-a-glance monitoring of critical parameters.',
+    path: '/settings/controller-outputs/faceplates/home-screen',
+    icon: Monitor,
+  },
+  {
+    id: 'rotating-equipment',
+    title: 'Rotating Equipment',
+    description: 'Faceplates for pumps, compressors, blowers, and motors. Monitor running status, speed, vibration, bearing temperatures, and control start/stop operations with interlock displays.',
+    path: '/settings/controller-outputs/faceplates/rotating-equipment',
+    icon: Fan,
+  },
   {
     id: 'controller-blocks',
     title: 'Controller Instrument Blocks',
@@ -61,7 +75,7 @@ export default function FaceplatesPage() {
             <div className="flex items-center gap-3">
               <LayoutGrid className="w-6 h-6 text-primary" />
               <div>
-                <h1 className="font-semibold text-foreground">Delta V Faceplates</h1>
+                <h1 className="font-semibold text-foreground">UI and Instrument Faceplates</h1>
                 <p className="text-xs text-muted-foreground">Instrument block categories</p>
               </div>
             </div>
@@ -105,7 +119,7 @@ export default function FaceplatesPage() {
 
       <footer className="border-t border-border bg-card py-3 px-6">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Delta V Faceplates | Instrument Blocks</span>
+          <span>UI and Instrument Faceplates | Instrument Blocks</span>
           <span>Lithium Americas OTS</span>
         </div>
       </footer>
