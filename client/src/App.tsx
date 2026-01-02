@@ -310,6 +310,12 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/flow-controller" component={FlowControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller" component={SulfurFlowControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-main" component={SulfurFlowControllerFaceplateMain} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3a" component={Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3b" component={Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3c" component={Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3d" component={Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3e" component={Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3f" component={Faceplate3F} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4030" component={MainCompressorHandControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-main" component={MainCompressorHandControllerFaceplateMain} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3a" component={HandController4030Faceplate3A} />

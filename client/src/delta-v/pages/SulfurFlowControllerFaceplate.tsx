@@ -17,7 +17,7 @@ const SulfurFlowControllerFaceplate = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/flow-controller"
+          href="/settings/controller-outputs/faceplates/flow-controller"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -39,17 +39,17 @@ const SulfurFlowControllerFaceplate = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/sulfur-flow-controller-main", label: "1530-F-2602 Sulfur Flow Controller Faceplate" },
-            { to: "/settings/controller-outputs/faceplates/faceplate-3a/1530-F-2602", label: "Faceplate 3A - PID Simulation" },
-            { to: "/settings/controller-outputs/faceplates/faceplate-3b/1530-F-2602", label: "Faceplate 3B - Parameter Tracking" },
-            { to: "/settings/controller-outputs/faceplates/faceplate-3c/1530-F-2602", label: "Faceplate 3C - Trend/Live Data" },
-            { to: "/settings/controller-outputs/faceplates/faceplate-3d/1530-F-2602", label: "Faceplate 3D - Control Studio" },
-            { to: "/settings/controller-outputs/faceplates/faceplate-3e/1530-F-2602", label: "Faceplate 3E - Controller Input GUI" },
-            { to: "/settings/controller-outputs/faceplates/faceplate-3f/1530-F-2602", label: "Faceplate 3F - Acknowledge Alarm" },
-          ].map(({ to, label }) => (
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-main", label: "1530-F-2602 Sulfur Flow Controller Faceplate" },
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3d", label: "Faceplate 3D - Control Studio" },
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3e", label: "Faceplate 3E - Controller Input GUI" },
+            { href: "/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
+          ].map(({ href, label }) => (
             <Link
-              key={to}
-              to={to}
+              key={href}
+              href={href}
               className={cn(
                 "group inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300",
                 "bg-gradient-to-br from-primary/20 to-cyan-600/10",
