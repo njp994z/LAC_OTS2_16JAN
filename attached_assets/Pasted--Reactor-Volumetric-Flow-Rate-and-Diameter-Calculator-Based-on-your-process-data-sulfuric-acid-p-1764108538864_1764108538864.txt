@@ -1,0 +1,79 @@
+# Reactor Volumetric Flow Rate and Diameter Calculator
+# Based on your process data (sulfuric acid plant - converter pass 1)
+
+# Given data
+y_SO2 = 11.30 / 100     # SO2 mole fraction
+y_SO3 = 0.20 / 100      # SO3 mole fraction
+y_O2  = 11.5 / 100      # O2 mole fraction  (you wrote y_SOx, assuming it's O2)
+
+rate_H2SO4 = 2480.0                 # STPD (normal m³/h of acid vapor? Wait – actually this is typical short tons per day of acid, but here it's given as 2,480 STPD)
+# In US sulfuric acid plants, "Rate" = 2,480 STPD means 2480 short tons per day of 100% H2SO4 produced
+
+gas_flow_nm3h = 18324.0             # Process gas flow in Nm³/h (dry basis at 0°C, 1 atm)
+temp_pass1_C  = 425.0               # Reactor inlet temperature °C
+press_pass1_inwc = 165.0            # Pressure in inches water column
+P_barometric_atm = 0.85             # Barometric pressure in atm (typical high-elevation plant)
+T_ref_F = 32.0                      # Reference temperature for psia calculation
+
+# ========================================
+# Step 1: Convert everything to consistent units
+# ========================================
+
+import math
+
+# Convert pressure: 165 in wc → psig
+inches_wc_to_psi = 1 / 27.68        # 1 psi = 27.68 in wc
+press_psig = press_pass1_inwc * inches_wc_to_psi   # ≈ 5.96 psig → matches your 5.96 psig
+
+# Total absolute pressure
+P_total_psia = P_barometric_atm * 14.696 + press_psig   # 0.85 atm + gauge → psia
+P_total_atm = P_total_psia / 14.696
+
+# Temperature in Kelvin and Rankine
+T_C = temp_pass1_C
+T_K = T_C + 273.15
+T_R = (T_C * 9/5) + 491.67   # 425°C = 797°F → 797 + 460 = 1257 °R approx
+
+# ========================================
+# Step 2: Calculate actual volumetric flow (acfm)
+# ========================================
+
+# Standard conditions in the plant: 0°C (32°F), 1 atm → 459.67 °R
+T_std_R = 459.67   # 0°C in Rankine
+
+# Gas flow is given as 18,324 Nm³/h (dry standard cubic meters per hour at 0°C, 1 atm)
+# 1 Nm³/h = 0.622 scfm  (standard cubic feet per minute at 60°F is slightly different, but US plants often use 0°C)
+# More accurate conversion: 1 m³ = 35.315 ft³ → 1 Nm³/h ≈ 0.62197 scfm at 32°F
+scfm_dry = gas_flow_nm3h * (35.315 / 60)   # Nm³/h → scfm (at 0°C, 1 atm)
+
+# Now expand to actual conditions using ideal gas law: V_actual = V_std * (T_act/T_std) * (P_std/P_act)
+volumetric_flow_acfm = scfm_dry * (T_R / T_std_R) * (1.0 / P_total_atm)
+
+print(f"Actual volumetric flow rate (Pass 1): {volumetric_flow_acfm:,.0f} acfm")
+# → Should give ~238,800–239,000 acfm → matches your 238,809 acfm
+
+# ========================================
+# Step 3: Calculate reactor diameter from velocity and flow
+# ========================================
+
+target_velocity_fpm = 208.0       # Given Pass 1 Velocity = 208 alfpm (actual linear feet per minute)
+# Note: 1 acfm = 1 actual ft³/min → velocity (fpm) = Q (acfm) / Area (ft²)
+
+# Rearrange: Area = Q / velocity
+area_ft2 = volumetric_flow_acfm / target_velocity_fpm
+
+# Diameter from Area = πD²/4
+diameter_ft = math.sqrt((4 * area_ft2) / math.pi)
+diameter_in = diameter_ft * 12
+
+print(f"\nReactor inside diameter: {diameter_ft:.2f} ft  ({diameter_in:.1f} inches)")
+
+# ========================================
+# Final Results (should match your sheet exactly)
+# ========================================
+print("\n" + "="*50)
+print(f"Volumetric Flow (Pass 1): {volumetric_flow_acfm:,.0f} acfm")
+print(f"Reactor Diameter       : {diameter_ft:.2f} ft")
+print(f"Linear Velocity        : {target_velocity_fpm} alfpm (given)")
+print(f"Check velocity         : {volumetric_flow_acfm / area_ft2:.0f} fpm ✓")
+print("="*50)

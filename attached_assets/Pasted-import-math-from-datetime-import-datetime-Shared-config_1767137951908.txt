@@ -1,0 +1,196 @@
+import math
+from datetime import datetime
+
+# Shared configuration
+CONFIG = {
+    "pipe_dia_in": 4.0,
+    "line_length_ft": 80.0,
+
+    # Furnace/backpressure boundary
+    "furnace_static_psi": 5.0,
+
+    # NOZZLE MODEL (use a nozzle Cv instead of fixed ΔP)
+    # Calibrated from datasheet MAX case:
+    #   Q = 19.74 m3/h = 86.91 gpm, ΔP_nozzle = 149.34 kPa = 21.66 psi, SG ~ 1.79–1.80
+    #   Cv_nozzle = Q * sqrt(SG/ΔP)  (liquid)
+    "Cv_nozzle": 24.98,  # ~25, good default for matching the datasheet max point
+
+    # Line hydraulics
+    "friction_factor": 0.018,
+    "K_minor_losses": 7.5,
+    "SG": 1.79,
+
+    # Valve (equal-%)
+    "Cv_max": 548.0,
+    "Cv_at_pos": 25.039,
+    "pos_at_Cv_pct": 30.6,
+    # Optionally override if you already know it:
+    # "R_equal_percent": 124.0,
+
+    # Atmosphere (psia display)
+    "barometric_psia": 14.696,
+    "temperature_f": 275.0,
+
+    # Optional fixed discharge line loss (pump outlet -> valve inlet)
+    "discharge_line_loss_psi": 2.0,
+
+    # Pump curve (static)
+    # Cubic fit from Weir/Lewis curve
+    "pump_coeffs": [-1.06594794e-05, -7.73601399e-04, -4.91452991e-02, 296.104895],
+}
+
+
+class StaticSulfurSprayHydraulics:
+    """
+    Static calculation to populate DCS material balance table.
+
+    Key fix vs your previous version:
+      - Downstream pressure is NOT modeled as furnace + constant nozzle ΔP.
+      - Instead, the nozzle is modeled as a Cv element: ΔP_nozzle = SG*(Q/Cv_nozzle)^2
+        which makes downstream pressure rise with flow like the datasheet cases.
+    """
+
+    def __init__(self):
+        self.g = 32.174
+        self.pipe_dia_ft = CONFIG["pipe_dia_in"] / 12.0
+        self.pipe_area_ft2 = math.pi * (self.pipe_dia_ft / 2.0) ** 2
+        self.psi_per_ft = CONFIG["SG"] * 0.433
+        self.pump_coeffs = CONFIG["pump_coeffs"]
+
+        # Equal-% rangeability R (compute from point unless provided)
+        self.R = float(CONFIG.get("R_equal_percent", self._compute_R_from_point()))
+        self.R = max(self.R, 1.000001)
+
+    @staticmethod
+    def _clamp(x: float, lo: float, hi: float) -> float:
+        return max(lo, min(hi, x))
+
+    def _compute_R_from_point(self) -> float:
+        """
+        Equal-% valve:
+            Cv(p) = Cv_max * R^((p-100)/100)
+        Given Cv1 at p1:
+            R = (Cv1/Cv_max)^(1/(p1/100 - 1))
+        """
+        Cv_max = max(float(CONFIG["Cv_max"]), 1e-12)
+        Cv1 = max(float(CONFIG["Cv_at_pos"]), 1e-12)
+        p1 = float(CONFIG["pos_at_Cv_pct"]) / 100.0
+        denom = p1 - 1.0
+        if abs(denom) < 1e-9:
+            return 124.0
+        return (Cv1 / Cv_max) ** (1.0 / denom)
+
+    # ---- Equal-% valve equations ----
+    def pos_from_Cv(self, Cv: float) -> float:
+        """
+        Inverse of equal-%:
+            p = 100 * [1 + ln(Cv/Cv_max)/ln(R)]
+        """
+        Cv = max(float(Cv), 0.0)
+        Cv_max = max(float(CONFIG["Cv_max"]), 1e-12)
+
+        Cv_min = Cv_max / self.R
+        if Cv <= Cv_min:
+            return 0.0
+        if Cv >= Cv_max:
+            return 100.0
+
+        p = 100.0 * (1.0 + math.log(Cv / Cv_max) / math.log(self.R))
+        return self._clamp(p, 0.0, 100.0)
+
+    def nozzle_dp_psi(self, Q_gpm: float) -> float:
+        """
+        Nozzle modeled as a Cv element:
+            ΔP = SG * (Q/Cv)^2
+        """
+        Q = max(0.0, float(Q_gpm))
+        Cv_n = max(float(CONFIG["Cv_nozzle"]), 1e-12)
+        SG = float(CONFIG["SG"])
+        return SG * (Q / Cv_n) ** 2 if Q > 0 else 0.0
+
+    def calculate(self, flow_gpm: float, pit_level_ft: float = 7.0) -> dict:
+        Q = max(0.0, float(flow_gpm))
+
+        # Pump head (ft)
+        a, b, c, d = self.pump_coeffs
+        pump_head_ft = a * Q**3 + b * Q**2 + c * Q + d
+        pump_head_ft = max(0.0, pump_head_ft)
+
+        # Friction loss (ft)
+        if Q > 0.0:
+            Q_cfs = Q / 448.831
+            v_fps = Q_cfs / self.pipe_area_ft2
+            h_f_ft = (
+                (CONFIG["friction_factor"] * CONFIG["line_length_ft"] / self.pipe_dia_ft + CONFIG["K_minor_losses"])
+                * (v_fps**2)
+                / (2.0 * self.g)
+            )
+        else:
+            v_fps = 0.0
+            h_f_ft = 0.0
+
+        # Suction and pump discharge (psig)
+        suction_psig = pit_level_ft * self.psi_per_ft
+        pump_discharge_psig = suction_psig + (pump_head_ft - h_f_ft) * self.psi_per_ft
+
+        # Valve inlet (psig)
+        valve_inlet_psig = pump_discharge_psig - float(CONFIG["discharge_line_loss_psi"])
+
+        # Downstream/backpressure model:
+        # P_out = furnace_static + nozzle_dp(Q)
+        dp_nozzle_psi = self.nozzle_dp_psi(Q)
+        valve_outlet_psig = float(CONFIG["furnace_static_psi"]) + dp_nozzle_psi
+
+        # Valve ΔP
+        dp_valve_psi = max(valve_inlet_psig - valve_outlet_psig, 0.0)
+
+        # Required Cv for requested flow (liquid): Cv = Q * sqrt(SG/ΔP)
+        if Q <= 0.0 or dp_valve_psi <= 0.0:
+            Cv_req = 0.0
+        else:
+            Cv_req = Q * math.sqrt(float(CONFIG["SG"]) / dp_valve_psi)
+
+        # Cv -> position (equal-% inverse)
+        pos_pct = self.pos_from_Cv(Cv_req)
+
+        # Position -> PID mA (4–20 mA linear to travel)
+        x = pos_pct / 100.0
+        pid_output_mA = 4.0 + 16.0 * x
+        pid_output_mA = self._clamp(pid_output_mA, 4.0, 20.0)
+
+        # Convert pressures to psia
+        p_atm = float(CONFIG["barometric_psia"])
+        pump_discharge_psia = pump_discharge_psig + p_atm
+        valve_inlet_psia = valve_inlet_psig + p_atm
+        valve_outlet_psia = valve_outlet_psig + p_atm
+
+        mass_klb_hr = (Q * float(CONFIG["SG"]) * 500.3) / 1000.0
+
+        return {
+            # Table outputs
+            "Pressure_psia_pump": round(pump_discharge_psia, 2),
+            "Pressure_psia_valve_inlet": round(valve_inlet_psia, 2),
+            "Pressure_psia_valve_outlet": round(valve_outlet_psia, 2),
+
+            "Flow_gpm": round(Q, 2),
+            "m_Total_klb_hr": round(mass_klb_hr, 2),
+            "Temp_F": float(CONFIG["temperature_f"]),
+
+            # Key results
+            "valve_position_pct": round(pos_pct, 4),
+            "x": round(x, 6),
+            "pid_output_mA": round(pid_output_mA, 4),
+            "Cv_required": round(Cv_req, 6),
+
+            # Diagnostics
+            "R_equal_percent": round(self.R, 3),
+            "Cv_nozzle": float(CONFIG["Cv_nozzle"]),
+            "dp_nozzle_psi": round(dp_nozzle_psi, 3),
+            "dP_valve_psi": round(dp_valve_psi, 3),
+            "valve_inlet_psig": round(valve_inlet_psig, 2),
+            "valve_outlet_psig": round(valve_outlet_psig, 2),
+            "pump_head_ft": round(pump_head_ft, 2),
+            "friction_loss_ft": round(h_f_ft, 3),
+            "velocity_fps": round(v_fps, 2),
+            "timestamp": datetime.now().isoformat(),
+        }

@@ -1,0 +1,457 @@
+{
+  "columns": [
+    "1540-XV-4080 fully open (1540-ZI-4080)",
+    "Acid flow over drying tower not low (1540-FSLL-5870)",
+    "Bypass Protection Signal available (1560-XS-6202)",
+    "ESD Push Button Triggered (1510-HS-9512)",
+    "ESD Push Button Triggered (1520-HS-9010B)",
+    "Field shutdown hand switch disengaged (1540-ESD-1094)",
+    "High-High Caustic Tank Level (1510-LSHH-9516)",
+    "High-High Condensate Conductivity Alarm (1560-ASHH-7512) w/ 1 min delay",
+    "High-High Effluent Storage Tank Level (1520-LSHH-4705)",
+    "High-High Liquid Level in Recovery Tank (1560-LSHH-2901)",
+    "High-High Oxidation Air Discharge Pressure to Tail Gas Scrubber (1530-PSHH-0652)",
+    "High-High Oxidation Air Temperature to Tail Gas Scrubber (1530-TSHH-0654)",
+    "High-High STG last stage pressure (1560-PIA-6317)",
+    "High-High STG last stage temperature (1560-TIA-6232)",
+    "High-High Start-Up Acid Storage Tank Level (1570-LSHH-9009)",
+    "High-High Sulfur Storage Tank Level (1510-LSHH-1201)",
+    "High-High Sulfur Storage Tank Level (1510-LSHH-1202)",
+    "High-High Temperature on Raw Water header (TIT-3102)",
+    "Hydrogen vents closed (1540-ZAC-5805, 1540-ZAC-6630, 1540-ZAC-8421)",
+    "Inlet guide vanes closed (1540-ZAC-4030)",
+    "Lithium Processing Plant gives ready/permission signal (tag TBD)",
+    "Low Caustic Supply Header Pressure (1510-PSL-9529)",
+    "Low-Low Acid Flow (1570-FSLL-8815)",
+    "Low-Low Acid Flow (1570-FSLL-8816)",
+    "Low-Low Booster Pump Discharge Pressure (1560-PSLL-7524)",
+    "Low-Low Caustic Tank Level (1510-LSLL-9516)",
+    "Low-Low Condensate Tank Water Level (1560-LSLL-9320)",
+    "Low-Low Cooling Tower Basin Level (1550-LSLL-2215)",
+    "Low-Low Deaerator (1540-PV-002) Level (1540-LSLL-6842)",
+    "Low-Low Effluent Storage Tank Level (1520-LSLL-4705)",
+    "Low-Low Effluent Storage Tank pH (1520-ASHH-4711)",
+    "Low-Low Fin Fan Cooling Water Expansion Tank Level (1520-LSLL-1401)",
+    "Low-Low HP Boiler Feedwater Discharge Pressure (1540-PSLL-7000)",
+    "Low-Low Recovery Tank Water Level (1560-LSLL-2901)",
+    "Low-Low Sulfur Vapor Scrubber Liquid Level (1510-LSLL-1524)",
+    "Low-Low Tail Gas Scrubber Level (1530-LSLL-0013)",
+    "Low-Low Water Treatment Area Sump Level (1560-LSLL-4001)"
+  ],
+  "interlocks": [
+    {
+      "tagNo": "I-21",
+      "type": "Interlock",
+      "serviceDescription": "Shut down HP Boiler Feedwater Pumps (1540-PP-017, 1540-PP-018)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-23",
+      "type": "Interlock",
+      "serviceDescription": "Autostart standby HP Boiler Feedwater Pumps (1540-PP-017, 1540-PP-018)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-60",
+      "type": "Interlock",
+      "serviceDescription": "Shut down Tail Gas Scrubber circulation pumps (1530-PP-001 & 1530-PP-002) and close effluent valve (1530-DCV-0006)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0]
+    },
+    {
+      "tagNo": "I-65",
+      "type": "Interlock",
+      "serviceDescription": "Shut down Oxidation Air Blowers (1530-GB-001 & 1530-GB-002)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-101",
+      "type": "Interlock",
+      "serviceDescription": "Stop Liquid Sulfur Unloading Pumps (1510-PP-001 & 1510-PP-002)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-110",
+      "type": "Interlock",
+      "serviceDescription": "Stop Fin Fan Cooling Water Pumps (1520-PP-008, -009, -010)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-111",
+      "type": "Interlock",
+      "serviceDescription": "Stop Acid Plant Cooling Tower Pumps (1550-PP-001, -002)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]
+    },
+    {
+      "tagNo": "I-112",
+      "type": "Interlock",
+      "serviceDescription": "Stop Treated Water Export Pumps (1560-PP-006, -007, -010, -011)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
+    },
+    {
+      "tagNo": "I-115",
+      "type": "Interlock",
+      "serviceDescription": "Start Bypass Condensate Pump (1560-PP-019 or -020)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-121",
+      "type": "Interlock",
+      "serviceDescription": "Open Off-Spec Condensate Return Valve (1560-XV-7513), close return-to-BFW valve (1560-XV-7514)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-123",
+      "type": "Interlock",
+      "serviceDescription": "Bypass condensate to water treatment sump via TCVs",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-124",
+      "type": "Interlock",
+      "serviceDescription": "Stop Water Recovery Pumps (1560-PP-021 & -022)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-126",
+      "type": "Interlock",
+      "serviceDescription": "Stop ACC Condensate Pumps (1560-PP-015 & -016) and Bypass Condensate Pumps (1560-PP-019 & -020)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-140",
+      "type": "Interlock",
+      "serviceDescription": "Close Sulfur Vapor Scrubber Blowdown Valve (1510-XV-1512)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-153A",
+      "type": "Interlock",
+      "serviceDescription": "Stop Acid Heater (1570-ZE-003)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-154A",
+      "type": "Interlock",
+      "serviceDescription": "Stop Acid Heater (1570-ZE-004)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-155",
+      "type": "Interlock",
+      "serviceDescription": "Close LCV-6240, unloading valves HV-9011/HV-9010, stop unloading pump PP-007",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-156",
+      "type": "Interlock",
+      "serviceDescription": "Product Acid Transfer Pumps (1570-PP-001 & -002) start",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+    },
+    {
+      "tagNo": "I-160",
+      "type": "Interlock",
+      "serviceDescription": "Stop Caustic Unloading Pump (1510-PP-003)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+    },
+    {
+      "tagNo": "I-161",
+      "type": "Interlock",
+      "serviceDescription": "Stop Caustic Feed Pumps (1510-PP-007 & -008)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-162",
+      "type": "Interlock",
+      "serviceDescription": "Start Standby Caustic Feed Pump (1510-PP-007 or -008)",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-167",
+      "type": "Interlock",
+      "serviceDescription": "Stop SA1 Effluent Feed Pumps (1520-PP-023 & -024) and agitator 1520-AG-003",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-169",
+      "type": "Interlock",
+      "serviceDescription": "Stop Transloading Effluent Unloading Pump (1520-PP-021), set XV-4711 to manual 0%",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-170",
+      "type": "Interlock",
+      "serviceDescription": "Close Control Valve 1520-LCV-4705",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-324",
+      "type": "Interlock",
+      "serviceDescription": "STG Bypass Protection: force PCV-6672 to manual 0%",
+      "status": "OFF",
+      "interlocking": "Trip",
+      "setPoint": "",
+      "conditions": [0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-2",
+      "type": "Permissive",
+      "serviceDescription": "Main Compressor Start Permissive",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-200",
+      "type": "Permissive",
+      "serviceDescription": "20% Caustic Solution Export to Lithium Processing Plant (On/Off Valve 1510-XV-9530) Permissive",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-201",
+      "type": "Permissive",
+      "serviceDescription": "Treated Water Export Pumps 1560-PP-006 and 1560-PP-007 (Standby) Start Permissive",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-202",
+      "type": "Permissive",
+      "serviceDescription": "150 psig Steam Export Station (1560-PCV-6011) Lithium Processing Plant Start Permissive",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-302",
+      "type": "Permissive",
+      "serviceDescription": "Permissive to Open Bypass Desuperheater Valve 1560-PCV-6672",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-307",
+      "type": "Permissive",
+      "serviceDescription": "Air Cooled Condenser (ACC) Unit Fan Start Up Permissives",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-308",
+      "type": "Permissive",
+      "serviceDescription": "Permissive for Air Cooled Condenser (ACC) Start-Up Sequence",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-317",
+      "type": "Permissive",
+      "serviceDescription": "Permissive for Opening ACC Holding Skid Air Suction Valve (V1560-9340)",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-320",
+      "type": "Permissive",
+      "serviceDescription": "Permissive for Opening Exhaust Steam Line Vacuum Breaker (V1560-9308)",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-323",
+      "type": "Permissive",
+      "serviceDescription": "Permissive for Put Fan Assembly Function Group in Auto",
+      "status": "OFF",
+      "interlocking": "Permissive",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-63A",
+      "type": "On-Off",
+      "serviceDescription": "Open Raw Water to Oxidation Blowers Air Sparger On/Off Valve (1530-XV-0656)",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-63B",
+      "type": "On-Off",
+      "serviceDescription": "Close Raw Water to Oxidation Blowers Air Sparger On/Off Valve (1530-XV-0656)",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-103",
+      "type": "On-Off",
+      "serviceDescription": "Start/Stop Liquid Sulfur Unloading Pumps 1510-PP-001 and 1510-PP-002",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-117",
+      "type": "On-Off",
+      "serviceDescription": "Start/Stop Water Treatment Area Sump Pumps 1560-PP-012 or 1560-PP-013",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-119",
+      "type": "On-Off",
+      "serviceDescription": "Start Boiler Blowdown Sump Pump 1540-PP-001",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-120",
+      "type": "On-Off",
+      "serviceDescription": "Stop Boiler Blowdown Sump Pump 1540-PP-001",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-122",
+      "type": "On-Off",
+      "serviceDescription": "Open/Close Deaerator Overflow Valve 1540-XV-6843",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-137",
+      "type": "On-Off",
+      "serviceDescription": "Start and Stop Acid Plant Cooling Tower Fan (1550-CT-001)",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-142",
+      "type": "On-Off",
+      "serviceDescription": "Sulfur Vapor Scrubber (1510-PK-007) Flush Sequence Starts",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-153B",
+      "type": "On-Off",
+      "serviceDescription": "Start/Stop Acid Heater (1570-ZE-003)",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    },
+    {
+      "tagNo": "I-154B",
+      "type": "On-Off",
+      "serviceDescription": "Start/Stop Acid Heater (1570-ZE-003)",
+      "status": "OFF",
+      "interlocking": "On-Off",
+      "setPoint": "",
+      "conditions": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    }
+  ]
+}

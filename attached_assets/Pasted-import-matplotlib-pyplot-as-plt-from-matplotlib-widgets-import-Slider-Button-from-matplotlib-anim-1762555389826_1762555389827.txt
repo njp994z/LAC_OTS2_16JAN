@@ -1,0 +1,131 @@
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button
+from matplotlib.animation import FuncAnimation
+import numpy as np
+
+# ==================== GLOBAL VARIABLES ====================
+t = 0.0
+PV = 0.0
+SP = 75.0
+integral = 0.0
+prev_error = 0.0
+MV = 12.0
+running = False
+
+K_process = 150 / 16.0    # 9.375 gpm per mA
+tau = 2.0
+
+time_data = [0.0]
+pv_data   = [0.0]
+sp_data   = [75.0]
+
+# ==================== FIGURE & AXES ====================
+fig = plt.figure(figsize=(13, 8))
+fig.canvas.manager.set_window_title("PID Sulfur Flow Controller – FULLY WORKING")
+ax = fig.add_subplot(111)
+ax.set_ylim(0, 150)
+ax.set_xlim(0, 60)
+ax.set_xlabel("Time (s)", fontsize=12)
+ax.set_ylabel("Sulfur Flow (gpm)", fontsize=12)
+ax.set_title("Real-Time PID Controller – 1st Order Process", fontsize=16, pad=20)
+ax.grid(True, alpha=0.4)
+
+line_sp, = ax.plot([], [], 'r--', lw=2.5, label='Setpoint')
+line_pv, = ax.plot([], [], 'cyan', lw=3, label='Process Value')
+ax.legend(loc='upper right', fontsize=12)
+
+# Force initial draw so lines are visible
+line_sp.set_data(time_data, sp_data)
+line_pv.set_data(time_data, pv_data)
+
+# ==================== SLIDERS (positioned correctly) ====================
+plt.subplots_adjust(left=0.08, bottom=0.30)
+
+ax_sp = fig.add_axes([0.15, 0.20, 0.65, 0.03])
+sl_sp = Slider(ax_sp, 'Setpoint (gpm)', 0, 150, valinit=75, valstep=1)
+
+ax_kp = fig.add_axes([0.15, 0.16, 0.65, 0.03])
+sl_kp = Slider(ax_kp, 'Kp', 0.001, 2.0, valinit=0.12)
+
+ax_ki = fig.add_axes([0.15, 0.12, 0.65, 0.03])
+sl_ki = Slider(ax_ki, 'Ki', 0.0, 1.0, valinit=0.08)
+
+ax_kd = fig.add_axes([0.15, 0.08, 0.65, 0.03])
+sl_kd = Slider(ax_kd, 'Kd', 0.0, 2.0, valinit=0.0)
+
+ax_tau = fig.add_axes([0.15, 0.04, 0.65, 0.03])
+sl_tau = Slider(ax_tau, 'Tau (s)', 0.5, 10.0, valinit=2.0)
+
+ax_dt = fig.add_axes([0.15, 0.00, 0.65, 0.03])
+sl_dt = Slider(ax_dt, 'dt (s)', 0.01, 0.5, valinit=0.1)
+
+# ==================== START/STOP BUTTON ====================
+ax_btn = fig.add_axes([0.02, 0.90, 0.10, 0.07])
+btn = Button(ax_btn, 'START', color='#00ff00', hovercolor='#00cc00')
+
+def toggle(event):
+    global running
+    running = not running
+    btn.label.set_text('STOP' if running else 'START')
+    btn.color = '#ff0000' if running else '#00ff00'
+
+btn.on_clicked(toggle)
+
+# ==================== UPDATE FUNCTION ====================
+def update(frame):
+    global t, PV, integral, prev_error, MV, tau
+
+    if not running:
+        return line_pv, line_sp
+
+    # Read current slider values
+    SP = sl_sp.val
+    Kp = sl_kp.val
+    Ki = sl_ki.val
+    Kd = sl_kd.val
+    tau = sl_tau.val
+    dt = sl_dt.val
+
+    # PID controller
+    error = SP - PV
+    integral += error * dt
+    derivative = (error - prev_error) / dt if dt > 0 else 0
+
+    MV_raw = Kp * error + Ki * integral + Kd * derivative
+    MV = np.clip(MV_raw, 4.0, 20.0)
+
+    # Anti-windup
+    if Ki > 0 and MV_raw != MV:
+        integral -= (MV_raw - MV) / Ki
+
+    prev_error = error
+
+    # Exact 1st-order response (inverse Laplace)
+    target = K_process * (MV - 4.0)
+    PV = PV * np.exp(-dt / tau) + target * (1 - np.exp(-dt / tau))
+
+    t += dt
+
+    # Append data
+    time_data.append(t)
+    pv_data.append(PV)
+    sp_data.append(SP)
+
+    # Update lines
+    line_pv.set_data(time_data, pv_data)
+    line_sp.set_data(time_data, sp_data)
+
+    # Rolling window
+    if t > 60:
+        ax.set_xlim(t - 60, t + 5)
+
+    ax.relim()
+    ax.autoscale_view(scaley=False)
+
+    return line_pv, line_sp
+
+# ==================== ANIMATION ====================
+ani = FuncAnimation(fig, update, interval=50, blit=False, cache_frame_data=False)
+
+# Show everything
+plt.show()

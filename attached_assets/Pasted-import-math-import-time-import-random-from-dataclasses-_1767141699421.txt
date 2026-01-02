@@ -1,0 +1,390 @@
+import math
+import time
+import random
+from dataclasses import dataclass
+
+# Assumes CONFIG exists in your module (same one used by Static)
+# If not, define it here (keys referenced below must exist).
+CONFIG = globals().get("CONFIG", {})
+
+@dataclass
+class DynamicState:
+    time_s: float = 0.0
+    received_mA: float = 4.0         # random PID inlet (mA)
+    position_pct: float = 0.0        # valve travel (%)
+    flow_gpm: float = 0.0            # lagged flow (gpm)
+
+
+class DynamicSulfurSprayHydraulics:
+    """
+    Dynamic model consistent with the latest Static model:
+      - PID inlet (mA) -> valve travel (linear)
+      - travel -> Cv via equal-%: Cv(p) = (Cv_max/R) * R^(p/100)
+      - Nozzle as Cv element: dP_nozzle = SG*(Q/Cv_nozzle)^2
+      - Downstream header term calibrated from datasheet max point to match valve dP at Q_cal
+      - Pump curve + line friction + discharge line loss
+      - First-order lags: positioner, flow
+      - Random PID inlet values generated internally with mean chosen to give ~74.98 gpm average
+    """
+
+    def __init__(
+        self,
+        dt: float = 0.5,
+        positioner_tau_s: float = 8.0,
+        flow_tau_s: float = 4.0,
+        pit_level_ft: float = 7.0,
+        mean_flow_gpm: float = 74.98,
+        mA_noise_sigma: float = 0.35,
+        rng_seed: int | None = 1234,
+    ):
+        self.dt = float(dt)
+        self.tau_pos = float(positioner_tau_s)
+        self.tau_flow = float(flow_tau_s)
+        self.pit_level_ft = float(pit_level_ft)
+
+        # Constants / geometry
+        self.g = 32.174
+        self.pipe_dia_ft = float(CONFIG["pipe_dia_in"]) / 12.0
+        self.pipe_area_ft2 = math.pi * (self.pipe_dia_ft / 2.0) ** 2
+        self.psi_per_ft = float(CONFIG["SG"]) * 0.433
+        self.p_atm = float(CONFIG.get("barometric_psia", 14.696))
+
+        # Pump curve (static curve used in static model)
+        self.pump_coeffs = CONFIG.get(
+            "pump_coeffs",
+            [-1.06594794e-05, -7.73601399e-04, -4.91452991e-02, 296.104895],
+        )
+
+        # Loss terms / properties
+        self.f = float(CONFIG["friction_factor"])
+        self.L = float(CONFIG["line_length_ft"])
+        self.K = float(CONFIG["K_minor_losses"])
+        self.SG = float(CONFIG["SG"])
+        self.discharge_line_loss_psi = float(CONFIG.get("discharge_line_loss_psi", 2.0))
+
+        # Valve / nozzle
+        self.Cv_max = float(CONFIG["Cv_max"])
+        self.R = max(float(CONFIG.get("R_equal_percent", 85.0)), 1.000001)
+        self.Cv_nozzle = float(CONFIG.get("Cv_nozzle", 24.98))
+        self.furnace_static_psig = float(CONFIG.get("furnace_static_psi", 5.0))
+
+        # Calibrate downstream header like static code (so pressures align)
+        self.downstream_header_psig = self._calibrate_downstream_header_psig()
+
+        # Random PID inlet generation
+        self.mean_flow_gpm = float(mean_flow_gpm)
+        self.mA_noise_sigma = float(mA_noise_sigma)
+        self.rng = random.Random(rng_seed)
+
+        # Compute the mean mA that corresponds to the requested mean flow (steady-state)
+        self.mean_mA = self._steady_state_mA_for_flow(self.mean_flow_gpm)
+
+        # State
+        self.state = DynamicState()
+        self.start_time = time.time()
+
+    # ----------------------------
+    #   Core relationships
+    # ----------------------------
+    @staticmethod
+    def _clamp(x: float, lo: float, hi: float) -> float:
+        return max(lo, min(hi, x))
+
+    def mA_to_position(self, mA: float) -> float:
+        """4–20 mA -> 0–100% travel (linear)."""
+        return self._clamp((float(mA) - 4.0) * 6.25, 0.0, 100.0)
+
+    def position_to_mA(self, pos_pct: float) -> float:
+        """0–100% travel -> 4–20 mA (linear)."""
+        p = self._clamp(float(pos_pct), 0.0, 100.0)
+        return 4.0 + 16.0 * (p / 100.0)
+
+    def Cv_from_position(self, pos_pct: float) -> float:
+        """Equal-%: Cv(p) = (Cv_max/R) * R^(p/100)."""
+        p = self._clamp(float(pos_pct), 0.0, 100.0)
+        return (self.Cv_max / self.R) * (self.R ** (p / 100.0))
+
+    def position_from_Cv(self, Cv: float) -> float:
+        """Inverse equal-%: p = 100 * ln(Cv*R/Cv_max) / ln(R)."""
+        Cv = max(float(Cv), 0.0)
+        Cv_min = self.Cv_max / self.R
+        if Cv <= Cv_min:
+            return 0.0
+        if Cv >= self.Cv_max:
+            return 100.0
+        return 100.0 * (math.log(Cv * self.R / self.Cv_max) / math.log(self.R))
+
+    def nozzle_dp_psi(self, Q_gpm: float) -> float:
+        """Nozzle as Cv element: dP = SG*(Q/Cv)^2."""
+        Q = max(0.0, float(Q_gpm))
+        if Q <= 0.0:
+            return 0.0
+        return self.SG * (Q / max(self.Cv_nozzle, 1e-12)) ** 2
+
+    # ----------------------------
+    #   Hydraulics
+    # ----------------------------
+    def pump_head_ft(self, Q_gpm: float) -> float:
+        a, b, c, d = self.pump_coeffs
+        head = a * Q_gpm**3 + b * Q_gpm**2 + c * Q_gpm + d
+        return max(0.0, head)
+
+    def friction_head_ft(self, Q_gpm: float) -> tuple[float, float]:
+        """Return (h_f_ft, velocity_fps)."""
+        Q = max(0.0, float(Q_gpm))
+        if Q <= 0.0:
+            return 0.0, 0.0
+        Q_cfs = Q / 448.831
+        v = Q_cfs / self.pipe_area_ft2
+        h_f = (self.f * self.L / self.pipe_dia_ft + self.K) * (v**2) / (2.0 * self.g)
+        return h_f, v
+
+    def valve_inlet_psig(self, Q_gpm: float) -> dict:
+        """
+        Compute upstream pressures at given flow.
+        Returns dict with: suction, pump_discharge, valve_inlet, pump_head_ft, friction_head_ft, velocity_fps
+        """
+        h_f_ft, v = self.friction_head_ft(Q_gpm)
+        head_ft = self.pump_head_ft(Q_gpm)
+
+        suction_psig = self.pit_level_ft * self.psi_per_ft
+        pump_discharge_psig = suction_psig + (head_ft - h_f_ft) * self.psi_per_ft
+        valve_inlet_psig = pump_discharge_psig - self.discharge_line_loss_psi
+
+        return {
+            "suction_psig": suction_psig,
+            "pump_discharge_psig": pump_discharge_psig,
+            "valve_inlet_psig": valve_inlet_psig,
+            "pump_head_ft": head_ft,
+            "friction_head_ft": h_f_ft,
+            "velocity_fps": v,
+        }
+
+    def valve_outlet_psig(self, Q_gpm: float) -> float:
+        """P2 = header + furnace + dP_nozzle(Q)."""
+        return self.downstream_header_psig + self.furnace_static_psig + self.nozzle_dp_psi(Q_gpm)
+
+    # ----------------------------
+    #   Calibration: match static
+    # ----------------------------
+    def _calibrate_downstream_header_psig(self) -> float:
+        """
+        Calibrate the downstream header to match datasheet valve dP at max point:
+          header = P1(Q_cal) - furnace - dP_nozzle(Q_cal) - dP_valve_target
+        """
+        Qc = float(CONFIG.get("cal_flow_gpm", 86.91))
+        dp_valve_target = float(CONFIG.get("cal_dp_valve_psi", 21.66))
+
+        P1 = self.valve_inlet_psig(Qc)["valve_inlet_psig"]
+        dp_noz = self.nozzle_dp_psi(Qc)
+        return P1 - self.furnace_static_psig - dp_noz - dp_valve_target
+
+    def _steady_state_mA_for_flow(self, Q_target_gpm: float) -> float:
+        """
+        Compute the steady-state mA that would (approximately) produce Q_target.
+        Steps:
+          - compute valve ΔP from hydraulics at Q_target
+          - compute Cv_req = Q * sqrt(SG/ΔP)
+          - invert equal-% to get position
+          - map to mA
+        """
+        Q = max(0.0, float(Q_target_gpm))
+        P1 = self.valve_inlet_psig(Q)["valve_inlet_psig"]
+        P2 = self.valve_outlet_psig(Q)
+        dp_valve = max(P1 - P2, 1e-9)
+
+        Cv_req = Q * math.sqrt(self.SG / dp_valve)
+        pos = self._clamp(self.position_from_Cv(Cv_req), 0.0, 100.0)
+        return self._clamp(self.position_to_mA(pos), 4.0, 20.0)
+
+    # ----------------------------
+    #   Flow solver (given Cv)
+    # ----------------------------
+    def solve_flow_from_Cv(self, Cv: float) -> tuple[float, dict]:
+        """
+        Solve Q such that Q = Cv*sqrt(dp/SG) where dp depends on Q through pump/line/nozzle.
+        Returns (Q_solution, pressure_survey_dict_at_Q_solution).
+        """
+        Cv = max(float(Cv), 0.0)
+        if Cv <= 0.0:
+            p0 = self._pressure_survey(0.0, Cv)
+            return 0.0, p0
+
+        # Good initial guess: last flow or mean flow
+        Q = self.state.flow_gpm if self.state.flow_gpm > 0 else self.mean_flow_gpm
+
+        for _ in range(80):
+            up = self.valve_inlet_psig(Q)
+            P1 = up["valve_inlet_psig"]
+            P2 = self.valve_outlet_psig(Q)
+            dp = max(P1 - P2, 1e-9)
+
+            Q_new = Cv * math.sqrt(dp / self.SG)
+
+            if abs(Q_new - Q) < 0.05:
+                Q = max(0.0, Q_new)
+                return Q, self._pressure_survey(Q, Cv, up_override=up)
+
+            # Relaxation for stability
+            Q = 0.65 * Q + 0.35 * Q_new
+
+        Q = max(0.0, Q)
+        return Q, self._pressure_survey(Q, Cv)
+
+    # ----------------------------
+    #   Pressure survey outputs
+    # ----------------------------
+    def _pressure_survey(self, Q_gpm: float, Cv: float, up_override: dict | None = None) -> dict:
+        Q = max(0.0, float(Q_gpm))
+        up = up_override if up_override is not None else self.valve_inlet_psig(Q)
+
+        P_suction = up["suction_psig"]
+        P_pump_out = up["pump_discharge_psig"]
+        P_valve_in = up["valve_inlet_psig"]
+
+        P_valve_out = self.valve_outlet_psig(Q)
+        P_noz_in = P_valve_out
+        P_furn = self.furnace_static_psig
+
+        dp_noz = self.nozzle_dp_psi(Q)
+        dp_valve = max(P_valve_in - P_valve_out, 0.0)
+
+        # Convert to psia
+        to_psia = lambda psig: psig + self.p_atm
+
+        return {
+            # flow/valve
+            "Flow_gpm": Q,
+            "Cv": Cv,
+            "Cv_required_at_Q": (Q * math.sqrt(self.SG / max(dp_valve, 1e-9))) if Q > 0 else 0.0,
+
+            # pressures psig
+            "Suction_psig": P_suction,
+            "Pump_Discharge_psig": P_pump_out,
+            "Valve_Inlet_psig": P_valve_in,
+            "Valve_Outlet_psig": P_valve_out,
+            "Nozzle_Inlet_psig": P_noz_in,
+            "Furnace_psig": P_furn,
+
+            # pressures psia
+            "Suction_psia": to_psia(P_suction),
+            "Pump_Discharge_psia": to_psia(P_pump_out),
+            "Valve_Inlet_psia": to_psia(P_valve_in),
+            "Valve_Outlet_psia": to_psia(P_valve_out),
+            "Nozzle_Inlet_psia": to_psia(P_noz_in),
+            "Furnace_psia": to_psia(P_furn),
+
+            # deltas
+            "dP_valve_psi": dp_valve,
+            "dP_nozzle_psi": dp_noz,
+            "discharge_line_loss_psi": self.discharge_line_loss_psi,
+
+            # hydraulics
+            "pump_head_ft": up["pump_head_ft"],
+            "friction_head_ft": up["friction_head_ft"],
+            "velocity_fps": up["velocity_fps"],
+
+            # boundary/model params
+            "downstream_header_psig": self.downstream_header_psig,
+            "Cv_nozzle": self.Cv_nozzle,
+            "R_equal_percent": self.R,
+        }
+
+    # ----------------------------
+    #   Random PID input generator
+    # ----------------------------
+    def random_pid_mA(self) -> float:
+        """
+        Generate random PID inlet values with mean chosen to yield ~mean_flow_gpm on average.
+        Using Gaussian noise around mean mA.
+        """
+        mA = self.rng.gauss(self.mean_mA, self.mA_noise_sigma)
+        return self._clamp(mA, 4.0, 20.0)
+
+    # ----------------------------
+    #   Simulation step
+    # ----------------------------
+    def step(self) -> dict:
+        """
+        One simulation step:
+          - draw random PID mA
+          - positioner lag to new travel
+          - compute Cv from travel
+          - solve target flow from Cv (steady-state hydraulics)
+          - flow lag toward target flow
+          - compute pressure survey at lagged flow
+        Returns a dict suitable for your UI.
+        """
+        now = time.time()
+        self.state.time_s = now - self.start_time
+
+        # 1) Random PID inlet (mA)
+        self.state.received_mA = self.random_pid_mA()
+
+        # 2) Positioner lag
+        target_pos = self.mA_to_position(self.state.received_mA)
+        alpha_pos = 1.0 - math.exp(-self.dt / max(self.tau_pos, 1e-9))
+        self.state.position_pct += (target_pos - self.state.position_pct) * alpha_pos
+        self.state.position_pct = self._clamp(self.state.position_pct, 0.0, 100.0)
+
+        # 3) Cv from travel
+        Cv = self.Cv_from_position(self.state.position_pct)
+
+        # 4) Solve steady target flow from Cv
+        target_flow, _ = self.solve_flow_from_Cv(Cv)
+
+        # 5) Flow lag
+        alpha_flow = 1.0 - math.exp(-self.dt / max(self.tau_flow, 1e-9))
+        self.state.flow_gpm += (target_flow - self.state.flow_gpm) * alpha_flow
+        self.state.flow_gpm = max(0.0, self.state.flow_gpm)
+
+        # 6) Pressure survey at lagged flow
+        survey = self._pressure_survey(self.state.flow_gpm, Cv)
+
+        return {
+            "time_s": round(self.state.time_s, 2),
+
+            # random PID inlet
+            "received_mA": round(self.state.received_mA, 4),
+            "mean_mA_used": round(self.mean_mA, 4),
+            "mA_noise_sigma": self.mA_noise_sigma,
+            "mean_flow_target_gpm": self.mean_flow_gpm,
+
+            # valve / flow
+            "valve_position_pct": round(self.state.position_pct, 4),
+            "x": round(self.state.position_pct / 100.0, 6),
+            "current_Cv": round(Cv, 4),
+            "flow_gpm": round(self.state.flow_gpm, 4),
+
+            # pressure survey (rounded for UI)
+            "Suction_psig": round(survey["Suction_psig"], 2),
+            "Pump_Discharge_psig": round(survey["Pump_Discharge_psig"], 2),
+            "Valve_Inlet_psig": round(survey["Valve_Inlet_psig"], 2),
+            "Valve_Outlet_psig": round(survey["Valve_Outlet_psig"], 2),
+            "Nozzle_Inlet_psig": round(survey["Nozzle_Inlet_psig"], 2),
+            "Furnace_psig": round(survey["Furnace_psig"], 2),
+
+            "Suction_psia": round(survey["Suction_psia"], 2),
+            "Pump_Discharge_psia": round(survey["Pump_Discharge_psia"], 2),
+            "Valve_Inlet_psia": round(survey["Valve_Inlet_psia"], 2),
+            "Valve_Outlet_psia": round(survey["Valve_Outlet_psia"], 2),
+            "Nozzle_Inlet_psia": round(survey["Nozzle_Inlet_psia"], 2),
+            "Furnace_psia": round(survey["Furnace_psia"], 2),
+
+            "dP_valve_psi": round(survey["dP_valve_psi"], 3),
+            "dP_nozzle_psi": round(survey["dP_nozzle_psi"], 3),
+
+            # hydraulics
+            "pump_head_ft": round(survey["pump_head_ft"], 2),
+            "friction_head_ft": round(survey["friction_head_ft"], 3),
+            "velocity_fps": round(survey["velocity_fps"], 2),
+
+            # model params (helpful for debugging)
+            "downstream_header_psig": round(self.downstream_header_psig, 3),
+            "R_equal_percent": round(self.R, 3),
+            "Cv_nozzle": round(self.Cv_nozzle, 3),
+        }
+
+    def reset(self):
+        self.state = DynamicState()
+        self.start_time = time.time()

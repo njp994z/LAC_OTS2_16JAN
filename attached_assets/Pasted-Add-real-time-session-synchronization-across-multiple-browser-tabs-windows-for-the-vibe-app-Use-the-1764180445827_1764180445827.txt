@@ -1,0 +1,29 @@
+Add real-time session synchronization across multiple browser tabs/windows for the vibe app. Use the following exact implementation:
+
+1. **Session Management**:
+   - On app load, check `localStorage` for an existing `vibeapp-sessionId` (a UUID).
+   - If it exists, use it (joining the current session).
+   - If not, generate a new UUID v4 (using `crypto.randomUUID()`), store it as `vibeapp-sessionId`, and initialize the session.
+   - All app state (e.g., current vibe, chat history, generated content, user inputs) must be stored in `localStorage` with the prefix `vibeapp-${sessionId}-` (e.g., `vibeapp-abc123-currentVibe`).
+
+2. **Real-Time Sync with BroadcastChannel**:
+   - Create a `BroadcastChannel` named `vibeapp-channel-${sessionId}` immediately after determining the session ID.
+   - Whenever **any** state changes (e.g., user inputs a command, vibe updates, new content generated):
+     | Step                  | Action |
+     |-----------------------|--------|
+     | 1. Update state       | Update the in-memory state object |
+     | 2. Persist to storage | Save the full state object to `localStorage` under `vibeapp-${sessionId}-state` (as JSON) |
+     | 3. Broadcast update   | Send a message to the BroadcastChannel: `{ type: 'STATE_UPDATE', payload: fullStateObject }` |
+
+   - Set up a listener on the BroadcastChannel:
+     | Event                  | Action |
+     |------------------------|--------|
+     | 'message' event        | Receive `{ type: 'STATE_UPDATE', payload }`, then: <br> - Merge/update local state with payload <br> - Re-render the UI immediately |
+
+3. **Additional Features**:
+   - Add a "New Session" button in the app header to generate a new session ID, clear old localStorage data for the previous session, and restart.
+   - Display the current session ID (shortened, e.g., first 8 chars) in the header for users to see which session they're in.
+   - Ensure the app works seamlessly with multiple windows/tabs open side-by-side: inputs/commands in one tab update the vibe/content in all others instantly (no page refresh needed).
+   - Handle edge cases: channel close (e.g., tab closed), storage quota exceeded (fallback to in-memory only), and initial sync on load (load from localStorage first, then listen).
+
+This should make the vibe app feel like a single shared workspace across all open windows. Test by opening 2-3 tabs/windows and typing commands in one—updates should appear live in others.

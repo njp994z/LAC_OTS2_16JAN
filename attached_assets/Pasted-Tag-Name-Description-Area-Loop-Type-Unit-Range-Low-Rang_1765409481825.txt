@@ -1,0 +1,422 @@
+Tag Name,Description,Area,Loop Type,Unit,Range Low,Range High,Typical SP,Alarm HH,Alarm H,Alarm L,Alarm LL,Control Mode,Controller Output,SP Source,Cascade Master,Fail Position,Interlocks,Summary,On Hold,Page
+1500-F-4244,AREA 1510 GROUP SAFETY SHOWER ALARM,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,20
+1500-F-4240,AREA 1520 GROUP SAFETY SHOWER ALARM,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,21
+1500-F-4242,AREA 1530 GROUP SAFETY SHOWER ALARM,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,22
+1500-F-4042,AREA 1540 GROUP SAFETY SHOWER ALARM,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,23
+1500-F-4044,AREA 1560 GROUP SAFETY SHOWER ALARM,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,24
+1500-F-4040,AREA 1570 GROUP SAFETY SHOWER ALARM,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,25
+1500-F-4002,TG BUILDING SAFETY SHOWER (NEAR WATER TREATMENT CHEM DOSING),Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,26
+1500-F-4004,TG BUILDING SAFETY SHOWER (AUX. BOILER CHEMICAL DOSING),Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,27
+1500-F-4006,ACC DEAERATOR (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,28
+1500-F-4008,CONV SH/ECON AREA (GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,29
+1500-F-4010,MAIN COMPRESSOR AREA (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,30
+1500-F-4012,SULFUR FURNACE (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,31
+1500-F-4014,DEAREATOR (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,32
+1500-F-4016,COOLING TOWER (AT CHEMICAL DOSING) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,33
+1500-F-4026,ACID STORAGE (AT PUMPS) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,34
+1500-F-4028,ACID STORAGE (AT RECIRC. PUMPS) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,35
+1500-F-4030,ACID LOADING (AT PLATFORM) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,36
+1500-F-4032,ACID LOADING (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,37
+1500-F-4200,EFFLUENT NEUTRALIZATION SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,38
+1500-F-4202,COMBINATION PUMP TANK (ON PLATFORM) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,39
+1500-F-4204,ACID COOLER (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,40
+1500-F-4206,DRYING TOWER (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,41
+1500-F-4208,FINAL TOWER (AT TUBESHEET) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,42
+1500-F-4210,DRYING TOWER (TUBESHEET) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,43
+1500-F-4212,FINAL TOWER (AT PLATFORM) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,44
+1500-F-4214,FINAL TOWER (AT PLATFORM) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,45
+1500-F-4215,INTERPASS TOWER (DISTRIBUTOR) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,46
+1500-F-4216,INTERPASS TOWER (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,47
+1500-F-4220,INTERPASS TOWER (DISTRIBUTOR) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,48
+1500-F-4217,DRYING TOWER (AT PLATFORM) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,49
+1500-F-4224,INTERPASS TOWER (AT TUBESHEET) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,50
+1500-F-4230,PUMP TANK/STRONG ACID COOLER AREA (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,51
+1500-F-4232,INSIDE LAB SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,52
+1500-F-4234,TAIL GAS SCRUBBER (AT GRADE) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,53
+1500-F-4238,SULFUR VAPOR SCRUBBER (AT PUMPS) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,54
+1500-F-4237,SULFUR UNLOADING (NEAR TRUCKS) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,55
+1500-F-4236,CAUSTIC STORAGE (AT TRUCKS) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,56
+1500-F-4235,CAUSTIC STORAGE (AT PUMPS) SAFETY SHOWER,Safety Shower,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,N/A,-,-,57
+1500-F-9802,PROPANE TO STARTUP BURNER,Startup Burner,Flow,lb/h,0,7800,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,58
+1500-F-9805,PROPANE TO AUX BOILER,Aux Boiler,Flow,lb/h,0,3000,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,59
+1510-H-1003A,SULFUR UNLOADING PUMP,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1003A,Operator,None,-,"I-101, I-103",-,-,60
+1510-H-1003B,SULFUR UNLOADING PUMP (STANDBY),Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1003B,Operator,None,-,"I-101, I-103",-,-,61
+1510-H-1004A,SULFUR FEED PUMP,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1004A,Operator,None,-,"I-7, I-80, I-81, I-164",-,-,62
+1510-H-1004B,SULFUR FEED PUMP (STANDBY),Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1004B,Operator,None,-,"I-7, I-80, I-81, I-164",-,-,63
+1510-A-1021,SULFUR UNLOADING PIT SO2 MONITOR,Sulfur Handling,Analysis,ppm,0,200,-,-,100,-,-,Indication,None,None,None,None,N/A,-,-,64
+1510-T-1020,SULFUR PIT VENT TO VAPOR SCRUBBER TEMPERATURE,Sulfur Handling,Temperature,°F,0,500,-,-,320,-,-,Indication,None,None,None,None,N/A,-,-,65
+1510-T-1008,SULFUR UNLOADING PIT TEMPERATURE,Sulfur Handling,Temperature,°F,0,500,-,-,300,260,-,Indication,None,None,None,None,N/A,-,-,66
+1510-L-1007,SULFUR UNLOADING PIT LEVEL,Sulfur Handling,Level,%,0,100,-,TBD,TBD,TBD,TBD,Indication,LCV-1007,Operator,None,Fail Close,"I-100, I-101, I-103",-,-,67
+1510-A-1019,SULFUR UNLOADING PIT H2S AREA MONITOR,Sulfur Handling,Analysis,ppm,0,100,-,50,20,-,-,Indication,None,None,None,None,N/A,-,-,69
+1510-A-1012,SULFUR UNLOADING PIT H2S AREA MONITOR,Sulfur Handling,Analysis,ppm,0,100,-,50,20,-,-,Indication,None,None,None,None,N/A,-,-,70
+1510-P-1013,STRAINER DIFFERENTIAL PRESS ON SULFUR FEED PUMPS LINE,Sulfur Handling,Pressure,psig,0,540,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,71
+1510-X-1118A,SULFUR UNLOADING AREA HIGH LEVEL ALARM,Sulfur Handling,Digital Output,-,0,1,-,-,-,-,-,Alarm,XA-1118A,None,None,None,I-100,-,-,72
+1510-X-1100,SULFUR UNLOADING TRUCK GROUND SWITCH,Sulfur Handling,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,73
+1510-X-1101,SULFUR UNLOADING TRUCK GROUND SWITCH,Sulfur Handling,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,74
+1510-L-1201,LIQUID SULFUR STORAGE TANK LEVEL,Sulfur Handling,Level,%,0,100,-,TBD,80,20,-,Indication,None,None,None,None,I-101,-,-,75
+1510-L-1202,LIQUID SULFUR STORAGE TANK LEVEL,Sulfur Handling,Level,%,0,100,-,TBD,80,20,-,Indication,None,None,None,None,I-101,-,-,76
+1510-T-1205,SULFUR STORAGE TANK VENT TEMPERATURE,Sulfur Handling,Temperature,°F,0,500,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,77
+1510-A-1206,LIQUID SULFUR STORAGE TANK SO2,Sulfur Handling,Analysis,ppm,0,200,-,-,100,-,-,Indication,None,None,None,None,N/A,-,-,78
+1510-A-1502,SULFUR VAPOR SCRUBBER INLET,Sulfur Handling,Analysis,ppm,0,200,-,-,100,-,-,Indication,None,None,None,None,N/A,-,-,79
+1510-T-1501,SCRUBBER INLET TEMPERATURE,Sulfur Handling,Temperature,°F,0,500,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,80
+1510-L-1524,SULFUR VAPOR SCRUBBER LEVEL,Sulfur Handling,Level,%,0,100,TBD,90,80,20,10,Auto/Man,LCV-1524,Operator,None,-,"I-140, I-141, I-142",-,-,81
+1510-H-1512,SULFUR VAPOR SCRUBBER TO EFFLUENT STORAGE TANK,Sulfur Handling,Hand Control,%,0,100,TBD,-,-,-,-,Auto/Man,HV-1512,Operator,None,-,I-142,-,-,82
+1510-A-1523,SULFUR VAPOR SCRUBBER EFFLUENT DISCH,Sulfur Handling,Analysis,mV,-750,300,TBD,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,83
+1510-P-1811,SULFUR AREA 70 PSIG LP STEAM DISTRIBUTION HEADER PRESSURE,Sulfur Handling,Pressure,psig,0,150,70,-,TBD,TBD,-,Auto,PCV-1811,Operator,None,Fail Close,N/A,-,-,84
+1510-P-1813,SULFUR AREA 44 PSIG LP STEAM DISTRIBUTION HEADER PRESSURE,Sulfur Handling,Pressure,psig,0,150,44,-,TBD,TBD,-,Auto,PCV-1813,Operator,None,Fail Close,N/A,-,-,85
+1510-A-2402,SULFUR AREA COND COLLECTION SYS HEADER CONDUCTIVITY,Sulfur Handling,Analysis,µS/cm,0,15,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,86
+1510-A-2403,SULFUR PITS COILS COND COLLECTION SYS HEADER CONDUCTIVITY,Sulfur Handling,Analysis,µS/cm,0,15,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,87
+1510-X-2412,SULFUR AREA COND COLLECTION SYSTEM,Sulfur Handling,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2412,None,None,None,N/A,-,-,88
+1510-X-9530,CAUSTIC SOLUTION TO LITHIUM PROCESSING PLANT,Sulfur Handling,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XV-9530,Operator,None,-,I-200,-,-,89
+1510-X-2413,SULFUR PITS COILS COND COLLECTION SYSTEM,Sulfur Handling,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2413,None,None,None,N/A,-,-,90
+1510-F-9510,CAUSTIC TANK INLET PROCESS CONDENSATE FLOW,Sulfur Handling,Flow,US gal/min,0,5,-,-,-,-,-,Auto/Cascade,FCV-9511,FIC-9511,Yes,Fail Close,N/A,-,-,91
+1510-F-9511,CAUSTIC UNLOADING PUMP DISCH FLOW,Sulfur Handling,Flow,US gal/min,0,5,TBD,-,-,TBD,-,Auto,FCV-9511,Operator,None,-,N/A,-,-,92
+1510-T-9515,CAUSTIC TANK TEMPERATURE,Sulfur Handling,Temperature,°F,0,200,-,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,93
+1510-P-9529,CAUSTIC FEED PUMPS DISCH PRESSURE,Sulfur Handling,Pressure,psig,0,150,TBD,-,-,TBD,-,Indication,None,None,None,None,I-162,-,-,94
+1510-D-9527,CAUSTIC FEED PUMPS DISCH DENSITY,Sulfur Handling,Density,lb/ft3,0,150,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,95
+1510-L-9516,CAUSTIC TANK LEVEL,Sulfur Handling,Level,%,0,100,-,90,80,20,10,Indication,None,None,None,None,"I-160, I-161",-,-,96
+1510-L-9517,CAUSTIC TANK LEVEL,Sulfur Handling,Level,%,0,100,-,-,80,20,-,Indication,None,None,None,None,N/A,-,-,97
+1540-A-2501,ACID PLANT CONDENSATE COLLECTION SYSTEM CONDUCTIVITY,Sulfur Burning,Analysis,µS/cm,0,15,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,98
+1540-X-2510,ACID PLANT CONDENSATE COLLECTIONS SYSTEM,Sulfur Burning,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2510,None,None,None,N/A,-,-,99
+1540-P-2600,LIQUID SULFUR TO SULFUR SPRAY NOZZLES PRESSURE,Sulfur Burning,Pressure,psig,0,500,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,100
+1530-F-2602,LIQUID SULFUR TO SULFUR SPRAY NOZZLES FLOW,Tail Gas,Flow,US gal/min,0,500,TBD,-,-,-,-,Auto,FCV-2602,Operator,None,Fail Close,I-7,-,-,101
+1540-P-2604,LIQUID SULFUR TO SULFUR SPRAY NOZZLES PRESSURE,Sulfur Burning,Pressure,psig,0,400,-,-,180,100,-,Indication,None,None,None,None,N/A,-,-,102
+1540-F-4070,MAIN COMP SUCTION FLOW,Sulfur Burning,Flow,ft3/min,0,115500,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,103
+1540-T-4071,MAIN COMP SUCTION TEMPERATURE,Sulfur Burning,Temperature,°F,0,200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,104
+1540-P-4072,MAIN COMP SUCTION PRESSURE,Sulfur Burning,Pressure,inH2O,-70,0,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,105
+1540-H-4030,MAIN COMP SUCTION,Sulfur Burning,Hand Control,%,0,100,-,-,-,-,-,Auto,HCV-4030,Operator,None,-,N/A,-,-,106
+1540-P-4002,MAIN COMP DISCH PRESS,Sulfur Burning,Pressure,inH2O,0,420,-,-,TBD,TBD,TBD,Indication,None,None,None,None,"I-4, I-7",-,-,107
+1540-T-4020,MAIN COMP DISCH TEMP,Sulfur Burning,Temperature,°F,0,350,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,108
+1540-H-4080,MAIN COMP DISCH TO SULFUR BURNER,Sulfur Burning,Hand Control,%,0,100,-,-,-,-,-,Auto/Man,HV-4080,Operator,None,Fail Close,"I-2, I-4",-,Yes (on hold),109
+1540-F-4081,MAIN COMP DISCH VENT,Sulfur Burning,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,FV-4081,Operator,None,-,N/A,-,-,110
+1540-P-4200,SULFUR BURNER INLET AND JUG VALVE OUTLET DIFFERENTIAL PRESSURE,Sulfur Burning,Pressure,inH2O,0,35,-,-,-,4.5,3,Indication,None,None,None,None,"I-7, I-8",-,-,111
+1540-T-4220,SULFUR BURNER TEMPERATURE,Sulfur Burning,Temperature,°F,0,2080,-,2195,-,-,-,Auto,TCV-4220,Operator,None,-,"I-7, I-8",-,-,112
+1540-T-4220A,SULFUR BURNER TEMPERATURE,Sulfur Burning,Temperature,°F,0,2080,-,2195,2150,1900,-,Indication,None,None,None,None,"I-7, I-8",-,-,113
+1540-T-4220B,SULFUR BURNER TEMPERATURE,Sulfur Burning,Temperature,°F,0,2080,-,2195,2150,1900,-,Indication,None,None,None,None,"I-7, I-8",-,-,114
+1540-T-4220C,SULFUR BURNER TEMPERATURE,Sulfur Burning,Temperature,°F,0,2080,-,2195,2150,1900,-,Indication,None,None,None,None,"I-7, I-8",-,-,115
+1540-H-4282,JUG VALVE,Sulfur Burning,Hand Control,%,0,100,-,-,-,-,-,Auto/Man,HCV-4282,Operator,None,-,N/A,-,-,116
+1540-H-4281,JUG VALVE PGS INLET BOILER DISCHARGE VALVE,Sulfur Burning,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HCV-4281,Operator,None,-,N/A,-,-,117
+1540-T-4820,WHB PGS TO CONV TEMPERATURE,Sulfur Burning,Temperature,°F,0,850,-,-,815,770,-,Indication,None,None,None,None,N/A,-,-,118
+1540-P-4850,CONV PGS BED 1 INLET PRESSURE,Sulfur Burning,Pressure,inH2O,0,420,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,119
+1540-T-4828,CONV 1ST PASS CATALYST OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,1200,-,-,1157,TBD,-,Indication,None,None,None,None,N/A,-,-,120
+1540-T-4840,CONV 2ND PASS CATALYST INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,121
+1540-T-4841,CONV 2ND PASS CATALYST OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,1020,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,122
+1540-T-4842,CONV 3RD PASS CATALYST INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,123
+1540-T-4825,CONV 1ST PASS CATALYST INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,850,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,124
+1540-T-4826,CONV 1ST PASS CATALYST INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,850,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,125
+1540-T-4827,CONV 1ST PASS CATALYST OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,1200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,126
+1540-T-4843,CONV 3RD PASS CATALYST OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,127
+1540-T-4844,CONV 4TH PASS CATALYST INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,128
+1540-T-4845,CONV 4TH PASS CATALYST OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,129
+1540-T-4822,HP SUPERHEATER 1B PGS TO CONV 2ND PASS INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,TBD,TBD,-,Auto,TCV-4822A/B,Operator,None,-,N/A,-,-,130
+1540-P-4851,CONV 1ST PASS CATALYST BED DIFFERENTIAL PRESSURE,Sulfur Burning,Pressure,inH2O,0,100,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,132
+1540-T-5231,CIP HEAT EXCH TUBE INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,133
+1540-P-5202,CONV 3RD PASS TO CIP HEAT EXCH TUBE INLET PRESSURE,Sulfur Burning,Pressure,inH2O,0,300,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,134
+1540-T-5232,HIP HEAT EXCH TUBE INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,1050,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,135
+1540-P-5200,CONV 2ND PASS TO HIP HEAT EXCH TUBE INLET PRESSURE,Sulfur Burning,Pressure,inH2O,0,300,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,136
+1540-P-5201,HIP HEAT EXCH TUBE OUTLET TO CONV 3RD PASS PRESSURE,Sulfur Burning,Pressure,inH2O,0,300,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,137
+1540-T-5220,HIP HEAT EXCH OUTLET PGS TO CONV 3RD PASS INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,806,-,824,797,-,Auto,TCV-5220,Operator,None,Fail Lock,N/A,-,-,138
+1540-T-5223,HIP HEAT EXCH PGS SHELL SIDE INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,700,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,139
+1540-P-5206,CIP HEAT EXCH SHELL OUTLET PGS TO HIP HEAT EXCH PRESSURE,Sulfur Burning,Pressure,inH2O,0,200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,140
+1540-P-5203,CIP HEAT EXCH TUBE OUTLET PGS TO ECON 3B PRESSURE,Sulfur Burning,Pressure,inH2O,0,280,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,141
+1540-L-5240,CIP HEAT EXCH DRAIN POT LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,142
+1540-L-5241,SHELL INLET DRAIN POT LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,143
+1540-P-5204,INTERPASS ABSORPTION TOWER PGS TO CIP HEAT EXCH PRESSURE,Sulfur Burning,Pressure,inH2O,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,144
+1540-P-5205,HIP HEAT EXCH OUTLET PGS TO CONV 4TH PASS PRESSURE,Sulfur Burning,Pressure,inH2O,0,120,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,145
+1540-T-5224,HIP HEAT EXCH PGS TO CONV 4TH PASS TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,779,-,797,770,-,Auto,TCV-5224A/B,Operator,None,-,N/A,-,-,146
+1520-T-5820,DT SA OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,148
+1520-P-5801,INLET AIR FILTER OUTLET PROCESS AIR PRESSURE,Drying/Absorbing,Pressure,inH2O,0,TBD,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,149
+1520-P-5800,INLET AIR FILTER INLET DIFFERENTIAL PRESSURE,Drying/Absorbing,Pressure,psig,0,TBD,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,150
+1520-L-5871,DT SA OUTLET LEVEL,Drying/Absorbing,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,151
+1520-T-5823,DT INLET SA TEMPERATURE,Drying/Absorbing,Temperature,°F,0,200,150,-,160,140,-,Auto,TCV-5823,Operator,None,Fail Close,N/A,-,-,152
+1520-F-5870,DT SA INLET FLOW,Drying/Absorbing,Flow,US gal/min,0,500,3500,-,-,TBD,-,Auto,FCV-5870,Operator,None,Fail Open,N/A,-,-,153
+1520-P-5804,DT MIST ELIMINATORS OUTLET PGS PRESSURE,Drying/Absorbing,Pressure,inH2O,0,TBD,-,-,-,-,TBD,Indication,None,None,None,None,N/A,-,-,154
+1520-X-5805,DT MIST ELIMINATORS PGS VENT,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XEV-5805,Operator,None,-,"I-2, I-81, I-164",-,-,155
+1520-T-5821,DT MIST ELIMINATORS PGS OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,156
+1520-A-6060,DT ACID PUMP RECIRC LINE SA CONCENTRATION,Drying/Absorbing,Analysis,%W,0,100,98.5,-,99,98,97.5,Auto,ACV-6060,Operator,None,Fail Close,I-9,-,-,157
+1520-A-6063,FT ACID PUMP RECIRC LINE SA CONCENTRATION,Drying/Absorbing,Analysis,%W,0,100,-,99,99,98,97.5,Auto,ACV-6063,Operator,None,Fail Close,I-10,-,-,158
+1520-H-6090,DT/IPAT ACID PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-6090,Operator,None,-,"I-9, I-13, I-16",-,-,159
+1520-H-6091,FINAL TOWER ACID PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-6091,Operator,None,-,I-10,-,-,160
+1520-F-6064,PUMP TANK SAMPLE POINT FLOW,Drying/Absorbing,Flow,US gal/min,0,100,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,161
+1520-F-6065,FAT PUMP TANK ANALYZER FLOW,Drying/Absorbing,Flow,US gal/min,0,100,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,162
+1520-F-6070,DILUTION WATER FLOW DT/IPAT SIDE,Drying/Absorbing,Flow,US gal/min,0,200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,163
+1520-X-6071,DILUTION WATER FLOW DT/IPAT SIDE,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6071,None,None,Fail Close,I-9,-,-,164
+1520-X-6072,DILUTION WATER FLOW FAT SIDE,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6072,None,None,Fail Close,I-10,-,-,165
+1520-X-6080,COMB PUMP TANK DILUTION WATER FLOW DT/IPAT SIDE,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6080,None,None,Fail Close,I-9,-,-,166
+1520-X-6081,COMB PUMP TANK DT/IPAT SIDE DILUTION WATER BLEED,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6081,None,None,Fail Open,I-9,-,-,167
+1520-X-6082,COMB PUMP TANK FAT SIDE DILUTION WATER BLEED,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6082,None,None,Fail Open,I-10,-,-,168
+1520-X-6083,DILUTION WATER TO COMB PUMP TANK FAT SIDE,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6083,None,None,Fail Close,I-10,-,-,169
+1520-F-6074,FINAL ABS TOWER DILUTION WATER FLOW,Drying/Absorbing,Flow,US gal/min,0,25,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,170
+1520-L-6093,SA SUMP,Drying/Absorbing,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,171
+1520-L-6040,COMB PUMP TANK LEVEL,Drying/Absorbing,Level,%,0,100,TBD,82,79,73,70,Auto,LCV-6040,Operator,None,Fail Close,"I-7, I-13",-,-,172
+1520-L-6040A,COMB PUMP TANK LEVEL DT/IPAT SIDE,Drying/Absorbing,Level,%,0,100,-,-,-,-,90,Indication,LCV-6040,Operator,None,-,I-13,-,-,173
+1520-L-6040B,COMB PUMP TANK LEVEL FAT SIDE,Drying/Absorbing,Level,%,0,100,-,-,-,-,90,Indication,LCV-6040,Operator,None,-,I-13,-,-,174
+1520-L-6240,DILUTION PUMP TANK LEVEL,Drying/Absorbing,Level,%,0,100,TBD,70,80,20,20,Auto,LCV-6240A,Operator,None,Fail Close,"I-13, I-14",-,-,175
+1520-L-6241,DILUTION PUMP TANK LEVEL,Drying/Absorbing,Level,%,0,100,-,90,70,20,10,Indication,None,None,None,None,"I-13, I-14",-,-,176
+1520-H-6290,1520-PP-005 PRODUCT ACID PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-6290,Operator,None,-,"I-14, I-15, I-16",-,-,177
+1520-F-6242,PRODUCT ACID PUMP RECIRC FLOW,Drying/Absorbing,Flow,US gal/min,0,100,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,178
+1520-A-6260,PRODUCT ACID CONCENTRATION,Drying/Absorbing,Analysis,%W,0,100,98.5,-,99,92.7,92.7,Auto,ACV-6260,Operator,None,Fail Close,I-16,-,-,179
+1520-F-6270,TW TO DILUTION PUMP TANK FLOW,Drying/Absorbing,Flow,US gal/min,0,45,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,180
+1520-X-6280,TW TO DILUTION PUMP TANK,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6280,None,None,Fail Close,I-16,-,-,181
+1520-X-6281,TW DRAIN TO GRADE,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6280,None,None,Fail Open,I-16,-,-,182
+1520-X-6282,TW TO DILUTION PUMP TANK,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6282,None,None,Fail Close,I-16,-,-,183
+1520-T-6420,PRODUCT ACID COOLER PRODUCT ACID OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,200,-,-,110,-,-,Indication,None,None,None,None,N/A,-,-,184
+1520-T-6421,PRODUCT ACID COOLER PRODUCT ACID INLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,200,-,-,170,-,-,Indication,None,None,None,None,N/A,-,-,185
+1520-A-6461,PRODUCT ACID COOLER CW OUTLET CONDUCTIVITY,Drying/Absorbing,Analysis,µS/cm,0,75,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,186
+1520-F-6470,PRODUCT ACID TO STORAGE TANK FLOW,Drying/Absorbing,Flow,US gal/min,0,1000,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,187
+1520-H-6490,STRONG ACID DRAIN PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-6490,Operator,None,-,N/A,-,-,188
+1520-T-6521,FINAL TOWER ACID COOLER SA OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,189
+1520-T-6512,FINAL TOWER ACID COOLER PRODUCT ACID INLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,190
+1520-A-6562,FINAL TOWER ACID COOLER CW OUTLET CONDUCTIVITY,Drying/Absorbing,Analysis,µS/cm,0,750,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,191
+1520-F-6670,FAT SA INLET FLOW,Drying/Absorbing,Flow,US gal/min,0,5000,3000,-,3500,2700,2400,Auto,FCV-6670,Operator,None,Fail Open,I-1,-,-,192
+1520-L-6625,FAT LEVEL,Drying/Absorbing,Level,%,0,100,-,-,70,-,-,Indication,None,None,None,None,N/A,-,-,193
+1520-T-6623,FAT SA OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,194
+1520-T-6624,FAT PGS OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,182,-,-,Indication,None,None,None,None,N/A,-,-,195
+1520-T-6622,FAT SA INLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,172,-,180,165,-,Auto,TCV-6622,Operator,None,Fail Lock,N/A,-,-,196
+1520-X-6630,FAT PGS VENT,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XEV-6630,Operator,None,-,I-164,-,-,197
+1520-T-6721,INTERPASS ACID COOLER SA OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,198
+1520-T-6712,INTERPASS ACID COOLER SA INLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,199
+1520-A-6762,INTERPASS ACID COOLER CW OUTLET CONDUCTIVITY,Drying/Absorbing,Analysis,µS/cm,0,750,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,200
+1520-T-6726,BFW PREHEATER TW OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,200,-,-,Indication,None,None,None,None,N/A,-,-,201
+1520-T-6728,BFW PREHEATER SA INLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,300,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,202
+1520-T-6734,BFW PREHEATER SA OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,203
+1520-T-6736,BFW PREHEATER TW INLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,204
+1520-F-6770,IPAT INLET SA FLOW,Drying/Absorbing,Flow,US gal/min,0,5000,4800,-,5300,4400,-,Auto,FCV-6770,Operator,None,Fail Open,N/A,-,-,205
+1520-T-6722,IPAT INLET SA TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,180,-,190,165,-,Auto,TCV-6722,Operator,None,Fail Lock,N/A,-,-,206
+1520-T-6731,BFW PREHEATER TO DEAERATOR TW TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,190,220,-,-,-,Auto,TCV-6731,Operator,None,Fail Close,I-83,-,-,207
+1520-X-6741,BFW PREHEATER TW OUTLET,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6741,None,None,Fail Close,I-83,-,-,208
+1520-X-6742,BFW PREHEATER TW BYPASS,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6742,None,None,Fail Open,I-83,-,-,209
+1520-X-6738,BFW PREHEATER TW INLET,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-6738,None,None,Fail Close,I-83,-,-,210
+1520-A-6745,BOILER FDWATER PREHEATER TW OUTLET CONDUCTIVITY,Drying/Absorbing,Analysis,µS/cm,0,40,-,TBD,TBD,-,-,Indication,None,None,None,None,I-83,-,-,211
+1520-T-8421,IPAT PGS OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,200,-,-,Indication,None,None,None,None,N/A,-,-,212
+1520-X-8423,INTERPASS ABSORBING TOWER VENT,Drying/Absorbing,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XEV-8423,Operator,None,Fail Close,I-164,-,-,213
+1520-T-8464,INTERPASS TOWER ACID OUTLET TEMPERATURE,Drying/Absorbing,Temperature,°F,0,250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,214
+1520-L-8461,INTERPASS ABSORBING TOWER BOOT LEVEL,Drying/Absorbing,Level,%,0,100,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,215
+1520-X-1400,FIN FAN COOLING WATER EXPANSION TANK TREATED WATER INLET,Cooling Tower,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-1400,None,None,-,I-163,-,-,216
+1520-L-1401,FIN FAN CW EXPANSION TANK LEVEL,Cooling Tower,Level,%,0,100,-,-,80,20,10,Indication,None,None,None,None,"I-110, I-163",-,-,217
+1520-P-1402,FIN FAN SIDE STREAM FILTER INLET AND OUTLET DIFFERENTIAL PRESS,Cooling Tower,Pressure,psig,0,70,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,218
+1520-F-1413,FIN FAN CW PUMPS CW DISCH FLOW,Cooling Tower,Flow,US gal/min,0,26000,-,-,-,-,TBD,Indication,None,None,None,None,I-1,-,-,219
+1520-T-1802,FIN FAN CW HEADER TEMPERATURE,Cooling Tower,Temperature,°F,0,175,-,-,TBD,TBD,-,Indication,None,None,None,None,I-137,-,-,220
+1520-A-1803,FIN FAN CW HEADER CONDUCTIVITY,Cooling Tower,Analysis,µS/cm,0,40,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,221
+1520-A-1806,FIN FAN CW HEADER CONDUCTIVITY,Cooling Tower,Analysis,µS/cm,0,100,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,222
+1520-T-1807,FIN FAN CW RETURN TEMPERATURE,Cooling Tower,Temperature,°F,0,200,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,223
+1520-L-4607,EFFLUENT NEUTRALIZATION SUMP FIRST SECTION LEVEL,Drying/Absorbing,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,224
+1520-A-4601,EFFLUENT NEUTRALIZATION SUMP FIRST SECTION PH,Drying/Absorbing,Analysis,PH,0,14,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,225
+1520-A-4602,EFFLUENT NEUTRALIZATION SUMP SECOND SECTION PH,Drying/Absorbing,Analysis,PH,0,14,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,226
+1520-L-4608,EFFLUENT NEUTRALIZATION SUMP SECOND SECTION LEVEL,Drying/Absorbing,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,227
+1520-T-4701,EFFLUENT STORAGE TANK TEMPERATURE,Drying/Absorbing,Temperature,°F,0,175,-,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,228
+1520-L-4705,EFFLUENT STORAGE TANK LEVEL,Drying/Absorbing,Level,%,0,100,TBD,90,80,20,10,Indication,LCV-6040,Operator,None,-,"I-167, I-168, I-169, I-171",-,-,229
+1520-A-4711,EFFLUENT STORAGE TANK PH,Drying/Absorbing,Analysis,PH,0,14,-,-,-,0-14,-,Indication,AEV-4711,None,None,-,I-170,-,-,230
+1530-F-0003,TAILGAS SCRUBBER CAUSTIC LIQUOR INLET FLOW,Tail Gas,Flow,US gal/min,0,25000,-,-,21500,17500,16500,Indication,None,None,None,None,I-7,-,-,231
+1530-P-0004,TAILGAS SCRUBBER CAUSTIC LIQUOR INLET PRESS,Tail Gas,Pressure,psig,0,150,10,-,12,8,-,Auto,PCV-0004,Operator,FIC-0003,Fail Lock,I-163,-,-,232
+1530-A-0002,TAILGAS SCRUBBER CAUSTIC LIQUOR INLET PH,Tail Gas,Analysis,pH,0,14,8,-,10,5.5,-,Auto,ACV-0002,Operator,None,Fail Close,"I-60, I-61, I-62",-,-,233
+1530-D-0006,TAILGAS SCRUBBER CIRCULATION PUMPS DISCH WEAK ACID DENSITY,Tail Gas,Density,lb/ft3,0,100,66.5,-,68.5,-,-,Auto,DCV-0006,Operator,None,Fail Close,I-60,-,-,235
+1530-L-0013,TAILGAS SCRUBBER BOTTOM LEVEL,Tail Gas,Level,%,0,100,TBD,26.5,26,24,TBD,Auto,LCV-0013,Operator,None,Fail Last,"I-60, I-61",-,-,236
+1530-P-0008,TAILGAS SCRUBBER CHEVRON VANE DEMISTER DIFFERENTIAL PRESSURE,Tail Gas,Pressure,inH2O-g,0,70,-,-,5,-,-,Indication,None,None,None,None,N/A,-,-,237
+1530-P-0009,TAILGAS SCRUBBER MESH PAD DIFFERENTIAL PRESSURE,Tail Gas,Pressure,inH2O-g,0,70,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,238
+1530-T-0420,PLANT STACK GAS INLET TEMPERATURE,Tail Gas,Temperature,°F,0,200,-,-,85,-,-,Indication,None,None,None,None,N/A,-,-,239
+1530-A-0460,PLANT STACK SO2,Tail Gas,Analysis,ppm,0,1000,-,-,6.8,-,-,Indication,None,None,None,None,N/A,-,-,240
+1530-A-0461,PLANT STACK 02,Tail Gas,Analysis,vol% O2,0,21,-,-,-,3.5,-,Indication,None,None,None,None,N/A,-,-,241
+1530-A-0465,PLANT STACK SO2,Tail Gas,Analysis,ppm,0,50,-,-,6.8,-,-,Indication,None,None,None,None,N/A,-,-,242
+1530-T-0653,OXIDATION BLOWERS DISCH TEMPERATURE,Tail Gas,Temperature,°F,0,200,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,243
+1530-P-0652,OXIDATION AIR BLOWERS DISCH PRESSURE,Tail Gas,Pressure,inH2O,0,620,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,244
+1530-T-0654,HUMIDIFIED AIR TO TAILGAS SCRUBBER TEMPERATURE,Tail Gas,Temperature,°F,0,200,-,140,130,-,-,Indication,None,None,None,None,I-65,-,-,245
+1530-X-0656,RAW WATER TO OXIDATION BLOWERS AIR SPARGER,Tail Gas,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XEV-0656,Operator,None,Fail Close,"I-63A, I-63B",-,-,246
+1540-L-6842,DEAERATOR LEVEL,Sulfur Burning,Level,%,0,100,-,-,-,-,10,Indication,None,None,None,None,I-21,-,-,247
+1540-T-6821,DEAERATOR TANK BOTTOM TEMPERATURE,Sulfur Burning,Temperature,°F,0,TBD,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,248
+1540-L-6840,DEAERATOR LEVEL,Sulfur Burning,Level,%,0,100,TBD,-,80,20,-,Auto,LCV-6840,Operator,None,-,N/A,-,-,249
+1540-P-6801,DEAERATOR PRESSURE,Sulfur Burning,Pressure,psig,0,TBD,4.9,-,TBD,TBD,-,Auto,PCV-6801,Operator,None,-,N/A,-,-,250
+1540-T-6820,DEAERATOR TOWER TOP TEMPERATURE,Sulfur Burning,Temperature,°F,0,TBD,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,251
+1540-P-7000,HP BFW PUMPS DISCH PRESSURE,Sulfur Burning,Pressure,psig,0,1750,-,-,-,TBD,-,Indication,None,None,None,None,I-23,-,-,252
+1540-F-7070,HP BFW PUMPS DISCH FLOW,Sulfur Burning,Flow,US gal/min,0,1117.5,TBD,-,-,-,-,Auto,FCV-7070,FY-7070A,None,Fail Open,N/A,-,-,253
+1540-T-7225,HP SUPERHEATER 4A PGS INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,950,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,254
+1540-T-7247,HP SUPERHEATER 4A HP STEAM OUTLET TEMPERATURE UPSTREAM BYPASS,Sulfur Burning,Temperature,°F,0,700,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,255
+1540-T-7228,HP SUPERHEATER 4A HP STEAM OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,700,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,256
+1540-T-7221,ECON 4A PGS OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,350,275,-,315,265,-,Auto,TCV-7221,Operator,None,Fail Open,N/A,-,-,257
+1540-T-7223,ECON 4C BFW OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,600,-,-,535,-,-,Indication,None,None,None,None,N/A,-,-,258
+1540-T-7227,ECON 3B BFW OUTLET TEMPERATURE DOWNSTREAM BYPASS,Sulfur Burning,Temperature,°F,0,500,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,259
+1540-T-7220,ECON 4A BOILER FDWT OUTLET TEMPERATURE DOWNSTREAM BYPASS,Sulfur Burning,Temperature,°F,0,400,-,-,-,275,-,Indication,None,None,None,None,N/A,-,-,260
+1540-L-7241,ECON 4A DRAIN POT LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,261
+1540-L-7240,ECON 3B DRAIN POT LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,N/A,-,-,262
+1540-T-7222,ECON 3B PGS INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,650,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,263
+1540-T-7224,ECON 3B PGS OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,400,330,-,370,320,-,Auto,TCV-7224,Operator,None,Fail Lock,N/A,-,-,264
+1540-T-7810,HP SUPERHEATER 1B HP STEAM OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,950,900,-,TBD,TBD,-,Auto,TCV-7810,Operator,None,Fail Lock,N/A,-,-,265
+1540-L-7440,WHB LEVEL,Sulfur Burning,Level,%,0,100,-,-,-,-,-,Auto,FY-7070A,Operator,None,-,N/A,-,-,266
+1540-L-7440A,WHB LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,80,90,Indication,FCV-7070,Operator,None,-,"I-1, I-7",-,-,268
+1540-L-7440B,WHB LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,20,90,Indication,FCV-7070,Operator,None,-,"I-1, I-7",-,-,269
+1540-L-7441,WHB LEVEL,Sulfur Burning,Level,%,0,100,-,90,80,20,10,Indication,None,None,None,None,"I-1, I-7",-,-,270
+1540-P-7401,WHB PRESSURE,Sulfur Burning,Pressure,psig,0,1200,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,271
+1540-P-7400,WHB HP STEAM OUTLET PRESSURE,Sulfur Burning,Pressure,psig,0,1200,-,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,272
+1540-T-7420,WHB HP STEAM OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,600,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,273
+1540-F-7470,WHB HP STEAM OUTLET FLOW,Sulfur Burning,Flow,lb/h,0,276723,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,274
+1540-T-7421,WHB PGS OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,800,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,276
+1540-P-7422,WHB PGS OUTLET PRESSURE,Sulfur Burning,Pressure,inH2O,0,400,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,277
+1540-F-7490,WHB DRUM CONTINUOUS BLOWDOWN FLOW,Sulfur Burning,Flow,US gal/min,0,28,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,278
+1540-L-7640,PRESSURIZED BOILER BLOWDOWN TANK LEVEL,Sulfur Burning,Level,%,0,TBD,TBD,-,80,20,-,Auto,LCV-7640,Operator,None,Fail Open,N/A,-,-,279
+1540-L-7655,BOILER BLOWDOWN SUMP LEVEL,Sulfur Burning,Level,%,0,100,-,-,80,10,-,Indication,None,None,None,None,"I-119, I-120",-,-,280
+1540-T-7821,HP SUPERHEATER 1B PROCESS GAS INLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,1200,-,-,1171,-,-,Indication,None,None,None,None,N/A,-,-,281
+1540-P-7806,HP SUPERHEATER 1B HP STEAM OUTLET PRESSURE,Sulfur Burning,Pressure,psig,0,1150,870,-,TBD,TBD,-,Auto,PCV-7806A/B,Operator,None,-,N/A,-,-,282
+1540-T-7823,HP SUPERHEATER 1B PROCESS GAS OUTLET TEMPERATURE,Sulfur Burning,Temperature,°F,0,900,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,284
+1540-F-8026,LOW PRESSURE STEAM TO PROCESS PLANT FLOW,Sulfur Burning,Flow,lb/h,0,95200,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,285
+1540-T-8025,LOW PRESSURE STEAM TO PROCESS PLANT TEMPERATURE,Sulfur Burning,Temperature,°F,0,500,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,287
+1540-P-8024,LOW PRESSURE STEAM TO PROCESS PLANT PRESSURE,Sulfur Burning,Pressure,psig,0,170,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,288
+1550-L-2215,ACID PLANT COOLING TOWER LEVEL,Cooling Tower,Level,%,0,100,TBD,-,80,20,10,Auto,LCV-2215,Operator,None,Fail Open,I-111,-,-,289
+1550-V-2201,ACID PLANT COOLING TOWER FAN MOTOR VIBRATION,Cooling Tower,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,290
+1550-H-2201,ACID PLANT COOLING TOWER FAN MOTOR,Cooling Tower,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-2201,Operator,None,-,I-137,-,-,291
+1550-H-2210,ACID PLANT COOLING TOWER PUMP,Cooling Tower,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-2201,Operator,None,-,I-111,-,-,292
+1550-H-2212,ACID PLANT COOLING TOWER PUMP (STANDBY),Cooling Tower,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-2212,Operator,None,-,I-111,-,-,293
+1550-A-2217,ACID PLANT COOLING PUMPS CW DISCH CONDUCTIVITY,Cooling Tower,Analysis,µS/cm,0,750,TBD,-,TBD,-,-,Auto,ACV-2217,Operator,None,Fail Lock,N/A,-,-,294
+1550-F-2218,ACID PLANT COOLING TOWER PUMPS DISCH FLOW,Cooling Tower,Flow,US gal/min,0,2867,-,-,-,TBD,TBD,Indication,None,None,None,None,N/A,-,-,295
+1550-T-2430,CW SUPPLY HEADER TO POWER PLANT TEMPERATURE,Cooling Tower,Temperature,°F,0,150,-,-,TBD,TBD,-,Indication,None,None,None,None,I-137,-,-,296
+1550-T-2432,CW RETURN HEADER TEMPERATURE,Cooling Tower,Temperature,°F,0,150,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,297
+1550-A-2461,POWER PLANT CW TO CW RETURN HEADER CONDUCTIVITY,Cooling Tower,Analysis,µS/cm,0,750,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,298
+1550-P-3000,INSTRUMENT AIR RECEIVER PRESSURE,Cooling Tower,Pressure,psig,0,200,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,299
+1550-P-3200,PLANT AIR RECEIVER PRESSURE,Cooling Tower,Pressure,psig,0,200,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,300
+1560-P-2600,RAW WATER HEADER PRESSURE,Water Treatment,Pressure,psig,0,200,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,301
+1560-T-2620,RAW WATER HEADER TEMPERATURE,Water Treatment,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,302
+1560-F-2670,RAW WATER HEADER FLOW,Water Treatment,Flow,US gal/min,0,1550,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,303
+1560-L-3401,TW STORAGE TANK LEVEL,Water Treatment,Level,%,0,100,-,-,TBD,TBD,TBD,Indication,None,None,None,None,I-112,-,-,304
+1560-P-3632,RAW WATER HEADER TO MULTIMEDIA FILTERS PRESSURE,Water Treatment,Pressure,psig,0,145,TBD,-,TBD,TBD,-,Auto,PCV-3632,Operator,None,Fail Close,N/A,-,-,305
+1560-F-3409,TW EXPORT PUMPS DISCH FLOW,Water Treatment,Flow,US gal/min,0,500,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,306
+1560-P-3430,TW EXPORT PUMPS DISCH PRESSURE,Water Treatment,Pressure,psig,0,145,-,-,-,-,-,Auto,PCV-3430,Operator,None,Fail Open,N/A,-,-,307
+1560-L-3601,WATER TREATMENT AREA SUMP LEVEL,Water Treatment,Level,%,0,100,-,TBD,TBD,-,TBD,Indication,None,None,None,None,"I-116, I-117, I-118",-,-,308
+1560-P-3800,TW PUMPS DISCH PRESSURE,Water Treatment,Pressure,psig,0,150,-,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,309
+1560-T-3815,TW PUMPS DISCH TEMPERATURE,Water Treatment,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,310
+1560-F-3900,TREATED WATER TO CONDENSATE HEADER FLOW,Water Treatment,Flow,US gal/min,0,530,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,311
+1560-P-3901,PROCESS CONDENSATE DISTRIBUTION PRESSURE,Water Treatment,Pressure,psig,0,150,TBD,-,-,-,-,Auto,PCV-3901A/B,Operator,None,Fail Last,N/A,-,-,312
+1560-P-3910,PROCESS CONDENSATE INLET PRESSURE,Water Treatment,Pressure,psig,0,150,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,313
+1560-T-3911,PROCESS CONDENSATE INLET TEMPERATURE,Water Treatment,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,314
+1560-F-3912,PROCESS CONDENSATE INLET FLOW,Water Treatment,Flow,US gal/min,0,110,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,315
+1560-T-3914,PROCESS CONDENSATE DISTRIBUTION TEMPERATURE,Water Treatment,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,316
+1560-F-3920,PROCESS CONDENSATE TO RAW WATER HEADER FLOW,Water Treatment,Flow,US gal/min,0,110,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,317
+1560-P-6001,BOILER FEED WATER TO SPRAY DESUPERHEATER PRESSURE,Water Treatment,Pressure,psig,0,1750,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,318
+1560-P-6002,TGS HP STEAM INLET PRESSURE,Water Treatment,Pressure,psig,0,1650,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,319
+1560-F-6004,TGS HP STEAM INLET FLOW,Water Treatment,Flow,lb/h,0,276723,-,-,-,-,-,Indication,FY-6004,None,None,-,N/A,-,-,320
+1560-T-6003,TGS INLET HP STEAM TEMPERATURE,Water Treatment,Temperature,°F,0,1250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,321
+1560-T-6009,TURBINE LUBE OIL COOLERS CW INLET TEMPERATURE,Water Treatment,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,322
+1560-T-6006,TURBO GENERATOR COOLER CW OUTLET TEMPERATURE,Water Treatment,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,323
+1560-P-6011,LP STEAM TO SPRAY DESUPERHEATER TCV-6014A PRESSURE,Water Treatment,Pressure,psig,0,330,TBD,-,-,-,-,Auto,PCV-6011,Operator,None,Fail Close,I-202,-,-,324
+1560-T-6012,LP STEAM TO SPRAY DESUPERHEATER TCV-6014A TEMPERATURE,Water Treatment,Temperature,°F,0,1250,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,325
+1560-F-6020,LP STEAM TO PROCESS PLANT FLOW,Water Treatment,Flow,lb/h,0,276723,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,326
+1560-P-6015,SPRAY DESUPERHEATER OUTLET LP STEAM PRESSURE,Water Treatment,Pressure,psig,0,280,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,327
+1560-T-6014,SPRAY DESUPERHEATER OUTLET LP STEAM TEMPERATURE,Water Treatment,Temperature,°F,0,600,TBD,-,TBD,-,-,Auto,TCV-6014,Operator,None,Fail Close,N/A,-,-,328
+1560-T-6016,LP STEAM TO SPRAY DESUPERHEATER TCV-6018A TEMPERATURE,Water Treatment,Temperature,°F,0,600,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,329
+1560-P-6017,LP STEAM TO SPRAY DESUPERHEATER TCV-6018A PRESSURE,Water Treatment,Pressure,psig,0,180,TBD,-,TBD,-,-,Auto,PCV-6017,Operator,None,Fail Close,N/A,-,-,330
+1560-T-6018,SPRAY DESUPERHEATER OUTLET LP STEAM TEMPERATURE,Water Treatment,Temperature,°F,0,600,TBD,-,TBD,-,-,Auto,TCV-6018,Operator,None,Fail Close,N/A,-,-,331
+1560-P-6019,SPRAY DESUPERHEATER OUTLET LP STEAM PRESSURE,Water Treatment,Pressure,psig,0,180,TBD,-,TBD,-,-,Auto,PCV-6019,Operator,None,Fail Close,N/A,-,-,332
+1560-F-6670,SPRAY DESUPERHEATER HP STEAM INLET FLOW,Water Treatment,Flow,lb/h,0,276723,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,333
+1560-F-6675,SPRAY DESUPERHEATER COND INLET FLOW,Water Treatment,Flow,US gal/min,0,675,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,334
+1560-T-6671,SPRAY DESUPERHEATER HP STEAM INLET TEMPERATURE,Water Treatment,Temperature,°F,0,1350,-,-,-,TBD,-,Indication,None,None,None,None,N/A,-,-,335
+1560-P-6672,SPRAY DESUPERHEATER HP STEAM OUTLET PRESSURE,Water Treatment,Pressure,psig,-9.4,0,TBD,-,-,-,-,Auto,PCV-6672,Operator,None,-,N/A,-,-,336
+1560-T-6673,SPRAY DESUPERHEATER HP STEAM OUTLET TEMPERATURE,Water Treatment,Temperature,°F,0,1250,-,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,337
+1560-T-6674,SPRAY DESUPERHEATER COND INLET TEMPERATURE,Water Treatment,Temperature,°F,0,200,-,-,-,-,-,Indication,TCV-6674,None,None,-,N/A,-,-,338
+1560-V-7403,ACC FAN VIBRATION,Water Treatment,Vibration,-,0,1,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,339
+1560-V-7404,ACC FAN VIBRATION,Water Treatment,Vibration,-,0,1,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,340
+1560-V-7405,ACC FAN VIBRATION,Water Treatment,Vibration,-,0,1,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,341
+1560-P-7524,BYPASS COND PUMPS DISCH PRESSURE,Water Treatment,Pressure,psig,0,1750,TBD,-,-,TBD,TBD,Auto,PCV-7524,Operator,None,Fail Close,I-115,-,-,342
+1560-L-7507,CONDENSATE TANK LEVEL,Water Treatment,Level,%,0,TBD,TBD,-,-,-,90,Auto,LCV-7507,Operator,None,Fail Close,I-126,-,-,343
+1560-F-7511,ACC COND FLOW,Water Treatment,Flow,US gal/min,0,675,TBD,-,-,-,-,Auto,FCV-7511,Operator,None,Fail Close,N/A,-,-,344
+1560-A-7512,ACC COND CONDUCTIVITY,Water Treatment,Analysis,µS/cm,0,15,-,TBD,TBD,TBD,-,Indication,None,None,None,None,I-121,-,-,345
+1560-X-7513,OFF SPEC COND RETURN VALVE,Water Treatment,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XV-7513,None,None,Fail Last,I-121,-,-,346
+1560-X-7514,COND VALVE LINE TO BFW HEATER,Water Treatment,Digital Output,-,0,1,-,-,-,-,-,Auto/Man,XV-7514,None,None,Fail Last,I-121,-,-,347
+1560-F-7526,ACC COND TRANSFER PUMPS FLOW TO BFW HEATER,Water Treatment,Flow,US gal/min,0,675,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,348
+1570-F-8631,PRODUCT ACID TRANSFER PUMPS DISCH FLOW,Acid Storage,Flow,US gal/min,0,1000,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,349
+1570-L-8601,PRODUCT ACID STORAGE TANK #1 LEVEL,Acid Storage,Level,%,0,100,-,90,80,20,-,Indication,None,None,None,None,I-14,-,-,350
+1570-L-8602,PRODUCT ACID STORAGE TANK #1 LEVEL,Acid Storage,Level,%,0,100,-,90,80,20,-,Indication,None,None,None,None,I-14,-,-,351
+1570-L-8604,PRODUCT ACID STORAGE TANK #2 LEVEL,Acid Storage,Level,%,0,100,-,90,80,20,-,Indication,None,None,None,None,I-14,-,-,352
+1570-L-8605,PRODUCT ACID STORAGE TANK #2 LEVEL,Acid Storage,Level,%,0,100,-,90,80,20,-,Indication,None,None,None,None,I-14,-,-,353
+1570-L-8603,PRODUCT ACID STORAGE SUMP,Acid Storage,Level,%,0,100,-,-,80,-,-,Indication,None,None,None,None,I-14,-,-,354
+1570-T-8801,98.5 ACID RECIRCULATION PUMPS SUCTION TEMPERATURE,Acid Storage,Temperature,°F,0,150,-,-,TBD,TBD,-,Indication,None,None,None,None,N/A,-,-,355
+1570-T-8806A,ACID HEATER SA INLET TEMPERATURE,Acid Storage,Temperature,°F,0,TBD,-,-,TBD,TBD,-,Indication,None,None,None,None,I-153,-,-,356
+1570-H-8806A,DCS HAND SWITCH OF ACID HEATER,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8806A,None,None,-,I-153,-,-,357
+1570-H-8806B,DCS HAND SWITCH OF STDBY ACID HEATER,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8806B,None,None,-,I-154,-,-,358
+1570-T-8806B,ACID HEATER SA INLET TEMPERATURE,Acid Storage,Temperature,°F,0,TBD,-,-,TBD,TBD,-,Indication,None,None,None,None,I-154,-,-,359
+1570-T-8820,ACID HEATER OUTLET SA TEMPERATURE,Acid Storage,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,360
+1570-T-8821,ACID HEATER OUTLET SA TEMPERATURE,Acid Storage,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,361
+1570-F-8815,STDBY ACID HEATER OUTLET SA FLOW,Acid Storage,Flow,US gal/min,0,1000,-,-,-,TBD,-,Indication,None,None,None,None,I-154,-,-,362
+1570-F-8816,ACID HEATER OUTLET SA FLOW,Acid Storage,Flow,US gal/min,0,1000,-,-,-,TBD,-,Indication,None,None,None,None,I-153,-,-,363
+1570-L-9008,START-UP ACID STORAGE TANK LEVEL,Acid Storage,Level,%,0,100,-,-,TBD,TBD,-,Indication,None,None,None,None,"I-14, I-150, I-155",-,-,364
+1570-L-9009,START-UP ACID STORAGE TANK LEVEL,Acid Storage,Level,%,0,100,-,TBD,TBD,TBD,TBD,Indication,None,None,None,None,"I-14, I-150, I-155",-,-,365
+1570-H-9010,START-UP ACID STORAGE TANK SA INLET,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HV-9010,Operator,None,Fail Close,I-155,-,-,366
+1570-H-9020,START-UP ACID STORAGE TANK TO RECIRCULATION PUMPS,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,XV-9020,Operator,None,Fail Close,N/A,-,-,367
+1570-H-9011,START-UP ACID STORAGE TANK SA INLET,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HV-9011,Operator,None,Fail Close,I-155,-,-,368
+1570-T-9200,ACID TRUCK LOADING ARM SA TEMPERATURE,Acid Storage,Temperature,°F,0,150,-,-,-,-,-,Indication,None,None,None,None,N/A,-,-,369
+1570-F-9201,ACID TRUCK LOADING ARM#1 FLOW,Acid Storage,Flow,US gal/min,0,1000,-,-,TBD,TBD,-,Auto,FCV-9201,Operator,None,Fail Close,I-151,-,-,370
+1570-H-9202,ACID TRUCK LOADING VALVE,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HV-9202,Operator,None,Fail Close,I-151,-,-,371
+1570-L-9203,TRUCK LOADING #1 LEVEL,Acid Storage,Level,%,0,100,-,0,100,-,-,Indication,None,None,None,None,I-151,-,-,372
+1570-F-9211,ACID TRUCK LOADING ARM# 2 FLOW,Acid Storage,Flow,US gal/min,0,5000,-,-,TBD,TBD,-,Auto,FCV-9211,Operator,None,Fail Close,I-152,-,-,373
+1570-H-9212,ACID TRUCK LOADING VALVE,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HV-9212,Operator,None,Fail Close,I-152,-,-,374
+1570-L-9213,TRUCK LOADING #2 LEVEL,Acid Storage,Level,%,0,100,-,0,100,-,-,Indication,None,None,None,None,I-152,-,-,375
+1570-L-9215,ACID LOADING AREA SUMP LEVEL,Acid Storage,Level,%,0,100,-,TBD,TBD,-,-,Indication,None,None,None,None,"I-151, I-152",-,-,376
+1510-X-1526,RAW WATER TO DISCH LINE,Sulfur Handling,Digital Output,-,0,1,-,-,-,-,-,Auto,XEV-1526,None,None,-,I-142,-,-,377
+1540-X-2993,STARTUP BURNER SYS BURNER ESD,Sulfur Burning,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,I-8,-,-,378
+1570-H-8610,PRODUCT ACID STORAGE TANK OUTLET,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,XV-8610,Operator,None,-,N/A,-,-,379
+1570-H-8611,PRODUCT ACID STORAGE TANK OUTLET,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,XV-8611,Operator,None,-,N/A,-,-,380
+1570-Z-9204,TRUCK LOADING BAY 1 ARM LIMIT SWITCH,Acid Storage,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,I-151,-,-,381
+1570-X-9230,TRUCK LOADING BAY 1 GROUND SWITCH,Acid Storage,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,I-151,-,-,382
+1570-H-9220,ACID TRUCK UNLOADING PUMP,Acid Storage,Hand Control,-,0,1,-,-,-,-,-,Auto/Man,HS-9220,Operator,None,-,I-155,-,-,383
+1570-Z-9214,TRUCK LOADING BAY 2 ARM LIMIT SWITCH,Acid Storage,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,I-152,-,-,384
+1570-X-9231,TRUCK LOADING BAY 2 GROUND SWITCH,Acid Storage,Digital Input,-,0,1,-,-,-,-,-,Indication,None,None,None,None,I-152,-,-,385
+1540-X-2990,STARTUP BURNER SYS BURNER PANEL PURGE FAILURE,Sulfur Burning,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2990,None,None,None,N/A,-,-,386
+1540-X-2991,STARTUP BURNER SYS FLAME ON,Sulfur Burning,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2991,None,None,None,N/A,-,-,387
+1540-X-2992,STARTUP BURNER SYS COMMON ALARM,Sulfur Burning,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2992,None,None,None,N/A,-,-,388
+1540-X-2995,STARTUP BURNER SYS MASTER FUEL PANEL,Sulfur Burning,Digital Input,-,0,1,-,-,-,-,-,Alarm,XA-2995,None,None,None,N/A,-,-,389
+1540-L-6841,DEAERATOR LEVEL HIGH HIGH,Sulfur Burning,Digital Input,%,0,100,-,-,0-100,-,-,Indication,LV-6843,None,None,Fail Open,I-122,-,-,390
+1560-U-6670,DCS FUNCTION,Water Treatment,Controller,-,0,1,-,-,-,-,-,Auto,TCV-6674,None,None,-,1560-UY-6670,-,-,391
+1540-H-7090A,HP BOILER FEEDWATER PUMP,Sulfur Burning,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7090A,Operator,None,-,"I-21, I23",-,-,392
+1540-H-7090B,BOILER FEEDWATER PUMP (STANDBY),Sulfur Burning,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7090B,Operator,None,-,"I-21, I-23",-,-,393
+1540-H-7657,BOILER BLOWDOWN SUMP PUMP,Sulfur Burning,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7657,Operator,None,-,"I-119, I-120",-,-,394
+1530-H-0290A,TAIL GAS SCRUBBER CIRCULATION PUMP,Tail Gas,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-0290A,Operator,None,-,"I-7, I-60, I-61",-,-,395
+1530-H-0290B,TAIL GAS SCRUBBER CIRCULATION PUMP (STANDBY),Tail Gas,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-0290B,Operator,None,-,"I-7, I-60, I-61",-,-,396
+1530-H-0657,OXIDATION BLOWER,Tail Gas,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-0657,Operator,None,-,I-65,-,-,397
+1530-H-0667,OXIDATION BLOWER (STANDBY),Tail Gas,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-0667,Operator,None,-,I-65,-,-,398
+1520-H-1411,FIN FAN COOLING WATER PUMP STANDBY,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1411,Operator,None,-,I-110,-,-,399
+1520-H-1409,FIN FAN COOLING WATER PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1409,Operator,None,-,I-110,-,-,400
+1520-H-1419,FIN FAN COOLING WATER PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1419,Operator,None,-,I-110,-,-,401
+1560-H-3405,TREATED WATER EXPORT PUMP,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-3405,Operator,None,-,"I-112, I-201",-,-,402
+1560-H-3408,TREATED WATER EXPORT PUMP STANDBY,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-3408,Operator,None,-,"I-112, I-201",-,-,403
+1560-H-3602A,WATER TREATMENT AREA SUMP PUMP,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-3602A,Operator,None,-,"I-116, I-117, I-118",-,-,404
+1560-H-3602B,WATER TREATMENT AREA SUMP PUMP STANDBY,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-3602B,Operator,None,-,"I-116, I-117, I-118",-,-,405
+1560-H-3809A,TREATED WATER PUMP,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-3809A,Operator,None,-,I-112,-,-,406
+1560-H-3809B,TREATED WATER PUMP STANDBY,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-3809B,Operator,None,-,I-112,-,-,407
+1520-H-4706,SA1 EFFLUENT FEED PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-4706,Operator,None,-,I-167,-,-,408
+1520-H-4707,SA1 EFFLUENT FEED PUMP STANDBY,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-4707,Operator,None,-,I-167,-,-,409
+1520-H-4702,TRANSLOADING EFFLUENT UNLOADING PUMP,Drying/Absorbing,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-4702,Operator,None,-,"I-169, I-171",-,-,410
+1520-H-4704,SA1 EFFLUENT STORAGE TANK AGITATOR,Drying/Absorbing,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-4704,Operator,None,-,I-168,-,-,411
+1560-H-7407,ACC FAN MOTOR,Water Treatment,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7407,Operator,None,-,N/A,-,-,412
+1560-H-7408,ACC FAN MOTOR,Water Treatment,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7408,Operator,None,-,N/A,-,-,413
+1560-H-7409,ACC FAN MOTOR,Water Treatment,Motor Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7409,Operator,None,-,N/A,-,-,414
+1510-H-9512,CAUSTIC UNLOADING PUMP,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-9512,Operator,None,-,I-160,-,-,415
+1510-H-9520,CAUSTIC FEED PUMP,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-9520,Operator,None,-,"I-161, I-162",-,-,416
+1510-H-9524,CAUSTIC FEED PUMP STANDBY,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-9524,Operator,None,-,"I-161, I-162",-,-,417
+1570-H-8850A,98.5 ACID RECIRCULATION PUMP,Acid Storage,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8850A,Operator,None,-,I-150,-,-,418
+1570-H-8850B,98.5 ACID RECIRCULATION PUMP STANDBY,Acid Storage,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8850B,Operator,None,-,I-150,-,-,419
+1570-H-8620A,ACID OUTLANDING PUMP,Acid Storage,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8620A,Operator,None,-,"I-151, I-152",-,-,420
+1570-H-8620B,ACID OUTLANDING PUMP STANDBY,Acid Storage,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8620B,Operator,None,-,"I-151, I-152",-,-,421
+1570-H-8619A,PRODUCT ACID TRANSFER PUMP,Acid Storage,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8619A,Operator,None,-,I-156,-,-,422
+1570-H-8619B,PRODUCT ACID TRANSFER PUMP STANDBY,Acid Storage,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-8619B,Operator,None,-,I-156,-,-,423
+1560-H-7516,ACC CONDENSATE TRANSFER PUMP,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7516,Operator,None,-,I-126,-,-,424
+1560-H-7517,ACC CONDENSATE TRANSFER PUMP STANDBY,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7517,Operator,None,-,I-126,-,-,425
+1560-H-7518,BYPASS CONDENSATE PUMP TO OFFSPEC CONDENSATE STANDBY,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7518,Operator,None,-,"I-115, I-126",-,-,426
+1560-H-7519,BYPASS CONDENSATE PUMP TO OFFSPEC CONDENSATE,Water Treatment,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-7519,Operator,None,-,"I-115, I-126",-,-,427
+1520-V-1600,FIN FAN COOLER FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,428
+1520-V-1608,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,429
+1520-V-1616,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,430
+1520-V-1601,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,431
+1520-V-1609,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,432
+1520-V-1617,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,433
+1520-V-1602,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,434
+1520-V-1610,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,435
+1520-V-1618,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,436
+1520-V-1603,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,437
+1520-V-1611,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,438
+1520-V-1619,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,439
+1520-V-1604,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,440
+1520-V-1612,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,441
+1520-V-1620,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,442
+1520-V-1605,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,443
+1520-V-1613,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,444
+1520-V-1621,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,445
+1520-V-1606,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,446
+1520-V-1614,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,447
+1520-V-1622,FIN FAN COOLERS FAN MOTOR VIBRATION,Drying/Absorbing,Vibration,-,0,1,-,-,TBD,-,-,Indication,None,None,None,None,N/A,-,-,448

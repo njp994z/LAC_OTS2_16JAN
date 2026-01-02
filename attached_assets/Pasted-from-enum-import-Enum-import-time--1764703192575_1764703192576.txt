@@ -1,0 +1,219 @@
+from enum import Enum
+import time
+
+
+# ============================================================
+# BASIC ENUMS
+# ============================================================
+
+class Mode(Enum):
+    AUTO = "AUTO"
+    MAN = "MAN"
+    CAS = "CAS"
+    OFF = "OFF"
+
+
+class AlarmState(Enum):
+    NORMAL = 0
+    ACTIVE = 1
+    ACKED = 2
+
+
+# ============================================================
+# PROCESS SIGNALS
+# ============================================================
+
+class ProcessSignal:
+    """Generic signal with value, limits, and timestamp."""
+
+    def __init__(self, value=0.0, low=0.0, high=100.0):
+        self.value = value
+        self.low = low
+        self.high = high
+        self.timestamp = time.time()
+
+    def update(self, new_value):
+        self.value = new_value
+        self.timestamp = time.time()
+
+
+# ============================================================
+# ALARM HANDLING
+# ============================================================
+
+class Alarm:
+    """Simple high/low alarm with states."""
+
+    def __init__(self, name, limit, direction="high"):
+        self.name = name
+        self.limit = limit
+        self.direction = direction  # "high" or "low"
+        self.state = AlarmState.NORMAL
+        self.last_change = time.time()
+
+    def check(self, pv_value):
+        """Evaluate alarm condition."""
+        if self.direction == "high" and pv_value > self.limit:
+            self._activate()
+        elif self.direction == "low" and pv_value < self.limit:
+            self._activate()
+        else:
+            self._return_normal()
+
+    def _activate(self):
+        if self.state == AlarmState.NORMAL:
+            self.state = AlarmState.ACTIVE
+            self.last_change = time.time()
+
+    def _return_normal(self):
+        if self.state != AlarmState.NORMAL:
+            self.state = AlarmState.NORMAL
+            self.last_change = time.time()
+
+    def acknowledge(self):
+        if self.state == AlarmState.ACTIVE:
+            self.state = AlarmState.ACKED
+
+
+# ============================================================
+# PID CONTROLLER
+# ============================================================
+
+class PIDController:
+    def __init__(self, name, kp=1.0, ki=0.1, kd=0.0):
+        self.name = name
+        self.mode = Mode.AUTO
+
+        self.PV = ProcessSignal()
+        self.SP = ProcessSignal()
+        self.OUT = ProcessSignal()
+
+        # PID parameters
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+
+        # Internal integrator / last error
+        self.integral = 0.0
+        self.last_error = 0.0
+        self.last_time = time.time()
+
+        # Alarms
+        self.alarms = {
+            "LL": Alarm("LL", limit=10, direction="low"),
+            "L":  Alarm("L",  limit=20, direction="low"),
+            "H":  Alarm("H",  limit=80, direction="high"),
+            "HH": Alarm("HH", limit=90, direction="high")
+        }
+
+    # ------------------------------------------------------------
+
+    def compute(self):
+        """Perform a PID compute step if in AUTO."""
+        if self.mode != Mode.AUTO:
+            return self.OUT.value  # Output unchanged
+
+        current_time = time.time()
+        dt = current_time - self.last_time
+        self.last_time = current_time
+
+        error = self.SP.value - self.PV.value
+
+        # Integral
+        self.integral += error * dt
+
+        # Derivative
+        derivative = (error - self.last_error) / dt if dt > 0 else 0
+
+        # PID output
+        output = (
+            self.kp * error +
+            self.ki * self.integral +
+            self.kd * derivative
+        )
+
+        # Clamp output to range 0–100
+        output = max(0, min(100, output))
+
+        # Update OUT and last_error
+        self.OUT.update(output)
+        self.last_error = error
+
+        # Update alarms
+        for alarm in self.alarms.values():
+            alarm.check(self.PV.value)
+
+        return output
+
+    # ------------------------------------------------------------
+
+    def set_mode(self, mode: Mode):
+        self.mode = mode
+        if mode == Mode.MAN:
+            # Freeze integrator for realistic control
+            self.integral = 0
+
+    # ------------------------------------------------------------
+
+    def manual_set(self, value):
+        """Operator changes output directly in MAN mode."""
+        if self.mode == Mode.MAN:
+            self.OUT.update(value)
+
+
+# ============================================================
+# FACEPLATE (UI MODEL)
+# ============================================================
+
+class Faceplate:
+    """A UI-facing object that mirrors what the operator sees."""
+
+    def __init__(self, controller: PIDController):
+        self.controller = controller
+
+    def get_display(self):
+        """Returns all values the UI would show."""
+        return {
+            "name": self.controller.name,
+            "mode": self.controller.mode.value,
+            "PV": self.controller.PV.value,
+            "SP": self.controller.SP.value,
+            "OUT": self.controller.OUT.value,
+            "alarms": {name: alarm.state.name for name, alarm in self.controller.alarms.items()}
+        }
+
+    def handle_button_press(self, button_name):
+        """Simulates clicking a button on the faceplate."""
+        if button_name == "AUTO":
+            self.controller.set_mode(Mode.AUTO)
+        elif button_name == "MAN":
+            self.controller.set_mode(Mode.MAN)
+        elif button_name == "RAISE":
+            self.controller.manual_set(self.controller.OUT.value + 1)
+        elif button_name == "LOWER":
+            self.controller.manual_set(self.controller.OUT.value - 1)
+
+        # More can be added: ACK, MODE, TREND, etc.
+
+
+# ============================================================
+# EXAMPLE USAGE
+# ============================================================
+
+if __name__ == "__main__":
+    pid = PIDController("SIM SR PID_1")
+
+    fp = Faceplate(pid)
+
+    # Sample simulated interactions:
+    pid.SP.update(70)
+    pid.PV.update(34.4)
+
+    print("Initial faceplate:", fp.get_display())
+
+    pid.compute()
+    print("After compute:", fp.get_display())
+
+    fp.handle_button_press("MAN")
+    fp.handle_button_press("RAISE")
+    print("After manual raise:", fp.get_display())

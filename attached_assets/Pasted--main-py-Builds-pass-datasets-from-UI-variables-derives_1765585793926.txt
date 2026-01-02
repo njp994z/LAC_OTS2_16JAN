@@ -1,0 +1,325 @@
+# main.py
+# Builds pass datasets from UI variables, derives absolute pressures,
+# runs segment RK4 (100 steps), and plots the X–T diagram in °C.
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Dict, List
+import numpy as np
+import matplotlib.pyplot as plt
+
+from rk_solver import (
+    ATM_TO_PSIA, INWC_PER_PSI, psia_to_atm,
+    get_catalyst, BedSegment, rk4_solve_segment, xt_diagram_data
+)
+
+# =============================================================================
+# UI inputs (your provided dataclass, trimmed to what's needed here)
+# =============================================================================
+
+@dataclass
+class CatalyticReactorInputs:
+    # catalyst config
+    pass1_type1: str
+    pass1_liters1: float
+    pass1_activity1: float
+    pass1_type2: str
+    pass1_liters2: float
+    pass1_activity2: float
+
+    pass2_type1: str
+    pass2_liters1: float
+    pass2_activity1: float
+
+    pass3_type1: str
+    pass3_liters1: float
+    pass3_activity1: float
+
+    pass4_type1: str
+    pass4_liters1: float
+    pass4_activity1: float
+    pass4_type2: str
+    pass4_liters2: float
+    pass4_activity2: float
+
+    # inlet gas composition (mol%)
+    so2_percent: float
+    so3_percent: float
+    o2_percent: float
+    co2_percent: float
+    n2_percent: float
+    p_barr: float  # atm
+    ipat_so3_removal: float
+
+    # process inputs
+    plant_rate: float
+    pass1_inlet_velocity: float  # ft/min (not used in this minimal RK demo)
+    converter_diameter: float     # ft (not used in this minimal RK demo)
+
+    # pass inlet temps (C)
+    pass1_inlet_temp: float
+    pass2_inlet_temp: float
+    pass3_inlet_temp: float
+    pass4_inlet_temp: float
+
+    # pass inlet pressures (in. w.c gauge)
+    pass1_inlet_pres: float
+    pass2_inlet_pres: float
+    pass3_inlet_pres: float
+    pass4_inlet_pres: float
+
+
+DEFAULT_INPUTS = CatalyticReactorInputs(
+    pass1_type1="MECS GR330",
+    pass1_liters1=12.0,
+    pass1_activity1=100.0,
+    pass1_type2="MECS GR330",
+    pass1_liters2=24.0,
+    pass1_activity2=100.0,
+
+    pass2_type1="MECS Super Gear XLP-310",
+    pass2_liters1=40.0,
+    pass2_activity1=100.0,
+
+    pass3_type1="MECS Super Gear XLP-310",
+    pass3_liters1=45.0,
+    pass3_activity1=100.0,
+
+    pass4_type1="MECS Super Gear XLP-310",
+    pass4_liters1=25.0,
+    pass4_activity1=100.0,
+    pass4_type2="MECS GR330",
+    pass4_liters2=25.0,
+    pass4_activity2=100.0,
+
+    so2_percent=11.3,
+    so3_percent=0.2,
+    o2_percent=9.5,
+    co2_percent=0.0,
+    n2_percent=79.0,
+    p_barr=0.85,
+    ipat_so3_removal=100.0,
+
+    plant_rate=2480.0,
+    pass1_inlet_velocity=145.0,
+    converter_diameter=42.0,
+
+    pass1_inlet_temp=390.0,
+    pass2_inlet_temp=420.0,
+    pass3_inlet_temp=440.0,
+    pass4_inlet_temp=390.0,
+
+    pass1_inlet_pres=150.0,
+    pass2_inlet_pres=135.0,
+    pass3_inlet_pres=100.0,
+    pass4_inlet_pres=60.0,
+)
+
+
+# =============================================================================
+# Pressure derivation: P_abs from P_barr (atm) + gauge (in.w.c)
+# =============================================================================
+
+def inlet_abs_pressure_atm(p_barr_atm: float, p_gauge_inwc: float) -> float:
+    p_barr_psia = p_barr_atm * ATM_TO_PSIA
+    p_gauge_psi = p_gauge_inwc / INWC_PER_PSI
+    p_abs_psia = p_barr_psia + p_gauge_psi
+    return psia_to_atm(p_abs_psia)
+
+
+# =============================================================================
+# Build inlet gas mole fractions from UI mol%
+# =============================================================================
+
+def inlet_mole_fractions(inputs: CatalyticReactorInputs) -> Dict[str, float]:
+    y = {
+        "SO2": inputs.so2_percent / 100.0,
+        "SO3": inputs.so3_percent / 100.0,
+        "O2":  inputs.o2_percent  / 100.0,
+        "CO2": inputs.co2_percent / 100.0,
+        "N2":  inputs.n2_percent  / 100.0,
+    }
+    s = sum(y.values())
+    return {k: v/s for k, v in y.items()}
+
+
+# =============================================================================
+# Build bed segments (Pass 1: 2 layers, Pass 2: 1, Pass 3: 1, Pass 4: 2)
+# This returns a flat list of segments, each run sequentially.
+# =============================================================================
+
+def build_segments(inputs: CatalyticReactorInputs) -> List[BedSegment]:
+    y0 = inlet_mole_fractions(inputs)
+
+    P1_atm = inlet_abs_pressure_atm(inputs.p_barr, inputs.pass1_inlet_pres)
+    P2_atm = inlet_abs_pressure_atm(inputs.p_barr, inputs.pass2_inlet_pres)
+    P3_atm = inlet_abs_pressure_atm(inputs.p_barr, inputs.pass3_inlet_pres)
+    P4_atm = inlet_abs_pressure_atm(inputs.p_barr, inputs.pass4_inlet_pres)
+
+    # Placeholder total molar flow basis for RK scaling:
+    # you can replace with real FT0 derived from plant rate & composition
+    FT0_lbmol_hr = 250.0
+
+    segs: List[BedSegment] = []
+
+    # Pass 1, layer 1
+    segs.append(BedSegment(
+        name="Pass1-L1",
+        catalyst=get_catalyst(inputs.pass1_type1),
+        liters=inputs.pass1_liters1,
+        activity_percent=inputs.pass1_activity1,
+        Tin_C=inputs.pass1_inlet_temp,
+        Pin_abs_atm=P1_atm,
+        FT0_lbmol_hr=FT0_lbmol_hr,
+        y0=y0,
+        n_steps=100
+    ))
+    # Pass 1, layer 2
+    segs.append(BedSegment(
+        name="Pass1-L2",
+        catalyst=get_catalyst(inputs.pass1_type2),
+        liters=inputs.pass1_liters2,
+        activity_percent=inputs.pass1_activity2,
+        Tin_C=inputs.pass1_inlet_temp,   # will be overwritten with outlet of L1 when run
+        Pin_abs_atm=P1_atm,
+        FT0_lbmol_hr=FT0_lbmol_hr,
+        y0=y0,
+        n_steps=100
+    ))
+
+    # Pass 2
+    segs.append(BedSegment(
+        name="Pass2",
+        catalyst=get_catalyst(inputs.pass2_type1),
+        liters=inputs.pass2_liters1,
+        activity_percent=inputs.pass2_activity1,
+        Tin_C=inputs.pass2_inlet_temp,
+        Pin_abs_atm=P2_atm,
+        FT0_lbmol_hr=FT0_lbmol_hr,
+        y0=y0,
+        n_steps=100
+    ))
+
+    # Pass 3
+    segs.append(BedSegment(
+        name="Pass3",
+        catalyst=get_catalyst(inputs.pass3_type1),
+        liters=inputs.pass3_liters1,
+        activity_percent=inputs.pass3_activity1,
+        Tin_C=inputs.pass3_inlet_temp,
+        Pin_abs_atm=P3_atm,
+        FT0_lbmol_hr=FT0_lbmol_hr,
+        y0=y0,
+        n_steps=100
+    ))
+
+    # Pass 4, layer 1
+    segs.append(BedSegment(
+        name="Pass4-L1",
+        catalyst=get_catalyst(inputs.pass4_type1),
+        liters=inputs.pass4_liters1,
+        activity_percent=inputs.pass4_activity1,
+        Tin_C=inputs.pass4_inlet_temp,
+        Pin_abs_atm=P4_atm,
+        FT0_lbmol_hr=FT0_lbmol_hr,
+        y0=y0,
+        n_steps=100
+    ))
+    # Pass 4, layer 2
+    segs.append(BedSegment(
+        name="Pass4-L2",
+        catalyst=get_catalyst(inputs.pass4_type2),
+        liters=inputs.pass4_liters2,
+        activity_percent=inputs.pass4_activity2,
+        Tin_C=inputs.pass4_inlet_temp,   # overwritten from L1 outlet
+        Pin_abs_atm=P4_atm,
+        FT0_lbmol_hr=FT0_lbmol_hr,
+        y0=y0,
+        n_steps=100
+    ))
+
+    return segs
+
+
+# =============================================================================
+# Run sequentially: outlet of each segment feeds next segment inlet temperature.
+# (You can also update composition if you later track species; here X is tracked.)
+# =============================================================================
+
+def run_all_segments(inputs: CatalyticReactorInputs):
+    segs = build_segments(inputs)
+
+    results = []
+    last_Tout = None
+    last_Xout = 0.0
+
+    for i, seg in enumerate(segs):
+        # enforce series connection for stacked layers within same pass:
+        # if segment name indicates it should inherit prior Tout, apply it.
+        if last_Tout is not None and ("-L2" in seg.name):
+            seg.Tin_C = float(last_Tout)
+
+        res = rk4_solve_segment(seg)
+        results.append((seg, res))
+
+        last_Tout = res.T_C[-1]
+        last_Xout = res.X[-1]
+
+        print(f"{seg.name:8s} | Tout={last_Tout:7.2f} C | Xout={last_Xout*100:7.2f}%")
+
+    return results
+
+
+# =============================================================================
+# Plot X–T diagram in °C (Equilibrium line + Operating line + Maximum rate curve)
+# Uses pass 1 inlet conditions and pass 1 layer 1 catalyst/activity as the reference.
+# =============================================================================
+
+def plot_xt_diagram_from_inputs(inputs: CatalyticReactorInputs):
+    y0 = inlet_mole_fractions(inputs)
+    P1_atm = inlet_abs_pressure_atm(inputs.p_barr, inputs.pass1_inlet_pres)
+
+    # pick catalyst & activity for the "max rate curve" reference
+    catalyst_name = inputs.pass1_type1
+    activity_pct = inputs.pass1_activity1
+
+    data = xt_diagram_data(
+        y0=y0,
+        P_atm=P1_atm,
+        Tin_C=inputs.pass1_inlet_temp,
+        T_range_C=(300.0, 650.0),
+        catalyst_name=catalyst_name,
+        activity_percent=activity_pct,
+        nT=140,
+        nX=140
+    )
+
+    plt.figure(figsize=(9, 5))
+    plt.plot(data["T_op_C"], data["X_op_pct"], label="Operating line (adiabatic)")
+    plt.plot(data["T_eq_C"], data["X_eq_pct"], linestyle="--", label="Equilibrium line")
+    plt.plot(data["T_rmax_C"], data["X_rmax_pct"], label="Maximum rate curve")
+
+    plt.xlabel("Temperature (°C)")
+    plt.ylabel("Conversion (%)")
+    plt.ylim(0, 100)
+    plt.xlim(300, 650)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    inputs = DEFAULT_INPUTS
+
+    print("\n=== Derived absolute inlet pressures (atm) ===")
+    print("Pass 1:", inlet_abs_pressure_atm(inputs.p_barr, inputs.pass1_inlet_pres))
+    print("Pass 2:", inlet_abs_pressure_atm(inputs.p_barr, inputs.pass2_inlet_pres))
+    print("Pass 3:", inlet_abs_pressure_atm(inputs.p_barr, inputs.pass3_inlet_pres))
+    print("Pass 4:", inlet_abs_pressure_atm(inputs.p_barr, inputs.pass4_inlet_pres))
+
+    print("\n=== Running segment RK (100 steps each) ===")
+    _ = run_all_segments(inputs)
+
+    print("\n=== Plotting X–T diagram (°C) ===")
+    plot_xt_diagram_from_inputs(inputs)

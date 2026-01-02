@@ -1,0 +1,78 @@
+Nope, there isn’t some “output variable” you forgot to set. If Pass 1 still tops out around **486°C** while conversion looks about right, that almost always means the **energy balance is still not actually applying the right heat release per degree of temperature rise** (unit basis mismatch), or you’re still **plotting/printing a different temperature than the one being integrated**.
+
+Here are the two big things to check next, in order of likelihood.
+
+---
+
+## 1) Your energy balance is still mixing unit bases (this will keep ΔT too small)
+
+In your snippet earlier you had:
+
+* `dHrxn_J_per_molSO2` in **J/mol**
+* `FT_mol_s` in **mol/s**
+* `r` and `dX_dW = r / F_SO2_0` strongly suggests `r` is on a **lbmol/hr** basis (since `F_SO2_0` is lbmol/hr)
+
+If `r` is lbmol/hr and you divide by `FT_mol_s` (mol/s), your `dT_dW` will be wrong by a big factor and your outlet temperature will stay too low even if Cp is perfect.
+
+### The clean, low-drama fix
+
+Do the whole energy balance in **BTU/lbmol·R** and **lbmol/hr** (so you don’t need mol/s anywhere):
+
+```ts
+// dH: J/mol -> BTU/lbmol
+const dHrxn_BTU_per_lbmolSO2 = dHrxn_J_per_molSO2 * 0.195305; // (453.59237 mol/lbmol) * (1 BTU/1055.056 J)
+
+// Cp_mix: BTU/lbmol-R from your polynomial database
+const Cp_mix_BTU_per_lbmolR = cp_mix_BTU_lbmolR(TC, y_local);
+
+// r should be lbmol/hr per catalyst weight (same basis you use in dX_dW)
+const FT_lbmol_hr = F_T0;
+
+// gives dT/dW in °R per (catalyst weight unit)
+const dT_dW_R = (-(dHrxn_BTU_per_lbmolSO2) * r) / (FT_lbmol_hr * Cp_mix_BTU_per_lbmolR);
+
+// integrate temperature in °C
+const dT_dW_C = dT_dW_R / 1.8;
+```
+
+If you instead keep everything in SI, that’s fine too, but then **you must convert `r` to mol/s** to match `FT_mol_s`. Mixing is what causes your exact symptom.
+
+Also double-check you didn’t accidentally use **4186.8** instead of **4.1868** when converting BTU/lbmol·R → J/mol·K. A 1000× Cp inflation will absolutely pin your outlet temperature down near where you are.
+
+---
+
+## 2) You might be displaying the wrong temperature field (UI wiring issue)
+
+Even if the integrator is producing the right outlet T, the table can still show an older or different variable if it’s bound to, say:
+
+* `seg.T_out_C` that never got updated
+* the last “profile point” from a previous run
+* a per-pass “inlet temp” variable reused in rendering
+
+Quick sanity check:
+
+* Wherever you compute the final RK4 arrays (`T[i]`, `X[i]`, etc.), log the last entry:
+
+  * `console.log("Pass1 Tout", T[T.length-1])`
+* Then compare to what the table prints.
+
+If console says ~618°C but table says 486°C, it’s purely a display mapping bug.
+
+---
+
+## What I’d do next (fastest pin-down)
+
+1. Print these four numbers at Pass 1, mid-bed and outlet:
+
+   * `r`
+   * `Cp_mix` (in whatever units you’re using)
+   * `dT_dW`
+   * `dX_dW`
+
+2. Also print the ratio:
+   **`(dT_dW / dX_dW)`**
+   That ratio is basically your adiabatic line slope. It should be similar across passes when units are consistent.
+
+---
+
+If you paste the current block that computes **`dT_dW`** (the exact code after your latest changes), I can tell you immediately which unit/basis mismatch is still alive and why it’s pinning Pass 1 at ~486°C.

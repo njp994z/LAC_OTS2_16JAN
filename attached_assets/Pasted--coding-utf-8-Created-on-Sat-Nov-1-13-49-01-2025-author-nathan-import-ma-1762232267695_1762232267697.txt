@@ -1,0 +1,198 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov  1 13:49:01 2025
+
+@author: nathan
+"""
+import math
+
+# Constants
+RPM_0 = 4500.0
+ICFM_0 = 159550.0
+P_COMP_IN0 = -13.0  # in wc
+P_COMP_OUT0_CL = 175.0  # in wc, dP_Clean; MECS
+P_COMP_OUT0_DT = 205.0 # in wc, dP_Dirty; MECS
+P_BAR = 0.84 * 14.696  # psia
+P_S = 14.696  # psia
+T_COMP_IN_F = 150.0  # F
+T_COMP_IN_R = T_COMP_IN_F + 460.0  # R
+T_S_F = 32.0  # F from notes
+T_S_R = T_S_F + 459.67  # R
+ETA_S = 0.82  # isentropic efficiency
+GAMMA = 1.4
+SG_SULF = 1.803357
+DENSITY_WATER = 8.34  # lb/gal
+Q_LOSS_FRAC = 0.0001
+HEAT_COMB = 3980.0  # Btu/lb S
+HEAT_SO3_RXN = 44400 # BTU/lbmol SO3
+CP_AIR = 0.24  # Btu/lb-F at ~250F
+CP_SULF = 0.32  # Btu/lb-F
+T_SULF_IN_F = 275.0  # in F
+CP_SO2 = 0.295  # Btu/lb-F @ 2100F
+CP_SO3 = 0.345  # BTU/lb-F @ 2100F
+CP_O2 = 0.294  # Btu/lb-F @ 2100F
+CP_N2 = 0.332  # Btu/lb-F @ 2100F
+MW_AIR = 28.846 # Dry Air
+MW_S = 32.06
+MW_SO2 = 64.06
+MW_SO3 = 80.06
+MW_O2 = 32.0
+MW_N2 = 28.01
+IN_WC_TO_PSI = 0.03613  # psi per in wc
+LBMOL_PER_SCFM = 0.002786  # from previous
+DP_FURN_0 = 9.0  # in wc for furnace per basis flow
+SCFM_0 = 109811.0
+CONV = 0.9985  # SO2 conversion
+MW_H2SO4 = 98.08
+GALPERFT3 = 7.4805
+LBPERGAL = 8.34
+SO3FRAC = 0.018
+
+# Input variables
+i1_comp_rpm = 4770.98  # Input 1: RPM set-point
+i2_sulf_flow_gpm = 75   # Input 2: sulfur flow gpm
+i3_comp_run = "On"    # Input 3: On/Off
+
+# If off, set flows to 0
+if i3_comp_run != "On":
+    i1_comp_rpm = 0.0
+    i2_sulf_flow = 0.0
+
+# o1. comp_rpm
+o1_comp_rpm = i1_comp_rpm
+
+# o2. sulf_flow
+o2_sulf_flow_gpm = i2_sulf_flow_gpm
+
+# o3. comp_icfm (ACFM at inlet)
+o3_comp_icfm = ICFM_0 * (o1_comp_rpm / RPM_0)
+
+# o4. comp_inlet_pressure (in wc)
+o4_comp_inlet_pressure = P_COMP_IN0 * (o3_comp_icfm / ICFM_0) ** 1.5
+
+# Calculate p_comp_inlet_a (psia)
+p_in_psi = o4_comp_inlet_pressure * IN_WC_TO_PSI
+p_comp_in_a = P_BAR + p_in_psi
+
+# o5. comp_scfm
+o5_comp_scfm = o3_comp_icfm * (p_comp_in_a / P_S) * (T_S_R / T_COMP_IN_R)
+
+# o6. comp_mass_flow (lb/min air)
+lbmol_air_min = o5_comp_scfm * LBMOL_PER_SCFM
+o6_comp_mass_flow = lbmol_air_min * MW_AIR
+
+# o7. comp_outlet_pressure (in wc gauge)
+o7_comp_outlet_pressure = P_COMP_OUT0_DT * (o5_comp_scfm / SCFM_0) ** 1.7
+
+# Calculate P_out (psia)
+p_out_gauge_psi = o7_comp_outlet_pressure * IN_WC_TO_PSI
+p_comp_out_a = P_BAR + p_out_gauge_psi
+
+# o8. comp_outlet_temp (F)
+exponent = (GAMMA - 1) / (GAMMA * ETA_S)
+comp_outlet_temp_r = T_COMP_IN_R * (p_comp_out_a / p_comp_in_a) ** exponent
+o8_comp_outlet_temp = comp_outlet_temp_r - 460.0
+
+# o9. comp_outlet_acfm
+o9_comp_outlet_acfm = o5_comp_scfm * (P_S / p_comp_out_a) * (comp_outlet_temp_r / T_S_R)
+
+# o10. sulfur_mass_flow (lb/min)
+o10_sulfur_flow_lbpermin = o2_sulf_flow_gpm * SG_SULF * LBPERGAL
+
+# o11. furn_outlet_temp (F) - heat balance
+## calc molar flows in lbmol/min
+mass_s = o10_sulfur_flow_lbpermin
+lbmol_s = mass_s / MW_S
+lbmol_o2_in = 0.2095 * lbmol_air_min
+lbmol_n2 = 0.7905 * lbmol_air_min
+lbmol_so2 = lbmol_s * (1 - SO3FRAC)
+lbmol_so3 = lbmol_s * SO3FRAC
+lbmol_o2_consum = lbmol_so2 + lbmol_so3 * 1.5
+lbmol_o2_resid = lbmol_o2_in - lbmol_o2_consum 
+## calc mass flows in lb/min
+mass_so2 = lbmol_so2 * MW_SO2
+mass_so3 = lbmol_so3 * MW_SO3
+mass_o2_resid = lbmol_o2_resid * MW_O2
+mass_n2 = lbmol_n2 * MW_N2
+mass_air = o6_comp_mass_flow
+## Sensible heat entering the furance in BTU/lb*F
+q_sulf = mass_s * CP_SULF * T_SULF_IN_F
+q_air = mass_air * CP_AIR * o8_comp_outlet_temp
+q_in = q_sulf + q_air
+## Total heat available to the outlet gas; q_released in BTU/min 
+q_released = mass_s * HEAT_COMB
+net_heat = (1 - Q_LOSS_FRAC) * q_released
+q_so3_rxn = lbmol_so3 * HEAT_SO3_RXN
+q_total = net_heat + q_in + q_so3_rxn
+## Outlet mixture properties
+mass_total = mass_so2 + mass_so3 + mass_o2_resid + mass_n2 # lb/min
+cp_mix_out = (mass_so2 * CP_SO2 + mass_so3 * CP_SO3 + mass_o2_resid * CP_O2 + mass_n2 * CP_N2) / mass_total
+## Outlet temperature (reference temp = 0F)
+o11_furn_outlet_temp_1 = o8_comp_outlet_temp + q_total / (mass_total * cp_mix_out)
+
+# o12. furn_out_temp_2 (F)
+o12_furn_out_temp_2 = o11_furn_outlet_temp_1 + 3
+
+# o13. furn_out_temp_3 (F)
+o13_furn_out_temp_3 = o11_furn_outlet_temp_1 - 4
+
+# o14. furnace_outlet_scfm (assume same as comp_scfm since moles equal)
+o14_furnace_outlet_scfm = o5_comp_scfm
+
+# o15. SO2 % to first pass (100% basis)
+o15_so2pct = lbmol_s / lbmol_air_min
+
+# o16. acid_production (metric ton/day)
+mass_acid_lb_min = mass_s * (MW_H2SO4 / MW_S) * CONV
+o16_acid_production = mass_acid_lb_min * 60 * 24 / 2204.62
+
+# o17. Sulfur_Inlet_pressure (psig)
+o17_sulf_in_pressure = 150.0 if o10_sulfur_flow_lbpermin > 0 else p_out_gauge_psi
+
+# o18. comp_status
+o18_comp_status = "Normal" if i3_comp_run == "On" else "Off"
+
+# o19. Furnace Outlet Pressure in inches of wc
+o19_furn_pres_out = P_COMP_OUT0_DT - DP_FURN_0 * (o5_comp_scfm / SCFM_0) ** 1.7
+
+# o20. Furnace Outlet ACFM
+p_furn_out_gauge_psi = o19_furn_pres_out * IN_WC_TO_PSI
+p_furn_out_a = P_BAR + p_furn_out_gauge_psi
+furn_out_r = o11_furn_outlet_temp_1 + 460.0
+o20_furn_out_acfm = o14_furnace_outlet_scfm * (P_S / p_furn_out_a) * (furn_out_r / T_S_R)
+
+# Format function
+def fmt(val):
+    if isinstance(val, (int, float)):
+        return f"{val:,.1f}"
+    else:
+        return str(val)
+
+
+# Print Inputs
+print("=== INPUTS ===")
+print(f"i1_comp_rpm: {fmt(i1_comp_rpm)}")
+print(f"i2_sulf_flow_gpm: {fmt(i2_sulf_flow_gpm)}")
+print(f"i3_comp_run: {i3_comp_run}")
+
+print("\n=== OUTPUTS ===")
+print(f"o1_comp_rpm: {fmt(o1_comp_rpm)}")
+print(f"o2_sulf_flow_gpm: {fmt(o2_sulf_flow_gpm)}")
+print(f"o3_comp_icfm: {fmt(o3_comp_icfm)}")
+print(f"o4_comp_inlet_pressure: {fmt(o4_comp_inlet_pressure)}")
+print(f"o5_comp_scfm: {fmt(o5_comp_scfm)}")
+print(f"o6_comp_mass_flow: {fmt(o6_comp_mass_flow)}")
+print(f"o7_comp_outlet_pressure: {fmt(o7_comp_outlet_pressure)}")
+print(f"o8_comp_outlet_temp: {fmt(o8_comp_outlet_temp)}")
+print(f"o9_comp_outlet_acfm: {fmt(o9_comp_outlet_acfm)}")
+print(f"o10_sulfur_flow_lbpermin: {fmt(o10_sulfur_flow_lbpermin)}")
+print(f"o11_furn_outlet_temp_1: {fmt(o11_furn_outlet_temp_1)}")
+print(f"o12_furn_out_temp_2: {fmt(o12_furn_out_temp_2)}")
+print(f"o13_furn_out_temp_3: {fmt(o13_furn_out_temp_3)}")
+print(f"o14_furnace_outlet_scfm: {fmt(o14_furnace_outlet_scfm)}")
+print(f"o15_so2pct:{o15_so2pct * 100:.2f}%")
+print(f"o16_acid_production: {fmt(o16_acid_production)}")
+print(f"o17_sulf_in_pressure: {fmt(o17_sulf_in_pressure)}")
+print(f"o18_comp_status: {o18_comp_status}")
+print(f"o19_furn_pres_out: {fmt(o19_furn_pres_out)}")
+print(f"o20_furn_out_acfm: {fmt(o20_furn_out_acfm)}")

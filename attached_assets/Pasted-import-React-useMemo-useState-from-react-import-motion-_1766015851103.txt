@@ -1,0 +1,344 @@
+import React, { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Shield,
+  RotateCcw,
+  Power,
+  Search,
+  Filter,
+} from "lucide-react";
+
+type InterlockStatus = "ok" | "tripped" | "disabled";
+
+type Interlock = {
+  id: string;          // e.g., "I-101"
+  title: string;       // e.g., "C-101 Low Level"
+  group?: string;      // optional grouping label
+  status: InterlockStatus;
+  enabled: boolean;
+};
+
+const demoInterlocks: Interlock[] = [
+  { id: "I-000", title: "Emergency Stop (E-STOP)", group: "Safety", status: "tripped", enabled: true },
+  { id: "I-101", title: "C-101 Low Level", group: "C-101", status: "ok", enabled: true },
+  { id: "I-102", title: "C-101 High Level", group: "C-101", status: "ok", enabled: true },
+  { id: "I-103", title: "C-102 Sump Low Level", group: "C-102", status: "ok", enabled: true },
+  { id: "I-104", title: "C-102 Sump High Level", group: "C-102", status: "ok", enabled: true },
+  { id: "I-105", title: "C-105 Draw Off Tank Low", group: "C-105", status: "ok", enabled: true },
+  { id: "I-107", title: "E-113 Low Level", group: "E-113", status: "ok", enabled: true },
+  { id: "I-108", title: "E-113 High Level", group: "E-113", status: "ok", enabled: true },
+  { id: "I-109", title: "C-104 Sump Low Level", group: "C-104", status: "ok", enabled: true },
+  { id: "I-110", title: "C-104 Sump High Level", group: "C-104", status: "ok", enabled: true },
+  { id: "I-111", title: "C-104 High Pressure", group: "C-104", status: "ok", enabled: true },
+  { id: "I-112", title: "C-105 Sump Low Level", group: "C-105", status: "ok", enabled: true },
+  { id: "I-113", title: "C-105 Sump High Level", group: "C-105", status: "ok", enabled: true },
+  { id: "I-114", title: "C-106 Sump Low Level", group: "C-106", status: "ok", enabled: true },
+  { id: "I-115", title: "C-106 Sump High Level", group: "C-106", status: "ok", enabled: true },
+  { id: "I-116", title: "T-104 Low Level", group: "T-104", status: "ok", enabled: true },
+  { id: "I-117", title: "DE-101 High Temperature", group: "DE-101", status: "ok", enabled: true },
+  { id: "I-118", title: "DE-101 Low Temperature", group: "DE-101", status: "ok", enabled: true },
+  { id: "I-119", title: "Acid High Conductivity", group: "Quality", status: "ok", enabled: true },
+  { id: "I-120", title: "Compressor Discharge High", group: "Compressor", status: "ok", enabled: true },
+];
+
+function cn(...parts: Array<string | false | undefined | null>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+function StatusPill({ status }: { status: InterlockStatus }) {
+  const map = {
+    ok: {
+      label: "OK",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      cls: "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20",
+    },
+    tripped: {
+      label: "Tripped",
+      icon: <AlertTriangle className="h-4 w-4" />,
+      cls: "bg-rose-500/10 text-rose-300 ring-1 ring-rose-500/25",
+    },
+    disabled: {
+      label: "Disabled",
+      icon: <Shield className="h-4 w-4" />,
+      cls: "bg-slate-500/10 text-slate-300 ring-1 ring-slate-500/20",
+    },
+  }[status];
+
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", map.cls)}>
+      {map.icon}
+      {map.label}
+    </span>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  disabled,
+  ariaLabel,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  ariaLabel?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-7 w-12 items-center rounded-full transition",
+        disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+        checked ? "bg-emerald-500/80" : "bg-slate-700"
+      )}
+    >
+      <span
+        className={cn(
+          "inline-block h-6 w-6 transform rounded-full bg-white/90 shadow-sm transition",
+          checked ? "translate-x-5" : "translate-x-1"
+        )}
+      />
+    </button>
+  );
+}
+
+function InterlockCard({
+  item,
+  masterEnabled,
+  onReset,
+  onToggleEnabled,
+}: {
+  item: Interlock;
+  masterEnabled: boolean;
+  onReset: (id: string) => void;
+  onToggleEnabled: (id: string, enabled: boolean) => void;
+}) {
+  const isEmergency = item.id === "I-000";
+  const effectiveEnabled = masterEnabled && item.enabled;
+
+  const accent =
+    item.status === "tripped"
+      ? "from-rose-500/20 to-rose-500/0"
+      : item.status === "ok"
+      ? "from-emerald-500/20 to-emerald-500/0"
+      : "from-slate-500/20 to-slate-500/0";
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur",
+        isEmergency && "md:col-span-2 lg:col-span-3"
+      )}
+    >
+      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br", accent)} />
+      <div className="relative p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-white/90">{item.id}</span>
+              <StatusPill status={effectiveEnabled ? item.status : "disabled"} />
+            </div>
+            <div className="mt-1 truncate text-sm text-white/70">{item.title}</div>
+            {item.group ? <div className="mt-2 text-xs text-white/45">Group: {item.group}</div> : null}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Toggle
+              ariaLabel={`Enable ${item.id}`}
+              checked={item.enabled}
+              onChange={(v) => onToggleEnabled(item.id, v)}
+              disabled={!masterEnabled}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => onReset(item.id)}
+            disabled={!masterEnabled || item.status !== "tripped"}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition",
+              !masterEnabled || item.status !== "tripped"
+                ? "bg-white/5 text-white/35 cursor-not-allowed"
+                : "bg-white/10 text-white/80 hover:bg-white/15"
+            )}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </button>
+
+          <div className="text-xs text-white/45">
+            {masterEnabled ? (item.enabled ? "Interlock enabled" : "Interlock disabled") : "Master disabled"}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function InterlocksBeautiful() {
+  const [masterEnabled, setMasterEnabled] = useState(true);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | "tripped" | "ok" | "disabled">("all");
+  const [items, setItems] = useState<Interlock[]>(demoInterlocks);
+
+  const stats = useMemo(() => {
+    const enabledCount = items.filter((i) => i.enabled).length;
+    const trippedCount = items.filter((i) => i.status === "tripped").length;
+    return { enabledCount, trippedCount, total: items.length };
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return items.filter((i) => {
+      const matchesQ =
+        !q ||
+        i.id.toLowerCase().includes(q) ||
+        i.title.toLowerCase().includes(q) ||
+        (i.group ?? "").toLowerCase().includes(q);
+
+      const effStatus: InterlockStatus = masterEnabled && i.enabled ? i.status : "disabled";
+      const matchesFilter = filter === "all" ? true : effStatus === filter;
+
+      return matchesQ && matchesFilter;
+    });
+  }, [items, query, filter, masterEnabled]);
+
+  function resetAll() {
+    // TODO: hook to PLC / backend command
+    setItems((prev) => prev.map((i) => ({ ...i, status: i.id === "I-000" ? i.status : "ok" })));
+  }
+
+  function resetOne(id: string) {
+    // TODO: hook to PLC / backend command
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: "ok" } : i)));
+  }
+
+  function toggleOne(id: string, enabled: boolean) {
+    // TODO: hook to PLC / backend command
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, enabled } : i)));
+  }
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_10%_0%,rgba(56,189,248,0.12),transparent_45%),radial-gradient(900px_circle_at_90%_20%,rgba(34,197,94,0.12),transparent_40%),radial-gradient(900px_circle_at_50%_100%,rgba(244,63,94,0.10),transparent_45%)] bg-slate-950">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+                <Shield className="h-5 w-5 text-white/80" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-white">Interlocks</h1>
+                <p className="text-sm text-white/55">Overview and control of safety interlocks</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-sm text-white/75 ring-1 ring-white/10">
+              <AlertTriangle className="h-4 w-4 text-rose-300" />
+              Tripped: <span className="font-semibold text-white">{stats.trippedCount}</span>
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-sm text-white/75 ring-1 ring-white/10">
+              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+              Enabled: <span className="font-semibold text-white">{stats.enabledCount}/{stats.total}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={resetAll}
+              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-medium text-white/85 ring-1 ring-white/10 transition hover:bg-white/15"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset all
+            </button>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="mt-6 grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur md:grid-cols-[1fr_auto_auto]">
+          <div className="flex items-center gap-3 rounded-2xl bg-slate-950/40 px-4 py-3 ring-1 ring-white/10">
+            <Search className="h-4 w-4 text-white/55" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search interlocks (e.g., I-111, C-104, pressure)…"
+              className="w-full bg-transparent text-sm text-white/85 placeholder:text-white/35 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-950/40 px-4 py-3 ring-1 ring-white/10">
+            <div className="flex items-center gap-2 text-sm text-white/70">
+              <Power className="h-4 w-4" />
+              Master enable
+            </div>
+            <Toggle checked={masterEnabled} onChange={setMasterEnabled} ariaLabel="Master enable" />
+          </div>
+
+          <div className="flex items-center gap-2 rounded-2xl bg-slate-950/40 px-3 py-2 ring-1 ring-white/10">
+            <Filter className="h-4 w-4 text-white/55" />
+            {(["all", "tripped", "ok", "disabled"] as const).map((k) => (
+              <button
+                key={k}
+                onClick={() => setFilter(k)}
+                className={cn(
+                  "rounded-xl px-3 py-2 text-xs font-medium transition",
+                  filter === k ? "bg-white/15 text-white" : "text-white/60 hover:bg-white/10 hover:text-white/80"
+                )}
+              >
+                {k === "all" ? "All" : k[0].toUpperCase() + k.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="mt-6">
+          <AnimatePresence>
+            <motion.div layout className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((it) => (
+                <InterlockCard
+                  key={it.id}
+                  item={it}
+                  masterEnabled={masterEnabled}
+                  onReset={resetOne}
+                  onToggleEnabled={toggleOne}
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          {filtered.length === 0 && (
+            <div className="mt-10 text-center text-sm text-white/55">
+              No interlocks match your filters. Try a different search or switch to “All”. 🧭
+            </div>
+          )}
+        </div>
+
+        {/* Footer hint */}
+        <div className="mt-8 text-xs text-white/40">
+          Tip: keep “Reset” disabled unless the interlock is actually tripped. Your operators will thank you.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/*
+WIRING NOTES (replace demo behavior):
+- items[] should come from your PLC/SCADA backend (polling or websockets).
+- resetOne/resetAll should call your command endpoint, then refresh statuses.
+- masterEnabled should be a real master permissive state (and probably role-gated).
+*/

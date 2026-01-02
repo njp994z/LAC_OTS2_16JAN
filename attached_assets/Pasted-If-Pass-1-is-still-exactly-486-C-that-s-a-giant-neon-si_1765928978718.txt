@@ -1,0 +1,100 @@
+If Pass 1 is **still exactly ~486°C**, that’s a giant neon sign that **your new energy-balance/Cp code is not actually being used by the simulation path that drives the UI table**.
+
+When a real physics fix is wired in, you almost never land on the *exact same* outlet temperature.
+
+Here’s what we change next, in the most “zero-guessing” order.
+
+---
+
+## 1) Prove whether the new code is being executed (this is step zero)
+
+In the **exact function that computes `dT_dW`** (inside `deriv(...)` in `client/src/pages/unit-operation/catalytic-reactor.tsx`), add a one-time log:
+
+```ts
+if (Math.abs(Xc) < 1e-9) {
+  console.log("PASS1 DEBUG:", {
+    TC,
+    Cp_mix,
+    dHrxn,
+    r,
+    FT: F_T0,
+    dT_dW
+  });
+}
+```
+
+Run Pass 1 once and look at the console.
+
+### What this tells us immediately
+
+* If you **don’t see the log**, you’re editing the wrong code path (or that pass uses a different solver function).
+* If you see the log but `Cp_mix` is still ~35 or looks like old numbers, you’re still calling the placeholder Cp or the wrong units.
+* If you see the log and `dT_dW` is tiny, then the unit basis is still mismatched.
+
+This single log ends the guessing game.
+
+---
+
+## 2) You likely fixed “Python code”, but the app runs TypeScript
+
+Your screenshot shows the agent running `python3 -c ...` tests.
+
+But your reactor math is in **`catalytic-reactor.tsx`** (TypeScript). If the agent patched a Python module that the UI *isn’t importing*, nothing changes in the table.
+
+So the change we want is:
+
+✅ **Make sure the Cp/energy-balance implementation used by the UI solver is inside the TSX code path**, not only in a Python helper.
+
+Quick check:
+
+* In Replit, global search for **`dHrxn_BTU`**, **`Cp/R`**, or **`1.9858775`**
+* If those appear only in a Python file, the UI will never see them.
+
+---
+
+## 3) You may still be integrating the wrong temperature variable
+
+I’ve seen this exact thing: you compute `dT_dW_C` but the RK4 uses `dT_dW` (old), or converts twice.
+
+In your RK4 loop, confirm that the integrator uses the same derivative you just computed:
+
+* `k1T = deriv(...)[0]` really is the new `dT/dW` in **°C per W**
+* and you’re not returning °R while integrating °C (or vice versa)
+
+A 1.8× mistake won’t keep you at 486 vs 618 though, so this is second priority after “is it running”.
+
+---
+
+## 4) The smoking gun: Pass 1 outlet is low because the energy balance is effectively “turned off”
+
+If the reaction rate `r` is getting clipped to zero early by equilibrium logic (or composition), you’ll get decent conversion math but small temperature rise.
+
+Specifically check this line (or equivalent):
+
+```ts
+r = (Xc >= Xeq_local) ? 0 : eklund_rate(...)
+```
+
+If `Xeq_local` is being computed wrong (wrong composition, wrong units, wrong pressure basis), `r` might be getting cut to 0 for most of the bed.
+
+Add this log at a few points (25%, 50%, 100% bed depth):
+
+```ts
+console.log("EQ CHECK", { TC, Xc, Xeq_local, r });
+```
+
+If `r` collapses early, that’s where we fix next.
+
+---
+
+# What we want to change *now*
+
+**Don’t change more math yet.** First we change instrumentation so we know what code is actually running:
+
+1. Add the one-time log inside `deriv(...)` in `catalytic-reactor.tsx`
+2. Verify the log appears and print `Cp_mix`, `dT_dW`, `r`
+3. If the log doesn’t appear, find the actual function used to generate Pass tables and patch *that* one
+
+---
+
+If you paste the current `deriv(...)` block (the part that computes `Cp`, `r`, and `dT_dW`), I’ll tell you exactly what values to expect in that debug print and what the next edit is depending on what you see.

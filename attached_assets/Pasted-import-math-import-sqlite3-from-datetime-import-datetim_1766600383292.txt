@@ -1,0 +1,116 @@
+import math
+import sqlite3
+from datetime import datetime
+import numpy as np
+
+class SulfurSprayHydraulics:
+    """
+    Static hydraulic model for sulfur control valve + spray nozzles.
+    """
+
+    def __init__(self):
+        # Updated from datasheets
+        self.rho_lb_per_gal = 1.79 * 8.34  # lb/gal
+        self.SG = 1.79
+        self.g = 32.174  # ft/s²
+        self.psi_per_ft_fluid = self.SG * 0.433  # psig/ft
+
+        # System geometry (line size per your spec)
+        self.pipe_dia_in = 4.0
+        self.pipe_dia_ft = self.pipe_dia_in / 12.0
+        self.pipe_area_ft2 = math.pi * (self.pipe_dia_ft / 2) ** 2
+
+        # Pump curve (refitted from new plot)
+        self.pump_curve = {
+            'A': -3.07211889e-05,
+            'B': 0.00691057173,
+            'C': -1.59344684,
+            'D': 411.58557
+        }
+
+        # Line parameters (placeholders; update as needed)
+        self.line_length_ft = 80.0
+        self.K_minor_losses = 7.5
+        self.friction_factor = 0.018  # approx; could add Re-based calc later
+
+        # Nozzle & furnace
+        self.deltaP_nozzle_psi = 150.0
+        self.furnace_static_psi = 5.0
+
+        # Valve (equal % via interpolated table, extended for full range)
+        self.Cv_max = 548.0
+        self.cv_points = np.array([0, 4.549, 12.169, 25.039, 548])
+        self.pos_points = np.array([0, 16.27, 23.4, 30.6, 100])
+
+    def gpm_to_cfs(self, gpm):
+        return gpm / 448.831
+
+    def calculate(self, flow_gpm, pit_level_ft=7.0):
+        Q = flow_gpm
+
+        # Pump head
+        A, B, C, D = self.pump_curve.values()
+        pump_head_ft = A * Q**3 + B * Q**2 + C * Q + D
+
+        # Velocity & losses
+        Q_cfs = self.gpm_to_cfs(Q)
+        velocity_fps = Q_cfs / self.pipe_area_ft2
+        h_f = (self.friction_factor * self.line_length_ft / self.pipe_dia_ft + self.K_minor_losses) * (velocity_fps**2) / (2 * self.g)
+
+        # Valve inlet pressure
+        pressure_valve_inlet_psig = (pit_level_ft + pump_head_ft - h_f) * self.psi_per_ft_fluid
+
+        # Downstream pressure
+        pressure_downstream_psig = self.furnace_static_psi + self.deltaP_nozzle_psi
+
+        # Valve ΔP
+        dP_valve_psi = pressure_valve_inlet_psig - pressure_downstream_psig
+
+        if dP_valve_psi <= 0:
+            return {
+                "status": "error",
+                "message": "Insufficient pump head",
+                "flow_gpm": Q,
+                "valve_position_percent": 100.0,
+                "dP_valve_psi": 0.0
+            }
+
+        # Required Cv
+        Cv_required = Q / math.sqrt(dP_valve_psi / self.SG)
+
+        # Position (% open) via equal % interpolation
+        valve_pos_pct = np.interp(Cv_required, self.cv_points, self.pos_points)
+        valve_pos_pct = min(max(valve_pos_pct, 0.0), 100.0)
+
+        # Results
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "flow_gpm": round(Q, 2),
+            "pump_head_ft": round(pump_head_ft, 2),
+            "valve_inlet_psig": round(pressure_valve_inlet_psig, 2),
+            "dP_valve_psi": round(dP_valve_psi, 2),
+            "valve_position_percent": round(valve_pos_pct, 2),
+            "Cv_used": round(Cv_required, 2),
+            "pit_level_ft": pit_level_ft
+        }
+
+    def save_to_sqlite(self, results, db_path="sulfur_hydraulics.db"):
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+                timestamp TEXT,
+                flow_gpm REAL,
+                pump_head_ft REAL,
+                valve_inlet_psig REAL,
+                dP_valve_psi REAL,
+                valve_position_percent REAL,
+                Cv_used REAL,
+                pit_level_ft REAL
+            )
+        ''')
+        cursor.execute('''
+            INSERT INTO history VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', tuple(results.values()))
+        conn.commit()
+        conn.close()

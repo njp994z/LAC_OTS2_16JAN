@@ -1,0 +1,87 @@
+import math
+import time
+from dataclasses import dataclass
+
+# Use same shared config
+CONFIG = globals().get('CONFIG', {})  # Will be populated when imported
+
+@dataclass
+class DynamicState:
+    time_s: float = 0.0
+    received_mA: float = 4.0
+    positioner_pct: float = 0.0
+    flow_gpm: float = 0.0
+
+class DynamicSulfurSprayHydraulics:
+    """Dynamic simulation with positioner lag and equal-% valve"""
+
+    def __init__(self,
+                 positioner_tau_s: float = 6.0,
+                 flow_tau_s: float = 4.0,
+                 dt: float = 0.5):
+        self.dt = dt
+        self.tau_positioner = positioner_tau_s
+        self.tau_flow = flow_tau_s
+        self.state = DynamicState()
+        self.start_time = time.time()
+
+    def mA_to_position(self, mA: float) -> float:
+        """4-20 mA → 0-100% positioner output"""
+        return max(0.0, min(100.0, (mA - 4.0) * 6.25))  # K_positioner = 6.25 %/mA
+
+    def position_to_Cv(self, pos_pct: float) -> float:
+        """Equal percentage characteristic"""
+        R = CONFIG.get('R_equal_percent', 124.0)
+        return CONFIG['Cv_max'] * (R ** ((pos_pct - 100) / 100))
+
+    def calculate_flow(self, Cv: float, pit_level_ft: float) -> float:
+        """Iterative flow solver based on current Cv"""
+        Q = 40.0  # initial guess
+        for _ in range(40):
+            a, b, c, d = [1.4933e-05, -0.010308, -0.103376, 407.28]
+            pump_head = a * Q**3 + b * Q**2 + c * Q + d
+
+            Q_cfs = Q / 448.831
+            v = Q_cfs / (math.pi * (CONFIG['pipe_dia_in']/12/2)**2)
+            h_f = (CONFIG['friction_factor'] * CONFIG['line_length_ft'] / (CONFIG['pipe_dia_in']/12) +
+                   CONFIG['K_minor_losses']) * v**2 / 64.4
+
+            suction_psig = pit_level_ft * CONFIG['SG'] * 0.433 + CONFIG['barometric_psig']
+            p_in = suction_psig + pump_head * CONFIG['SG'] * 0.433 - h_f * CONFIG['SG'] * 0.433
+            p_out = CONFIG['furnace_static_psi'] + CONFIG['deltaP_nozzle_psi']
+            dp = max(p_in - p_out, 0.01)
+
+            Q_new = Cv * math.sqrt(dp / CONFIG['SG'])
+            if abs(Q_new - Q) < 0.1:
+                break
+            Q = 0.6 * Q + 0.4 * Q_new
+        return Q
+
+    def step(self, received_mA: float, pit_level_ft: float) -> dict:
+        self.state.time_s = time.time() - self.start_time
+        self.state.received_mA = received_mA
+
+        # Positioner first-order lag
+        target_pos = self.mA_to_position(received_mA)
+        pos_prev = self.state.positioner_pct
+        self.state.positioner_pct += (target_pos - pos_prev) * (1 - math.exp(-self.dt / self.tau_positioner))
+        self.state.positioner_pct = max(0.0, min(100.0, self.state.positioner_pct))
+
+        Cv = self.position_to_Cv(self.state.positioner_pct)
+        target_flow = self.calculate_flow(Cv, pit_level_ft)
+
+        # Flow first-order lag
+        flow_prev = self.state.flow_gpm
+        self.state.flow_gpm += (target_flow - flow_prev) * (1 - math.exp(-self.dt / self.tau_flow))
+
+        return {
+            "time_s": round(self.state.time_s, 1),
+            "received_mA": round(received_mA, 2),
+            "valve_position_pct": round(self.state.positioner_pct, 2),
+            "flow_gpm": round(self.state.flow_gpm, 2),
+            "pit_level_ft": pit_level_ft
+        }
+
+    def reset(self):
+        self.state = DynamicState()
+        self.start_time = time.time()

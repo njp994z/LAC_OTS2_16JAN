@@ -1,0 +1,253 @@
+import os
+import time
+import math
+import requests
+from datetime import datetime, timedelta, timezone
+
+# ============================================
+# CONFIGURATION
+# ============================================
+
+# Option 1: Set your key here directly
+# API_KEY = "YOUR_OPENWEATHER_API_KEY_HERE"
+
+# Option 2 (recommended): Set an environment variable in Replit named OPENWEATHER_API_KEY
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
+
+# ZIP code for your location
+ZIP_CODE = "89445"
+COUNTRY_CODE = "US"
+
+# Units:
+# "standard" = Kelvin, "metric" = °C, "imperial" = °F
+UNITS = "metric"
+
+# ============================================
+# SIMPLE HELPERS
+# ============================================
+
+class OpenWeatherError(Exception):
+    pass
+
+
+def ensure_api_key():
+    global API_KEY
+    if not API_KEY:
+        # Fallback: prompt user in Replit console
+        API_KEY = input("Enter your OpenWeather API key: ").strip()
+    if not API_KEY:
+        raise OpenWeatherError("No API key provided. Set OPENWEATHER_API_KEY or edit API_KEY in the script.")
+
+
+def get_coords_for_zip(zip_code: str, country_code: str = "US"):
+    """
+    Use the Geocoding API to convert ZIP code → (lat, lon, name).
+    """
+    url = "https://api.openweathermap.org/geo/1.0/direct"
+    params = {
+        "q": f"{zip_code},{country_code}",
+        "limit": 1,
+        "appid": API_KEY,
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    if resp.status_code != 200:
+        raise OpenWeatherError(f"Geocoding request failed: {resp.status_code} {resp.text}")
+
+    data = resp.json()
+    if not data:
+        raise OpenWeatherError(f"No location found for ZIP {zip_code}, country {country_code}")
+
+    loc = data[0]
+    lat = loc["lat"]
+    lon = loc["lon"]
+    name = loc.get("name", "Unknown")
+    print(f"Geocoding: {zip_code} → {name} (lat={lat}, lon={lon})")
+    return lat, lon, name
+
+
+# ============================================
+# PSYCHROMETRIC CALCULATIONS
+# ============================================
+
+def saturation_vapor_pressure_kpa(temp_c: float) -> float:
+    """
+    Saturation vapor pressure (kPa) using a common Magnus-type formula.
+    Valid for typical ambient temps.
+    """
+    return 0.6108 * math.exp((17.27 * temp_c) / (temp_c + 237.3))
+
+
+def psychrometrics_from_temp_rh_pressure(temp_c: float, rh_percent: float, pressure_hpa: float):
+    """
+    Given dry-bulb temperature (°C), relative humidity (%), and pressure (hPa),
+    calculate basic psychrometric properties:
+
+    - humidity_ratio (kg water / kg dry air)
+    - specific_enthalpy (kJ / kg dry air)
+    - vapor_pressure (kPa)
+    """
+    rh = rh_percent / 100.0
+    p_kpa = pressure_hpa / 10.0  # 1 hPa = 0.1 kPa
+
+    es = saturation_vapor_pressure_kpa(temp_c)   # saturation vapor pressure (kPa)
+    e = rh * es                                  # actual vapor pressure (kPa)
+
+    # Humidity ratio (kg water / kg dry air)
+    humidity_ratio = 0.62198 * e / (p_kpa - e)
+
+    # Moist air enthalpy (kJ/kg dry air)
+    specific_enthalpy = 1.006 * temp_c + humidity_ratio * (2501 + 1.86 * temp_c)
+
+    return {
+        "humidity_ratio": humidity_ratio,
+        "specific_enthalpy": specific_enthalpy,
+        "vapor_pressure_kpa": e,
+        "saturation_vapor_pressure_kpa": es,
+    }
+
+
+# ============================================
+# OPENWEATHER API CALLS (ONE CALL 3.0)
+# ============================================
+
+def get_current_onecall(lat: float, lon: float):
+    """
+    Get current conditions using One Call 3.0.
+    Returns JSON with fields like current.temp, current.humidity, current.dew_point, current.pressure.
+    """
+    url = "https://api.openweathermap.org/data/3.0/onecall"
+    params = {
+        "lat": lat,
+        "lon": lon,
+        "appid": API_KEY,
+        "units": UNITS,
+        "exclude": "minutely,hourly,daily,alerts",
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    if resp.status_code != 200:
+        raise OpenWeatherError(f"One Call current request failed: {resp.status_code} {resp.text}")
+    return resp.json()
+
+
+def get_historical_onecall(lat: float, lon: float, when_utc: datetime):
+    """
+    Get historical data for a specific timestamp using One Call 3.0 'timemachine'.
+    You can use any timestamp from 1979 up to 4 days ahead (forecast) depending on your subscription.
+    """
+    url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
+    # Convert datetime to Unix timestamp (UTC)
+    if when_utc.tzinfo is None:
+        when_utc = when_utc.replace(tzinfo=timezone.utc)
+    ts = int(when_utc.timestamp())
+
+    params = {
+        "lat": lat,
+        "lon": lon,
+        "dt": ts,
+        "appid": API_KEY,
+        "units": UNITS,
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    if resp.status_code != 200:
+        raise OpenWeatherError(f"One Call timemachine request failed: {resp.status_code} {resp.text}")
+    return resp.json()
+
+
+# ============================================
+# PRETTY PRINTING
+# ============================================
+
+def print_current_psychrometrics(current_json: dict):
+    current = current_json["current"]
+    temp = current["temp"]               # °C (because UNITS="metric")
+    rh = current["humidity"]            # %
+    pressure = current["pressure"]      # hPa
+    dew_point = current.get("dew_point")
+
+    psychro = psychrometrics_from_temp_rh_pressure(temp, rh, pressure)
+
+    print("\n=== CURRENT CONDITIONS (psychrometric) ===")
+    print(f"Temperature      : {temp:.2f} °C")
+    print(f"Relative Humidity: {rh:.1f} %")
+    if dew_point is not None:
+        print(f"Dew Point        : {dew_point:.2f} °C")
+    print(f"Pressure         : {pressure:.1f} hPa")
+
+    print("\nDerived:")
+    print(f"Humidity ratio   : {psychro['humidity_ratio']:.6f} kg/kg dry air")
+    print(f"Vapor pressure   : {psychro['vapor_pressure_kpa']:.4f} kPa")
+    print(f"Enthalpy         : {psychro['specific_enthalpy']:.2f} kJ/kg dry air")
+
+
+def print_historical_summary(hist_json: dict):
+    """
+    Shows an example of how to pull psychrometric data from the timemachine response.
+    That response usually includes a 'data' or 'hourly' list depending on your subscription specifics.
+    We'll probe both.
+    """
+    print("\n=== HISTORICAL SNAPSHOT (timemachine) ===")
+
+    # Try "data" (older format) or "hourly" (common for timemachine)
+    records = hist_json.get("data") or hist_json.get("hourly") or []
+    if not records:
+        print("No historical records field found in response (check your subscription & endpoint docs).")
+        print("Raw keys in JSON:", list(hist_json.keys()))
+        return
+
+    # Just look at the first record as an example
+    record = records[0]
+    ts = record.get("dt")
+    when = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else None
+    temp = record["temp"]
+    rh = record["humidity"]
+    pressure = record["pressure"]
+    dew_point = record.get("dew_point")
+
+    psychro = psychrometrics_from_temp_rh_pressure(temp, rh, pressure)
+
+    if when:
+        print(f"Timestamp (UTC)  : {when.isoformat()}")
+    print(f"Temperature      : {temp:.2f} °C")
+    print(f"Relative Humidity: {rh:.1f} %")
+    if dew_point is not None:
+        print(f"Dew Point        : {dew_point:.2f} °C")
+    print(f"Pressure         : {pressure:.1f} hPa")
+
+    print("\nDerived:")
+    print(f"Humidity ratio   : {psychro['humidity_ratio']:.6f} kg/kg dry air")
+    print(f"Vapor pressure   : {psychro['vapor_pressure_kpa']:.4f} kPa")
+    print(f"Enthalpy         : {psychro['specific_enthalpy']:.2f} kJ/kg dry air")
+
+
+# ============================================
+# MAIN
+# ============================================
+
+def main():
+    ensure_api_key()
+
+    # 1. Get coordinates for your ZIP
+    lat, lon, name = get_coords_for_zip(ZIP_CODE, COUNTRY_CODE)
+
+    # 2. Get current conditions & psychrometrics
+    current_json = get_current_onecall(lat, lon)
+    print_current_psychrometrics(current_json)
+
+    # 3. Example: get historical data for 24 hours ago
+    hours_back = 24
+    when_utc = datetime.now(timezone.utc) - timedelta(hours=hours_back)
+    print(f"\nRequesting historical data for ~{hours_back} hours ago (UTC): {when_utc.isoformat()}")
+
+    hist_json = get_historical_onecall(lat, lon, when_utc)
+    print_historical_summary(hist_json)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except OpenWeatherError as e:
+        print("\n[OpenWeather API ERROR]")
+        print(e)
+    except Exception as e:
+        print("\n[UNEXPECTED ERROR]")
+        print(e)

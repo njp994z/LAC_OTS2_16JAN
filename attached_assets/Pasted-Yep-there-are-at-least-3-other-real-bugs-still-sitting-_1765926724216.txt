@@ -1,0 +1,137 @@
+Yep, there are **at least 3 other “real” bugs** still sitting in that same neighborhood, even if you swapped in the right Cp.
+
+From your `catalytic-reactor.tsx` snippet (lines ~1186–1200), the remaining problems are mostly **(1) using inlet composition everywhere**, and **(2) unit/basis mismatch in the energy balance**.
+
+## 1) You’re still using `seg.y0` (inlet composition) for equilibrium and rate
+
+Right now:
+
+```python
+Xeq_local = Xeq_at_T(TC, P_atm, seg.y0)
+r = 0.0 if Xc >= Xeq_local else eklund_rate(TC, Xc, P_atm, seg.y0, a_eff)
+...
+y_local = y_at_conversion(seg.y0, Xc)
+```
+
+That means:
+
+* equilibrium is computed for **fresh feed**, not the **current** mixture at conversion `Xc`
+* rate is computed for **fresh feed**, not the **current** mixture at `Xc`
+
+Even if Cp is perfect, this alone can make passes behave differently.
+
+**Fix:** compute `y_local` *before* equilibrium/rate, and use it:
+
+```python
+y_local = y_at_conversion(seg.y0, Xc)
+
+Xeq_local = Xeq_at_T(TC, P_atm, y_local)
+
+r = 0.0 if Xc >= Xeq_local else eklund_rate(TC, Xc, P_atm, y_local, a_eff)
+```
+
+(And if your `eklund_rate` uses SO2/O2 partial pressures, this change is huge.)
+
+## 2) Your Cp and ΔH are likely in one unit system, but `dT_dW` is computed in another
+
+You have:
+
+```python
+dHrxn_J_per_molSO2 = -99000.0
+FT_mol_s = F_T0 * 453.59237 / 3600.0  # lbmol/hr -> mol/s
+dT_dW = (-(dHrxn_J_per_molSO2) * r) / (FT_mol_s * Cp)
+```
+
+This only works if **r is in mol/s per catalyst-weight**.
+
+But your earlier line says:
+
+```python
+dX_dW = r / F_SO2_0
+```
+
+…where `F_SO2_0` is in **lbmol/hr** (by variable naming and the earlier calculation). That strongly suggests `r` is in **lbmol/hr per catalyst-weight**, not mol/s.
+
+If that’s true, then `dT_dW` is mixing:
+
+* `r` in **lbmol/hr**
+* `FT_mol_s` in **mol/s**
+* Cp in whatever units you currently use
+
+That will warp the adiabatic slope.
+
+### The clean fix (recommended)
+
+Keep the energy balance entirely on an **lbmol/hr + BTU/lbmol·R** basis (no mol/s conversion needed):
+
+* convert ΔH to **BTU/lbmol**
+* use `FT0_lbmol_hr` directly
+* use Cp in **BTU/lbmol·R**
+* you’ll get `dT/dW` in **°R per catalyst-weight**
+
+Then convert °R to °C only for reporting if needed.
+
+If you prefer to stay in SI (J/mol·K), then convert **both** `FT` and `r` consistently to mol/s.
+
+## 3) Cp is being computed at one composition, then you compute `y_local` later
+
+You already fixed Cp once, but double-check the flow: Cp must be evaluated with the same mixture state used in the energy balance.
+
+Right now Cp is computed before `y_local` exists (in your screenshot). Even if you changed it once, I’d search for any remaining call like:
+
+* `cp_mix(... seg.y0 ...)`
+* or a “default y0” inside cp mix
+
+This is a common “one fix didn’t stick everywhere” situation.
+
+## 4) Stoichiometry bug in `y_at_conversion` can silently wreck slopes
+
+If `y_at_conversion` does not correctly update:
+
+* SO2 down by X
+* SO3 up by X
+* O2 down by 0.5X
+* total moles change (or not) consistently with your basis
+
+…then everything downstream (Cp, equilibrium, rate, density) will be off.
+
+This is the other place I’d look *immediately* if slopes still don’t match after fixing Cp + `seg.y0` usage.
+
+---
+
+# Where to look (quick map)
+
+In `catalytic-reactor.tsx`:
+
+1. The `deriv(...)` function region you screenshotted:
+
+* change `Xeq_at_T(... seg.y0 ...)` → `... y_local ...`
+* change `eklund_rate(... seg.y0 ...)` → `... y_local ...`
+* ensure Cp uses `y_local`
+* ensure `dT_dW` uses a consistent unit basis with `r`
+
+2. The implementation of:
+
+* `y_at_conversion(...)`
+* `Xeq_at_T(...)`
+* `eklund_rate(...)`
+* (and any helper computing partial pressures / Kp)
+
+---
+
+## Fast diagnostic (takes 2 minutes, catches the culprit)
+
+Add temporary logging for each pass at inlet and mid-bed:
+
+* `TC`, `Xc`
+* `y_local.SO2`, `y_local.O2`, `y_local.SO3`
+* `Xeq_local`
+* `r`
+* `Cp_mix`
+* computed adiabatic slope proxy: `dT_dW / dX_dW`
+
+That last ratio should be **nearly constant across passes** if Cp/ΔH/basis are correct.
+
+---
+
+If you paste the code for **`eklund_rate`**, **`Xeq_at_T`**, and **`y_at_conversion`** (just those functions), I’ll point to the exact lines that are wrong and tell you the minimal patch set.

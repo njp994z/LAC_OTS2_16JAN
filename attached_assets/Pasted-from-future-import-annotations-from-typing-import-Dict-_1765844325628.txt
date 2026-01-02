@@ -1,0 +1,317 @@
+from __future__ import annotations
+from typing import Dict, Any, List, Tuple
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+
+from ui_inputs import DEFAULT_INPUTS, CatalyticReactorInputs
+from ui_outputs import ConverterUIOutput, ConverterSummary, PassSummary, PassPoint, XTPlotData
+
+from rk import (
+    ATM_TO_PSIA, INWC_PER_PSI,
+    psia_to_atm, bed_depth_ft_from_liters,
+    acfm_from_FT_TP_psia, velocity_ft_s,
+    CatalystProps, BedSegment, rk4_segment,
+    y_at_conversion, Xeq_at_T
+)
+
+# =============================================================================
+# Unit conversions
+# =============================================================================
+def inwc_to_psi(inwc: float) -> float:
+    return inwc / INWC_PER_PSI
+
+def psi_to_inwc(psi: float) -> float:
+    return psi * INWC_PER_PSI
+
+def inlet_abs_psia(p_barr_atm: float, p_gauge_inwc: float) -> float:
+    return p_barr_atm * ATM_TO_PSIA + inwc_to_psi(p_gauge_inwc)
+
+def psia_to_inwc_gauge(P_abs_psia: float, p_barr_atm: float) -> float:
+    P_bar_psia = p_barr_atm * ATM_TO_PSIA
+    P_gauge_psi = P_abs_psia - P_bar_psia
+    return psi_to_inwc(P_gauge_psi)
+
+# =============================================================================
+# Gas properties in THIS file (Wilke μ + ideal gas ρ)
+# =============================================================================
+MW = {"SO2": 64.066, "SO3": 80.066, "O2": 31.999, "N2": 28.014}
+
+SUTHERLAND_PARAMS = {
+    "SO2": {"mu_0": 12.4,  "T_0": 293.0, "S": 416.0},
+    "SO3": {"mu_0": 12.4,  "T_0": 293.0, "S": 416.0},
+    "O2":  {"mu_0": 20.18, "T_0": 293.0, "S": 139.0},
+    "N2":  {"mu_0": 17.81, "T_0": 293.0, "S": 111.0},
+}
+
+UPA_S_TO_PA_S = 1e-6
+R_UNIV = 8.314462618  # J/(mol*K)
+
+def normalize_y(y: Dict[str, float]) -> Dict[str, float]:
+    s = sum(max(v, 0.0) for v in y.values())
+    if s <= 0:
+        raise ValueError("Invalid mole fractions: sum <= 0")
+    return {k: max(v, 0.0) / s for k, v in y.items()}
+
+def sutherland_mu_uPa_s(T_K: float, mu0_uPa_s: float, T0: float, S: float) -> float:
+    return mu0_uPa_s * (T_K / T0) ** 1.5 * ((T0 + S) / (T_K + S))
+
+def pure_mu_pa_s(species: str, T_C: float) -> float:
+    p = SUTHERLAND_PARAMS[species]
+    T_K = T_C + 273.15
+    return sutherland_mu_uPa_s(T_K, p["mu_0"], p["T_0"], p["S"]) * UPA_S_TO_PA_S
+
+def wilke_phi(mu_i: float, mu_j: float, Mi: float, Mj: float) -> float:
+    return (1.0 + math.sqrt(mu_i / mu_j) * (Mj / Mi) ** 0.25) ** 2 / (
+        math.sqrt(8.0) * math.sqrt(1.0 + Mi / Mj)
+    )
+
+def mu_wilke_pa_s(y: Dict[str, float], T_C: float) -> float:
+    x = normalize_y(y)
+    mu = {sp: pure_mu_pa_s(sp, T_C) for sp in x}
+    M  = {sp: MW[sp] for sp in x}
+
+    mu_mix = 0.0
+    for i, xi in x.items():
+        denom = 0.0
+        for j, xj in x.items():
+            denom += xj * wilke_phi(mu[i], mu[j], M[i], M[j])
+        mu_mix += xi * mu[i] / max(denom, 1e-30)
+    return mu_mix
+
+def mw_mix_kg_per_mol(y: Dict[str, float]) -> float:
+    x = normalize_y(y)
+    mw_g_mol = sum(x[sp] * MW[sp] for sp in x)
+    return mw_g_mol / 1000.0
+
+def rho_ideal_kg_m3(y: Dict[str, float], T_C: float, P_abs_psia: float) -> float:
+    T_K = T_C + 273.15
+    P_Pa = P_abs_psia * 6894.757293168
+    MWmix = mw_mix_kg_per_mol(y)
+    return (P_Pa * MWmix) / (R_UNIV * T_K)
+
+# =============================================================================
+# Catalyst database used by RK
+# =============================================================================
+CATALYST_DB: Dict[str, CatalystProps] = {
+    "Topsoe VK69": CatalystProps("Topsoe VK69", void_fraction=0.60, sphericity=0.75, diameter_mm=9.0,  bulk_density_kg_m3=800.0, activity_fresh=3.51),
+    "MECS Super Gear XLP-310": CatalystProps("MECS Super Gear XLP-310", void_fraction=0.50, sphericity=0.65, diameter_mm=12.5, bulk_density_kg_m3=815.0, activity_fresh=3.35),
+    "MECS GR330": CatalystProps("MECS GR330", void_fraction=0.55, sphericity=0.70, diameter_mm=11.0, bulk_density_kg_m3=865.0, activity_fresh=1.40),
+}
+
+# =============================================================================
+# Helper: inlet composition
+# =============================================================================
+def inlet_y(inputs: CatalyticReactorInputs) -> Dict[str, float]:
+    y = {
+        "SO2": inputs.so2_percent / 100.0,
+        "SO3": inputs.so3_percent / 100.0,
+        "O2":  inputs.o2_percent / 100.0,
+        "N2":  inputs.n2_percent / 100.0,
+    }
+    return normalize_y(y)
+
+# =============================================================================
+# Diameter sizing (minimal: fixed vs velocity)
+# =============================================================================
+def diameter_from_velocity(acfm: float, v_fpm: float) -> float:
+    area_ft2 = acfm / max(v_fpm, 1e-12)
+    return math.sqrt(4.0 * area_ft2 / math.pi)
+
+def compute_diameter_ft(inputs: CatalyticReactorInputs, P1_psia: float, FT0_lbmol_hr: float) -> float:
+    if inputs.sizing_mode == "fixed":
+        return inputs.converter_diameter
+    # velocity mode
+    acfm = acfm_from_FT_TP_psia(max(FT0_lbmol_hr, 1e-6), inputs.pass1_inlet_temp, P1_psia)
+    return diameter_from_velocity(acfm, inputs.pass1_inlet_velocity)
+
+# =============================================================================
+# Main simulation
+# =============================================================================
+def run_converter(inputs: CatalyticReactorInputs) -> ConverterUIOutput:
+    y0 = inlet_y(inputs)
+
+    # Inlet absolute pressures for each pass (psia)
+    P1 = inlet_abs_psia(inputs.p_barr, inputs.pass1_inlet_pres)
+    P2 = inlet_abs_psia(inputs.p_barr, inputs.pass2_inlet_pres)
+    P3 = inlet_abs_psia(inputs.p_barr, inputs.pass3_inlet_pres)
+    P4 = inlet_abs_psia(inputs.p_barr, inputs.pass4_inlet_pres)
+
+    # Flow basis: for now we keep it simple and use a nominal FT0 from plant_rate.
+    # You will replace this with your real flow calc later.
+    FT0 = max(1.0, inputs.plant_rate)  # placeholder mapping: STPD -> lbmol/hr-ish
+    D_ft = compute_diameter_ft(inputs, P1, FT0)
+
+    # Build segments
+    segs: List[BedSegment] = [
+        BedSegment("Pass1-L1", CATALYST_DB[inputs.pass1_type1], inputs.pass1_liters1, inputs.pass1_activity1,
+                   inputs.pass1_inlet_temp, P1, FT0, y0, D_ft),
+        BedSegment("Pass1-L2", CATALYST_DB[inputs.pass1_type2], inputs.pass1_liters2, inputs.pass1_activity2,
+                   inputs.pass1_inlet_temp, P1, FT0, y0, D_ft),
+
+        BedSegment("Pass2", CATALYST_DB[inputs.pass2_type1], inputs.pass2_liters1, inputs.pass2_activity1,
+                   inputs.pass2_inlet_temp, P2, FT0, y0, D_ft),
+
+        BedSegment("Pass3", CATALYST_DB[inputs.pass3_type1], inputs.pass3_liters1, inputs.pass3_activity1,
+                   inputs.pass3_inlet_temp, P3, FT0, y0, D_ft),
+
+        BedSegment("Pass4-L1", CATALYST_DB[inputs.pass4_type1], inputs.pass4_liters1, inputs.pass4_activity1,
+                   inputs.pass4_inlet_temp, P4, FT0, y0, D_ft),
+        BedSegment("Pass4-L2", CATALYST_DB[inputs.pass4_type2], inputs.pass4_liters2, inputs.pass4_activity2,
+                   inputs.pass4_inlet_temp, P4, FT0, y0, D_ft),
+    ]
+
+    # Run sequentially; L2 inherits outlet of L1
+    seg_results = []
+    for seg in segs:
+        if seg_results and seg.name.endswith("-L2"):
+            prev_seg, prev_res = seg_results[-1]
+            seg.Tin_C = float(prev_res.T_C[-1])
+            seg.Pin_abs_psia = float(prev_res.P_psia[-1])
+
+        res = rk4_segment(seg, mu_wilke_pa_s, rho_ideal_kg_m3)
+        seg_results.append((seg, res))
+
+    # Assemble pass summaries (5 points: 0/25/50/75/100)
+    def sample_idxs(n: int) -> List[int]:
+        fracs = [0.0, 0.25, 0.50, 0.75, 1.0]
+        return [int(round(f*(n-1))) for f in fracs]
+
+    pass_map = {
+        1: ["Pass1-L1", "Pass1-L2"],
+        2: ["Pass2"],
+        3: ["Pass3"],
+        4: ["Pass4-L1", "Pass4-L2"],
+    }
+    by_name = {seg.name: (seg, res) for seg, res in seg_results}
+
+    overall_X_in = 0.0
+    pass_summaries: List[PassSummary] = []
+
+    for pnum in [1, 2, 3, 4]:
+        names = pass_map[pnum]
+
+        # concatenate arrays
+        T_all, X_bed, P_all, Xeq_all = [], [], [], []
+        for k, nm in enumerate(names):
+            _, r = by_name[nm]
+            if k == 0:
+                T_all += r.T_C.tolist()
+                X_bed += r.X.tolist()
+                P_all += r.P_psia.tolist()
+                Xeq_all += r.Xeq.tolist()
+            else:
+                T_all += r.T_C[1:].tolist()
+                X_bed += r.X[1:].tolist()
+                P_all += r.P_psia[1:].tolist()
+                Xeq_all += r.Xeq[1:].tolist()
+
+        T_all = np.array(T_all)
+        X_bed = np.array(X_bed)
+        P_all = np.array(P_all)
+        Xeq_all = np.array(Xeq_all)
+
+        L_total_ft = sum(bed_depth_ft_from_liters(by_name[nm][0].liters, D_ft) for nm in names)
+
+        pts: List[PassPoint] = []
+        for frac, idx in zip([0, 25, 50, 75, 100], sample_idxs(len(T_all))):
+            bedX = float(X_bed[idx])
+            overallX = overall_X_in + (1.0 - overall_X_in) * bedX
+            y_rep = y_at_conversion(y0, overallX)
+
+            Ppsia = float(P_all[idx])
+            acfm = acfm_from_FT_TP_psia(FT0, float(T_all[idx]), Ppsia)
+            vfts = velocity_ft_s(acfm, D_ft)
+
+            mu = mu_wilke_pa_s(y_rep, float(T_all[idx]))
+            rho = rho_ideal_kg_m3(y_rep, float(T_all[idx]), Ppsia)
+
+            pts.append(PassPoint(
+                bed_depth_pct=float(frac),
+                bed_depth_ft=float(L_total_ft * frac/100.0),
+                temp_c=float(T_all[idx]),
+
+                bed_conv_pct=100.0 * bedX,
+                overall_conv_pct=100.0 * overallX,
+                eq_conv_pct=100.0 * float(Xeq_all[idx]),
+
+                p_abs_psia=Ppsia,
+                p_gauge_inwc=psia_to_inwc_gauge(Ppsia, inputs.p_barr),
+
+                so2_pct=100.0 * y_rep["SO2"],
+                o2_pct=100.0 * y_rep["O2"],
+                so3_pct=100.0 * y_rep["SO3"],
+                n2_pct=100.0 * y_rep["N2"],
+
+                acfm=acfm,
+                v_ft_s=vfts,
+
+                mu_pa_s=mu,
+                rho_kg_m3=rho,
+            ))
+
+        overall_X_out = overall_X_in + (1.0 - overall_X_in) * float(X_bed[-1])
+        overall_X_in = overall_X_out
+
+        outlet_row = pts[-1]
+        pass_summaries.append(PassSummary(
+            pass_number=pnum,
+            points=pts,
+            outlet={
+                "outlet_temp_c": outlet_row.temp_c,
+                "outlet_p_abs_psia": outlet_row.p_abs_psia,
+                "outlet_p_gauge_inwc": outlet_row.p_gauge_inwc,
+                "outlet_overall_conv_pct": outlet_row.overall_conv_pct,
+            }
+        ))
+
+    # Overall summary
+    last_pt = pass_summaries[-1].points[-1]
+    converter_summary = ConverterSummary(
+        converter_diameter_ft=float(D_ft),
+        total_molar_flow_lbmol_hr=float(FT0),
+        overall_conv_pct=float(last_pt.overall_conv_pct),
+        outlet_temp_c=float(last_pt.temp_c),
+        outlet_p_abs_psia=float(last_pt.p_abs_psia),
+        outlet_p_gauge_inwc=float(last_pt.p_gauge_inwc),
+    )
+
+    # Xeq curve for plotting (Celsius)
+    Tgrid = np.linspace(300.0, 650.0, 140)
+    Xeq = [100.0 * Xeq_at_T(float(TC), psia_to_atm(P1), y0) for TC in Tgrid]
+    xt_plot = XTPlotData(T_C=Tgrid.tolist(), Xeq_pct=Xeq)
+
+    return ConverterUIOutput(
+        converter=converter_summary,
+        passes=pass_summaries,
+        xt_plot=xt_plot,
+        debug={
+            "P1_psia": P1, "P2_psia": P2, "P3_psia": P3, "P4_psia": P4,
+            "y0": y0,
+            "note": "FT0 is currently a placeholder mapping from plant_rate; replace with real flow basis.",
+        }
+    )
+
+
+if __name__ == "__main__":
+    out = run_converter(DEFAULT_INPUTS)
+
+    # quick console summary
+    print("\n=== Converter Summary ===")
+    print(out.converter)
+
+    for ps in out.passes:
+        print(f"\n=== Pass {ps.pass_number} ===")
+        for pt in ps.points:
+            print(f"{pt.bed_depth_pct:>5.0f}%  T={pt.temp_c:7.2f}C  OvX={pt.overall_conv_pct:7.3f}%  "
+                  f"P={pt.p_abs_psia:8.4f} psia  Pg={pt.p_gauge_inwc:7.2f} inwc")
+
+    # plot equilibrium curve (fast check)
+    plt.figure(figsize=(8, 4.5))
+    plt.plot(out.xt_plot.T_C, out.xt_plot.Xeq_pct, linestyle="--", label="Equilibrium Conversion")
+    plt.xlabel("Temperature (°C)")
+    plt.ylabel("Conversion (%)")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

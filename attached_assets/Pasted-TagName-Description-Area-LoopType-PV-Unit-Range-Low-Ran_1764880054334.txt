@@ -1,0 +1,24 @@
+TagName,Description,Area,LoopType,PV_Unit,Range_Low,Range_High,Typical_SP,Alarm_HH,Alarm_H,Alarm_L,Alarm_LL,Control_Mode,Controller_Output_To,Setpoint_Source,Cascade_Master,Fail_Position,Interlocks_Permissives,Key_Narrative_Summary,On_Hold,Page
+1500-F-4244,AREA 1510 GROUP SAFETY SHOWER ALARM,Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Group alarm from multiple safety shower flow switches,-,20
+1500-F-4240,AREA 1520 GROUP SAFETY SHOWER ALARM,Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Group alarm from multiple safety shower flow switches,-,21
+1500-F-4242,AREA 1530 GROUP SAFETY SHOWER ALARM,Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Group alarm from multiple safety shower flow switches,-,22
+1500-F-4042,AREA 1540 GROUP SAFETY SHOWER ALARM,Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Group alarm from multiple safety shower flow switches,-,23
+1500-F-4044,AREA 1560 GROUP SAFETY SHOWER ALARM,Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Group alarm from multiple safety shower flow switches,-,24
+1500-F-4040,AREA 1570 GROUP SAFETY SHOWER ALARM,Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Group alarm from multiple safety shower flow switches,-,25
+1500-F-4002,TG BUILDING SAFETY SHOWER (NEAR WATER TREATMENT CHEM DOSING),Safety Showers,Digital Input,-,0,1,-,-,-,-,-,None,None,None,None,None,Individual safety shower activation alarm,-,26
+1500-F-9802,PROPANE TO STARTUP BURNER,Startup Burner,Flow,t/h,0,10,Operator,8,6,-,-,Auto/Man,FV-9802,Operator,None,Fail Close,Permissive: Burner management system healthy,Flow control to startup propane burner,-,58
+1500-F-9805,PROPANE TO AUX BOILER,Aux Boiler,Flow,t/h,0,5,Operator,4,3,-,-,Auto/Man,FV-9805,Operator,None,Fail Close,Permissive: Aux boiler in service,Propane flow to auxiliary boiler package,-,59
+1510-H-1003A,SULFUR UNLOADING PUMP,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1003A,Operator,None,—,Start/stop + auto-start on high pit level,-,60
+1510-H-1003B,SULFUR UNLOADING PUMP (STANDBY),Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1003B,Operator,None,—,Standby pump with auto-start on lead fail,-,61
+1510-H-1004A,SULFUR FEED PUMP,Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1004A,Operator,None,—,Lead sulfur feed pump to burner,-,62
+1510-H-1004B,SULFUR FEED PUMP (STANDBY),Sulfur Handling,Pump Control,-,0,1,-,-,-,-,-,Auto/Man,HS-1004B,Operator,None,—,Standby sulfur feed pump,-,63
+1540-H-4080,MAIN COMP DISCH TO SULFUR BURNER,Sulfur Burning,Flow Control (Jug Valve),Nm³/h,0,120000,Operator,110000,105000,-,-,Auto/Man,HV-4080,Operator,FIC-4070 (cascade),Fail Close,Trip on low-low sulfur flow or burner trip,Cascaded from main air flow – primary oxygen control,Yes (on hold),109
+1540-F-4070,MAIN COMP SUCTION FLOW,Sulfur Burning,Flow,Nm³/h,0,120000,105000,115000,110000,90000,-,Auto,FV-4070,Operator,None,Fail Open,Primary air flow measurement for ratio control,-,103
+1540-T-4220,SULFUR BURNER TEMPERATURE,Sulfur Burning,Temperature,°C,800,1400,1150,1300,1250,950,900,Auto,TIC-4220 output to FIC-4070 SP,Ratio control,Ratio TY-4220,—,Main burner temperature controls air/sulfur ratio,-,112
+1540-P-4200,SULFUR BURNER INLET AND JUG VALVE OUTLET DIFFERENTIAL PRESSURE,Sulfur Burning,Pressure,kPag,0,50,20,40,35,-,-,Indication only,None,None,None,None,Used for detecting plugged sulfur gun,-,111
+1520-L-6040,COMB PUMP TANK LEVEL,Absorption,Level,%,0,100,50,90,80,20,10,Auto/Man,LV-6040,Operator,None,Fail Close,Level control of combined acid pump tank,-,172
+1520-F-6070,DILUTION WATER FLOW DT/IPAT SIDE,Absorption,Flow,m³/h,0,50,Auto,45,40,-,-,Auto,FV-6070,LIC-6040 (cascade),LIC-6040,Fail Close,Cascade dilution water from combined tank level,-,163
+1520-A-6060,DT ACID PUMP RECIRC LINE SA CONCENTRATION,Absorption,Analyzer,% H2SO4,90,100,98.5,99.5,99.2,97.5,97.0,Auto,AIC-6060 output to dilution valves,Operator,None,—,Concentration control of drying tower acid,-,157
+1570-L-8601,PRODUCT ACID STORAGE TANK #1 LEVEL,Acid Storage,Level,m,0,15,8,14,13,2,1,Auto,LIC-8601 → product acid transfer pumps,Operator,None,—,Storage tank level indication & high/low alarms,-,350
+1570-F-9201,ACID TRUCK LOADING ARM#1 FLOW,Acid Loading,Flow,t/h,0,300,250,—,—,—,—,Auto/Man,FV-9201,Operator,None,Fail Close,Loading flow with high-flow cutoff,-,370
+... (all 422 rows are included — truncated here for message length)

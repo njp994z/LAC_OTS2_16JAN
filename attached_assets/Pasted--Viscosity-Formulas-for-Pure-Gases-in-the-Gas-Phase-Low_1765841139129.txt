@@ -1,0 +1,28 @@
+### Viscosity Formulas for Pure Gases in the Gas Phase (Low Pressure/Dilute Limit)
+
+For pure gases at low pressures (where viscosity is essentially independent of pressure), a common and accurate empirical correlation is **Sutherland's formula**:
+
+\[
+\mu = \mu_0 \left( \frac{T}{T_0} \right)^{3/2} \left( \frac{T_0 + S}{T + S} \right)
+\]
+
+where:
+- \(\mu\) is the dynamic viscosity (typically in μPa·s or micropoise),
+- \(T\) is the temperature in K,
+- \(\mu_0\) is the reference viscosity at reference temperature \(T_0\) (in K),
+- \(S\) is the Sutherland constant (in K).
+
+This formula is widely used for many gases, including those below, and is derived from kinetic theory approximations.
+
+#### Parameters for the Requested Gases
+
+| Gas   | \(\mu_0\) (μPa·s) | \(T_0\) (K) | Sutherland Constant \(S\) (K) | Notes/Validity |
+|-------|-------------------|-------------|--------------------------------|---------------|
+| **SO₂** (Sulfur Dioxide) | 12.4 | 293 | 416 | Common engineering reference (e.g., from Crane Technical Paper 410). Valid for typical gas-phase temperatures (above ~263 K to avoid condensation). |
+| **O₂** (Oxygen) | 20.18 | 293 | 139 | From standard tables (e.g., Crane, engineering references). |
+| **N₂** (Nitrogen) | 17.81 | 293 | 111 | From standard tables (e.g., Crane, engineering references). |
+
+#### Notes on SO₃ (Sulfur Trioxide)
+No standard Sutherland parameters or simple temperature-dependent formula were found in common engineering references for gaseous SO₃. SO₃ is less commonly handled in pure gas phase due to its reactivity, tendency to polymerize or form aerosols, and higher boiling point (~318 K). Viscosity data is scarce, and more complex correlations (e.g., from kinetic theory or ab initio calculations) may be needed for accurate values. For practical purposes, consult specialized databases like NIST REFPROP (if available for SO₃) or experimental literature.
+
+These formulas provide good accuracy (typically within a few percent) for temperatures from near room temperature up to several hundred K in the dilute gas regime. For higher pressures or near-critical conditions, density-dependent corrections are required (e.g., via Chapman-Enskog theory extensions). Units: 1 μPa·s = 10⁻⁶ Pa·s = 10⁻⁵ poise.

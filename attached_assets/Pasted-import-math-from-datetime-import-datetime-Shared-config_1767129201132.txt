@@ -1,0 +1,116 @@
+import math
+from datetime import datetime
+
+# Shared configuration
+CONFIG = {
+    "pipe_dia_in": 4.0,
+    "line_length_ft": 80.0,
+    "deltaP_nozzle_psi": 150.0,
+    "furnace_static_psi": 7.0,
+    "friction_factor": 0.018,
+    "K_minor_losses": 7.5,
+    "SG": 1.79,
+    "Cv_max": 548.0,
+    "barometric_psig": 0.0,
+    "temperature_f": 275.0,
+}
+
+
+class StaticSulfurSprayHydraulics:
+    """Static calculation to populate DCS material balance table (Option A: linear Cv vs travel)."""
+
+    def __init__(self):
+        self.g = 32.174
+        self.psi_per_ft = CONFIG["SG"] * 0.433
+        self.pipe_dia_ft = CONFIG["pipe_dia_in"] / 12.0
+        self.pipe_area_ft2 = math.pi * (self.pipe_dia_ft / 2.0) ** 2
+
+        # Cubic fit from Weir/Lewis curve
+        self.pump_coeffs = [-1.06594794e-05, -7.73601399e-04, -4.91452991e-02, 296.104895]
+
+    @staticmethod
+    def _clamp(x: float, lo: float, hi: float) -> float:
+        return max(lo, min(hi, x))
+
+    def calculate(self, flow_gpm: float, pit_level_ft: float = 7.0) -> dict:
+        # Allow true zero flow (no forced minimum). Keep non-negative.
+        Q = max(0.0, float(flow_gpm))
+
+        # Pump head from curve (safe at Q=0)
+        a, b, c, d = self.pump_coeffs
+        pump_head_ft = a * Q**3 + b * Q**2 + c * Q + d
+
+        # Friction loss
+        Q_cfs = Q / 448.831 if Q > 0.0 else 0.0
+        v_fps = Q_cfs / self.pipe_area_ft2 if Q > 0.0 else 0.0
+        h_f = (
+            (CONFIG["friction_factor"] * CONFIG["line_length_ft"] / self.pipe_dia_ft + CONFIG["K_minor_losses"])
+            * (v_fps**2)
+            / (2.0 * self.g)
+            if Q > 0.0
+            else 0.0
+        )
+
+        # Suction pressure
+        suction_psig = pit_level_ft * self.psi_per_ft + CONFIG["barometric_psig"]
+
+        # Pump outlet pressure
+        pump_discharge_psig = suction_psig + pump_head_ft * self.psi_per_ft - h_f * self.psi_per_ft
+
+        # Nozzle inlet pressure = furnace + nozzle ΔP
+        nozzle_inlet_psig = CONFIG["furnace_static_psi"] + CONFIG["deltaP_nozzle_psi"]
+
+        # Discharge line loss (pump outlet to valve inlet)
+        discharge_line_loss_psi = 2.0
+        valve_inlet_psig = pump_discharge_psig - discharge_line_loss_psi
+
+        # Valve ΔP (avoid divide-by-zero; physically, if <=0 there is no driving pressure)
+        dp_valve_psi = max(valve_inlet_psig - nozzle_inlet_psig, 0.0)
+
+        # Required Cv (liquid): Cv = Q * sqrt(SG / ΔP)
+        if Q <= 0.0 or dp_valve_psi <= 0.0:
+            Cv_req = 0.0
+        else:
+            Cv_req = Q * math.sqrt(CONFIG["SG"] / dp_valve_psi)
+
+        # Option A: linear valve assumption -> Cv/Cv_max = travel fraction
+        Cv_max = max(float(CONFIG["Cv_max"]), 1e-12)
+        pos_frac = Cv_req / Cv_max  # 0..1 (unclamped)
+        pos_frac = self._clamp(pos_frac, 0.0, 1.0)
+        pos_pct = 100.0 * pos_frac
+
+        # Back-calculate PID controller output (4–20 mA maps to 0–100% travel)
+        pid_output_mA = 4.0 + 16.0 * pos_frac
+        pid_output_mA = self._clamp(pid_output_mA, 4.0, 20.0)
+
+        # Convert pressures to psia (use configured barometric if you want; leaving as 14.7 for now)
+        pump_discharge_psia = pump_discharge_psig + 14.7
+        valve_inlet_psia = valve_inlet_psig + 14.7
+        nozzle_inlet_psia = nozzle_inlet_psig + 14.7
+
+        # Mass flow
+        mass_klb_hr = (Q * CONFIG["SG"] * 500.3) / 1000.0
+
+        return {
+            "1540-PI-2600_psia": round(pump_discharge_psia, 2),
+            "1540-FIC-2602_gpm": round(Q, 2),
+            "1540-PI-2604_psia": round(nozzle_inlet_psia, 2),
+            "x_H2SO4": 0.00,
+            "x_H2O": 0.00,
+            "x_Sulfur": 1.00,
+            "m_Total_klb_hr": round(mass_klb_hr, 2),
+            "Pressure_psia_pump": round(pump_discharge_psia, 2),
+            "Pressure_psia_valve": round(valve_inlet_psia, 2),
+            "Pressure_psia_nozzle": round(nozzle_inlet_psia, 2),
+            "Temp_F": CONFIG["temperature_f"],
+            "Flow_gpm_pump": round(Q, 2),
+            "Flow_gpm_valve": round(Q, 2),
+            "Flow_gpm_nozzle": round(Q, 2),
+            # Diagnostics
+            "pump_head_ft": round(pump_head_ft, 2),
+            "valve_position_pct": round(pos_pct, 4),
+            "Cv_used": round(Cv_req, 6),
+            "dP_valve_psi": round(dp_valve_psi, 2),
+            "pid_output_mA": round(pid_output_mA, 4),
+            "timestamp": datetime.now().isoformat(),
+        }

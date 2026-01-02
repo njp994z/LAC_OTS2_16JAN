@@ -1,0 +1,76 @@
+    def calculate(self, flow_gpm: float, pit_level_ft: float = 7.0) -> dict:
+        Q = max(0.1, flow_gpm)  # avoid div-by-zero
+
+        # Pump head
+        a, b, c, d = self.pump_coeffs
+        pump_head_ft = a * Q**3 + b * Q**2 + c * Q + d
+
+        # Friction loss
+        Q_cfs = Q / 448.831
+        v_fps = Q_cfs / self.pipe_area_ft2
+        h_f = (CONFIG['friction_factor'] * CONFIG['line_length_ft'] / self.pipe_dia_ft +
+               CONFIG['K_minor_losses']) * (v_fps**2) / (2 * self.g)
+
+        # Suction and discharge pressures
+        suction_psig = pit_level_ft * self.psi_per_ft + CONFIG['barometric_psig']
+        pump_discharge_psig = suction_psig + pump_head_ft * self.psi_per_ft - h_f * self.psi_per_ft
+
+        # Nozzle inlet pressure = furnace + nozzle ΔP
+        nozzle_inlet_psig = CONFIG['furnace_static_psi'] + CONFIG['deltaP_nozzle_psi']
+
+        # Valve inlet pressure = pump discharge (no significant line loss assumed)
+        valve_inlet_psig = pump_discharge_psig
+
+        # Valve ΔP
+        dp_valve_psi = max(valve_inlet_psig - nozzle_inlet_psig, 0.01)
+
+        # Required Cv
+        Cv_req = Q / math.sqrt(dp_valve_psi / CONFIG['SG'])
+
+        # Equal percentage valve position calculation
+        # Formula: % = 100 * (ln(Cv_req / Cv_max) / ln(R) + 1)
+        # where R is the rangeability (typical values 30–50 for globe valves,
+        # higher for plug valves with strong equal-% behavior)
+        R = 50.0  # ← adjust this value based on your valve data
+        if Cv_req >= CONFIG['Cv_max']:
+            pos_pct = 100.0
+        elif Cv_req <= 0:
+            pos_pct = 0.0
+        else:
+            pos_pct = 100 * (math.log(Cv_req / CONFIG['Cv_max']) / math.log(R) + 1)
+            pos_pct = max(0.0, min(100.0, pos_pct))
+
+        # Convert pressures to psia for table
+        pump_discharge_psia = pump_discharge_psig + 14.7
+        valve_inlet_psia = valve_inlet_psig + 14.7
+        nozzle_inlet_psia = nozzle_inlet_psig + 14.7
+
+        # Mass flow
+        mass_klb_hr = Q * CONFIG['SG'] * 500.3 / 1000
+
+        return {
+            "1540-PI-2600_psia": round(pump_discharge_psia, 2),
+            "1540-FIC-2602_gpm": round(Q, 2),
+            "1540-PI-2604_psia": round(nozzle_inlet_psia, 2),
+
+            "x_H2SO4": 0.00,
+            "x_H2O": 0.00,
+            "x_Sulfur": 1.00,
+            "m_Total_klb_hr": round(mass_klb_hr, 2),
+
+            "Pressure_psia_pump": round(pump_discharge_psia, 2),
+            "Pressure_psia_valve": round(valve_inlet_psia, 2),
+            "Pressure_psia_nozzle": round(nozzle_inlet_psia, 2),
+
+            "Temp_F": CONFIG['temperature_f'],
+            "Flow_gpm_pump": round(Q, 2),
+            "Flow_gpm_valve": round(Q, 2),
+            "Flow_gpm_nozzle": round(Q, 2),
+
+            # Additional outputs for debugging / display
+            "pump_head_ft": round(pump_head_ft, 2),
+            "valve_position_pct": round(pos_pct, 2),
+            "Cv_used": round(Cv_req, 2),
+            "dp_valve_psi": round(dp_valve_psi, 2),
+            "timestamp": datetime.now().isoformat()
+        }

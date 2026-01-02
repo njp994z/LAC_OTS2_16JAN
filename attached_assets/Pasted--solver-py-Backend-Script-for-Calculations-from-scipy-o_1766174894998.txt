@@ -1,0 +1,269 @@
+# solver.py - Backend Script for Calculations
+from scipy.optimize import fsolve  # Requires scipy installed
+import numpy as np
+
+def solve_system(fcv_pos, tcv_pos, acid_flow_final, cooler_k, pump_a, pump_b, pump_c,
+                 elevation_diff, pipe_dp, cv_fcv_max, cv_tcv_max, fluid_sg):
+    """
+    Solve the hydraulic system based on assumptions:
+    - Valves are equal-percentage for Cv vs. position.
+    - Flow in m³/h, pressure in bar.
+    - Cooler ΔP = cooler_k * flow_cooler**2
+    - Pump discharge P = pump_a - pump_b * total_flow - pump_c * total_flow**2
+    - dP_FCV calculated from Cv and flow.
+    - Elevation converted to pressure: ΔP_elev = elevation_diff * fluid_sg * 0.0981 (bar/m assuming water-like)
+    - Assumes P_final (outlet) is 0 or atmospheric for simplicity; adjust if needed.
+    """
+    if not (0 <= fcv_pos <= 1 and 0 <= tcv_pos <= 1):
+        raise ValueError("Valve positions must be between 0 and 1.")
+
+    # Convert elevation to pressure (bar, assuming g=9.81, rho=sg*1000 kg/m³)
+    dp_elev = elevation_diff * fluid_sg * 0.0981  # Approximate bar per meter
+
+    # Assume equal-percentage valves: Cv = Cv_max * (rangeability^(pos-1)) but simplify to linear for demo
+    # For better accuracy, use: rangeability = 50; Cv_tcv = cv_tcv_max * 50**(tcv_pos - 1)
+    # But here, assume linear Cv vs. pos for simplicity
+    cv_fcv = cv_fcv_max * fcv_pos
+    cv_tcv = cv_tcv_max * tcv_pos
+
+    # Total flow is acid_flow_final (fixed by flow control, but wait - actually in real, flow is result, but per convo it's input?)
+    # Per diagram, Acid Flow Final is input? But with pump curve, flow is determined by pump vs system.
+    # Clarification: If FCV is positioner, but convo says Acid Flow for Cooler dP=f(F), but assume total flow is given.
+    # If pump curve is given, and P_final, we can solve for flow, but to match, assume total_flow = acid_flow_final given.
+
+    total_flow = acid_flow_final
+
+    # Function to solve for dp_common (across bypass and cooler)
+    def equations(dp_common):
+        # Flow through bypass: standard valve equation flow = Cv * sqrt(dp / sg) (for liquids, in gpm? Wait units)
+        # Caution: Units matter! Assume Cv in m³/h / bar^0.5, common in metric.
+        flow_bypass = cv_tcv * np.sqrt(dp_common / fluid_sg)
+        flow_cooler = total_flow - flow_bypass
+        if flow_cooler < 0:
+            return 1e6  # Invalid
+        dp_cooler_calc = cooler_k * flow_cooler**2
+        return dp_cooler_calc - dp_common
+
+    # Solve for dp_common
+    dp_common_guess = 1.0  # bar
+    dp_common = fsolve(equations, dp_common_guess)[0]
+
+    flow_bypass = cv_tcv * np.sqrt(dp_common / fluid_sg)
+    flow_cooler = total_flow - flow_bypass
+
+    # Now, inlet pressure to bypass/cooler = P_CLR_in = pump discharge - dp_fcv? Wait, let's chain.
+    # From diagram: Pump -> FCV -> Split (byp + cooler) -> P_final
+
+    # Outlet pressure bypass & cooler: P_BYP_out = P_CLR_out = P_final + dp_elev + pipe_dp? Per eq 5.
+    # Eq5: P_BYP Out = P Cooler Out = P_FCV + elevation + Pipe dP  ? Wait, P_FCV is outlet of FCV?
+
+    # Clarify nomenclature from image:
+    # Pump -> P_in (pump discharge?) -> FCV -> P_final? Wait, image shows Pump -> Cooler/TCV -> FCV ? Wait.
+
+    # Looking back at image:
+    # Pump -> (P_in) -> Cooler (dp_CLR, Flow_CLR) / Flow_Byp -> TCV (dp TCV?) -> P_Byp_out / P_CLR_out -> FCV (dp FCV) -> P_final
+
+    # The FCV is DOWNSTREAM of the mixing.
+
+    # Oh, important: The diagram shows the FCV after the mixing junction, so the flow through FCV is total_flow, and P_final is after FCV.
+
+    # So order:
+    # Pump discharge pressure (output1) pushes total_flow through the parallel (bypass + cooler), then mixed flow through FCV to P_final.
+
+    # To correct:
+    # Assume P_final = 0 (atmospheric, or known backpressure).
+
+    # Then, P_out_byp_cooler = P_final + dp_FCV
+
+    # From eq4: Pipe dP+E ? But image has P_BYP Out = P Cooler Out = P_FCV + elevation + Pipe dP
+    # P_FCV is likely P after FCV, but confusing.
+
+    # Let's interpret equations from image:
+    # 1. Acid Pres. Final = f(Acid Flow Final)  -- P_final = f(flow_total)
+
+    # But what is Acid Pres. Final? Probably P_final after FCV.
+
+    # 2. dP FCV = f(Acid Flow Final, Acid Pressure Final, FCV Valve Position) -- yes, dp_fcv = flow^2 * sg / Cv^2
+
+    # 3. P_FCV in = P Acid Final - dP FCV   -- Wait, if P Acid Final is after FCV, then P_in_FCV = P_final + dp_FCV (flow direction)
+
+    # Yes, flow is from high to low pressure.
+
+    # 4. Pipe dP + E
+
+    # 5. P_BYP Out = P Cooler Out = P_FCV + elevation + Pipe dP  -- P_FCV is P_in_FCV ? Wait, P_FCV is outlet of FCV? No.
+
+    # The label is dP Final FCV, P_final after FCV.
+
+    # Assuming standard: Pump (high P) -> parallel cooler/bypass -> mixing -> pipe/elevation -> FCV -> low P_final.
+
+    # But in image, FCV is labeled with dP Final, and P_final after.
+
+    # To simplify, let's assume P_final is known (say 0), then work upstream.
+
+    # Eq1 suggests Acid Pres. Final = f(Acid Flow Final) -- perhaps P_final = f(flow), but that seems odd; perhaps it's the pump pressure = f(flow).
+
+    # Wait, eq1: Acid Pres. Final = f(Acid Flow Final) -- perhaps "Acid Pres. Final" is the pressure at the end, but likely it's the pump discharge = f(flow), from pump curve.
+
+    # Looking at output: 1. Pump Discharge Pressure -- yes, that's P_pump = pump curve f(total_flow)
+
+    # Then dP FCV = f(flow, P? , pos)
+
+    # But to make it work, let's assume P_final = 0 (or input), then P_out_byp_cooler = dp_FCV (since P_out = P_in_FCV - dp_FCV = 0 + dp_FCV? No.
+
+    # Flow: Pump -> parallel -> mixing -> FCV -> P_final =0
+
+    # So P_pump = dp_parallel + dp_FCV + dp_pipe_elev
+
+    # But dp_parallel = dp_common for byp and cooler
+
+    # And dp_FCV = flow_total^2 * sg / Cv_fcv^2
+
+    # And pump_p = pump_a - pump_b*flow - pump_c*flow**2
+
+    # So actually, if total_flow is not given, we solve for total_flow such that pump_p = dp_common + dp_fcv + dp_pipe + dp_elev
+
+    # But in the convo, Acid Flow Final is input, perhaps it's the desired flow, but since FCV is positioner @ t=i, the flow is result of position.
+
+    # The input is FCV Positioner @ t=i, TCV Positioner @ t=i, Equation for Cooler dP = f(F), Pump Curve, etc.
+
+    # No Acid Flow Final in inputs? Wait, input3. Acid Flow for Cooler dP = f(F) -- perhaps the f(F) is given, but not the flow.
+
+    # Input3. Acid Flow for Cooler dP = f(F) -- seems like typo, probably the equation f(F)
+
+    # To solve, since positions are fixed, flow is determined by the system balance.
+
+    # Yes, that's standard hydraulic calculation: with valve positions fixed, find the flows and pressures that balance the pump curve vs system curve.
+
+    # So, to correct, total_flow is unknown, we solve for it along with the split.
+
+    # Let's redefine the equations.
+
+    # Function to solve for total_flow and dp_common (2 vars)
+
+    def equations(vars):
+        total_flow, dp_common = vars
+
+        # Flow bypass = cv_tcv * sqrt(dp_common / sg)
+        flow_bypass = cv_tcv * np.sqrt(dp_common / fluid_sg)
+
+        # Flow cooler = total_flow - flow_bypass
+        flow_cooler = total_flow - flow_bypass
+
+        # dp_cooler = cooler_k * flow_cooler**2
+        dp_cooler = cooler_k * flow_cooler**2
+
+        eq1 = dp_cooler - dp_common  # Must equal
+
+        # dp_fcv = total_flow**2 / cv_fcv**2 * fluid_sg  (standard liquid valve eq: dp = (flow / Cv)**2 * sg
+        dp_fcv = (total_flow / cv_fcv)**2 * fluid_sg
+
+        # Total system dp = dp_common + dp_pipe + dp_elev + dp_fcv
+
+        # Pump discharge pressure = pump curve = pump_a - pump_b*total_flow - pump_c*total_flow**2
+
+        # Assuming P_final = 0, then pump_discharge_press = total_system_dp
+        total_dp = dp_common + pipe_dp + dp_elev + dp_fcv
+
+        eq2 = (pump_a - pump_b * total_flow - pump_c * total_flow**2) - total_dp
+
+        return [eq1, eq2]
+
+    # Initial guess
+    guess = [acid_flow_final, 1.0]  # Use provided acid_flow_final as guess for total_flow
+
+    solution = fsolve(equations, guess)
+
+    total_flow, dp_common = solution
+
+    flow_bypass = cv_tcv * np.sqrt(dp_common / fluid_sg)
+
+    flow_cooler = total_flow - flow_bypass
+
+    dp_fcv = (total_flow / cv_fcv)**2 * fluid_sg
+
+    pump_discharge_press = pump_a - pump_b * total_flow - pump_c * total_flow**2
+
+    # Inlet pressure to bypass & cooler: after pump, but before parallel? Wait, from diagram, pump -> parallel, so P_inlet = pump_discharge - 0 (assuming no dp before split)
+
+    p_inlet_byp_cooler = pump_discharge_press
+
+    # Outlet pressure bypass & cooler: p_out = p_inlet - dp_common
+
+    p_out_byp_cooler = p_inlet_byp_cooler - dp_common
+
+    # Note: If there is pipe/elev between mixing and FCV, then P_in_FCV = p_out - dp_pipe - dp_elev, then P_final = P_in_FCV - dp_fcv
+
+    # But per eq5: P_BYP Out = P Cooler Out = P_FCV + elevation + Pipe dP
+
+    # Assuming P_FCV is P_out_FCV = P_final
+
+    # So P_out_byp = P_final + dp_fcv + elevation + pipe_dp
+
+    # To match, perhaps the order is pump -> FCV -> split -> cooler/bypass -> P_final
+
+    # Looking at the image again: The diagram shows:
+
+    # Pump -> Flow Byp -> TCV -> P_Byp_out -> (arrow to FCV)
+
+    # Pump -> Cooler -> P_CLR_out -> (arrow to FCV)
+
+    # Then FCV -> P_final
+
+    # Yes, parallel is after pump, FCV is after mixing.
+
+    # So P_pump = dp_parallel + dp_fcv + dp_pipe + dp_elev + P_final
+
+    # If P_final =0, then P_pump = dp_common + dp_fcv + dp_pipe + dp_elev
+
+    # Yes, that's what I have.
+
+    # Inlet to bypass & cooler = P_pump (assuming no dp before split)
+
+    # Outlet = P_pump - dp_common
+
+    # Then P_in to FCV = P_out - dp_pipe - dp_elev (if pipe/elev between mixing and FCV)
+
+    # But in eq5: P_BYP Out = P Cooler Out = P_FCV + elevation + Pipe dP
+
+    # P_FCV is probably P_out_FCV = P_final
+
+    # So P_out = P_final + dp_fcv + elevation + pipe_dp
+
+    # Yes, so the dp_elev and pipe_dp are between mixing and FCV.
+
+    # To adjust: total_dp = dp_common + dp_fcv + pipe_dp + dp_elev
+
+    # Yes, same as I have.
+
+    # And if P_final = 0, p_out_byp_cooler = dp_fcv + pipe_dp + dp_elev
+
+    # p_inlet = p_out + dp_common
+
+    # pump_discharge = p_inlet
+
+    # Yes.
+
+    # For eq3: P_FCV in = P Acid Final - dP FCV  -- if P Acid Final is P_final =0, then P_FCV in = 0 - dp_fcv ? No, that would be negative.
+
+    # Flow drops pressure, so P_in_FCV = P_final + dp_fcv
+
+    # Yes, eq3: P_FCV in = P Acid. Final + dP FCV  (likely typo in image with -)
+
+    # Yes, probably typo, should be +.
+
+    # Anyway, my setup matches.
+
+    # Assume P_final =0 for calculation.
+
+    results = {
+        'pump_discharge_press': pump_discharge_press,
+        'dp_bypass': dp_common,
+        'dp_fcv': dp_fcv,
+        'p_inlet_byp_cooler': p_inlet_byp_cooler,
+        'p_out_byp_cooler': p_out_byp_cooler,
+        'flow_bypass': flow_bypass,
+        'flow_cooler': flow_cooler
+    }
+
+    return results

@@ -1,0 +1,543 @@
+from __future__ import annotations
+from typing import Dict, Any, List
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+
+from ui_inputs import DEFAULT_INPUTS, CatalyticReactorInputs
+from ui_outputs import ConverterUIOutput, ConverterSummary, PassSummary, PassPoint, XTPlotData
+
+from rk import (
+    ATM_TO_PSIA, INWC_PER_PSI,
+    psia_to_atm, bed_depth_ft_from_liters,
+    acfm_from_FT_TP_psia, velocity_ft_s,
+    CatalystProps, BedSegment, rk4_segment,
+    y_at_conversion, Xeq_at_T, eklund_rate
+)
+
+# =============================================================================
+# Unit conversions
+# =============================================================================
+def inwc_to_psi(inwc: float) -> float:
+    return inwc / INWC_PER_PSI
+
+def psi_to_inwc(psi: float) -> float:
+    return psi * INWC_PER_PSI
+
+def inlet_abs_psia(p_barr_atm: float, p_gauge_inwc: float) -> float:
+    return p_barr_atm * ATM_TO_PSIA + inwc_to_psi(p_gauge_inwc)
+
+def psia_to_inwc_gauge(P_abs_psia: float, p_barr_atm: float) -> float:
+    P_bar_psia = p_barr_atm * ATM_TO_PSIA
+    return psi_to_inwc(P_abs_psia - P_bar_psia)
+
+# =============================================================================
+# Gas properties in THIS file (Wilke μ + ideal gas ρ)
+# =============================================================================
+MW = {"SO2": 64.066, "SO3": 80.066, "O2": 31.999, "N2": 28.014}
+
+SUTHERLAND_PARAMS = {
+    "SO2": {"mu_0": 12.4,  "T_0": 293.0, "S": 416.0},
+    "SO3": {"mu_0": 12.4,  "T_0": 293.0, "S": 416.0},
+    "O2":  {"mu_0": 20.18, "T_0": 293.0, "S": 139.0},
+    "N2":  {"mu_0": 17.81, "T_0": 293.0, "S": 111.0},
+}
+
+UPA_S_TO_PA_S = 1e-6
+R_UNIV = 8.314462618  # J/(mol*K)
+
+def normalize_y(y: Dict[str, float]) -> Dict[str, float]:
+    s = sum(max(v, 0.0) for v in y.values())
+    if s <= 0:
+        raise ValueError("Invalid mole fractions: sum <= 0")
+    return {k: max(v, 0.0) / s for k, v in y.items()}
+
+def sutherland_mu_uPa_s(T_K: float, mu0_uPa_s: float, T0: float, S: float) -> float:
+    return mu0_uPa_s * (T_K / T0) ** 1.5 * ((T0 + S) / (T_K + S))
+
+def pure_mu_pa_s(species: str, T_C: float) -> float:
+    p = SUTHERLAND_PARAMS[species]
+    T_K = T_C + 273.15
+    return sutherland_mu_uPa_s(T_K, p["mu_0"], p["T_0"], p["S"]) * UPA_S_TO_PA_S
+
+def wilke_phi(mu_i: float, mu_j: float, Mi: float, Mj: float) -> float:
+    return (1.0 + math.sqrt(mu_i / mu_j) * (Mj / Mi) ** 0.25) ** 2 / (
+        math.sqrt(8.0) * math.sqrt(1.0 + Mi / Mj)
+    )
+
+def mu_wilke_pa_s(y: Dict[str, float], T_C: float) -> float:
+    x = normalize_y(y)
+    mu = {sp: pure_mu_pa_s(sp, T_C) for sp in x}
+    M  = {sp: MW[sp] for sp in x}
+
+    mu_mix = 0.0
+    for i, xi in x.items():
+        denom = 0.0
+        for j, xj in x.items():
+            denom += xj * wilke_phi(mu[i], mu[j], M[i], M[j])
+        mu_mix += xi * mu[i] / max(denom, 1e-30)
+    return mu_mix
+
+def mw_mix_kg_per_mol(y: Dict[str, float]) -> float:
+    x = normalize_y(y)
+    mw_g_mol = sum(x[sp] * MW[sp] for sp in x)
+    return mw_g_mol / 1000.0
+
+def rho_ideal_kg_m3(y: Dict[str, float], T_C: float, P_abs_psia: float) -> float:
+    T_K = T_C + 273.15
+    P_Pa = P_abs_psia * 6894.757293168
+    MWmix = mw_mix_kg_per_mol(y)
+    return (P_Pa * MWmix) / (R_UNIV * T_K)
+
+# =============================================================================
+# Catalyst database used by RK
+# =============================================================================
+CATALYST_DB: Dict[str, CatalystProps] = {
+    "Topsoe VK69": CatalystProps("Topsoe VK69", void_fraction=0.60, sphericity=0.75, diameter_mm=9.0,  bulk_density_kg_m3=800.0, activity_fresh=3.51),
+    "MECS Super Gear XLP-310": CatalystProps("MECS Super Gear XLP-310", void_fraction=0.50, sphericity=0.65, diameter_mm=12.5, bulk_density_kg_m3=815.0, activity_fresh=3.35),
+    "MECS GR330": CatalystProps("MECS GR330", void_fraction=0.55, sphericity=0.70, diameter_mm=11.0, bulk_density_kg_m3=865.0, activity_fresh=1.40),
+}
+
+# =============================================================================
+# Inlet composition
+# =============================================================================
+def inlet_y(inputs: CatalyticReactorInputs) -> Dict[str, float]:
+    y = {
+        "SO2": inputs.so2_percent / 100.0,
+        "SO3": inputs.so3_percent / 100.0,
+        "O2":  inputs.o2_percent / 100.0,
+        "N2":  inputs.n2_percent / 100.0,
+    }
+    return normalize_y(y)
+
+# =============================================================================
+# Diameter sizing (minimal)
+# =============================================================================
+def diameter_from_velocity(acfm: float, v_fpm: float) -> float:
+    area_ft2 = acfm / max(v_fpm, 1e-12)
+    return math.sqrt(4.0 * area_ft2 / math.pi)
+
+def compute_diameter_ft(inputs: CatalyticReactorInputs, P1_psia: float, FT0_lbmol_hr: float) -> float:
+    if inputs.sizing_mode == "fixed":
+        return inputs.converter_diameter
+    acfm = acfm_from_FT_TP_psia(max(FT0_lbmol_hr, 1e-6), inputs.pass1_inlet_temp, P1_psia)
+    return diameter_from_velocity(acfm, inputs.pass1_inlet_velocity)
+
+# =============================================================================
+# Maximum-rate curve helper
+# =============================================================================
+def max_rate_conversion_at_T(TC: float, P_atm: float, y0: Dict[str, float], a_eff: float = 1.0) -> float:
+    Xeq = Xeq_at_T(TC, P_atm, y0)
+    if Xeq <= 1e-12:
+        return 0.0
+
+    n = 250
+    X_grid = np.linspace(0.0, float(Xeq), n)
+
+    bestX = 0.0
+    bestR = -1.0
+    for X in X_grid:
+        r = eklund_rate(TC, float(X), P_atm, y0, a_eff)
+        if r > bestR:
+            bestR = r
+            bestX = float(X)
+    return bestX
+
+# =============================================================================
+# IPAT SO3 removal (Option A)
+# =============================================================================
+def apply_ipat_so3_removal(
+    y_out: Dict[str, float],
+    FT_lbmol_hr: float,
+    removal_percent: float
+) -> tuple[Dict[str, float], float]:
+    """
+    Remove a fraction of SO3 from the gas stream and renormalize remaining mole fractions.
+    Returns (new_y, new_FT).
+
+    Option A: remove SO3 only; SO2, O2, N2 flows unchanged.
+    """
+    rem = max(0.0, min(100.0, float(removal_percent))) / 100.0
+
+    y_out = normalize_y(y_out)
+    F_SO3 = FT_lbmol_hr * y_out["SO3"]
+    F_SO3_removed = rem * F_SO3
+
+    FT_new = max(1e-12, FT_lbmol_hr - F_SO3_removed)
+
+    # Remaining component flows
+    F_SO2 = FT_lbmol_hr * y_out["SO2"]
+    F_O2  = FT_lbmol_hr * y_out["O2"]
+    F_N2  = FT_lbmol_hr * y_out["N2"]
+    F_SO3_new = F_SO3 - F_SO3_removed
+
+    y_new = {
+        "SO2": F_SO2 / FT_new,
+        "O2":  F_O2  / FT_new,
+        "SO3": max(0.0, F_SO3_new / FT_new),
+        "N2":  F_N2  / FT_new,
+    }
+    return normalize_y(y_new), FT_new
+
+# =============================================================================
+# Main simulation
+# =============================================================================
+def run_converter(inputs: CatalyticReactorInputs) -> ConverterUIOutput:
+    # Pass inlet absolute pressures for each pass (psia)
+    P1 = inlet_abs_psia(inputs.p_barr, inputs.pass1_inlet_pres)
+    P2 = inlet_abs_psia(inputs.p_barr, inputs.pass2_inlet_pres)
+    P3 = inlet_abs_psia(inputs.p_barr, inputs.pass3_inlet_pres)
+    P4 = inlet_abs_psia(inputs.p_barr, inputs.pass4_inlet_pres)
+
+    # Basis (placeholder): replace with real flow later
+    FT0 = max(1.0, inputs.plant_rate)
+    y0 = inlet_y(inputs)
+
+    D_ft = compute_diameter_ft(inputs, P1, FT0)
+
+    # -----------------------------
+    # Run Passes 1-3 on inlet basis y0
+    # -----------------------------
+    segs_123: List[BedSegment] = [
+        BedSegment("Pass1-L1", CATALYST_DB[inputs.pass1_type1], inputs.pass1_liters1, inputs.pass1_activity1,
+                   inputs.pass1_inlet_temp, P1, FT0, y0, D_ft),
+        BedSegment("Pass1-L2", CATALYST_DB[inputs.pass1_type2], inputs.pass1_liters2, inputs.pass1_activity2,
+                   inputs.pass1_inlet_temp, P1, FT0, y0, D_ft),
+
+        BedSegment("Pass2", CATALYST_DB[inputs.pass2_type1], inputs.pass2_liters1, inputs.pass2_activity1,
+                   inputs.pass2_inlet_temp, P2, FT0, y0, D_ft),
+
+        BedSegment("Pass3", CATALYST_DB[inputs.pass3_type1], inputs.pass3_liters1, inputs.pass3_activity1,
+                   inputs.pass3_inlet_temp, P3, FT0, y0, D_ft),
+    ]
+
+    seg_results_123 = []
+    for seg in segs_123:
+        # layer 2 inherits outlet T,P from layer 1
+        if seg_results_123 and seg.name.endswith("-L2"):
+            _, prev_res = seg_results_123[-1]
+            seg.Tin_C = float(prev_res.T_C[-1])
+            seg.Pin_abs_psia = float(prev_res.P_psia[-1])
+
+        res = rk4_segment(seg, mu_wilke_pa_s, rho_ideal_kg_m3)
+        seg_results_123.append((seg, res))
+
+    # Overall conversion after Pass 3 (on original basis)
+    # Find last segment of pass 3
+    pass3_seg, pass3_res = seg_results_123[-1]
+    X3 = float(pass3_res.X[-1])  # bed conversion on basis y0
+    overall_X3 = X3  # since our RK basis was pass-1 inlet y0 from start
+
+    # Compute Pass 3 outlet composition (using y0 and overall_X3)
+    y3_out = y_at_conversion(y0, overall_X3)
+
+    # Apply IPAT removal AFTER pass 3
+    y4_in, FT4 = apply_ipat_so3_removal(y3_out, FT0, inputs.ipat_so3_removal)
+
+    # -----------------------------
+    # Run Pass 4 on NEW inlet basis (after SO3 removal)
+    # -----------------------------
+    segs_4: List[BedSegment] = [
+        BedSegment("Pass4-L1", CATALYST_DB[inputs.pass4_type1], inputs.pass4_liters1, inputs.pass4_activity1,
+                   inputs.pass4_inlet_temp, P4, FT4, y4_in, D_ft),
+        BedSegment("Pass4-L2", CATALYST_DB[inputs.pass4_type2], inputs.pass4_liters2, inputs.pass4_activity2,
+                   inputs.pass4_inlet_temp, P4, FT4, y4_in, D_ft),
+    ]
+
+    seg_results_4 = []
+    for seg in segs_4:
+        if seg_results_4 and seg.name.endswith("-L2"):
+            _, prev_res = seg_results_4[-1]
+            seg.Tin_C = float(prev_res.T_C[-1])
+            seg.Pin_abs_psia = float(prev_res.P_psia[-1])
+
+        res = rk4_segment(seg, mu_wilke_pa_s, rho_ideal_kg_m3)
+        seg_results_4.append((seg, res))
+
+    # Pass 4 adds additional conversion on the remaining SO2.
+    # We treat Pass 4 RK conversion X4 as "fraction of SO2 in y4_in converted".
+    pass4_last_seg, pass4_last_res = seg_results_4[-1]
+    X4 = float(pass4_last_res.X[-1])
+
+    # Convert that to additional overall conversion on original basis:
+    # remaining SO2 after pass3 (original basis) = (1 - overall_X3)
+    overall_X_out = overall_X3 + (1.0 - overall_X3) * X4
+
+    # -----------------------------
+    # Build pass summaries (5 points each) but Pass 4 points need mapping into "overall"
+    # -----------------------------
+    def sample_idxs(n: int) -> List[int]:
+        fracs = [0.0, 0.25, 0.50, 0.75, 1.0]
+        return [int(round(f*(n-1))) for f in fracs]
+
+    pass_summaries: List[PassSummary] = []
+
+    # Helper to create points for passes 1-3 (basis y0)
+    def make_pass_points_from_concat(
+        pass_number: int,
+        names: List[str],
+        y_basis: Dict[str, float],
+        FT_basis: float,
+        overall_in: float
+    ) -> tuple[List[PassPoint], float]:
+        # concat arrays
+        T_all, X_bed, P_all, Xeq_all = [], [], [], []
+        for k, nm in enumerate(names):
+            seg, r = next((s, rr) for (s, rr) in seg_results_123 if s.name == nm)
+            if k == 0:
+                T_all += r.T_C.tolist()
+                X_bed += r.X.tolist()
+                P_all += r.P_psia.tolist()
+                Xeq_all += r.Xeq.tolist()
+            else:
+                T_all += r.T_C[1:].tolist()
+                X_bed += r.X[1:].tolist()
+                P_all += r.P_psia[1:].tolist()
+                Xeq_all += r.Xeq[1:].tolist()
+
+        T_all = np.array(T_all)
+        X_bed = np.array(X_bed)
+        P_all = np.array(P_all)
+        Xeq_all = np.array(Xeq_all)
+
+        L_total_ft = sum(bed_depth_ft_from_liters(
+            next(s for (s, _) in seg_results_123 if s.name == nm).liters, D_ft
+        ) for nm in names)
+
+        pts: List[PassPoint] = []
+        for frac, idx in zip([0, 25, 50, 75, 100], sample_idxs(len(T_all))):
+            bedX = float(X_bed[idx])
+            overallX = overall_in + (1.0 - overall_in) * bedX
+            y_rep = y_at_conversion(y_basis, overallX)
+
+            Ppsia = float(P_all[idx])
+            acfm = acfm_from_FT_TP_psia(FT_basis, float(T_all[idx]), Ppsia)
+            vfts = velocity_ft_s(acfm, D_ft)
+
+            mu = mu_wilke_pa_s(y_rep, float(T_all[idx]))
+            rho = rho_ideal_kg_m3(y_rep, float(T_all[idx]), Ppsia)
+
+            pts.append(PassPoint(
+                bed_depth_pct=float(frac),
+                bed_depth_ft=float(L_total_ft * frac/100.0),
+                temp_c=float(T_all[idx]),
+
+                bed_conv_pct=100.0 * bedX,
+                overall_conv_pct=100.0 * overallX,
+                eq_conv_pct=100.0 * float(Xeq_all[idx]),
+
+                p_abs_psia=Ppsia,
+                p_gauge_inwc=psia_to_inwc_gauge(Ppsia, inputs.p_barr),
+
+                so2_pct=100.0 * y_rep["SO2"],
+                o2_pct=100.0 * y_rep["O2"],
+                so3_pct=100.0 * y_rep["SO3"],
+                n2_pct=100.0 * y_rep["N2"],
+
+                acfm=acfm,
+                v_ft_s=vfts,
+
+                mu_pa_s=mu,
+                rho_kg_m3=rho,
+            ))
+
+        overall_out = overall_in + (1.0 - overall_in) * float(X_bed[-1])
+        return pts, overall_out
+
+    overall_in = 0.0
+
+    # Pass 1 (two layers)
+    pts1, overall_in = make_pass_points_from_concat(1, ["Pass1-L1", "Pass1-L2"], y0, FT0, overall_in)
+    pass_summaries.append(PassSummary(1, pts1, outlet={
+        "outlet_temp_c": pts1[-1].temp_c,
+        "outlet_p_abs_psia": pts1[-1].p_abs_psia,
+        "outlet_p_gauge_inwc": pts1[-1].p_gauge_inwc,
+        "outlet_overall_conv_pct": pts1[-1].overall_conv_pct,
+    }))
+
+    # Pass 2
+    pts2, overall_in = make_pass_points_from_concat(2, ["Pass2"], y0, FT0, overall_in)
+    pass_summaries.append(PassSummary(2, pts2, outlet={
+        "outlet_temp_c": pts2[-1].temp_c,
+        "outlet_p_abs_psia": pts2[-1].p_abs_psia,
+        "outlet_p_gauge_inwc": pts2[-1].p_gauge_inwc,
+        "outlet_overall_conv_pct": pts2[-1].overall_conv_pct,
+    }))
+
+    # Pass 3
+    pts3, overall_in = make_pass_points_from_concat(3, ["Pass3"], y0, FT0, overall_in)
+    pass_summaries.append(PassSummary(3, pts3, outlet={
+        "outlet_temp_c": pts3[-1].temp_c,
+        "outlet_p_abs_psia": pts3[-1].p_abs_psia,
+        "outlet_p_gauge_inwc": pts3[-1].p_gauge_inwc,
+        "outlet_overall_conv_pct": pts3[-1].overall_conv_pct,
+        "ipat_so3_removal_pct": float(inputs.ipat_so3_removal),
+        "y_after_pass3": y3_out,
+        "y_after_ipat": y4_in,
+        "FT_after_ipat_lbmol_hr": FT4,
+    }))
+
+    # Pass 4 points: use RK data on basis y4_in but map to overall basis via:
+    # overallX = overall_X3 + (1-overall_X3)*X4_local
+    def make_pass4_points() -> List[PassPoint]:
+        # concat pass4 arrays
+        T_all, X_bed, P_all, Xeq_all = [], [], [], []
+        for k, (seg, r) in enumerate(seg_results_4):
+            if k == 0:
+                T_all += r.T_C.tolist()
+                X_bed += r.X.tolist()
+                P_all += r.P_psia.tolist()
+                Xeq_all += r.Xeq.tolist()
+            else:
+                T_all += r.T_C[1:].tolist()
+                X_bed += r.X[1:].tolist()
+                P_all += r.P_psia[1:].tolist()
+                Xeq_all += r.Xeq[1:].tolist()
+
+        T_all = np.array(T_all)
+        X_bed = np.array(X_bed)
+        P_all = np.array(P_all)
+        Xeq_all = np.array(Xeq_all)
+
+        L_total_ft = sum(bed_depth_ft_from_liters(seg.liters, D_ft) for seg, _ in seg_results_4)
+
+        pts: List[PassPoint] = []
+        for frac, idx in zip([0, 25, 50, 75, 100], sample_idxs(len(T_all))):
+            X4_local = float(X_bed[idx])
+            overallX = overall_X3 + (1.0 - overall_X3) * X4_local
+
+            # For display composition, we can show gas composition on the ORIGINAL basis
+            # (after total conversion). This uses y0 and overallX:
+            y_rep = y_at_conversion(y0, overallX)
+
+            Ppsia = float(P_all[idx])
+            acfm = acfm_from_FT_TP_psia(FT4, float(T_all[idx]), Ppsia)
+            vfts = velocity_ft_s(acfm, D_ft)
+
+            mu = mu_wilke_pa_s(y_rep, float(T_all[idx]))
+            rho = rho_ideal_kg_m3(y_rep, float(T_all[idx]), Ppsia)
+
+            pts.append(PassPoint(
+                bed_depth_pct=float(frac),
+                bed_depth_ft=float(L_total_ft * frac/100.0),
+                temp_c=float(T_all[idx]),
+
+                bed_conv_pct=100.0 * X4_local,
+                overall_conv_pct=100.0 * overallX,
+                eq_conv_pct=100.0 * float(Xeq_all[idx]),
+
+                p_abs_psia=Ppsia,
+                p_gauge_inwc=psia_to_inwc_gauge(Ppsia, inputs.p_barr),
+
+                so2_pct=100.0 * y_rep["SO2"],
+                o2_pct=100.0 * y_rep["O2"],
+                so3_pct=100.0 * y_rep["SO3"],
+                n2_pct=100.0 * y_rep["N2"],
+
+                acfm=acfm,
+                v_ft_s=vfts,
+
+                mu_pa_s=mu,
+                rho_kg_m3=rho,
+            ))
+        return pts
+
+    pts4 = make_pass4_points()
+    pass_summaries.append(PassSummary(4, pts4, outlet={
+        "outlet_temp_c": pts4[-1].temp_c,
+        "outlet_p_abs_psia": pts4[-1].p_abs_psia,
+        "outlet_p_gauge_inwc": pts4[-1].p_gauge_inwc,
+        "outlet_overall_conv_pct": pts4[-1].overall_conv_pct,
+    }))
+
+    # -----------------------------
+    # Operating line (2 points per pass + horizontal intercooling)
+    # -----------------------------
+    op_T: List[float] = []
+    op_X: List[float] = []
+
+    pass_inlet_T = [
+        inputs.pass1_inlet_temp,
+        inputs.pass2_inlet_temp,
+        inputs.pass3_inlet_temp,
+        inputs.pass4_inlet_temp,
+    ]
+
+    prev_out_X_pct = 0.0
+    for i, ps in enumerate(pass_summaries):
+        Tin = float(pass_inlet_T[i])
+        Xin = float(prev_out_X_pct)
+
+        Tout = float(ps.points[-1].temp_c)
+        Xout = float(ps.points[-1].overall_conv_pct)
+
+        op_T.extend([Tin, Tout])
+        op_X.extend([Xin, Xout])
+
+        if i < len(pass_summaries) - 1:
+            Tnext = float(pass_inlet_T[i + 1])
+            op_T.append(Tnext)
+            op_X.append(Xout)
+
+        prev_out_X_pct = Xout
+
+    # -----------------------------
+    # X-T curves for plotting (Celsius)
+    # Use y0 as the "reference" for equilibrium curve; Pass 4 behavior is shown by operating line.
+    # -----------------------------
+    Tgrid = np.linspace(300.0, 650.0, 200)
+    Pplot_atm = psia_to_atm(P1)
+
+    Xeq_pct = [100.0 * Xeq_at_T(float(TC), Pplot_atm, y0) for TC in Tgrid]
+    Xmr_pct = [100.0 * max_rate_conversion_at_T(float(TC), Pplot_atm, y0, a_eff=1.0) for TC in Tgrid]
+
+    xt_plot = XTPlotData(
+        T_C=Tgrid.tolist(),
+        Xeq_pct=Xeq_pct,
+        Xmr_pct=Xmr_pct,
+        operating_T_C=op_T,
+        operating_X_pct=op_X,
+    )
+
+    last_pt = pass_summaries[-1].points[-1]
+    converter_summary = ConverterSummary(
+        converter_diameter_ft=float(D_ft),
+        total_molar_flow_lbmol_hr=float(FT0),
+        overall_conv_pct=float(last_pt.overall_conv_pct),
+        outlet_temp_c=float(last_pt.temp_c),
+        outlet_p_abs_psia=float(last_pt.p_abs_psia),
+        outlet_p_gauge_inwc=float(last_pt.p_gauge_inwc),
+    )
+
+    return ConverterUIOutput(
+        converter=converter_summary,
+        passes=pass_summaries,
+        xt_plot=xt_plot,
+        debug={
+            "P1_psia": P1, "P2_psia": P2, "P3_psia": P3, "P4_psia": P4,
+            "y0": y0,
+            "y_after_pass3": y3_out,
+            "y_after_ipat": y4_in,
+            "FT0_lbmol_hr": FT0,
+            "FT4_after_ipat_lbmol_hr": FT4,
+            "note": "FT0 is still a placeholder mapping from plant_rate; replace with real flow basis later.",
+        }
+    )
+
+if __name__ == "__main__":
+    out = run_converter(DEFAULT_INPUTS)
+
+    print("\n=== Converter Summary ===")
+    print(out.converter)
+
+    # Optional: quick plot to verify
+    plt.figure(figsize=(9, 4.8))
+    plt.plot(out.xt_plot.T_C, out.xt_plot.Xeq_pct, linestyle="--", label="Equilibrium Line")
+    plt.plot(out.xt_plot.T_C, out.xt_plot.Xmr_pct, label="Maximum Rate Curve")
+    plt.plot(out.xt_plot.operating_T_C, out.xt_plot.operating_X_pct, label="Adiabatic Operating Line")
+    plt.xlabel("Temperature (°C)")
+    plt.ylabel("Conversion (%)")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

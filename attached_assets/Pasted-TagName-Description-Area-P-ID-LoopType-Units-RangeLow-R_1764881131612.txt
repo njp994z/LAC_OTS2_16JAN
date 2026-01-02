@@ -1,0 +1,22 @@
+TagName,Description,Area,P&ID,LoopType,Units,RangeLow,RangeHigh,TypicalSP,HH,H,L,LL,Mode,OutputTo,CascadeFrom,FailPos,KeyInterlocks,ControlPhilosophy,OnHold,Page
+1500-F-4244,AREA 1510 GROUP SAFETY SHOWER ALARM,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Group alarm from multiple shower flow switches,No,20
+1500-F-4240,AREA 1520 GROUP SAFETY SHOWER ALARM,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Group alarm from multiple shower flow switches,No,21
+1500-F-4242,AREA 1530 GROUP SAFETY SHOWER ALARM,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Group alarm from multiple shower flow switches,No,22
+1500-F-4042,AREA 1540 GROUP SAFETY SHOWER ALARM,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Group alarm from multiple shower flow switches,No,23
+1500-F-4044,AREA 1560 GROUP SAFETY SHOWER ALARM,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Group alarm from multiple shower flow switches,No,24
+1500-F-4040,AREA 1570 GROUP SAFETY SHOWER ALARM,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Group alarm from multiple shower flow switches,No,25
+1500-F-4002,TG BLDG SAFETY SHOWER (WATER TREAT CHEM),Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,26
+1500-F-4004,TG BLDG SAFETY SHOWER (AUX BOILER CHEM),Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,27
+1500-F-4006,ACC DEAERATOR (GRADE) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,28
+1500-F-4008,CONV SH/ECON AREA (GRADE) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,29
+1500-F-4010,MAIN COMPRESSOR AREA (GRADE) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,30
+1500-F-4012,SULFUR FURNACE (GRADE) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,31
+1500-F-4014,DEAERATOR (GRADE) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,32
+1500-F-4016,COOLING TOWER (CHEM DOSING) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,33
+1500-F-4026,ACID STORAGE (AT PUMPS) SAFETY SHOWER,Safety Showers,,DI,-,0,1,,,Alarm,,,None,None,None,None,Individual shower alarm,No,34
+1500-F-9802,PROPANE TO STARTUP BURNER,Startup Burner,,FIC,t/h,0,10,Operator,8,6,,,Auto,FV-9802,Operator,None,FC,Burner management healthy,Manual/auto propane flow to startup burner,No,58
+1500-F-9805,PROPANE TO AUX BOILER,Aux Boiler,,FIC,t/h,0,5,Operator,4,3,,,Auto,FV-9805,Operator,None,FC,Aux boiler in service,Propane flow to auxiliary boiler package,No,59
+1510-H-1003A,SULFUR UNLOADING PUMP,Sulfur Unloading,,HS,-,0,1,,,,,Auto,HS-1003A,Operator,None,-,High pit level auto-start,Lead unloading pump,No,60
+1510-H-1003B,SULFUR UNLOADING PUMP (STANDBY),Sulfur Unloading,,HS,-,0,1,,,,,Auto,HS-1003B,Operator,None,-,Auto-start on lead pump fail,Standby unloading pump,No,61
+1510-H-1004A,SULFUR FEED PUMP,Sulfur Feed,,HS,-,0,1,,,,,Auto,HS-1004A,Operator,None,-,,Lead sulfur feed pump to burner,No,62
+1510-H-1004B,SULFUR FEED PUMP (STANDBY),Sulfur Feed,,HS,-,0,1,,,,,Auto,HS-1004B,Operator,None,-,,Standby sulfur feed pump,No,63

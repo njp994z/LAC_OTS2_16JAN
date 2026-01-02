@@ -1,0 +1,31 @@
+**In Emerson DeltaV DCS, instrument blocks (such as Analog Input or AI blocks used for sensors like pressure indicators/PI) provide processed sensor data via key outputs: primarily the OUT parameter (scaled engineering units value) and its associated STATUS parameter.**
+
+**The STATUS output follows the Foundation Fieldbus (FF) model used across DeltaV function blocks, indicating data quality. It combines:**
+
+- **Primary quality**: Good, Uncertain, or Bad.
+- **Limit state** (for Good or Uncertain): Not Limited (default), Constant, Low Limited, or High Limited.
+- **Sub-status** (specific reasons, especially for Uncertain/Bad).
+
+**On faceplates or graphics (like your PI block showing "NO DATA"), statuses are visualized with colors/icons (green=Good, yellow=Uncertain, red=Bad) and text like "NO DATA" for Bad cases where no valid value is available.**
+
+### Possible STATUS Outputs
+Here's a comprehensive list based on DeltaV/FF standards, AI block behavior, and I/O channel conditions (e.g., 4-20 mA out-of-range, open wire, HART/Fieldbus issues). STATUS is configurable via options like "Bad if Limited" or "Uncertain if Man Mode."
+
+| Primary Quality | Limit State       | Sub-Status Examples                          | Common Triggers/Notes |
+|-----------------|-------------------|----------------------------------------------|-----------------------|
+| **Good**       | Not Limited      | N/A                                         | Normal operation, valid sensor signal (e.g., 4-20 mA in range). |
+| **Good**       | Constant         | N/A                                         | Output held steady (e.g., tracking). |
+| **Good**       | Low Limited      | N/A                                         | Value at/below low limit but valid. |
+| **Good**       | High Limited     | N/A                                         | Value at/above high limit but valid. |
+| **Uncertain**  | Not Limited      | Non-specific; Last Usable Value; Engineering Units Range Violation; Instrument Out of Calibration; Electromotive Force Too Low | Manual mode (if option set); minor signal issues; uses last good value. |
+| **Uncertain**  | Constant         | Last Usable Value (common)                  | Held value from prior good reading. |
+| **Uncertain**  | Low/High Limited | Non-specific                                | Limited but questionable validity. |
+| **Bad**        | N/A              | Non-specific; No Communication; Device Failure; Sensor Failure/I-O Failure; Out of Service; Block Configuration Error; Loop Check | Open/short circuit, >25 mA/<0 mA, comm loss, OOS mode, hardware fault → displays "NO DATA". |
+
+**Notes:**
+- **Numeric representation** (internal): Good (~128/0x80), Uncertain (~64/0x40), Bad (0).
+- AI block propagates channel status (from I/O card) to OUT/STATUS, modified by STATUS_OPTS (e.g., Bad if >110% or < -10%).
+- For your 1540PI5205 (likely AI-backed PI), "NO DATA" + red X indicates Bad status (e.g., wiring/comm issue).
+- Full details in DeltaV Books Online > Function Block Reference (AI block section) or Monitor/Control Software PDS.
+
+This covers native I/O, HART, and Fieldbus instruments. For custom blocks, statuses propagate similarly.

@@ -1,0 +1,32 @@
+1. Static Acid Plant Simulator  
+   Instantly generate precise heat and material balances using fixed inputs. Ideal for validating operator decisions and understanding steady-state plant performance.
+
+2. Dynamic Acid Plant Simulator  
+   Experience real-time process dynamics, including control loop response times. Master how setpoint changes propagate through the system and stabilize operations.
+
+3. Profit Maximizer & Operation Optimizer  
+   Harness Monte Carlo simulations to run thousands of scenarios, pinpointing the exact parameters that unlock peak profitability. Delivers data-driven, meta-optimal operating setpoints.
+
+4. Emergency Shutdown (ESD) Trainer  
+   High-fidelity interlock scenarios prepare operators to respond confidently during upsets and execute safe, rapid plant shutdowns.
+
+5. OTS Learning Hub  
+   Jump-start proficiency with bite-sized tutorials, walkthrough videos, and the complete OTS User Guide—everything needed to master the simulator.
+
+6. Daily Operations Playbook  
+   Follow SOPs with crystal-clear step-by-step videos, annotated photos, and fillable digital logs to run the plant smoothly shift after shift.
+
+7. Maintenance Mastery  
+   Extend asset life decades ahead using best-practice SOPs, video-guided procedures, and preventive checklists tailored for sulfuric acid plants.
+
+8. Capital Projects Accelerator  
+   Equip teams to scope, execute, and commission replacement equipment and upgrades that keep the plant reliable and future-proof.
+
+9. Safety First Academy  
+   Zero-incident training on hazard recognition, PPE protocols, emergency response, and safe work practices specific to sulfuric acid environments.
+
+10. Acid Plant Document Vault  
+    One-click access to every plant engineering design specification, equipment drawing, SOP, datasheet, and OEM manual—centralized, searchable, and version-controlled for flawless operations.
+
+11. Sulfuric Acid Technology Deep Dive  
+    SME-level modules to unpack the thermodynamics, reaction kinetics, metallurgy, and process engineering behind world-class acid production.

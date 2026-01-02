@@ -1,0 +1,49 @@
+{
+  "version": "DeltaV v15-Live 2025",
+  "updated": "2025-12-05",
+  "symbols": {
+    "NAV_DETAIL":          { "shape": "diamond",      "bg": "#0055A5", "fg": "#FFFFFF", "text": "→",  "title": "Open Detail Faceplate" },
+    "NAV_INFO":            { "shape": "square",       "bg": "#808080", "fg": "#FFFFFF", "text": "I",   "title": "Module Info / Help" },
+    "NAV_HELP":            { "shape": "square",       "bg": "#FFC800", "fg": "#000000", "text": "H",   "title": "Operator Notes / SOP" },
+    "NAV_CLOSE":           { "shape": "circle",       "bg": "#D00000", "fg": "#FFFFFF", "text": "X",   "title": "Close Faceplate" },
+    "NAV_APPLY":           { "shape": "circle",       "bg": "#00A000", "fg": "#FFFFFF", "text": "✓",   "title": "Confirm Change" },
+    "NAV_TUNE":            { "shape": "circle",       "bg": "#666666", "fg": "#FFFFFF", "text": "⚙",   "title": "Tuning Parameters" },
+
+    "MODE_AUTO":           { "shape": "rounded",      "bg": "#0055A5", "fg": "#FFFFFF", "text": "AUTO", "title": "Automatic" },
+    "MODE_MAN":            { "shape": "rounded",      "bg": "#FFC800", "fg": "#000000", "text": "MAN",  "title": "Manual" },
+    "MODE_CAS":            { "shape": "rounded",      "bg": "#00A000", "fg": "#FFFFFF", "text": "CAS",  "title": "Cascade" },
+    "MODE_RCAS":           { "shape": "rounded",      "bg": "#7030A0", "fg": "#FFFFFF", "text": "RCAS", "title": "Remote Cascade" },
+    "MODE_ROUT":           { "shape": "rounded",      "bg": "#7030A0", "fg": "#FFFFFF", "text": "ROUT", "title": "Remote Output" },
+    "MODE_LO":             { "shape": "rounded",      "bg": "#FF6A00", "fg": "#FFFFFF", "text": "LO",   "title": "Local Operator" },
+    "MODE_OOS":            { "shape": "rounded",      "bg": "#D00000", "fg": "#FFFFFF", "text": "OOS",  "title": "Out Of Service" },
+    "MODE_TRK":            { "shape": "rounded",      "bg": "#A0A0A0", "fg": "#FFFFFF", "text": "TRK",  "title": "Tracking" },
+
+    "ALARM_HIHI":          { "shape": "triangle-up",  "bg": "#FF0000", "fg": "#FFFFFF", "text": "!", "blink": true,  "title": "High-High Alarm" },
+    "ALARM_HI":            { "shape": "triangle-up",  "bg": "#FF5555", "fg": "#000000", "text": "!", "blink": false, "title": "High Alarm" },
+    "ALARM_LO":            { "shape": "triangle-down","bg": "#FFC800", "fg": "#000000", "text": "!", "blink": false, "title": "Low Alarm" },
+    "ALARM_LOLO":          { "shape": "triangle-down","bg": "#FF8C00", "fg": "#000000", "text": "!", "blink": true,  "title": "Low-Low Alarm" },
+    "ALARM_DEV":           { "shape": "diamond",      "bg": "#FFFFFF", "fg": "#000000", "text": "DV", "blink": true,  "title": "Deviation Alarm" },
+    "ALARM_BAD":           { "shape": "square",       "bg": "#0055A5", "fg": "#FFFFFF", "text": "?", "blink": true,  "title": "Bad Quality" },
+    "ALARM_NC":            { "shape": "circle",       "bg": "#808080", "fg": "#FFFFFF", "text": "Ø", "title": "No Communication" },
+    "ALARM_SHELVED":       { "shape": "hexagon",      "bg": "#7030A0", "fg": "#FFFFFF", "text": "⏰", "title": "Alarm Shelved" },
+
+    "STATUS_GOOD":         { "shape": "circle",       "bg": "#00A000", "fg": "#FFFFFF", "text": "✓", "title": "Normal" },
+    "STATUS_RUNNING":      { "shape": "propeller",     "bg": "#00A000", "fg": "#FFFFFF", "animate": "spin", "title": "Motor Running" },
+    "STATUS_STOPPED":      { "shape": "square",       "bg": "#D00000", "fg": "#FFFFFF", "text": "■", "title": "Stopped" },
+    "STATUS_OPEN":         { "shape": "valve-open",   "bg": "#00A000", "title": "Valve Open" },
+    "STATUS_CLOSED":       { "shape": "valve-closed", "bg": "#D00000", "title": "Valve Closed" },
+    "STATUS_MOVING":       { "shape": "valve",        "bg": "#FFC800", "animate": "pulse", "title": "Valve Moving" },
+
+    "INTERLOCK_ACTIVE":    { "shape": "diamond",      "bg": "#D00000", "fg": "#FFFFFF", "text": "X", "title": "Interlock Tripped" },
+    "PERMISSIVE_OK":       { "shape": "shield",       "bg": "#00A000", "fg": "#FFFFFF", "text": "✓", "title": "Permissive Satisfied" },
+
+    "BAR_ZERO":            { "shape": "line-vertical", "color": "#000000", "title": "0% Reference" },
+    "BAR_SP":              { "shape": "line-horizontal","color": "#FFFFFF", "title": "Setpoint Marker" },
+    "BAR_LIMITED":         { "shape": "hatch",        "color": "#FF0000", "title": "Output Limited" },
+
+    "BATCH_RUNNING":       { "shape": "play",         "bg": "#00A000", "title": "Phase Running" },
+    "BATCH_PAUSED":        { "shape": "pause",        "bg": "#FFC800", "title": "Phase Paused" },
+    "BATCH_ABORTED":       { "shape": "stop",         "bg": "#D00000", "title": "Phase Aborted" },
+    "TREND":               { "shape": "chart",        "bg": "#0055A5", "fg": "#FFFFFF", "text": "📈", "title": "Open Trend" }
+  }
+}

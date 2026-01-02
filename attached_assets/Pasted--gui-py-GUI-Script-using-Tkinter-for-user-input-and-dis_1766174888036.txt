@@ -1,0 +1,114 @@
+# gui.py - GUI Script using Tkinter for user input and display
+import tkinter as tk
+from tkinter import messagebox
+import solver  # Import the backend solver script
+
+def calculate():
+    try:
+        # Retrieve input values from GUI fields
+        fcv_pos = float(fcv_pos_entry.get())
+        tcv_pos = float(tcv_pos_entry.get())
+        acid_flow_final = float(acid_flow_final_entry.get())
+        cooler_k = float(cooler_k_entry.get())  # Assuming ΔP_cooler = k * flow**2
+        pump_a = float(pump_a_entry.get())  # Assuming pump curve P = a - b*flow - c*flow**2
+        pump_b = float(pump_b_entry.get())
+        pump_c = float(pump_c_entry.get())
+        elevation_diff = float(elevation_entry.get())
+        pipe_dp = float(pipe_dp_entry.get())  # Fixed pipe dP or function if needed
+        cv_fcv_max = float(cv_fcv_entry.get())  # Max Cv for FCV
+        cv_tcv_max = float(cv_tcv_entry.get())  # Max Cv for TCV
+        fluid_sg = float(sg_entry.get())  # Specific gravity for flow calculations
+
+        # Call backend solver
+        results = solver.solve_system(
+            fcv_pos=fcv_pos,
+            tcv_pos=tcv_pos,
+            acid_flow_final=acid_flow_final,
+            cooler_k=cooler_k,
+            pump_a=pump_a,
+            pump_b=pump_b,
+            pump_c=pump_c,
+            elevation_diff=elevation_diff,
+            pipe_dp=pipe_dp,
+            cv_fcv_max=cv_fcv_max,
+            cv_tcv_max=cv_tcv_max,
+            fluid_sg=fluid_sg
+        )
+
+        # Display results
+        output_text.delete(1.0, tk.END)
+        output_text.insert(tk.END, f"Pump Discharge Pressure: {results['pump_discharge_press']:.2f}\n")
+        output_text.insert(tk.END, f"dP Bypass (== dP Cooler): {results['dp_bypass']:.2f}\n")
+        output_text.insert(tk.END, f"dP FCV: {results['dp_fcv']:.2f}\n")
+        output_text.insert(tk.END, f"Inlet Pressure Bypass & Cooler: {results['p_inlet_byp_cooler']:.2f}\n")
+        output_text.insert(tk.END, f"Outlet Pressure Bypass & Cooler: {results['p_out_byp_cooler']:.2f}\n")
+        output_text.insert(tk.END, f"Flow Bypass: {results['flow_bypass']:.2f}\n")
+        output_text.insert(tk.END, f"Flow Cooler: {results['flow_cooler']:.2f}\n")
+
+    except ValueError as ve:
+        messagebox.showerror("Input Error", str(ve))
+    except Exception as e:
+        messagebox.showerror("Calculation Error", str(e))
+
+# Create GUI window
+root = tk.Tk()
+root.title("Acid Cooler Loop Calculator")
+
+# Input labels and entries
+tk.Label(root, text="FCV Position (0-1)").grid(row=0, column=0)
+fcv_pos_entry = tk.Entry(root)
+fcv_pos_entry.grid(row=0, column=1)
+
+tk.Label(root, text="TCV Position (0-1)").grid(row=1, column=0)
+tcv_pos_entry = tk.Entry(root)
+tcv_pos_entry.grid(row=1, column=1)
+
+tk.Label(root, text="Acid Flow Final (e.g., m³/h)").grid(row=2, column=0)
+acid_flow_final_entry = tk.Entry(root)
+acid_flow_final_entry.grid(row=2, column=1)
+
+tk.Label(root, text="Cooler K (ΔP = K * flow²)").grid(row=3, column=0)
+cooler_k_entry = tk.Entry(root)
+cooler_k_entry.grid(row=3, column=1)
+
+tk.Label(root, text="Pump Curve A (P = A - B*flow - C*flow²)").grid(row=4, column=0)
+pump_a_entry = tk.Entry(root)
+pump_a_entry.grid(row=4, column=1)
+
+tk.Label(root, text="Pump Curve B").grid(row=5, column=0)
+pump_b_entry = tk.Entry(root)
+pump_b_entry.grid(row=5, column=1)
+
+tk.Label(root, text="Pump Curve C").grid(row=6, column=0)
+pump_c_entry = tk.Entry(root)
+pump_c_entry.grid(row=6, column=1)
+
+tk.Label(root, text="Elevation Difference (m)").grid(row=7, column=0)
+elevation_entry = tk.Entry(root)
+elevation_entry.grid(row=7, column=1)
+
+tk.Label(root, text="Pipe dP (fixed, bar)").grid(row=8, column=0)
+pipe_dp_entry = tk.Entry(root)
+pipe_dp_entry.grid(row=8, column=1)
+
+tk.Label(root, text="CV Max FCV").grid(row=9, column=0)
+cv_fcv_entry = tk.Entry(root)
+cv_fcv_entry.grid(row=9, column=1)
+
+tk.Label(root, text="CV Max TCV").grid(row=10, column=0)
+cv_tcv_entry = tk.Entry(root)
+cv_tcv_entry.grid(row=10, column=1)
+
+tk.Label(root, text="Fluid SG").grid(row=11, column=0)
+sg_entry = tk.Entry(root)
+sg_entry.grid(row=11, column=1)
+
+# Calculate button
+calc_button = tk.Button(root, text="Calculate", command=calculate)
+calc_button.grid(row=12, column=0, columnspan=2)
+
+# Output text area
+output_text = tk.Text(root, height=10, width=50)
+output_text.grid(row=13, column=0, columnspan=2)
+
+root.mainloop()

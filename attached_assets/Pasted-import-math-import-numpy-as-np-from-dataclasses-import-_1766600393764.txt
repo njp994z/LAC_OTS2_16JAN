@@ -1,0 +1,116 @@
+import math
+import numpy as np
+from dataclasses import dataclass
+
+@dataclass
+class DynamicState:
+    time_s: float = 0.0
+    flow_gpm: float = 0.0
+    valve_pos_pct: float = 0.0
+    controller_output_pct: float = 0.0
+    integral_error: float = 0.0
+
+class DynamicSulfurSprayHydraulics:
+    """
+    Dynamic hydraulic model for sulfur control valve + spray nozzles.
+    """
+
+    def __init__(self, valve_tau_s=8.0, flow_tau_s=4.0, kp=1.2, ki=0.15, dt=0.5):
+        # Same params as static
+        self.rho_lb_per_gal = 1.79 * 8.34
+        self.SG = 1.79
+        self.g = 32.174
+        self.psi_per_ft_fluid = self.SG * 0.433
+
+        self.pipe_dia_in = 4.0
+        self.pipe_dia_ft = self.pipe_dia_in / 12.0
+        self.pipe_area_ft2 = math.pi * (self.pipe_dia_ft / 2) ** 2
+
+        self.pump_curve = {
+            'A': -3.07211889e-05,
+            'B': 0.00691057173,
+            'C': -1.59344684,
+            'D': 411.58557
+        }
+
+        self.line_length_ft = 80.0
+        self.K_minor_losses = 7.5
+        self.friction_factor = 0.018
+
+        self.deltaP_nozzle_psi = 150.0
+        self.furnace_static_psi = 5.0
+
+        self.Cv_max = 548.0
+        self.cv_points = np.array([0, 4.549, 12.169, 25.039, 548])
+        self.pos_points = np.array([0, 16.27, 23.4, 30.6, 100])
+
+        # Dynamics
+        self.tau_valve = valve_tau_s
+        self.tau_flow = flow_tau_s
+        self.kp = kp
+        self.ki = ki
+        self.dt = dt
+        self.state = DynamicState()
+
+    def gpm_to_cfs(self, gpm):
+        return gpm / 448.831
+
+    def get_cv_from_pos(self, pos_pct):
+        return np.interp(pos_pct, self.pos_points, self.cv_points)
+
+    def get_flow_from_cv(self, Cv, pit_level_ft):
+        Q = 80.0  # initial guess
+        for _ in range(50):
+            A, B, C, D = self.pump_curve.values()
+            pump_head_ft = A * Q**3 + B * Q**2 + C * Q + D
+
+            Q_cfs = self.gpm_to_cfs(Q)
+            velocity_fps = Q_cfs / self.pipe_area_ft2
+            h_f = (self.friction_factor * self.line_length_ft / self.pipe_dia_ft + self.K_minor_losses) * (velocity_fps**2) / (2 * self.g)
+
+            P_i = (pit_level_ft + pump_head_ft - h_f) * self.psi_per_ft_fluid
+            P_o = self.furnace_static_psi + self.deltaP_nozzle_psi
+            dP = max(P_i - P_o, 0.0)
+
+            Q_new = Cv * math.sqrt(dP / self.SG)
+
+            if abs(Q_new - Q) < 0.1:
+                break
+            Q = 0.7 * Q + 0.3 * Q_new  # relaxation
+
+        return Q
+
+    def step(self, setpoint_gpm, pit_level_ft):
+        self.state.time_s += self.dt
+
+        # PID controller
+        error = setpoint_gpm - self.state.flow_gpm
+        self.state.integral_error += error * self.dt
+        U = self.kp * error + self.ki * self.state.integral_error
+        U = max(0.0, min(100.0, U))
+        self.state.controller_output_pct = U
+
+        # Valve position lag
+        d_pos = (U - self.state.valve_pos_pct) / self.tau_valve * self.dt
+        self.state.valve_pos_pct += d_pos
+        self.state.valve_pos_pct = max(0.0, min(100.0, self.state.valve_pos_pct))
+
+        # Calculate flow from current position
+        Cv = self.get_cv_from_pos(self.state.valve_pos_pct)
+        target_flow = self.get_flow_from_cv(Cv, pit_level_ft)
+
+        # Flow lag
+        d_flow = (target_flow - self.state.flow_gpm) / self.tau_flow * self.dt
+        self.state.flow_gpm += d_flow
+
+        return {
+            "time_s": round(self.state.time_s, 1),
+            "setpoint_gpm": setpoint_gpm,
+            "flow_gpm": round(self.state.flow_gpm, 2),
+            "valve_position_pct": round(self.state.valve_pos_pct, 2),
+            "controller_output_pct": round(self.state.controller_output_pct, 2),
+            "pit_level_ft": pit_level_ft
+        }
+
+    def reset(self):
+        self.state = DynamicState()

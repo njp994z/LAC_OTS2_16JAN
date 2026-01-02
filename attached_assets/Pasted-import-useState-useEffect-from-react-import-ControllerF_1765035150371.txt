@@ -1,0 +1,142 @@
+import { useState, useEffect } from 'react';
+import { ControllerFaceplate } from '@/components/faceplate/ControllerFaceplate';
+import { defaultControllerData, type ControllerData } from '@/types/controller';
+import { cn } from '@/lib/utils';
+
+const Index = () => {
+  const [controllerData, setControllerData] = useState<ControllerData>(defaultControllerData);
+  
+  // Simulate backend updates for demo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setControllerData(prev => ({
+        ...prev,
+        pv: parseFloat((prev.pv + (Math.random() - 0.5) * 2).toFixed(1)),
+        out: parseFloat(Math.max(0, Math.min(100, prev.out + (Math.random() - 0.5) * 1)).toFixed(1)),
+      }));
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Expose update function for Python integration
+  useEffect(() => {
+    (window as any).updateControllerData = (newData: Partial<ControllerData>) => {
+      setControllerData(prev => ({ ...prev, ...newData }));
+    };
+    
+    return () => {
+      delete (window as any).updateControllerData;
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-background p-8">
+      {/* Background pattern */}
+      <div className="fixed inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 1px, transparent 0)`,
+          backgroundSize: '32px 32px'
+        }} />
+      </div>
+
+      <div className="relative max-w-4xl mx-auto">
+        <header className="mb-10 text-center">
+          <h1 className={cn(
+            "text-3xl font-bold mb-3 tracking-tight",
+            "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent"
+          )}>
+            Delta V Controller Faceplate
+          </h1>
+          <p className="text-muted-foreground text-sm tracking-wide">
+            Industrial HMI Interface • Python Backend Ready
+          </p>
+        </header>
+
+        <main className="flex flex-col items-center gap-10">
+          {/* Main Faceplate Display */}
+          <ControllerFaceplate 
+            data={controllerData}
+            onSelect={() => console.log('Faceplate selected:', controllerData.instrumentTag)}
+          />
+
+          {/* Demo Controls */}
+          <div className={cn(
+            "bg-card/80 backdrop-blur-sm p-5 rounded-xl border border-border/50",
+            "shadow-xl w-full max-w-md"
+          )}>
+            <h2 className="font-semibold text-sm text-card-foreground mb-4 tracking-wide">
+              Demo Controls
+              <span className="text-muted-foreground font-normal ml-2">(Simulating Python Backend)</span>
+            </h2>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setControllerData(prev => ({ ...prev, alarmActive: !prev.alarmActive }))}
+                className={cn(
+                  "px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  "bg-gradient-to-br from-red-500/20 to-red-600/10",
+                  "text-red-400 border border-red-500/30",
+                  "hover:from-red-500/30 hover:to-red-600/20 hover:border-red-500/50",
+                  "active:scale-95"
+                )}
+              >
+                Toggle Alarm
+              </button>
+              
+              <button
+                onClick={() => setControllerData(prev => ({ 
+                  ...prev, 
+                  mode: prev.mode === 'AUTO' ? 'MAN' : prev.mode === 'MAN' ? 'CAS' : 'AUTO'
+                }))}
+                className={cn(
+                  "px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  "bg-gradient-to-br from-primary/20 to-cyan-600/10",
+                  "text-primary border border-primary/30",
+                  "hover:from-primary/30 hover:to-cyan-600/20 hover:border-primary/50",
+                  "active:scale-95"
+                )}
+              >
+                Cycle Mode
+              </button>
+              
+              <button
+                onClick={() => setControllerData(prev => ({ ...prev, manualMode: !prev.manualMode }))}
+                className={cn(
+                  "px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  "bg-gradient-to-br from-blue-500/20 to-blue-600/10",
+                  "text-blue-400 border border-blue-500/30",
+                  "hover:from-blue-500/30 hover:to-blue-600/20 hover:border-blue-500/50",
+                  "active:scale-95"
+                )}
+              >
+                Toggle Manual
+              </button>
+              
+              <button
+                onClick={() => setControllerData(prev => ({ ...prev, interlockActive: !prev.interlockActive }))}
+                className={cn(
+                  "px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  "bg-gradient-to-br from-amber-500/20 to-amber-600/10",
+                  "text-amber-400 border border-amber-500/30",
+                  "hover:from-amber-500/30 hover:to-amber-600/20 hover:border-amber-500/50",
+                  "active:scale-95"
+                )}
+              >
+                Toggle Interlock
+              </button>
+            </div>
+            
+            <div className="mt-5 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground font-mono bg-faceplate-shadow/30 p-2 rounded">
+                window.updateControllerData({'{'} pv: 85.5, sp: 90 {'}'})
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Index;

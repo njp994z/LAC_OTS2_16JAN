@@ -1,0 +1,63 @@
+import math
+from datetime import datetime
+import numpy as np
+
+# Shared configuration (updated from GUI)
+CONFIG = {
+    'pipe_dia_in': 4.0,
+    'line_length_ft': 80.0,
+    'deltaP_nozzle_psi': 150.0,
+    'furnace_static_psi': 5.0,
+    'friction_factor': 0.018,
+    'K_minor_losses': 7.5,
+    'SG': 1.79,
+    'Cv_max': 548.0,
+    'barometric_psig': 0.0,           # gauge pressure at pump suction
+    'R_equal_percent': 168.3          # refitted from valve data
+}
+
+class StaticSulfurSprayHydraulics:
+    """Static calculation for molten sulfur flow control"""
+
+    def __init__(self):
+        self.g = 32.174
+        self.psi_per_ft = CONFIG['SG'] * 0.433
+        self.pipe_dia_ft = CONFIG['pipe_dia_in'] / 12.0
+        self.pipe_area_ft2 = math.pi * (self.pipe_dia_ft / 2) ** 2
+
+        # Updated cubic fit from Weir/Lewis datasheet (shutoff ~296 ft, rated 273.8 ft @ 39.9 gpm)
+        self.pump_coeffs = [-0.000242, 0.01785, -0.837, 296.0]  # aQ³ + bQ² + cQ + d
+
+    def calculate(self, flow_gpm: float, pit_level_ft: float = 7.0) -> dict:
+        Q = max(0.1, flow_gpm)  # avoid div-by-zero
+
+        a, b, c, d = self.pump_coeffs
+        pump_head_ft = a * Q**3 + b * Q**2 + c * Q + d
+
+        Q_cfs = Q / 448.831
+        v_fps = Q_cfs / self.pipe_area_ft2
+        h_f = (CONFIG['friction_factor'] * CONFIG['line_length_ft'] / self.pipe_dia_ft +
+               CONFIG['K_minor_losses']) * (v_fps**2) / (2 * self.g)
+
+        suction_psig = pit_level_ft * self.psi_per_ft + CONFIG['barometric_psig']
+        p_valve_in_psig = suction_psig + pump_head_ft * self.psi_per_ft - h_f * self.psi_per_ft
+        p_downstream_psig = CONFIG['furnace_static_psi'] + CONFIG['deltaP_nozzle_psi']
+        dp_valve_psi = max(p_valve_in_psig - p_downstream_psig, 0.01)
+
+        Cv_req = Q / math.sqrt(dp_valve_psi / CONFIG['SG'])
+
+        # Equal percentage position calculation
+        R = CONFIG['R_equal_percent']
+        pos_pct = 100 * (math.log(Cv_req / CONFIG['Cv_max']) / math.log(1 / R) + 1)
+        pos_pct = max(0.0, min(100.0, pos_pct))
+
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "flow_gpm": round(Q, 2),
+            "pump_head_ft": round(pump_head_ft, 2),
+            "valve_inlet_psig": round(p_valve_in_psig, 2),
+            "dp_valve_psi": round(dp_valve_psi, 2),
+            "valve_position_pct": round(pos_pct, 2),
+            "Cv_used": round(Cv_req, 2),
+            "pit_level_ft": pit_level_ft
+        }

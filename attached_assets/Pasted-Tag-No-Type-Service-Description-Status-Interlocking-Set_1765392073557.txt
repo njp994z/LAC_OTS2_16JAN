@@ -1,0 +1,47 @@
+Tag No.,Type,Service Description,Status,Interlocking,Set Point,1540-XV-4080 fully open (1540-ZI-4080),Acid flow over drying tower not low (1540-FSLL-5870),Bypass Protection Signal available (1560-XS-6202),ESD Push Button Triggered (1510-HS-9512),ESD Push Button Triggered (1520-HS-9010B),Field shutdown hand switch disengaged (1540-ESD-1094),High-High Caustic Tank Level (1510-LSHH-9516),High-High Condensate Conductivity Alarm (1560-ASHH-7512) w/ 1 min delay,High-High Effluent Storage Tank Level (1520-LSHH-4705),High-High Liquid Level in Recovery Tank (1560-LSHH-2901),High-High Oxidation Air Discharge Pressure to Tail Gas Scrubber (1530-PSHH-0652),High-High Oxidation Air Temperature to Tail Gas Scrubber (1530-TSHH-0654),High-High STG last stage pressure (1560-PIA-6317),High-High STG last stage temperature (1560-TIA-6232),High-High Start-Up Acid Storage Tank Level (1570-LSHH-9009),High-High Sulfur Storage Tank Level (1510-LSHH-1201),High-High Sulfur Storage Tank Level (1510-LSHH-1202),High-High Temperature on Raw Water header (TIT-3102),Hydrogen vents closed (1540-ZAC-5805, 1540-ZAC-6630, 1540-ZAC-8421),Inlet guide vanes closed (1540-ZAC-4030),Lithium Processing Plant gives ready/permission signal (tag TBD),Low Caustic Supply Header Pressure (1510-PSL-9529),Low-Low Acid Flow (1570-FSLL-8815),Low-Low Acid Flow (1570-FSLL-8816),Low-Low Booster Pump Discharge Pressure (1560-PSLL-7524),Low-Low Caustic Tank Level (1510-LSLL-9516),Low-Low Condensate Tank Water Level (1560-LSLL-9320),Low-Low Cooling Tower Basin Level (1550-LSLL-2215),Low-Low Deaerator (1540-PV-002) Level (1540-LSLL-6842),Low-Low Effluent Storage Tank Level (1520-LSLL-4705),Low-Low Effluent Storage Tank pH (1520-ASHH-4711),Low-Low Fin Fan Cooling Water Expansion Tank Level (1520-LSLL-1401),Low-Low HP Boiler Feedwater Discharge Pressure (1540-PSLL-7000),Low-Low Recovery Tank Water Level (1560-LSLL-2901),Low-Low Sulfur Vapor Scrubber Liquid Level (1510-LSLL-1524),Low-Low Tail Gas Scrubber Level (1530-LSLL-0013),Low-Low Tail Gas Scrubber Level (1530-LSLL-0014),Low-Low Treated Water Storage Level (1560-LSLL-3401),Truck Not Grounded (1570-XI-9540)
+I-21,Interlock,Shut down HP Boiler Feedwater Pumps (1540-PP-017, 1540-PP-018),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0
+I-23,Interlock,Autostart standby HP Boiler Feedwater Pumps (1540-PP-017, 1540-PP-018),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
+I-60,Interlock,"Shut down Tail Gas Scrubber circulation pumps (1530-PP-001 & 1530-PP-002) and close effluent valve (1530-DCV-0006)",OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0
+I-65,Interlock,Shut down Oxidation Air Blowers (1530-GB-001 & 1530-GB-002),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-101,Interlock,Stop Liquid Sulfur Unloading Pumps (1510-PP-001 & 1510-PP-002),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-110,Interlock,Stop Fin Fan Cooling Water Pumps (1520-PP-008, -009, -010),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
+I-111,Interlock,Stop Acid Plant Cooling Tower Pumps (1550-PP-001, -002),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0
+I-112,Interlock,Stop Treated Water Export Pumps (1560-PP-006, -007, -010, -011),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0
+I-115,Interlock,Start Bypass Condensate Pump (1560-PP-019 or -020),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0
+I-121,Interlock,"Open Off-Spec Condensate Return Valve (1560-XV-7513), close return-to-BFW valve (1560-XV-7514)",OFF,Trip,,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-123,Interlock,Bypass condensate to water treatment sump via TCVs,OFF,Trip,,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-124,Interlock,Stop Water Recovery Pumps (1560-PP-021 & -022),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+I-126,Interlock,"Stop ACC Condensate Pumps (1560-PP-015 & -016) and Bypass Condensate Pumps (1560-PP-019 & -020)",OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0
+I-140,Interlock,Close Sulfur Vapor Scrubber Blowdown Valve (1510-XV-1512),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0
+I-153A,Interlock,Stop Acid Heater (1570-ZE-003),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-154A,Interlock,Stop Acid Heater (1570-ZE-004),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-155,Interlock,"Close LCV-6240, unloading valves HV-9011/HV-9010, stop unloading pump PP-007",OFF,Trip,,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-156,Interlock,Product Acid Transfer Pumps (1570-PP-001 & -002) start,OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1
+I-160,Interlock,Stop Caustic Unloading Pump (1510-PP-003),OFF,Trip,,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1
+I-161,Interlock,Stop Caustic Feed Pumps (1510-PP-007 & -008),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0
+I-162,Interlock,Start Standby Caustic Feed Pump (1510-PP-007 or -008),OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0
+I-167,Interlock,Stop SA1 Effluent Feed Pumps (1520-PP-023 & -024) and agitator 1520-AG-003,OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0
+I-169,Interlock,"Stop Transloading Effluent Unloading Pump (1520-PP-021), set XV-4711 to manual 0%",OFF,Trip,,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-170,Interlock,Close Control Valve 1520-LCV-4705,OFF,Trip,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-324,Interlock,STG Bypass Protection: force PCV-6672 to manual 0%,OFF,Trip,,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-2,Permissive,Main Compressor Start Permissive,OFF,Permissive,,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0
+I-200,Permissive,20% Caustic Solution Export to Lithium Processing Plant (On/Off Valve 1510-XV-9530) Permissive,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-201,Permissive,Treated Water Export Pumps 1560-PP-006 and 1560-PP-007 (Standby) Start Permissive,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-202,Permissive,150 psig Steam Export Station (1560-PCV-6011) Lithium Processing Plant Start Permissive,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-302,Permissive,Permissive to Open Bypass Desuperheater Valve 1560-PCV-6672,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-307,Permissive,Air Cooled Condenser (ACC) Unit Fan Start Up Permissives,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-308,Permissive,Permissive for Air Cooled Condenser (ACC) Start-Up Sequence,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-317,Permissive,Permissive for Opening ACC Holding Skid Air Suction Valve (V1560-9340),OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-320,Permissive,Permissive for Opening Exhaust Steam Line Vacuum Breaker (V1560-9308),OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-323,Permissive,Permissive for Put Fan Assembly Function Group in Auto,OFF,Permissive,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-63A,On-Off,Open Raw Water to Oxidation Blowers Air Sparger On/Off Valve (1530-XV-0656),OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-63B,On-Off,Close Raw Water to Oxidation Blowers Air Sparger On/Off Valve (1530-XV-0656),OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-103,On-Off,Start/Stop Liquid Sulfur Unloading Pumps 1510-PP-001 and 1510-PP-002,OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-117,On-Off,Start/Stop Water Treatment Area Sump Pumps 1560-PP-012 or 1560-PP-013,OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-119,On-Off,Start Boiler Blowdown Sump Pump 1540-PP-001,OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-120,On-Off,Stop Boiler Blowdown Sump Pump 1540-PP-001,OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-122,On-Off,Open/Close Deaerator Overflow Valve 1540-XV-6843,OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-137,On-Off,Start and Stop Acid Plant Cooling Tower Fan (1550-CT-001),OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-142,On-Off,Sulfur Vapor Scrubber (1510-PK-007) Flush Sequence Starts,OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-153B,On-Off,Start/Stop Acid Heater (1570-ZE-003),OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+I-154B,On-Off,Start/Stop Acid Heater (1570-ZE-003),OFF,On-Off,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

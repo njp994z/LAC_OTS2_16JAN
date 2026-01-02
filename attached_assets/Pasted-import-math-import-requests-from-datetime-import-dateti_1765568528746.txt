@@ -1,0 +1,243 @@
+import math
+import requests
+from datetime import datetime, timedelta, timezone
+
+# ============================================
+# CONFIGURATION
+# ============================================
+
+ZIP_CODE = "89445"
+COUNTRY_CODE = "US"  # 2-letter, used for geocoding filter when possible
+
+# How many past days of recent data to ask for in the forecast API
+PAST_DAYS = 1  # 1 = yesterday + today
+
+# Historical range (ERA5 reanalysis)
+HISTORICAL_DAYS_BACK = 7  # last 7 days from now
+
+
+# ============================================
+# PSYCHROMETRIC HELPERS
+# ============================================
+
+def saturation_vapor_pressure_kpa(temp_c: float) -> float:
+    """
+    Saturation vapor pressure (kPa) using a common Magnus-type formula.
+    Valid for typical ambient conditions.
+    """
+    return 0.6108 * math.exp((17.27 * temp_c) / (temp_c + 237.3))
+
+
+def psychrometrics_from_temp_rh_pressure(temp_c: float, rh_percent: float, pressure_hpa: float):
+    """
+    Given dry-bulb temperature (°C), relative humidity (%), and pressure (hPa),
+    calculate basic psychrometric properties:
+
+    - humidity_ratio (kg water / kg dry air)
+    - specific_enthalpy (kJ / kg dry air)
+    - vapor_pressure_kpa
+    - saturation_vapor_pressure_kpa
+    """
+    rh = rh_percent / 100.0
+    p_kpa = pressure_hpa / 10.0  # 1 hPa = 0.1 kPa
+
+    es = saturation_vapor_pressure_kpa(temp_c)   # saturation vapor pressure (kPa)
+    e = rh * es                                  # actual vapor pressure (kPa)
+
+    # Humidity ratio (kg water / kg dry air)
+    humidity_ratio = 0.62198 * e / (p_kpa - e)
+
+    # Moist air enthalpy (kJ/kg dry air)
+    specific_enthalpy = 1.006 * temp_c + humidity_ratio * (2501 + 1.86 * temp_c)
+
+    return {
+        "humidity_ratio": humidity_ratio,
+        "specific_enthalpy": specific_enthalpy,
+        "vapor_pressure_kpa": e,
+        "saturation_vapor_pressure_kpa": es,
+    }
+
+
+# ============================================
+# OPEN-METEO API CALLS
+# ============================================
+
+def get_coords_for_zip(zip_code: str, country_code: str = "US"):
+    """
+    Use Open-Meteo's geocoding API to convert a ZIP/postal code to (lat, lon, name).
+    No API key required.
+    """
+    url = "https://geocoding-api.open-meteo.com/v1/search"
+    params = {
+        "name": zip_code,
+        "count": 1,
+        "language": "en",
+        "format": "json",
+        "country": country_code,
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Geocoding request failed: {resp.status_code} {resp.text}")
+
+    data = resp.json()
+    results = data.get("results", [])
+    if not results:
+        raise RuntimeError(f"No location found for ZIP {zip_code}, country {country_code}")
+
+    loc = results[0]
+    lat = loc["latitude"]
+    lon = loc["longitude"]
+    name = loc.get("name", "Unknown")
+    print(f"Geocoding: {zip_code} -> {name} (lat={lat}, lon={lon})")
+    return lat, lon, name
+
+
+def get_recent_and_forecast(lat: float, lon: float, past_days: int = 1):
+    """
+    Get recent and short-term forecast data (hourly) from Open-Meteo.
+    Includes temperature, RH, dew point, and pressure.
+    """
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": "temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl",
+        "past_days": past_days,
+        "forecast_days": 1,
+        "timezone": "auto",
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Forecast request failed: {resp.status_code} {resp.text}")
+    return resp.json()
+
+
+def get_historical_era5(lat: float, lon: float, start_date: str, end_date: str):
+    """
+    Get historical ERA5 data (hourly) from Open-Meteo archive API.
+    Dates are strings "YYYY-MM-DD".
+    """
+    url = "https://archive-api.open-meteo.com/v1/era5"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "start_date": start_date,
+        "end_date": end_date,
+        "hourly": "temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl",
+        "timezone": "auto",
+    }
+    resp = requests.get(url, params=params, timeout=10)
+    if resp.status_code != 200:
+        raise RuntimeError(f"ERA5 request failed: {resp.status_code} {resp.text}")
+    return resp.json()
+
+
+# ============================================
+# PRINTING / DEMOS
+# ============================================
+
+def print_latest_from_hourly(hourly: dict):
+    """
+    Take the latest hourly entry from Open-Meteo and compute psychrometrics.
+    """
+    times = hourly.get("time", [])
+    temps = hourly.get("temperature_2m", [])
+    rhs = hourly.get("relative_humidity_2m", [])
+    dew_points = hourly.get("dew_point_2m", [])
+    pressures = hourly.get("pressure_msl", [])
+
+    if not times:
+        print("No hourly data found.")
+        return
+
+    idx = len(times) - 1  # last point = most recent
+    t_str = times[idx]
+    temp = temps[idx]
+    rh = rhs[idx]
+    dew_point = dew_points[idx]
+    pressure = pressures[idx]
+
+    psychro = psychrometrics_from_temp_rh_pressure(temp, rh, pressure)
+
+    print("\n=== MOST RECENT HOURLY CONDITIONS (Open-Meteo forecast API) ===")
+    print(f"Time (local)      : {t_str}")
+    print(f"Temperature       : {temp:.2f} °C")
+    print(f"Relative Humidity : {rh:.1f} %")
+    print(f"Dew Point         : {dew_point:.2f} °C")
+    print(f"Pressure          : {pressure:.1f} hPa")
+
+    print("\nDerived:")
+    print(f"Humidity ratio    : {psychro['humidity_ratio']:.6f} kg/kg dry air")
+    print(f"Vapor pressure    : {psychro['vapor_pressure_kpa']:.4f} kPa")
+    print(f"Enthalpy          : {psychro['specific_enthalpy']:.2f} kJ/kg dry air")
+
+
+def print_sample_historical(hourly: dict):
+    """
+    Print psychrometric info for the first and last hour in a historical ERA5 request.
+    """
+    times = hourly.get("time", [])
+    temps = hourly.get("temperature_2m", [])
+    rhs = hourly.get("relative_humidity_2m", [])
+    dew_points = hourly.get("dew_point_2m", [])
+    pressures = hourly.get("pressure_msl", [])
+
+    if not times:
+        print("No historical hourly data found.")
+        return
+
+    def print_idx(label: str, idx: int):
+        t_str = times[idx]
+        temp = temps[idx]
+        rh = rhs[idx]
+        dew_point = dew_points[idx]
+        pressure = pressures[idx]
+
+        psychro = psychrometrics_from_temp_rh_pressure(temp, rh, pressure)
+
+        print(f"\n--- {label} ---")
+        print(f"Time (local)      : {t_str}")
+        print(f"Temperature       : {temp:.2f} °C")
+        print(f"Relative Humidity : {rh:.1f} %")
+        print(f"Dew Point         : {dew_point:.2f} °C")
+        print(f"Pressure          : {pressure:.1f} hPa")
+        print("Derived:")
+        print(f"  Humidity ratio  : {psychro['humidity_ratio']:.6f} kg/kg dry air")
+        print(f"  Vapor pressure  : {psychro['vapor_pressure_kpa']:.4f} kPa")
+        print(f"  Enthalpy        : {psychro['specific_enthalpy']:.2f} kJ/kg dry air")
+
+    print("\n=== HISTORICAL ERA5 SNAPSHOT ===")
+    print_idx("Earliest hour in range", 0)
+    print_idx("Latest hour in range", len(times) - 1)
+
+
+# ============================================
+# MAIN
+# ============================================
+
+def main():
+    # 1. ZIP -> lat/lon using Open-Meteo geocoding
+    lat, lon, name = get_coords_for_zip(ZIP_CODE, COUNTRY_CODE)
+    print(f"Using coordinates for {name}: lat={lat}, lon={lon}")
+
+    # 2. Get recent + near-term forecast hourly data
+    forecast_json = get_recent_and_forecast(lat, lon, past_days=PAST_DAYS)
+    hourly_forecast = forecast_json.get("hourly", {})
+    print_latest_from_hourly(hourly_forecast)
+
+    # 3. Get historical ERA5 data for last N days
+    end_date = datetime.now(timezone.utc).date()
+    start_date = end_date - timedelta(days=HISTORICAL_DAYS_BACK)
+
+    print(f"\nRequesting ERA5 historical data from {start_date} to {end_date}...")
+    era5_json = get_historical_era5(lat, lon, start_date.isoformat(), end_date.isoformat())
+    hourly_era5 = era5_json.get("hourly", {})
+    print_sample_historical(hourly_era5)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print("\n[ERROR]")
+        print(e)
