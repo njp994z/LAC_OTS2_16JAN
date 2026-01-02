@@ -39,18 +39,18 @@ const TemperatureControllerFaceplates = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/controller-5823", label: "1520-T-5823 DT SA Inlet Temperature Controller" },
-            { to: "/controller-6722", label: "1520-T-6722 IPAT SA Inlet Temperature Controller" },
-            { to: "/controller", label: "1520-T-6622 FAT SA Inlet Temperature Controller" },
-            { to: "/controller-4828", label: "1540-T-4828 Pass 2 Inlet Temperature Controller" },
-            { to: "/controller-5220", label: "1540-T-5220 Pass 3 Inlet Temperature Controller" },
-            { to: "/controller-5224", label: "1540-T-5224 Pass 4 Inlet Temperature Controller" },
-            { to: "/controller-7221", label: "1540-T-7221 Econ 4A Outlet Temperature Controller" },
-            { to: "/controller-7224", label: "1540-T-7224 Econ 3B Outlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-5823", label: "1520-T-5823 DT SA Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-6722", label: "1520-T-6722 IPAT SA Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-6622", label: "1520-T-6622 FAT SA Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-4828", label: "1540-T-4828 Pass 2 Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-5220", label: "1540-T-5220 Pass 3 Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-5224", label: "1540-T-5224 Pass 4 Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-7221", label: "1540-T-7221 Econ 4A Outlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller-7224", label: "1540-T-7224 Econ 3B Outlet Temperature Controller" },
           ].map(({ to, label }) => (
             <Link
               key={to}
-              to={to}
+              href={to}
               className={cn(
                 "group inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300",
                 "bg-gradient-to-br from-primary/20 to-cyan-600/10",

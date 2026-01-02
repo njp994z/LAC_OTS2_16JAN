@@ -304,6 +304,7 @@ function Router() {
       
       {/* Delta-V Controller Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/temperature-controller" component={TemperatureControllerFaceplates} />
+      <Route path="/settings/controller-outputs/faceplates/controller-6622" component={ControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/level-controller" component={LevelControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/concentration-controller" component={ConcentrationControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/flow-controller" component={FlowControllerFaceplate} />
