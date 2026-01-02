@@ -22,7 +22,7 @@ const ValveFaceplatePage = () => {
       <div className="relative max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/"
+          href="/settings/controller-outputs/faceplates/home-screen"
           className={cn(
             "inline-flex items-center gap-2 mb-6 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
             "text-muted-foreground hover:text-foreground",
@@ -49,7 +49,7 @@ const ValveFaceplatePage = () => {
           {valveTypes.map((valve) => (
             <Link
               key={valve.id}
-              to={`/valve/${valve.id}`}
+              href={`/settings/controller-outputs/faceplates/valve-blocks/${valve.id}`}
               className={cn(
                 "w-full max-w-md px-6 py-4 rounded-xl font-semibold text-center transition-all duration-200",
                 "bg-[#1e40af] hover:bg-[#1d4ed8] text-white",

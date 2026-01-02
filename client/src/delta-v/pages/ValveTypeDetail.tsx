@@ -89,7 +89,7 @@ const ValveTypeDetail = () => {
             {flowControlValves.map((fcv) => (
               <Link
                 key={fcv.id}
-                to={`/valve/flow-control/${fcv.id}`}
+                href={`/settings/controller-outputs/faceplates/valve-blocks/flow-control/${fcv.id}`}
                 className={cn(
                   "group flex items-center justify-between p-4 rounded-lg transition-all duration-200",
                   "bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40",
@@ -106,7 +106,7 @@ const ValveTypeDetail = () => {
             {tempControlValves.map((tcv) => (
               <Link
                 key={tcv.id}
-                to={`/valve/temperature-control/${tcv.id}`}
+                href={`/settings/controller-outputs/faceplates/valve-blocks/temperature-control/${tcv.id}`}
                 className={cn(
                   "group flex items-center justify-between p-4 rounded-lg transition-all duration-200",
                   "bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40",
@@ -123,7 +123,7 @@ const ValveTypeDetail = () => {
             {handControlValves.map((hcv) => (
               <Link
                 key={hcv.id}
-                to={hcv.id === '1540-hcv-4282' ? '/jug-valve' : hcv.id === '1540-hcv-4281' ? '/jug-valve-positioner' : `/valve/hand-control/${hcv.id}`}
+                href={hcv.id === '1540-hcv-4282' ? '/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282' : hcv.id === '1540-hcv-4281' ? '/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4281' : `/settings/controller-outputs/faceplates/valve-blocks/hand-control/${hcv.id}`}
                 className={cn(
                   "group flex items-center justify-between p-4 rounded-lg transition-all duration-200",
                   "bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40",
