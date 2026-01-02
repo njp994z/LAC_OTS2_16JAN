@@ -3,10 +3,10 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 
 const sensorCategories = [
-  { name: 'Temperature Sensors', path: '/temperature-sensors' },
-  { name: 'Pressure Sensors', path: '/pressure-sensors' },
-  { name: 'Level Sensors', path: '/level-sensors' },
-  { name: 'Position Sensors', path: '/position-sensors' },
+  { name: 'Temperature Sensors', path: '/settings/controller-outputs/faceplates/temperature-sensors' },
+  { name: 'Pressure Sensors', path: '/settings/controller-outputs/faceplates/pressure-sensors' },
+  { name: 'Level Sensors', path: '/settings/controller-outputs/faceplates/level-sensors' },
+  { name: 'Position Sensors', path: '/settings/controller-outputs/faceplates/position-sensors' },
 ];
 
 const SensorFaceplatePage = () => {
@@ -23,7 +23,7 @@ const SensorFaceplatePage = () => {
       <div className="relative max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/"
+          href="/settings/controller-outputs/faceplates"
           className={cn(
             "inline-flex items-center gap-2 mb-6 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
             "text-muted-foreground hover:text-foreground",
@@ -31,7 +31,7 @@ const SensorFaceplatePage = () => {
           )}
         >
           <ArrowLeft size={18} />
-          Back
+          Back to Faceplates
         </Link>
 
         <header className="mb-10 text-center">
@@ -50,7 +50,7 @@ const SensorFaceplatePage = () => {
           {sensorCategories.map((category) => (
             <Link
               key={category.path}
-              to={category.path}
+              href={category.path}
               className={cn(
                 "w-64 py-3 px-6 text-center font-medium rounded-lg transition-all duration-200",
                 "bg-cyan-400 text-white border-2 border-cyan-500",
