@@ -350,6 +350,7 @@ function Router() {
       
       {/* Delta-V Temperature Sensor Detail Pages */}
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821" component={TempSensor5821Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-main" component={TempSensor5821Main} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3a" component={TempSensor5821Faceplate3A} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3b" component={TempSensor5821Faceplate3B} />

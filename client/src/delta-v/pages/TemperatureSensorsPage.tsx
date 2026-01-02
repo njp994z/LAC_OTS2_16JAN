@@ -35,7 +35,7 @@ const TemperatureSensorsPage = () => {
 
       <div className="relative max-w-4xl mx-auto">
         <Link
-          to="/settings/controller-outputs/faceplates/sensor-blocks"
+          href="/settings/controller-outputs/faceplates/sensor-blocks"
           className={cn(
             "inline-flex items-center gap-2 mb-6 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
             "text-muted-foreground hover:text-foreground",
@@ -62,7 +62,13 @@ const TemperatureSensorsPage = () => {
           {temperatureSensors.map((sensor) => (
             <Link
               key={sensor.tag}
-              to={sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A' ? `/temp-sensor/${sensor.tag}` : `/temp-sensor/${sensor.tag}`}
+              href={
+                sensor.tag === '1520-TI-5821' 
+                  ? '/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821'
+                  : sensor.tag === '1540-TI-4200A'
+                  ? '/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A'
+                  : `/settings/controller-outputs/faceplates/temp-sensor/${sensor.tag}`
+              }
               className={cn(
                 "group relative flex flex-col items-center justify-center p-6 rounded-xl transition-all duration-300",
                 "bg-card/30 backdrop-blur-sm border border-border/50",
