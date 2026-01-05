@@ -9,8 +9,8 @@ type ButtonVariant = "default" | "warning" | "destructive";
 const scenarios = [
   {
     id: 1,
-    name: "Normal Operations",
-    description: "Learn how operational parameters are inter-related and understand steady-state.",
+    name: "Static Plant Operations",
+    description: "Learn the inter-relations between each of the Process Variables (PV) when the acid plant operates in a Static Mode where the Set Points (SP) are always equal to the PVs.",
     difficulty: "Beginner",
     status: "available",
     icon: CheckCircle2,
