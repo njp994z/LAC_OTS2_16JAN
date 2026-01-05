@@ -1200,6 +1200,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setSh1bSize({ width: sh1b.width, height: sh1b.height });
     }
     
+    // Industrial Filter
+    const industrialFilter = positionMap.get('industrial_filter');
+    if (industrialFilter) {
+      setFilterPosition({ x: industrialFilter.x, y: industrialFilter.y });
+      setFilterSize({ width: industrialFilter.width, height: industrialFilter.height });
+    }
+    
     // Dashed lines
     const dashedLine1 = positionMap.get('dashed_line_1');
     if (dashedLine1) {
@@ -1267,6 +1274,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'sh4a', positionX: Math.round(sh4aPosition.x), positionY: Math.round(sh4aPosition.y), width: sh4aSize.width, height: sh4aSize.height, rotation: 0 },
         { elementId: 'ec3b', positionX: Math.round(ec3bPosition.x), positionY: Math.round(ec3bPosition.y), width: ec3bSize.width, height: ec3bSize.height, rotation: 0 },
         { elementId: 'sh1b', positionX: Math.round(sh1bPosition.x), positionY: Math.round(sh1bPosition.y), width: sh1bSize.width, height: sh1bSize.height, rotation: 0 },
+        { elementId: 'industrial_filter', positionX: Math.round(filterPosition.x), positionY: Math.round(filterPosition.y), width: filterSize.width, height: filterSize.height, rotation: 0 },
         { elementId: 'dashed_line_1', positionX: Math.round(dashedLine1Position.x), positionY: Math.round(dashedLine1Position.y), width: dashedLine1Size.width, height: dashedLine1Size.height, rotation: dashedLine1Rotation },
         { elementId: 'dashed_line_2', positionX: Math.round(dashedLine2Position.x), positionY: Math.round(dashedLine2Position.y), width: dashedLine2Size.width, height: dashedLine2Size.height, rotation: dashedLine2Rotation },
         { elementId: 'dashed_line_3', positionX: Math.round(dashedLine3Position.x), positionY: Math.round(dashedLine3Position.y), width: dashedLine3Size.width, height: dashedLine3Size.height, rotation: dashedLine3Rotation },
