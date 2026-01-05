@@ -1,6 +1,6 @@
-import { users, processTags, catalystParameters, converterCases, processVariables, sulfurProcessNodes, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SulfurProcessNode, type InsertSulfurProcessNode } from "@shared/schema";
+import { users, processTags, catalystParameters, converterCases, processVariables, sulfurProcessNodes, homescreenLayout, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -42,6 +42,10 @@ export interface IStorage {
   // Sulfur Process Nodes
   getSulfurProcessNodes(simulationType: string): Promise<SulfurProcessNode[]>;
   upsertSulfurProcessNodes(simulationType: string, nodes: InsertSulfurProcessNode[]): Promise<SulfurProcessNode[]>;
+  
+  // Homescreen Layout
+  getHomescreenLayout(screenId: string): Promise<HomescreenLayout[]>;
+  upsertHomescreenLayout(screenId: string, layouts: Partial<InsertHomescreenLayout>[]): Promise<HomescreenLayout[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -237,6 +241,55 @@ export class DatabaseStorage implements IStorage {
     await db.delete(sulfurProcessNodes).where(eq(sulfurProcessNodes.simulationType, simulationType));
     if (nodes.length === 0) return [];
     const results = await db.insert(sulfurProcessNodes).values(nodes).returning();
+    return results;
+  }
+
+  // Homescreen Layout methods
+  async getHomescreenLayout(screenId: string): Promise<HomescreenLayout[]> {
+    return await db.select().from(homescreenLayout).where(eq(homescreenLayout.screenId, screenId));
+  }
+
+  async upsertHomescreenLayout(screenId: string, layouts: Partial<InsertHomescreenLayout>[]): Promise<HomescreenLayout[]> {
+    // For each layout item, update if exists or insert new
+    const results: HomescreenLayout[] = [];
+    for (const layout of layouts) {
+      // Find existing by screenId and elementId
+      const existing = await db.select().from(homescreenLayout)
+        .where(and(
+          eq(homescreenLayout.screenId, screenId),
+          eq(homescreenLayout.elementId, layout.elementId || '')
+        ));
+      
+      if (existing.length > 0) {
+        // Update existing
+        const [updated] = await db.update(homescreenLayout)
+          .set({
+            positionX: layout.positionX ?? 0,
+            positionY: layout.positionY ?? 0,
+            width: layout.width ?? 100,
+            height: layout.height ?? 100,
+            rotation: layout.rotation ?? 0,
+            updatedAt: new Date(),
+          })
+          .where(eq(homescreenLayout.id, existing[0].id))
+          .returning();
+        results.push(updated);
+      } else {
+        // Insert new
+        const [inserted] = await db.insert(homescreenLayout)
+          .values({
+            screenId,
+            elementId: layout.elementId || '',
+            positionX: layout.positionX ?? 0,
+            positionY: layout.positionY ?? 0,
+            width: layout.width ?? 100,
+            height: layout.height ?? 100,
+            rotation: layout.rotation ?? 0,
+          })
+          .returning();
+        results.push(inserted);
+      }
+    }
     return results;
   }
 }

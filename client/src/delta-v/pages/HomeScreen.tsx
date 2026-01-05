@@ -1,6 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Rnd } from "react-rnd";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import AlarmBanner from "@/delta-v/components/faceplate/AlarmBanner";
 import furnaceWhbImg from "@assets/delta-v/icons/furnace-whb.png";
 import blueArrowImg from "@assets/delta-v/icons/blue-arrow.png";
@@ -1037,13 +1039,256 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     UNIT: whbHandControllerConfig.UNIT || 'U-505',
   };
 
+  // Fetch saved layout positions from database
+  const { data: layoutData, isLoading: isLoadingLayout } = useQuery<{ layouts: Array<{
+    elementId: string;
+    positionX: number;
+    positionY: number;
+    width: number;
+    height: number;
+    rotation: number;
+  }> }>({
+    queryKey: ['/api/homescreen-layout/L1'],
+  });
+
+  // Apply loaded positions to state when data arrives
+  useEffect(() => {
+    if (!layoutData?.layouts || layoutData.layouts.length === 0) return;
+    
+    const positionMap = new Map<string, { x: number; y: number; width: number; height: number; rotation: number }>();
+    layoutData.layouts.forEach((item) => {
+      positionMap.set(item.elementId, {
+        x: item.positionX,
+        y: item.positionY,
+        width: item.width,
+        height: item.height,
+        rotation: item.rotation || 0,
+      });
+    });
+
+    // Apply positions to equipment
+    const furnace = positionMap.get('furnace');
+    if (furnace) {
+      setFurnacePosition({ x: furnace.x, y: furnace.y });
+      setFurnaceSize({ width: furnace.width, height: furnace.height });
+    }
+    
+    const compressor = positionMap.get('compressor');
+    if (compressor) {
+      setCompressorPosition({ x: compressor.x, y: compressor.y });
+      setCompressorSize({ width: compressor.width, height: compressor.height });
+    }
+    
+    const sulfurFlow = positionMap.get('sulfur_flow');
+    if (sulfurFlow) {
+      setSulfurFlowPosition({ x: sulfurFlow.x, y: sulfurFlow.y });
+      setSulfurFlowSize({ width: sulfurFlow.width, height: sulfurFlow.height });
+    }
+    
+    const sulfurValve = positionMap.get('sulfur_valve');
+    if (sulfurValve) {
+      setSulfurValvePosition({ x: sulfurValve.x, y: sulfurValve.y });
+      setSulfurValveSize({ width: sulfurValve.width, height: sulfurValve.height });
+    }
+    
+    const jugValve = positionMap.get('jug_valve');
+    if (jugValve) {
+      setJugValvePosition({ x: jugValve.x, y: jugValve.y });
+      setJugValveSize({ width: jugValve.width, height: jugValve.height });
+    }
+    
+    const jugValvePositioner = positionMap.get('jug_valve_positioner');
+    if (jugValvePositioner) {
+      setJugValvePositionerPosition({ x: jugValvePositioner.x, y: jugValvePositioner.y });
+      setJugValvePositionerSize({ width: jugValvePositioner.width, height: jugValvePositioner.height });
+    }
+    
+    const handController = positionMap.get('hand_controller');
+    if (handController) {
+      setHandControllerPosition({ x: handController.x, y: handController.y });
+      setHandControllerSize({ width: handController.width, height: handController.height });
+    }
+    
+    const whbHandController = positionMap.get('whb_hand_controller');
+    if (whbHandController) {
+      setWhbHandControllerPosition({ x: whbHandController.x, y: whbHandController.y });
+      setWhbHandControllerSize({ width: whbHandController.width, height: whbHandController.height });
+    }
+    
+    const jugValveHandController = positionMap.get('jug_valve_hand_controller');
+    if (jugValveHandController) {
+      setJugValveHandControllerPosition({ x: jugValveHandController.x, y: jugValveHandController.y });
+      setJugValveHandControllerSize({ width: jugValveHandController.width, height: jugValveHandController.height });
+    }
+    
+    const tempSensor5821 = positionMap.get('temp_sensor_5821');
+    if (tempSensor5821) {
+      setTempSensorPosition({ x: tempSensor5821.x, y: tempSensor5821.y });
+      setTempSensorSize({ width: tempSensor5821.width, height: tempSensor5821.height });
+    }
+    
+    const tempSensor4200a = positionMap.get('temp_sensor_4200a');
+    if (tempSensor4200a) {
+      setTempSensor4200APosition({ x: tempSensor4200a.x, y: tempSensor4200a.y });
+      setTempSensor4200ASize({ width: tempSensor4200a.width, height: tempSensor4200a.height });
+    }
+    
+    const tempSensor4200b = positionMap.get('temp_sensor_4200b');
+    if (tempSensor4200b) {
+      setTempSensor4200BPosition({ x: tempSensor4200b.x, y: tempSensor4200b.y });
+      setTempSensor4200BSize({ width: tempSensor4200b.width, height: tempSensor4200b.height });
+    }
+    
+    const tempSensor4200c = positionMap.get('temp_sensor_4200c');
+    if (tempSensor4200c) {
+      setTempSensor4200CPosition({ x: tempSensor4200c.x, y: tempSensor4200c.y });
+      setTempSensor4200CSize({ width: tempSensor4200c.width, height: tempSensor4200c.height });
+    }
+    
+    // Converter and process equipment
+    const converter4 = positionMap.get('converter4');
+    if (converter4) {
+      setConverter4Position({ x: converter4.x, y: converter4.y });
+      setConverter4Size({ width: converter4.width, height: converter4.height });
+    }
+    
+    const dt2 = positionMap.get('dt2');
+    if (dt2) {
+      setDt2Position({ x: dt2.x, y: dt2.y });
+      setDt2Size({ width: dt2.width, height: dt2.height });
+    }
+    
+    const fat1 = positionMap.get('fat1');
+    if (fat1) {
+      setFat1Position({ x: fat1.x, y: fat1.y });
+      setFat1Size({ width: fat1.width, height: fat1.height });
+    }
+    
+    const ipat1 = positionMap.get('ipat1');
+    if (ipat1) {
+      setIpat1Position({ x: ipat1.x, y: ipat1.y });
+      setIpat1Size({ width: ipat1.width, height: ipat1.height });
+    }
+    
+    const hip1 = positionMap.get('hip1');
+    if (hip1) {
+      setHip1Position({ x: hip1.x, y: hip1.y });
+      setHip1Size({ width: hip1.width, height: hip1.height });
+    }
+    
+    const cip = positionMap.get('cip');
+    if (cip) {
+      setCipPosition({ x: cip.x, y: cip.y });
+      setCipSize({ width: cip.width, height: cip.height });
+    }
+    
+    const sh4a = positionMap.get('sh4a');
+    if (sh4a) {
+      setSh4aPosition({ x: sh4a.x, y: sh4a.y });
+      setSh4aSize({ width: sh4a.width, height: sh4a.height });
+    }
+    
+    const ec3b = positionMap.get('ec3b');
+    if (ec3b) {
+      setEc3bPosition({ x: ec3b.x, y: ec3b.y });
+      setEc3bSize({ width: ec3b.width, height: ec3b.height });
+    }
+    
+    const sh1b = positionMap.get('sh1b');
+    if (sh1b) {
+      setSh1bPosition({ x: sh1b.x, y: sh1b.y });
+      setSh1bSize({ width: sh1b.width, height: sh1b.height });
+    }
+    
+    // Dashed lines
+    const dashedLine1 = positionMap.get('dashed_line_1');
+    if (dashedLine1) {
+      setDashedLine1Position({ x: dashedLine1.x, y: dashedLine1.y });
+      setDashedLine1Size({ width: dashedLine1.width, height: dashedLine1.height });
+      setDashedLine1Rotation(dashedLine1.rotation || 0);
+    }
+    
+    const dashedLine2 = positionMap.get('dashed_line_2');
+    if (dashedLine2) {
+      setDashedLine2Position({ x: dashedLine2.x, y: dashedLine2.y });
+      setDashedLine2Size({ width: dashedLine2.width, height: dashedLine2.height });
+      setDashedLine2Rotation(dashedLine2.rotation || 0);
+    }
+    
+    const dashedLine3 = positionMap.get('dashed_line_3');
+    if (dashedLine3) {
+      setDashedLine3Position({ x: dashedLine3.x, y: dashedLine3.y });
+      setDashedLine3Size({ width: dashedLine3.width, height: dashedLine3.height });
+      setDashedLine3Rotation(dashedLine3.rotation || 0);
+    }
+    
+    // Arrows - update from database
+    setArrows(prev => prev.map(arrow => {
+      const saved = positionMap.get(arrow.id);
+      if (saved) {
+        return {
+          ...arrow,
+          x: saved.x,
+          y: saved.y,
+          width: saved.width,
+          height: saved.height,
+          rotation: saved.rotation || 0,
+        };
+      }
+      return arrow;
+    }));
+    
+  }, [layoutData]);
+
   const handleSaveLayout = async () => {
     setIsSaving(true);
-    // Simulate save - layout positions are maintained in React state for this session
-    setTimeout(() => {
-      toast({ title: "Layout saved", description: "Icon positions saved for this session." });
+    try {
+      // Collect all current positions
+      const layouts = [
+        { elementId: 'furnace', positionX: Math.round(furnacePosition.x), positionY: Math.round(furnacePosition.y), width: furnaceSize.width, height: furnaceSize.height, rotation: 0 },
+        { elementId: 'compressor', positionX: Math.round(compressorPosition.x), positionY: Math.round(compressorPosition.y), width: compressorSize.width, height: compressorSize.height, rotation: 0 },
+        { elementId: 'sulfur_flow', positionX: Math.round(sulfurFlowPosition.x), positionY: Math.round(sulfurFlowPosition.y), width: sulfurFlowSize.width, height: sulfurFlowSize.height, rotation: 0 },
+        { elementId: 'sulfur_valve', positionX: Math.round(sulfurValvePosition.x), positionY: Math.round(sulfurValvePosition.y), width: sulfurValveSize.width, height: sulfurValveSize.height, rotation: 0 },
+        { elementId: 'jug_valve', positionX: Math.round(jugValvePosition.x), positionY: Math.round(jugValvePosition.y), width: jugValveSize.width, height: jugValveSize.height, rotation: 0 },
+        { elementId: 'jug_valve_positioner', positionX: Math.round(jugValvePositionerPosition.x), positionY: Math.round(jugValvePositionerPosition.y), width: jugValvePositionerSize.width, height: jugValvePositionerSize.height, rotation: 0 },
+        { elementId: 'hand_controller', positionX: Math.round(handControllerPosition.x), positionY: Math.round(handControllerPosition.y), width: handControllerSize.width, height: handControllerSize.height, rotation: 0 },
+        { elementId: 'whb_hand_controller', positionX: Math.round(whbHandControllerPosition.x), positionY: Math.round(whbHandControllerPosition.y), width: whbHandControllerSize.width, height: whbHandControllerSize.height, rotation: 0 },
+        { elementId: 'jug_valve_hand_controller', positionX: Math.round(jugValveHandControllerPosition.x), positionY: Math.round(jugValveHandControllerPosition.y), width: jugValveHandControllerSize.width, height: jugValveHandControllerSize.height, rotation: 0 },
+        { elementId: 'temp_sensor_5821', positionX: Math.round(tempSensorPosition.x), positionY: Math.round(tempSensorPosition.y), width: tempSensorSize.width, height: tempSensorSize.height, rotation: 0 },
+        { elementId: 'temp_sensor_4200a', positionX: Math.round(tempSensor4200APosition.x), positionY: Math.round(tempSensor4200APosition.y), width: tempSensor4200ASize.width, height: tempSensor4200ASize.height, rotation: 0 },
+        { elementId: 'temp_sensor_4200b', positionX: Math.round(tempSensor4200BPosition.x), positionY: Math.round(tempSensor4200BPosition.y), width: tempSensor4200BSize.width, height: tempSensor4200BSize.height, rotation: 0 },
+        { elementId: 'temp_sensor_4200c', positionX: Math.round(tempSensor4200CPosition.x), positionY: Math.round(tempSensor4200CPosition.y), width: tempSensor4200CSize.width, height: tempSensor4200CSize.height, rotation: 0 },
+        { elementId: 'converter4', positionX: Math.round(converter4Position.x), positionY: Math.round(converter4Position.y), width: converter4Size.width, height: converter4Size.height, rotation: 0 },
+        { elementId: 'dt2', positionX: Math.round(dt2Position.x), positionY: Math.round(dt2Position.y), width: dt2Size.width, height: dt2Size.height, rotation: 0 },
+        { elementId: 'fat1', positionX: Math.round(fat1Position.x), positionY: Math.round(fat1Position.y), width: fat1Size.width, height: fat1Size.height, rotation: 0 },
+        { elementId: 'ipat1', positionX: Math.round(ipat1Position.x), positionY: Math.round(ipat1Position.y), width: ipat1Size.width, height: ipat1Size.height, rotation: 0 },
+        { elementId: 'hip1', positionX: Math.round(hip1Position.x), positionY: Math.round(hip1Position.y), width: hip1Size.width, height: hip1Size.height, rotation: 0 },
+        { elementId: 'cip', positionX: Math.round(cipPosition.x), positionY: Math.round(cipPosition.y), width: cipSize.width, height: cipSize.height, rotation: 0 },
+        { elementId: 'sh4a', positionX: Math.round(sh4aPosition.x), positionY: Math.round(sh4aPosition.y), width: sh4aSize.width, height: sh4aSize.height, rotation: 0 },
+        { elementId: 'ec3b', positionX: Math.round(ec3bPosition.x), positionY: Math.round(ec3bPosition.y), width: ec3bSize.width, height: ec3bSize.height, rotation: 0 },
+        { elementId: 'sh1b', positionX: Math.round(sh1bPosition.x), positionY: Math.round(sh1bPosition.y), width: sh1bSize.width, height: sh1bSize.height, rotation: 0 },
+        { elementId: 'dashed_line_1', positionX: Math.round(dashedLine1Position.x), positionY: Math.round(dashedLine1Position.y), width: dashedLine1Size.width, height: dashedLine1Size.height, rotation: dashedLine1Rotation },
+        { elementId: 'dashed_line_2', positionX: Math.round(dashedLine2Position.x), positionY: Math.round(dashedLine2Position.y), width: dashedLine2Size.width, height: dashedLine2Size.height, rotation: dashedLine2Rotation },
+        { elementId: 'dashed_line_3', positionX: Math.round(dashedLine3Position.x), positionY: Math.round(dashedLine3Position.y), width: dashedLine3Size.width, height: dashedLine3Size.height, rotation: dashedLine3Rotation },
+        // Add all arrows
+        ...arrows.map(arrow => ({
+          elementId: arrow.id,
+          positionX: Math.round(arrow.x),
+          positionY: Math.round(arrow.y),
+          width: arrow.width,
+          height: arrow.height,
+          rotation: arrow.rotation,
+        })),
+      ];
+
+      await apiRequest('PUT', '/api/homescreen-layout/L1', { layouts });
+      toast({ title: "Layout saved", description: "Icon positions saved to database." });
+    } catch (error) {
+      console.error('Failed to save layout:', error);
+      toast({ title: "Error", description: "Failed to save layout positions.", variant: "destructive" });
+    } finally {
       setIsSaving(false);
-    }, 300);
+    }
   };
 
 

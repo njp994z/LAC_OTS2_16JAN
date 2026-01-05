@@ -2105,5 +2105,35 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // ===== HOMESCREEN LAYOUT ENDPOINTS =====
+  
+  // Get homescreen layout positions for a screen
+  app.get('/api/homescreen-layout/:screenId', async (req: Request, res: Response) => {
+    try {
+      const { screenId } = req.params;
+      const layouts = await storage.getHomescreenLayout(screenId);
+      res.json({ layouts });
+    } catch (error) {
+      console.error("Homescreen layout fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch homescreen layout" });
+    }
+  });
+
+  // Save/update homescreen layout positions
+  app.put('/api/homescreen-layout/:screenId', async (req: Request, res: Response) => {
+    try {
+      const { screenId } = req.params;
+      const { layouts } = req.body;
+      if (!Array.isArray(layouts)) {
+        return res.status(400).json({ message: "Layouts must be an array" });
+      }
+      const saved = await storage.upsertHomescreenLayout(screenId, layouts);
+      res.json({ success: true, count: saved.length });
+    } catch (error) {
+      console.error("Homescreen layout save error:", error);
+      res.status(500).json({ message: "Failed to save homescreen layout" });
+    }
+  });
+
   return httpServer;
 }
