@@ -1346,9 +1346,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* DeltaV Live Toolbar */}
-      <div className="bg-gray-100 border-b border-gray-300 px-2 py-1 flex items-center justify-between">
+      <div className="flex-shrink-0 bg-gray-100 border-b border-gray-300 px-2 py-1 flex items-center justify-between">
         {/* Left side - Icon buttons */}
         <div className="flex items-center gap-1">
           <TooltipProvider delayDuration={300}>
@@ -2490,8 +2490,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         </div>
       </div>
 
-      {/* Alarm Banner */}
-      <AlarmBanner />
+      {/* Alarm Banner - always visible at bottom */}
+      <div className="flex-shrink-0">
+        <AlarmBanner />
+      </div>
 
       {/* VFD Faceplate Modal */}
       <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen}>
