@@ -18,6 +18,15 @@ import sh4aImg from "@assets/delta-v/process-diagrams/sh4a.png";
 import ec3bImg from "@assets/delta-v/process-diagrams/ec3b.png";
 import sh1bImg from "@assets/delta-v/process-diagrams/sh1b.png";
 import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-filter.png";
+import menuIconImg from "@assets/image_1767651932939.png";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
 import { PrimaryCompressorFaceplate } from "@/delta-v/components/faceplate/PrimaryCompressorFaceplate";
 import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
 import { ControllerFaceplate } from "@/delta-v/components/faceplate/ControllerFaceplate";
@@ -1347,7 +1356,103 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
-      {/* DeltaV Live Toolbar */}
+      {/* Traditional Menu Bar */}
+      <div className="flex-shrink-0 bg-gray-200 border-b border-gray-300 px-1 py-0.5 flex items-center">
+        <img src={menuIconImg} alt="Menu" className="w-5 h-5 mr-2" />
+        <Menubar className="border-none bg-transparent h-6 p-0 space-x-0">
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-file">
+              File
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-file-new">New</MenubarItem>
+              <MenubarItem data-testid="menu-file-open">Open</MenubarItem>
+              <MenubarItem data-testid="menu-file-save">Save</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem data-testid="menu-file-print">Print</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem data-testid="menu-file-exit">Exit</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-edit">
+              Edit
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-edit-undo">Undo</MenubarItem>
+              <MenubarItem data-testid="menu-edit-redo">Redo</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem data-testid="menu-edit-cut">Cut</MenubarItem>
+              <MenubarItem data-testid="menu-edit-copy">Copy</MenubarItem>
+              <MenubarItem data-testid="menu-edit-paste">Paste</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-view">
+              View
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-view-zoom-in">Zoom In</MenubarItem>
+              <MenubarItem data-testid="menu-view-zoom-out">Zoom Out</MenubarItem>
+              <MenubarItem data-testid="menu-view-fit">Fit to Screen</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem data-testid="menu-view-refresh">Refresh</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-chart">
+              Chart
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-chart-trend">Trend Chart</MenubarItem>
+              <MenubarItem data-testid="menu-chart-bar">Bar Chart</MenubarItem>
+              <MenubarItem data-testid="menu-chart-pie">Pie Chart</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-trend">
+              Trend
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-trend-new">New Trend</MenubarItem>
+              <MenubarItem data-testid="menu-trend-historical">Historical</MenubarItem>
+              <MenubarItem data-testid="menu-trend-realtime">Real-time</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-events">
+              Events
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-events-alarms">Alarms</MenubarItem>
+              <MenubarItem data-testid="menu-events-journal">Event Journal</MenubarItem>
+              <MenubarItem data-testid="menu-events-history">Event History</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-window">
+              Window
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-window-cascade">Cascade</MenubarItem>
+              <MenubarItem data-testid="menu-window-tile">Tile</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem data-testid="menu-window-close-all">Close All</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-help">
+              Help
+            </MenubarTrigger>
+            <MenubarContent className="bg-white">
+              <MenubarItem data-testid="menu-help-contents">Help Contents</MenubarItem>
+              <MenubarItem data-testid="menu-help-about">About DeltaV</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
+      </div>
+
+      {/* DeltaV Live Icon Toolbar */}
       <div className="flex-shrink-0 bg-gray-100 border-b border-gray-300 px-2 py-1 flex items-center justify-between">
         {/* Left side - Icon buttons */}
         <div className="flex items-center gap-1">
