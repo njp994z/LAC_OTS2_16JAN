@@ -1240,8 +1240,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         </div>
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 relative">
+      {/* Main content area - scrollable container */}
+      <div className="flex-1 overflow-auto">
+        {/* Fixed-size canvas for scrollable content */}
+        <div className="relative" style={{ width: '5200px', height: '1600px', minWidth: '5200px', minHeight: '1600px' }}>
         <Rnd
           position={furnacePosition}
           size={furnaceSize}
@@ -2193,6 +2195,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           </div>
         </Rnd>
 
+        </div>
       </div>
 
       {/* Alarm Banner */}
