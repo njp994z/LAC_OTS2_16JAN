@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect, useCallback } from "react";
 import { Rnd } from "react-rnd";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import AlarmBanner from "@/delta-v/components/faceplate/AlarmBanner";
 import furnaceWhbImg from "@assets/delta-v/icons/furnace-whb.png";
 import blueArrowImg from "@assets/delta-v/icons/blue-arrow.png";
@@ -1290,6 +1290,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       ];
 
       await apiRequest('PUT', '/api/homescreen-layout/L1', { layouts });
+      // Invalidate cache so fresh data loads on next page visit
+      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L1'] });
       toast({ title: "Layout saved", description: "Icon positions saved to database." });
     } catch (error) {
       console.error('Failed to save layout:', error);
