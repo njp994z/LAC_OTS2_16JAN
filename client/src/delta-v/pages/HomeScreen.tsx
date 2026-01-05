@@ -140,6 +140,15 @@ const HomeScreen = () => {
   
   const [isLocked, setIsLocked] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
+  const [selectedMode, setSelectedMode] = useState("Static");
+  
+  // Mode options for the Mode dropdown
+  const modeOptions = [
+    { id: "static", label: "Static" },
+    { id: "dynamic", label: "Dynamic" },
+    { id: "startup", label: "Start-Up" },
+    { id: "emergency", label: "Emergency Scenarios" },
+  ];
   const [isVFDModalOpen, setIsVFDModalOpen] = useState(false);
   const [isSulfurFlowModalOpen, setIsSulfurFlowModalOpen] = useState(false);
   const [sulfurFlowModelockOverride, setSulfurFlowModelockOverride] = useState(false);
@@ -1417,14 +1426,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </Tooltip>
           </TooltipProvider>
 
-          {/* Homescreen Dropdown */}
+          {/* View Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
                 className="bg-gray-700 text-white hover:bg-gray-600 hover:text-white px-3 py-1 text-sm h-8"
+                data-testid="dropdown-view"
               >
-                {selectedScreen}
+                View: {selectedScreen}
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -1434,6 +1444,33 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   key={option.id}
                   onClick={() => setSelectedScreen(option.label)}
                   className={selectedScreen === option.label ? "bg-gray-100" : ""}
+                  data-testid={`dropdown-view-option-${option.id}`}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Mode Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="bg-gray-700 text-white hover:bg-gray-600 hover:text-white px-3 py-1 text-sm h-8"
+                data-testid="dropdown-mode"
+              >
+                Mode: {selectedMode}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-white z-50">
+              {modeOptions.map((option) => (
+                <DropdownMenuItem 
+                  key={option.id}
+                  onClick={() => setSelectedMode(option.label)}
+                  className={selectedMode === option.label ? "bg-gray-100" : ""}
+                  data-testid={`dropdown-mode-option-${option.id}`}
                 >
                   {option.label}
                 </DropdownMenuItem>
