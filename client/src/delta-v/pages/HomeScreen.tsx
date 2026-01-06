@@ -162,6 +162,7 @@ const HomeScreen = () => {
   const [isLocked, setIsLocked] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
   const [selectedMode, setSelectedMode] = useState("Static");
+  const [location] = useLocation();
   
   // Mode options for the Mode dropdown
   const modeOptions = [
@@ -170,6 +171,18 @@ const HomeScreen = () => {
     { id: "startup", label: "Start-Up" },
     { id: "emergency", label: "Emergency Scenarios" },
   ];
+  
+  // Read mode from query parameter on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const modeParam = searchParams.get('mode');
+    if (modeParam) {
+      const modeMatch = modeOptions.find(m => m.id.toLowerCase() === modeParam.toLowerCase());
+      if (modeMatch) {
+        setSelectedMode(modeMatch.label);
+      }
+    }
+  }, [location]);
   const [isVFDModalOpen, setIsVFDModalOpen] = useState(false);
   const [isSulfurFlowModalOpen, setIsSulfurFlowModalOpen] = useState(false);
   const [sulfurFlowModelockOverride, setSulfurFlowModelockOverride] = useState(false);
