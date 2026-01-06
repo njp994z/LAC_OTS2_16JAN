@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import AlarmBanner from "@/delta-v/components/faceplate/AlarmBanner";
 import furnaceWhbImg from "@assets/delta-v/icons/furnace-whb.png";
 import blueArrowImg from "@assets/delta-v/icons/blue-arrow.png";
+import purpleArrowImg from "@assets/delta-v/icons/output-path-arrow.png";
 import jugValveImage from "@assets/delta-v/icons/jug-valve.png";
 import jugValvePositionerImage from "@assets/delta-v/icons/jug-valve-positioner.png";
 import converter4Img from "@assets/delta-v/process-diagrams/converter4.png";
@@ -2508,12 +2509,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 style={{ transform: `rotate(${arrow.rotation}deg)`, transformOrigin: 'center' }}
               >
                 <img 
-                  src={blueArrowImg} 
+                  src={arrow.color === 'purple' ? purpleArrowImg : blueArrowImg} 
                   alt={`${arrow.color} Arrow`}
                   className="w-full h-full object-fill"
                   style={
                     arrow.color === 'yellow' ? { filter: 'hue-rotate(60deg) saturate(1.5)' } : 
-                    arrow.color === 'purple' ? { filter: 'hue-rotate(290deg) saturate(2) brightness(0.8)' } : 
                     undefined
                   }
                   draggable={false}
