@@ -2520,16 +2520,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onResizeStop={(e, dir, ref, delta, position) => {
               setVerticalArrows(prev => prev.map(va => 
                 va.id === vArrow.id 
-                  ? { ...va, width: parseInt(ref.style.width), height: parseInt(ref.style.height), x: position.x, y: position.y }
+                  ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
                   : va
               ));
             }}
-            minWidth={16}
+            minWidth={24}
             minHeight={50}
-            maxWidth={40}
+            maxWidth={24}
             bounds="window"
             disableDragging={isLocked}
-            enableResizing={!isLocked ? { top: true, bottom: true, left: false, right: false } : false}
+            enableResizing={!isLocked ? { 
+              top: true, 
+              bottom: true, 
+              left: false, 
+              right: false,
+              topLeft: false,
+              topRight: false,
+              bottomLeft: false,
+              bottomRight: false
+            } : false}
             className={isLocked ? "cursor-default" : "cursor-move"}
             style={{ zIndex: 35 }}
           >
