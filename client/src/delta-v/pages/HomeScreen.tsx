@@ -1665,6 +1665,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {/* Start Simulation Button - only visible when NOT in Static mode */}
+          {selectedMode !== "Static" && (
+            <Button
+              variant="default"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 text-sm h-8 gap-2"
+              data-testid="button-start-simulation"
+            >
+              <Activity className="h-4 w-4" />
+              Start
+            </Button>
+          )}
         </div>
 
         {/* Right side - Date, Time, User, Window controls */}

@@ -110,6 +110,9 @@ export default function ScenarioSelector({ onSelectScenario, selectedScenario }:
                   if (scenario.id === 1) {
                     // Static Plant Operations - navigate to home-screen with mode=static
                     setLocation("/settings/controller-outputs/faceplates/home-screen?mode=static");
+                  } else if (scenario.id === 2) {
+                    // Dynamic Operations - navigate to home-screen with mode=dynamic
+                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=dynamic");
                   } else if ('externalLink' in scenario && scenario.externalLink) {
                     window.open(scenario.externalLink, "_blank", "noopener,noreferrer");
                   } else {
