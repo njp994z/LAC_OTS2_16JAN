@@ -42,6 +42,7 @@ import { defaultControllerData } from "@/delta-v/types/controller";
 import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta-v/types/secondaryController";
 import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
+import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,7 @@ import {
   ChevronDown,
   Save,
   RotateCw,
+  ArrowUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -146,6 +148,16 @@ const HomeScreen = () => {
     { id: 'arrow_34', x: 2340, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
   ]);
   
+  // Vertical arrows - narrow width, variable height, positioned near edges
+  const [verticalArrows, setVerticalArrows] = useState<Array<{
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>>([
+    { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150 },
+  ]);
   
   const [isLocked, setIsLocked] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
@@ -1263,6 +1275,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       return arrow;
     }));
     
+    // Vertical arrows - load from database (dynamically created elements)
+    const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number }> = [];
+    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number }) => {
+      if (layout.elementId.startsWith('v_arrow_')) {
+        savedVerticalArrows.push({
+          id: layout.elementId,
+          x: layout.positionX,
+          y: layout.positionY,
+          width: layout.width,
+          height: layout.height,
+        });
+      }
+    });
+    if (savedVerticalArrows.length > 0) {
+      setVerticalArrows(savedVerticalArrows);
+    }
+    
   }, [layoutData]);
 
   const handleSaveLayout = async () => {
@@ -1304,6 +1333,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           width: arrow.width,
           height: arrow.height,
           rotation: arrow.rotation,
+        })),
+        // Add all vertical arrows
+        ...verticalArrows.map(va => ({
+          elementId: va.id,
+          positionX: Math.round(va.x),
+          positionY: Math.round(va.y),
+          width: va.width,
+          height: va.height,
+          rotation: 0,
         })),
       ];
 
@@ -1352,6 +1390,19 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         ? { ...arrow, rotation: (arrow.rotation + 90) % 360 }
         : arrow
     ));
+  };
+  
+  // Add a new vertical arrow
+  const handleAddVerticalArrow = () => {
+    const newId = `v_arrow_${Date.now()}`;
+    setVerticalArrows(prev => [...prev, {
+      id: newId,
+      x: 100,
+      y: 100,
+      width: 24,
+      height: 150,
+    }]);
+    toast({ title: "Vertical Arrow Added", description: "A new vertical arrow has been added to the canvas." });
   };
 
   return (
@@ -1527,6 +1578,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 <p>{isSaving ? "Saving..." : "Save Layout"}</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            {/* Add Vertical Arrow Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-gray-200"
+                  onClick={handleAddVerticalArrow}
+                  disabled={isLocked}
+                  data-testid="button-add-vertical-arrow"
+                >
+                  <ArrowUp className="h-5 w-5 text-cyan-500" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Add Vertical Arrow</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -2433,6 +2503,41 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </button>
               )}
             </div>
+          </Rnd>
+        ))}
+
+        {/* Render vertical arrows */}
+        {verticalArrows.map((vArrow) => (
+          <Rnd
+            key={vArrow.id}
+            position={{ x: vArrow.x, y: vArrow.y }}
+            size={{ width: vArrow.width, height: vArrow.height }}
+            onDragStop={(e, d) => {
+              setVerticalArrows(prev => prev.map(va => 
+                va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
+              ));
+            }}
+            onResizeStop={(e, dir, ref, delta, position) => {
+              setVerticalArrows(prev => prev.map(va => 
+                va.id === vArrow.id 
+                  ? { ...va, width: parseInt(ref.style.width), height: parseInt(ref.style.height), x: position.x, y: position.y }
+                  : va
+              ));
+            }}
+            minWidth={16}
+            minHeight={50}
+            maxWidth={40}
+            bounds="window"
+            disableDragging={isLocked}
+            enableResizing={!isLocked ? { top: true, bottom: true, left: false, right: false } : false}
+            className={isLocked ? "cursor-default" : "cursor-move"}
+            style={{ zIndex: 35 }}
+          >
+            <VerticalArrow 
+              width={vArrow.width} 
+              height={vArrow.height} 
+              color="#53B1D8"
+            />
           </Rnd>
         ))}
 
