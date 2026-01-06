@@ -2513,7 +2513,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   className="w-full h-full object-fill"
                   style={
                     arrow.color === 'yellow' ? { filter: 'hue-rotate(60deg) saturate(1.5)' } : 
-                    arrow.color === 'purple' ? { filter: 'hue-rotate(270deg) saturate(1.2)' } : 
+                    arrow.color === 'purple' ? { filter: 'hue-rotate(290deg) saturate(2) brightness(0.8)' } : 
                     undefined
                   }
                   draggable={false}
