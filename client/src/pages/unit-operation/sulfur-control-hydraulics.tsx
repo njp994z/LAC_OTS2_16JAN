@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +105,9 @@ interface DynamicState {
 
 export default function SulfurControlHydraulics() {
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
+  const fromHomeScreen = searchParams.get('from') === 'home-screen';
   const { toast } = useToast();
   
   const [mode, setMode] = useState<SimulationMode>("static");
@@ -502,7 +505,7 @@ export default function SulfurControlHydraulics() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation("/unit-operation-simulator")}
+                onClick={() => setLocation(fromHomeScreen ? "/settings/controller-outputs/faceplates/home-screen" : "/unit-operation-simulator")}
                 data-testid="button-back"
               >
                 <ArrowLeft className="h-5 w-5" />

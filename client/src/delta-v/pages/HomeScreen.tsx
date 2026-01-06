@@ -734,7 +734,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   const handleSulfurValveClick = () => {
     if (isLocked) {
-      setLocation('/valve/flow-control/1540-fcv-2602/3e');
+      setLocation('/unit-operation/sulfur-control-hydraulics?from=home-screen');
     }
   };
 
@@ -1548,7 +1548,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <DropdownMenuItem 
                   key={option.id}
                   onClick={() => setSelectedScreen(option.label)}
-                  className={selectedScreen === option.label ? "bg-gray-100" : ""}
+                  className={`text-gray-800 ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-view-option-${option.id}`}
                 >
                   {option.label}
@@ -1574,7 +1574,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <DropdownMenuItem 
                   key={option.id}
                   onClick={() => setSelectedMode(option.label)}
-                  className={selectedMode === option.label ? "bg-gray-100" : ""}
+                  className={`text-gray-800 ${selectedMode === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-mode-option-${option.id}`}
                 >
                   {option.label}
