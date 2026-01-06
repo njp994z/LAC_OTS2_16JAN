@@ -6,7 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import AlarmBanner from "@/delta-v/components/faceplate/AlarmBanner";
 import furnaceWhbImg from "@assets/delta-v/icons/furnace-whb.png";
 import blueArrowImg from "@assets/delta-v/icons/blue-arrow.png";
-import purpleArrowImg from "@assets/delta-v/icons/output-path-arrow.png";
+import purpleArrowImg from "@assets/generated_images/purple_horizontal_process_arrow.png";
 import jugValveImage from "@assets/delta-v/icons/jug-valve.png";
 import jugValvePositionerImage from "@assets/delta-v/icons/jug-valve-positioner.png";
 import converter4Img from "@assets/delta-v/process-diagrams/converter4.png";
