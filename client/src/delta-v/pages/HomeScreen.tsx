@@ -1428,89 +1428,89 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-file">
               File
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-file-new">New</MenubarItem>
-              <MenubarItem data-testid="menu-file-open">Open</MenubarItem>
-              <MenubarItem data-testid="menu-file-save">Save</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-file-new">New</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-file-open">Open</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-file-save">Save</MenubarItem>
               <MenubarSeparator />
-              <MenubarItem data-testid="menu-file-print">Print</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-file-print">Print</MenubarItem>
               <MenubarSeparator />
-              <MenubarItem data-testid="menu-file-exit">Exit</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-file-exit">Exit</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-edit">
               Edit
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-edit-undo">Undo</MenubarItem>
-              <MenubarItem data-testid="menu-edit-redo">Redo</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-edit-undo">Undo</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-edit-redo">Redo</MenubarItem>
               <MenubarSeparator />
-              <MenubarItem data-testid="menu-edit-cut">Cut</MenubarItem>
-              <MenubarItem data-testid="menu-edit-copy">Copy</MenubarItem>
-              <MenubarItem data-testid="menu-edit-paste">Paste</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-edit-cut">Cut</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-edit-copy">Copy</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-edit-paste">Paste</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-view">
               View
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-view-zoom-in">Zoom In</MenubarItem>
-              <MenubarItem data-testid="menu-view-zoom-out">Zoom Out</MenubarItem>
-              <MenubarItem data-testid="menu-view-fit">Fit to Screen</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-view-zoom-in">Zoom In</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-view-zoom-out">Zoom Out</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-view-fit">Fit to Screen</MenubarItem>
               <MenubarSeparator />
-              <MenubarItem data-testid="menu-view-refresh">Refresh</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-view-refresh">Refresh</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-chart">
               Chart
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-chart-trend">Trend Chart</MenubarItem>
-              <MenubarItem data-testid="menu-chart-bar">Bar Chart</MenubarItem>
-              <MenubarItem data-testid="menu-chart-pie">Pie Chart</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-chart-trend">Trend Chart</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-chart-bar">Bar Chart</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-chart-pie">Pie Chart</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-trend">
               Trend
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-trend-new">New Trend</MenubarItem>
-              <MenubarItem data-testid="menu-trend-historical">Historical</MenubarItem>
-              <MenubarItem data-testid="menu-trend-realtime">Real-time</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-trend-new">New Trend</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-trend-historical">Historical</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-trend-realtime">Real-time</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-events">
               Events
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-events-alarms">Alarms</MenubarItem>
-              <MenubarItem data-testid="menu-events-journal">Event Journal</MenubarItem>
-              <MenubarItem data-testid="menu-events-history">Event History</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-events-alarms">Alarms</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-events-journal">Event Journal</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-events-history">Event History</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-window">
               Window
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-window-cascade">Cascade</MenubarItem>
-              <MenubarItem data-testid="menu-window-tile">Tile</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-window-cascade">Cascade</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-window-tile">Tile</MenubarItem>
               <MenubarSeparator />
-              <MenubarItem data-testid="menu-window-close-all">Close All</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-window-close-all">Close All</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
             <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-help">
               Help
             </MenubarTrigger>
-            <MenubarContent className="bg-white">
-              <MenubarItem data-testid="menu-help-contents">Help Contents</MenubarItem>
-              <MenubarItem data-testid="menu-help-about">About DeltaV</MenubarItem>
+            <MenubarContent className="bg-white text-gray-800">
+              <MenubarItem className="text-gray-800" data-testid="menu-help-contents">Help Contents</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-help-about">About DeltaV</MenubarItem>
             </MenubarContent>
           </MenubarMenu>
         </Menubar>
