@@ -1361,7 +1361,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         <img src={menuIconImg} alt="Menu" className="w-5 h-5 mr-2" />
         <Menubar className="border-none bg-transparent h-6 p-0 space-x-0">
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-file">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-file">
               File
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1375,7 +1375,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-edit">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-edit">
               Edit
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1388,7 +1388,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-view">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-view">
               View
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1400,7 +1400,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-chart">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-chart">
               Chart
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1410,7 +1410,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-trend">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-trend">
               Trend
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1420,7 +1420,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-events">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-events">
               Events
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1430,7 +1430,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-window">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-window">
               Window
             </MenubarTrigger>
             <MenubarContent className="bg-white">
@@ -1441,7 +1441,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-help">
+            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-help">
               Help
             </MenubarTrigger>
             <MenubarContent className="bg-white">
