@@ -1,3 +1,7 @@
+// IMPORTANT: This file was recovered via checkpoint rollback on January 8, 2026
+// Prefer local (HEAD) version over remote changes unless upstream contains critical fixes
+// Reviewed and resolved manually - do not blindly overwrite in future merges
+
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { spawn } from "child_process";

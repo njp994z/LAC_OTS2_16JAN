@@ -1,3 +1,8 @@
+// IMPORTANT: This file was recovered via checkpoint rollback on January 8, 2026
+// Prefer local (HEAD) version over remote changes unless upstream contains critical fixes
+// Reviewed and resolved manually - do not blindly overwrite in future merges
+
+
 import { Link, useLocation } from "wouter";
 import { useState, useEffect, useCallback } from "react";
 import { Rnd } from "react-rnd";

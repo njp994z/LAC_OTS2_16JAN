@@ -1,3 +1,8 @@
+// IMPORTANT: This file was recovered via checkpoint rollback on January 8, 2026
+// Prefer local (HEAD) version over remote changes unless upstream contains critical fixes
+// Reviewed and resolved manually - do not blindly overwrite in future merges
+
+
 import { users, processTags, catalystParameters, converterCases, processVariables, sulfurProcessNodes, homescreenLayout, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
