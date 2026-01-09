@@ -355,3 +355,22 @@ export const insertHomescreenLayoutSchema = createInsertSchema(homescreenLayout)
 
 export type InsertHomescreenLayout = z.infer<typeof insertHomescreenLayoutSchema>;
 export type HomescreenLayout = typeof homescreenLayout.$inferSelect;
+
+// Controller Configs table - stores faceplate controller configurations
+export const controllerConfigs = pgTable("controller_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  controllerId: text("controller_id").notNull().unique(),
+  config: jsonb("config").notNull(),
+  data: jsonb("data"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertControllerConfigSchema = createInsertSchema(controllerConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertControllerConfig = z.infer<typeof insertControllerConfigSchema>;
+export type ControllerConfig = typeof controllerConfigs.$inferSelect;

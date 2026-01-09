@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import {
   SecondaryControllerConfig,
   SecondaryControllerData,
@@ -7,6 +7,7 @@ import {
   getDefaultSecondaryControllerConfig,
   getDefaultSecondaryControllerData,
 } from '@/delta-v/lib/controllerDefaults';
+import { apiRequest } from '@/lib/queryClient';
 
 const STORAGE_KEY = 'controller-configs';
 
@@ -84,38 +85,70 @@ interface ControllerConfigProviderProps {
 
 export const ControllerConfigProvider: React.FC<ControllerConfigProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ControllerConfigStore>({ configs: {}, data: {} });
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Load from database API on mount, fallback to localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const loadFromDb = async () => {
       try {
-        const parsed = JSON.parse(saved) as ControllerConfigStore;
-        setStore(parsed);
-        console.log('Loaded controller configs from localStorage:', parsed);
+        const response = await fetch('/api/controller-configs');
+        if (response.ok) {
+          const dbConfigs = await response.json();
+          if (Array.isArray(dbConfigs) && dbConfigs.length > 0) {
+            const newStore: ControllerConfigStore = { configs: {}, data: {} };
+            for (const item of dbConfigs) {
+              if (item.controllerId && item.config) {
+                newStore.configs[item.controllerId] = item.config as SecondaryControllerConfig;
+                if (item.data) {
+                  newStore.data[item.controllerId] = item.data as SecondaryControllerData;
+                }
+              }
+            }
+            setStore(newStore);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newStore));
+            console.log('Loaded controller configs from database:', newStore);
+            setIsLoaded(true);
+            return;
+          }
+        }
       } catch (e) {
-        console.error('Failed to load controller configs:', e);
+        console.error('Failed to load from database, falling back to localStorage:', e);
       }
-    }
+      
+      // Fallback to localStorage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as ControllerConfigStore;
+          setStore(parsed);
+          console.log('Loaded controller configs from localStorage:', parsed);
+        } catch (e) {
+          console.error('Failed to load controller configs:', e);
+        }
+      }
+      setIsLoaded(true);
+    };
+    
+    loadFromDb();
   }, []);
 
-  // Auto-save whenever store changes
+  // Auto-save to localStorage whenever store changes (for quick access/cache)
   useEffect(() => {
-    if (Object.keys(store.configs).length > 0 || Object.keys(store.data).length > 0) {
+    if (isLoaded && (Object.keys(store.configs).length > 0 || Object.keys(store.data).length > 0)) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-      console.log('Auto-saved controller configs:', store);
+      console.log('Auto-saved controller configs to localStorage:', store);
     }
-  }, [store]);
+  }, [store, isLoaded]);
 
-  const getControllerConfig = (controllerId: string): SecondaryControllerConfig => {
+  const getControllerConfig = useCallback((controllerId: string): SecondaryControllerConfig => {
     const defaults = getDefaultSecondaryControllerConfig(controllerId);
     const saved = store.configs[controllerId];
     // Merge defaults with saved config - saved values override defaults, then sanitize
     const merged = saved ? { ...defaults, ...saved } : defaults;
     return sanitizeConfig(controllerId, merged);
-  };
+  }, [store.configs]);
 
-  const updateControllerConfig = (controllerId: string, config: SecondaryControllerConfig) => {
+  const updateControllerConfig = useCallback((controllerId: string, config: SecondaryControllerConfig) => {
     // Sanitize before storing to prevent NaN from entering the store
     const sanitized = sanitizeConfig(controllerId, config);
     setStore(prev => ({
@@ -125,14 +158,14 @@ export const ControllerConfigProvider: React.FC<ControllerConfigProviderProps> =
         [controllerId]: sanitized,
       },
     }));
-  };
+  }, []);
 
-  const getControllerData = (controllerId: string): SecondaryControllerData => {
+  const getControllerData = useCallback((controllerId: string): SecondaryControllerData => {
     const raw = store.data[controllerId] || getDefaultSecondaryControllerData(controllerId);
     return sanitizeData(controllerId, raw);
-  };
+  }, [store.data]);
 
-  const updateControllerData = (controllerId: string, data: SecondaryControllerData) => {
+  const updateControllerData = useCallback((controllerId: string, data: SecondaryControllerData) => {
     // Sanitize before storing to prevent NaN from entering the store
     const sanitized = sanitizeData(controllerId, data);
     setStore(prev => ({
@@ -142,13 +175,25 @@ export const ControllerConfigProvider: React.FC<ControllerConfigProviderProps> =
         [controllerId]: sanitized,
       },
     }));
-  };
+  }, []);
 
-  const saveController = (controllerId: string) => {
-    // Force a save by triggering the auto-save effect
+  const saveController = useCallback(async (controllerId: string) => {
+    // Save to localStorage immediately
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    console.log(`Saved controller ${controllerId} configuration`);
-  };
+    
+    // Also save to database
+    try {
+      const config = store.configs[controllerId];
+      const data = store.data[controllerId];
+      
+      if (config) {
+        await apiRequest('POST', `/api/controller-configs/${controllerId}`, { config, data });
+        console.log(`Saved controller ${controllerId} configuration to database`);
+      }
+    } catch (e) {
+      console.error(`Failed to save controller ${controllerId} to database:`, e);
+    }
+  }, [store]);
 
   return (
     <ControllerConfigContext.Provider

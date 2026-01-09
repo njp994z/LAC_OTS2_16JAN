@@ -2139,5 +2139,60 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // ===== Controller Config Endpoints =====
+  
+  // Get all controller configs
+  app.get('/api/controller-configs', async (req: Request, res: Response) => {
+    try {
+      const configs = await storage.getAllControllerConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Get controller configs error:", error);
+      res.status(500).json({ message: "Failed to get controller configs" });
+    }
+  });
+
+  // Get a specific controller config by controllerId
+  app.get('/api/controller-configs/:controllerId', async (req: Request, res: Response) => {
+    try {
+      const { controllerId } = req.params;
+      const config = await storage.getControllerConfig(controllerId);
+      if (!config) {
+        return res.status(404).json({ message: "Controller config not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Get controller config error:", error);
+      res.status(500).json({ message: "Failed to get controller config" });
+    }
+  });
+
+  // Save or update a controller config
+  app.post('/api/controller-configs/:controllerId', async (req: Request, res: Response) => {
+    try {
+      const { controllerId } = req.params;
+      const { config, data } = req.body;
+      
+      if (!controllerId || typeof controllerId !== 'string') {
+        return res.status(400).json({ message: "Valid controllerId is required" });
+      }
+      
+      if (!config || typeof config !== 'object') {
+        return res.status(400).json({ message: "Config object is required" });
+      }
+      
+      // Basic validation of config structure
+      if (config.TAGNAME !== undefined && typeof config.TAGNAME !== 'string') {
+        return res.status(400).json({ message: "Invalid config: TAGNAME must be a string" });
+      }
+      
+      const saved = await storage.upsertControllerConfig(controllerId, config, data);
+      res.json(saved);
+    } catch (error) {
+      console.error("Save controller config error:", error);
+      res.status(500).json({ message: "Failed to save controller config" });
+    }
+  });
+
   return httpServer;
 }

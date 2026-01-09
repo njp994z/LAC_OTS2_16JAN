@@ -3,7 +3,7 @@
 // Reviewed and resolved manually - do not blindly overwrite in future merges
 
 
-import { users, processTags, catalystParameters, converterCases, processVariables, sulfurProcessNodes, homescreenLayout, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout } from "@shared/schema";
+import { users, processTags, catalystParameters, converterCases, processVariables, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -51,6 +51,11 @@ export interface IStorage {
   // Homescreen Layout
   getHomescreenLayout(screenId: string): Promise<HomescreenLayout[]>;
   upsertHomescreenLayout(screenId: string, layouts: Partial<InsertHomescreenLayout>[]): Promise<HomescreenLayout[]>;
+  
+  // Controller Configs
+  getAllControllerConfigs(): Promise<ControllerConfig[]>;
+  getControllerConfig(controllerId: string): Promise<ControllerConfig | undefined>;
+  upsertControllerConfig(controllerId: string, config: unknown, data?: unknown): Promise<ControllerConfig>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -296,6 +301,41 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return results;
+  }
+
+  // Controller Config methods
+  async getAllControllerConfigs(): Promise<ControllerConfig[]> {
+    return await db.select().from(controllerConfigs);
+  }
+
+  async getControllerConfig(controllerId: string): Promise<ControllerConfig | undefined> {
+    const [config] = await db.select().from(controllerConfigs).where(eq(controllerConfigs.controllerId, controllerId));
+    return config;
+  }
+
+  async upsertControllerConfig(controllerId: string, config: unknown, data?: unknown): Promise<ControllerConfig> {
+    const existing = await this.getControllerConfig(controllerId);
+    
+    if (existing) {
+      const [updated] = await db.update(controllerConfigs)
+        .set({
+          config,
+          data: data ?? existing.data,
+          updatedAt: new Date(),
+        })
+        .where(eq(controllerConfigs.controllerId, controllerId))
+        .returning();
+      return updated;
+    } else {
+      const [inserted] = await db.insert(controllerConfigs)
+        .values({
+          controllerId,
+          config,
+          data,
+        })
+        .returning();
+      return inserted;
+    }
   }
 }
 
