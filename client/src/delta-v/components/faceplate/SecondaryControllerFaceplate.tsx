@@ -16,36 +16,47 @@ import {
 
 // Helper function to route to independent pages for specific controllers
 const getRouteForController = (basePath: string, controllerId?: string): string => {
+  if (controllerId === '1530-F-2602') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3a',
+      'faceplate-3b': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3b',
+      'faceplate-3c': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3c',
+      'faceplate-3d': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3d',
+      'faceplate-3e': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3e',
+      'faceplate-3f': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3f',
+    };
+    return routeMap[basePath] || `/${basePath}/${controllerId}`;
+  }
   if (controllerId === '1540-H-4030') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/hand-controller-4030-faceplate-3a',
-      'faceplate-3b': '/hand-controller-4030-faceplate-3b',
-      'faceplate-3c': '/hand-controller-4030-faceplate-3c',
-      'faceplate-3d': '/hand-controller-4030-faceplate-3d',
-      'faceplate-3e': '/hand-controller-4030-faceplate-3e',
-      'faceplate-3f': '/hand-controller-4030-faceplate-3f',
+      'faceplate-3a': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3a',
+      'faceplate-3b': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3b',
+      'faceplate-3c': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3c',
+      'faceplate-3d': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3d',
+      'faceplate-3e': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3e',
+      'faceplate-3f': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3f',
     };
     return routeMap[basePath] || `/${basePath}/${controllerId}`;
   }
   if (controllerId === '1540-H-4282') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/hand-controller-4282-faceplate-3a',
-      'faceplate-3b': '/hand-controller-4282-faceplate-3b',
-      'faceplate-3c': '/hand-controller-4282-faceplate-3c',
-      'faceplate-3d': '/hand-controller-4282-faceplate-3d',
-      'faceplate-3e': '/hand-controller-4282-faceplate-3e',
-      'faceplate-3f': '/hand-controller-4282-faceplate-3f',
+      'faceplate-3a': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3a',
+      'faceplate-3b': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3b',
+      'faceplate-3c': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3c',
+      'faceplate-3d': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3d',
+      'faceplate-3e': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3e',
+      'faceplate-3f': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3f',
     };
     return routeMap[basePath] || `/${basePath}/${controllerId}`;
   }
   if (controllerId === '1540-H-4283') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/hand-controller-4283-faceplate-3a',
-      'faceplate-3b': '/hand-controller-4283-faceplate-3b',
-      'faceplate-3c': '/hand-controller-4283-faceplate-3c',
-      'faceplate-3d': '/hand-controller-4283-faceplate-3d',
-      'faceplate-3e': '/hand-controller-4283-faceplate-3e',
-      'faceplate-3f': '/hand-controller-4283-faceplate-3f',
+      'faceplate-3a': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3a',
+      'faceplate-3b': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3b',
+      'faceplate-3c': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3c',
+      'faceplate-3d': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3d',
+      'faceplate-3e': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3e',
+      'faceplate-3f': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3f',
     };
     return routeMap[basePath] || `/${basePath}/${controllerId}`;
   }
