@@ -507,13 +507,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     sp: sulfurSyncState.syncedSP,
     out: sulfurSyncState.syncedOUT,
     mode: sulfurSyncState.syncedMode,
-    pvUnits: sulfurFlowConfig.EU || 'GPM',
+    pvUnits: sulfurFlowConfig.EU || 'gpm',
     pvRangeMin: sulfurFlowConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: sulfurFlowConfig.PV_SCALE_HI ?? 100,
     alarmActive: sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.H || 
                  sulfurSyncState.alarmStates.L || sulfurSyncState.alarmStates.LL,
     alarmColor: (sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL) ? 'red' : 
                 (sulfurSyncState.alarmStates.H || sulfurSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: sulfurFlowConfig.ALM_LL_LIM ?? 0,
+    alarmL: sulfurFlowConfig.ALM_L_LIM ?? 0,
+    alarmH: sulfurFlowConfig.ALM_H_LIM ?? 0,
+    alarmHH: sulfurFlowConfig.ALM_HH_LIM ?? 0,
   };
   
   // Build valve faceplate data from synced state
@@ -616,6 +620,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                  handControllerSyncState.alarmStates.L || handControllerSyncState.alarmStates.LL,
     alarmColor: (handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.LL) ? 'red' : 
                 (handControllerSyncState.alarmStates.H || handControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: handControllerConfig.ALM_LL_LIM ?? 0,
+    alarmL: handControllerConfig.ALM_L_LIM ?? 0,
+    alarmH: handControllerConfig.ALM_H_LIM ?? 0,
+    alarmHH: handControllerConfig.ALM_HH_LIM ?? 0,
   };
 
   // Build WHB Outlet dP Hand Controller 1540-H-4283 data from synced state
@@ -634,6 +642,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                  whbHandControllerSyncState.alarmStates.L || whbHandControllerSyncState.alarmStates.LL,
     alarmColor: (whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.LL) ? 'red' : 
                 (whbHandControllerSyncState.alarmStates.H || whbHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: whbHandControllerConfig.ALM_LL_LIM ?? 0,
+    alarmL: whbHandControllerConfig.ALM_L_LIM ?? 0,
+    alarmH: whbHandControllerConfig.ALM_H_LIM ?? 0,
+    alarmHH: whbHandControllerConfig.ALM_HH_LIM ?? 0,
   };
 
   // Build Jug Valve Hand Controller 1540-H-4282 data from synced state
@@ -652,6 +664,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                  jugValveHandControllerSyncState.alarmStates.L || jugValveHandControllerSyncState.alarmStates.LL,
     alarmColor: (jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.LL) ? 'red' : 
                 (jugValveHandControllerSyncState.alarmStates.H || jugValveHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: jugValveHandControllerConfig.ALM_LL_LIM ?? 0,
+    alarmL: jugValveHandControllerConfig.ALM_L_LIM ?? 0,
+    alarmH: jugValveHandControllerConfig.ALM_H_LIM ?? 0,
+    alarmHH: jugValveHandControllerConfig.ALM_HH_LIM ?? 0,
   };
 
   // Build Temperature Sensor 1520-TI-5821 data from synced state
@@ -1842,7 +1858,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={sulfurFlowData}
               isTransparent={true}
-              showAlarmLimits={false}
             />
           </div>
         </Rnd>
@@ -1982,7 +1997,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={handControllerData}
               isTransparent={true}
-              showAlarmLimits={false}
             />
           </div>
         </Rnd>
@@ -2017,7 +2031,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={whbHandControllerData}
               isTransparent={true}
-              showAlarmLimits={false}
             />
           </div>
         </Rnd>
@@ -2052,7 +2065,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={jugValveHandControllerData}
               isTransparent={true}
-              showAlarmLimits={false}
             />
           </div>
         </Rnd>
