@@ -18,6 +18,8 @@ interface RangeBarProps {
   alarmActive?: boolean;
   alarmColor?: 'red' | 'yellow';
   units?: string;
+  // Whether to show alarm limit markers (LL, L, H, HH) - default true
+  showAlarmLimits?: boolean;
 }
 
 // Determine bar color based on alarm state from parent or PV value relative to alarm limits
@@ -71,7 +73,8 @@ export const RangeBar = ({
   isTransparent = false,
   alarmActive,
   alarmColor,
-  units
+  units,
+  showAlarmLimits = true
 }: RangeBarProps) => {
   const pvPercentage = Math.max(0, Math.min(100, ((pvValue - min) / (max - min)) * 100));
   const outPercentage = Math.max(0, Math.min(100, ((outValue - min) / (max - min)) * 100));
@@ -86,8 +89,8 @@ export const RangeBar = ({
     <div className="relative overflow-visible pt-2">
       {/* Bar Track with tick marks */}
       <div className="relative overflow-visible">
-        {/* Tick marks at alarm setpoint positions with labels - hide when limit = 0 */}
-        {[
+        {/* Tick marks at alarm setpoint positions with labels - hide when limit = 0 or showAlarmLimits = false */}
+        {showAlarmLimits && [
           { value: alarmLL, label: 'LL' },
           { value: alarmL, label: 'L' },
           { value: alarmH, label: 'H' },
@@ -104,7 +107,7 @@ export const RangeBar = ({
                 transform: 'translateX(-50%)'
               }}
             >
-<span className={cn(
+              <span className={cn(
                 "text-[9px] font-mono font-bold mb-0.5",
                 isTransparent ? "text-black" : "text-cyan-300"
               )}>{alarm.label}</span>

@@ -315,6 +315,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     updateSyncedOUT: updateSulfurOUT,
     updateSyncedMode: updateSulfurMode 
   } = useControllerSync('1530-F-2602');
+  const sulfurFlowConfig = getControllerConfig('default');
   
   // Get real-time synced state for Sulfur Flow Control Valve
   const { state: valveSyncState } = useControllerSync('1540-FCV-2602');
@@ -500,15 +501,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Build controller data from synced state
   const sulfurFlowData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: '1530-F-2602',
-    description: 'Sulfur Flow Controller',
+    instrumentTag: sulfurFlowConfig.TAGNAME || '1530-F-2602',
+    description: sulfurFlowConfig.DESC || 'Sulfur Flow Controller',
     pv: sulfurSyncState.syncedPV,
     sp: sulfurSyncState.syncedSP,
     out: sulfurSyncState.syncedOUT,
     mode: sulfurSyncState.syncedMode,
-    pvUnits: 'GPM',
-    pvRangeMin: 0,
-    pvRangeMax: 100,
+    pvUnits: sulfurFlowConfig.EU || 'GPM',
+    pvRangeMin: sulfurFlowConfig.PV_SCALE_LO ?? 0,
+    pvRangeMax: sulfurFlowConfig.PV_SCALE_HI ?? 100,
     alarmActive: sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.H || 
                  sulfurSyncState.alarmStates.L || sulfurSyncState.alarmStates.LL,
     alarmColor: (sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL) ? 'red' : 
@@ -602,15 +603,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Build Hand Controller 1540-H-4030 data from synced state
   const handControllerData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: '1540-H-4030',
-    description: 'Main Compressor Hand Controller',
+    instrumentTag: handControllerConfig.TAGNAME || '1540-H-4030',
+    description: handControllerConfig.DESC || 'Main Compressor Hand Controller',
     pv: handControllerSyncState.syncedPV,
     sp: handControllerSyncState.syncedSP,
     out: handControllerSyncState.syncedOUT,
     mode: handControllerSyncState.syncedMode,
-    pvUnits: '%',
-    pvRangeMin: 0,
-    pvRangeMax: 100,
+    pvUnits: handControllerConfig.EU || '%',
+    pvRangeMin: handControllerConfig.PV_SCALE_LO ?? 0,
+    pvRangeMax: handControllerConfig.PV_SCALE_HI ?? 100,
     alarmActive: handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.H || 
                  handControllerSyncState.alarmStates.L || handControllerSyncState.alarmStates.LL,
     alarmColor: (handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.LL) ? 'red' : 
@@ -1841,6 +1842,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={sulfurFlowData}
               isTransparent={true}
+              showAlarmLimits={false}
             />
           </div>
         </Rnd>
@@ -1980,6 +1982,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={handControllerData}
               isTransparent={true}
+              showAlarmLimits={false}
             />
           </div>
         </Rnd>
@@ -2014,6 +2017,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={whbHandControllerData}
               isTransparent={true}
+              showAlarmLimits={false}
             />
           </div>
         </Rnd>
@@ -2048,6 +2052,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={jugValveHandControllerData}
               isTransparent={true}
+              showAlarmLimits={false}
             />
           </div>
         </Rnd>

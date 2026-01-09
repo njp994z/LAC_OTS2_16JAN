@@ -295,21 +295,25 @@ export const SecondaryControllerFaceplate = ({
               {isBypassMode ? 'BYPASS' : isRcasMode ? 'RCAS' : isRoutMode ? 'ROUT' : data.MODE_AUTOMAN}
             </div>
             
-            {/* Modelock Override - Only show when modelock is active (locked) */}
-            {!data.MODELOCK_OVERRIDE && (
-              <button 
-                onClick={() => {
+            {/* Modelock Override - Shows lock when locked, unlock when override is active */}
+            <button 
+              onClick={() => {
+                if (data.MODELOCK_OVERRIDE) {
+                  onModelockOverrideChange?.(false);
+                } else {
                   setShowModelockConfirm(true);
-                }}
-                className={cn(
-                  "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors mt-1 border",
-                  "bg-slate-600/80 text-slate-300 border-slate-500/50"
-                )}
-              >
-                <Lock size={9} />
-                <span>Modelock</span>
-              </button>
-            )}
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors mt-1 border",
+                data.MODELOCK_OVERRIDE 
+                  ? "bg-cyan-600/80 text-white border-cyan-500/50"
+                  : "bg-slate-600/80 text-slate-300 border-slate-500/50"
+              )}
+            >
+              {data.MODELOCK_OVERRIDE ? <Unlock size={9} /> : <Lock size={9} />}
+              <span>Modelock</span>
+            </button>
 
             {/* Modelock Confirmation Dialog */}
             <AlertDialog open={showModelockConfirm} onOpenChange={setShowModelockConfirm}>

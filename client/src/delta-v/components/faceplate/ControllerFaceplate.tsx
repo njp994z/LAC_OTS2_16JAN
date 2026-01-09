@@ -31,9 +31,10 @@ interface ControllerFaceplateProps {
   className?: string;
   onSelect?: () => void;
   isTransparent?: boolean;
+  showAlarmLimits?: boolean;
 }
 
-export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false }: ControllerFaceplateProps) => {
+export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false, showAlarmLimits = true }: ControllerFaceplateProps) => {
   const isCriticalAlarm = data.alarmColor === 'red' && data.alarmActive;
   const isWarningAlarm = data.alarmColor === 'yellow' && data.alarmActive;
   const isNormalState = !isCriticalAlarm && !isWarningAlarm;
@@ -128,6 +129,7 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
               alarmActive={data.alarmActive}
               alarmColor={data.alarmColor}
               units={data.pvUnits}
+              showAlarmLimits={showAlarmLimits}
             />
           </div>
         </div>

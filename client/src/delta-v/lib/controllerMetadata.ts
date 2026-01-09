@@ -53,8 +53,8 @@ export const CONTROLLER_METADATA: Record<string, ControllerMetadata> = {
   },
   'default': {
     name: 'Controller',
-    backRoute: '/flow-controller',
-    label: 'Flow Controller',
+    backRoute: '/settings/controller-outputs/faceplates/sulfur-flow-controller-main',
+    label: 'Primary & Secondary Faceplates',
   },
 };
 
