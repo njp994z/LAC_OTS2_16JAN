@@ -153,13 +153,13 @@ export const RangeBar = ({
             >
               <div className={cn(
                 "w-0 h-0 border-l-[4px] border-r-[4px] border-t-[5px]",
-                "border-l-transparent border-r-transparent border-t-sp-marker",
+                "border-l-transparent border-r-transparent border-t-white",
                 "drop-shadow-md"
               )} />
-              <div className="w-0.5 h-2 bg-sp-marker shadow-md" />
+              <div className="w-0.5 h-2 bg-white shadow-md" />
               <div className={cn(
                 "w-0 h-0 border-l-[4px] border-r-[4px] border-b-[5px]",
-                "border-l-transparent border-r-transparent border-b-sp-marker",
+                "border-l-transparent border-r-transparent border-b-white",
                 "drop-shadow-md"
               )} />
             </div>
