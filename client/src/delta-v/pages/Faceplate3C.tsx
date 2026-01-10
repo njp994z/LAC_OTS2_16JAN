@@ -1,5 +1,6 @@
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, TrendingUp } from 'lucide-react';
+import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { useState, useEffect, useCallback } from 'react';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
@@ -107,7 +108,10 @@ const Faceplate3C = () => {
             <TrendingUp className="text-cyan-400" />
             Trend (Live Data Only)
           </h1>
-          <p className="text-muted-foreground mb-8">Faceplate 3C - Real-time process data trending (1 hour window)</p>
+          <div className="flex items-center justify-between mb-8">
+            <p className="text-muted-foreground">Faceplate 3C - Real-time process data trending (1 hour window)</p>
+            <FaceplateDownloadButtons faceplateId="3C" />
+          </div>
 
           <div className="space-y-6">
             {/* Legend */}

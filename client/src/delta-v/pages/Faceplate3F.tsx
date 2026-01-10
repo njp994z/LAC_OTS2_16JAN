@@ -1,5 +1,6 @@
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, Bell, CheckCircle, AlertTriangle } from 'lucide-react';
+import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
 import { useControllerConfig } from '@/delta-v/contexts/ControllerConfigContext';
 import { useEffect, useRef } from 'react';
@@ -113,7 +114,10 @@ const Faceplate3F = () => {
             <Bell className="text-cyan-400" />
             Acknowledge Alarm
           </h1>
-          <p className="text-muted-foreground mb-6">Faceplate 3F - Active alarms and acknowledgement</p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-muted-foreground">Faceplate 3F - Active alarms and acknowledgement</p>
+            <FaceplateDownloadButtons faceplateId="3F" />
+          </div>
 
           {/* Test Buttons */}
           <div className="flex gap-2 mb-6">

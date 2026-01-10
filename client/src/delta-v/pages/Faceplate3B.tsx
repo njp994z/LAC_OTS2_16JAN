@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, Play, Square, Trash2, Download, Settings } from 'lucide-react';
+import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
 import { LoopTimeseriesRow, LOOP_TIMESERIES_STORAGE_KEY, defaultPIDHxBypassConfig, PID_HX_BYPASS_STORAGE_KEY } from '@/delta-v/types/pidHxBypassConfig';
@@ -323,6 +324,7 @@ const Faceplate3B = () => {
               <Download size={14} />
               Export CSV
             </Button>
+            <FaceplateDownloadButtons faceplateId="3B" />
           </div>
 
           {/* Status Bar */}

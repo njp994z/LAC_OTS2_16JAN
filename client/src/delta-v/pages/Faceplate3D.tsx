@@ -1,5 +1,6 @@
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, Settings2 } from 'lucide-react';
+import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { useState, useEffect } from 'react';
 import { PIDHxBypassConfig, defaultPIDHxBypassConfig, PID_HX_BYPASS_STORAGE_KEY } from '@/delta-v/types/pidHxBypassConfig';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
@@ -58,7 +59,10 @@ const Faceplate3D = () => {
             <Settings2 className="text-cyan-400" />
             Control Studio – Engineering Function
           </h1>
-          <p className="text-muted-foreground mb-6">Faceplate 3D - Complete configuration overview from Faceplate 3A</p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-muted-foreground">Faceplate 3D - Complete configuration overview from Faceplate 3A</p>
+            <FaceplateDownloadButtons faceplateId="3D" />
+          </div>
 
           {/* Configuration Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

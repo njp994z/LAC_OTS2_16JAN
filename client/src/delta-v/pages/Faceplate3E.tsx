@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, Sliders, Save } from 'lucide-react';
+import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -244,10 +245,13 @@ const Faceplate3E = () => {
               </h1>
               <p className="text-muted-foreground">Faceplate 3E - All inputs for Primary & Secondary Controllers</p>
             </div>
-            <Button onClick={handleApply} className="bg-cyan-600 hover:bg-cyan-500">
-              <Save className="mr-2 h-4 w-4" />
-              Apply Changes
-            </Button>
+            <div className="flex gap-2">
+              <FaceplateDownloadButtons faceplateId="3E" />
+              <Button onClick={handleApply} className="bg-cyan-600 hover:bg-cyan-500">
+                <Save className="mr-2 h-4 w-4" />
+                Apply Changes
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-6">

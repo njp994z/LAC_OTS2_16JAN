@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft, Download, Upload, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
+import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -348,6 +349,7 @@ const Faceplate3A = () => {
               <Upload size={16} />
               Load JSON
             </Button>
+            <FaceplateDownloadButtons faceplateId="3A" />
           </div>
         </div>
 
