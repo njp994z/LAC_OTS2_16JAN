@@ -928,35 +928,28 @@ const SulfurFlowControllerFaceplateMain = () => {
     OUT_PCT: syncState.syncedOUT,
   });
   
-  // Sync config changes from Faceplate3E/3F - re-read on focus to catch navigation back
+  // Sync config changes from Faceplate3E/3F - react to savedConfig changes from context
+  // Use JSON string for stable comparison since getControllerConfig returns new objects
+  const savedConfigKey = JSON.stringify(savedConfig);
   useEffect(() => {
-    const syncConfigFromContext = () => {
-      const savedConfig = getControllerConfig(activeControllerId);
-      setConfig(savedConfig);
-      setControllerData(prev => ({
-        ...prev,
-        instrumentTag: savedConfig.TAGNAME || defaultControllerData.instrumentTag,
-        description: savedConfig.DESC || defaultControllerData.description,
-        pvUnits: savedConfig.EU || defaultControllerData.pvUnits,
-        pvRangeMin: savedConfig.PV_SCALE_LO ?? defaultControllerData.pvRangeMin,
-        pvRangeMax: savedConfig.PV_SCALE_HI ?? defaultControllerData.pvRangeMax,
-        // Sync indicator visibility flags
-        showHoldIndicator: savedConfig.SHOW_HOLD_INDICATOR,
-        showOutputPathIndicator: savedConfig.SHOW_OUTPUT_PATH_INDICATOR,
-        showInterlockIndicator: savedConfig.SHOW_INTERLOCK_INDICATOR,
-        showInterlockDiamond: savedConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
-        showLockIndicator: savedConfig.SHOW_LOCK_INDICATOR,
-        holdActive: savedConfig.HOLD_ACTIVE ?? false,
-      }));
-    };
-    
-    // Sync immediately on mount/navigation
-    syncConfigFromContext();
-    
-    // Also sync when window regains focus (user returns from config page)
-    window.addEventListener('focus', syncConfigFromContext);
-    return () => window.removeEventListener('focus', syncConfigFromContext);
-  }, [getControllerConfig, activeControllerId]);
+    setConfig(savedConfig);
+    setControllerData(prev => ({
+      ...prev,
+      instrumentTag: savedConfig.TAGNAME || defaultControllerData.instrumentTag,
+      description: savedConfig.DESC || defaultControllerData.description,
+      pvUnits: savedConfig.EU || defaultControllerData.pvUnits,
+      pvRangeMin: savedConfig.PV_SCALE_LO ?? defaultControllerData.pvRangeMin,
+      pvRangeMax: savedConfig.PV_SCALE_HI ?? defaultControllerData.pvRangeMax,
+      // Sync indicator visibility flags
+      showHoldIndicator: savedConfig.SHOW_HOLD_INDICATOR,
+      showOutputPathIndicator: savedConfig.SHOW_OUTPUT_PATH_INDICATOR,
+      showInterlockIndicator: savedConfig.SHOW_INTERLOCK_INDICATOR,
+      showInterlockDiamond: savedConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
+      showLockIndicator: savedConfig.SHOW_LOCK_INDICATOR,
+      holdActive: savedConfig.HOLD_ACTIVE ?? false,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedConfigKey]);
   
   // Derive alarm state from secondary controller alarms
   const hasRedAlarm = !secondaryData.PV_OK || secondaryData.ALM_LL_ACT || secondaryData.ALM_HH_ACT;
