@@ -435,6 +435,14 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/faceplate-3e/:controllerId?" component={Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/faceplate-3f/:controllerId?" component={Faceplate3F} />
       
+      {/* Short Path Redirects for Convenience */}
+      <Route path="/delta-v/faceplate/3A" component={Faceplate3A} />
+      <Route path="/delta-v/faceplate/3B" component={Faceplate3B} />
+      <Route path="/delta-v/faceplate/3C" component={Faceplate3C} />
+      <Route path="/delta-v/faceplate/3D" component={Faceplate3D} />
+      <Route path="/delta-v/faceplate/3E" component={Faceplate3E} />
+      <Route path="/delta-v/faceplate/3F" component={Faceplate3F} />
+      
       {/* Delta-V VFD Pages */}
       <Route path="/settings/controller-outputs/faceplates/vfd-settings" component={VFDSettings} />
       <Route path="/settings/controller-outputs/faceplates/vfd-history" component={VFDHistory} />

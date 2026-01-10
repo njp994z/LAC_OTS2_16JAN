@@ -16,51 +16,53 @@ import {
 
 // Helper function to route to independent pages for specific controllers
 const getRouteForController = (basePath: string, controllerId?: string): string => {
+  const deltaVPrefix = '/settings/controller-outputs/faceplates';
+  
   if (controllerId === '1530-F-2602') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3a',
-      'faceplate-3b': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3b',
-      'faceplate-3c': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3c',
-      'faceplate-3d': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3d',
-      'faceplate-3e': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3e',
-      'faceplate-3f': '/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3f',
+      'faceplate-3a': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3a`,
+      'faceplate-3b': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3b`,
+      'faceplate-3c': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3c`,
+      'faceplate-3d': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3d`,
+      'faceplate-3e': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3e`,
+      'faceplate-3f': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3f`,
     };
-    return routeMap[basePath] || `/${basePath}/${controllerId}`;
+    return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
   }
   if (controllerId === '1540-H-4030') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3a',
-      'faceplate-3b': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3b',
-      'faceplate-3c': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3c',
-      'faceplate-3d': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3d',
-      'faceplate-3e': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3e',
-      'faceplate-3f': '/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3f',
+      'faceplate-3a': `${deltaVPrefix}/hand-controller-4030-faceplate-3a`,
+      'faceplate-3b': `${deltaVPrefix}/hand-controller-4030-faceplate-3b`,
+      'faceplate-3c': `${deltaVPrefix}/hand-controller-4030-faceplate-3c`,
+      'faceplate-3d': `${deltaVPrefix}/hand-controller-4030-faceplate-3d`,
+      'faceplate-3e': `${deltaVPrefix}/hand-controller-4030-faceplate-3e`,
+      'faceplate-3f': `${deltaVPrefix}/hand-controller-4030-faceplate-3f`,
     };
-    return routeMap[basePath] || `/${basePath}/${controllerId}`;
+    return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
   }
   if (controllerId === '1540-H-4282') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3a',
-      'faceplate-3b': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3b',
-      'faceplate-3c': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3c',
-      'faceplate-3d': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3d',
-      'faceplate-3e': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3e',
-      'faceplate-3f': '/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3f',
+      'faceplate-3a': `${deltaVPrefix}/hand-controller-4282-faceplate-3a`,
+      'faceplate-3b': `${deltaVPrefix}/hand-controller-4282-faceplate-3b`,
+      'faceplate-3c': `${deltaVPrefix}/hand-controller-4282-faceplate-3c`,
+      'faceplate-3d': `${deltaVPrefix}/hand-controller-4282-faceplate-3d`,
+      'faceplate-3e': `${deltaVPrefix}/hand-controller-4282-faceplate-3e`,
+      'faceplate-3f': `${deltaVPrefix}/hand-controller-4282-faceplate-3f`,
     };
-    return routeMap[basePath] || `/${basePath}/${controllerId}`;
+    return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
   }
   if (controllerId === '1540-H-4283') {
     const routeMap: Record<string, string> = {
-      'faceplate-3a': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3a',
-      'faceplate-3b': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3b',
-      'faceplate-3c': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3c',
-      'faceplate-3d': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3d',
-      'faceplate-3e': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3e',
-      'faceplate-3f': '/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3f',
+      'faceplate-3a': `${deltaVPrefix}/hand-controller-4283-faceplate-3a`,
+      'faceplate-3b': `${deltaVPrefix}/hand-controller-4283-faceplate-3b`,
+      'faceplate-3c': `${deltaVPrefix}/hand-controller-4283-faceplate-3c`,
+      'faceplate-3d': `${deltaVPrefix}/hand-controller-4283-faceplate-3d`,
+      'faceplate-3e': `${deltaVPrefix}/hand-controller-4283-faceplate-3e`,
+      'faceplate-3f': `${deltaVPrefix}/hand-controller-4283-faceplate-3f`,
     };
-    return routeMap[basePath] || `/${basePath}/${controllerId}`;
+    return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
   }
-  return `/${basePath}${controllerId ? `/${controllerId}` : ''}`;
+  return `${deltaVPrefix}/${basePath}${controllerId ? `/${controllerId}` : ''}`;
 };
 
 interface SecondaryControllerFaceplateProps {
