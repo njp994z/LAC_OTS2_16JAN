@@ -3,6 +3,7 @@ import type { ControllerData, ControllerMode } from '@/delta-v/types/controller'
 import { Check, X, Lock, Unlock } from 'lucide-react';
 import { RangeBar } from './RangeBar';
 import { OutBarDisplay } from './OutBarDisplay';
+import { useControllerConfig } from '@/delta-v/contexts/ControllerConfigContext';
 
 // Map mode to two-letter DeltaV abbreviation
 const modeAbbreviation: Record<ControllerMode, string> = {
@@ -32,9 +33,19 @@ interface ControllerFaceplateProps {
   onSelect?: () => void;
   isTransparent?: boolean;
   showAlarmLimits?: boolean;
+  controllerId?: string;
 }
 
-export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false, showAlarmLimits = true }: ControllerFaceplateProps) => {
+export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false, showAlarmLimits = true, controllerId }: ControllerFaceplateProps) => {
+  const { getControllerConfig } = useControllerConfig();
+  
+  // Get config from context if controllerId is provided, for dynamic TAGNAME/DESC
+  const config = controllerId ? getControllerConfig(controllerId) : null;
+  
+  // Use config values if available, otherwise fall back to data props
+  const displayTag = config?.TAGNAME || data.instrumentTag;
+  const displayDesc = config?.DESC || data.description;
+  
   const isCriticalAlarm = data.alarmColor === 'red' && data.alarmActive;
   const isWarningAlarm = data.alarmColor === 'yellow' && data.alarmActive;
   const isNormalState = !isCriticalAlarm && !isWarningAlarm;
@@ -89,10 +100,10 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
           "font-mono font-bold text-xs tracking-wide",
           isTransparent ? "text-black" : "text-faceplate-border glow-text"
         )}>
-          {data.instrumentTag}
+          {displayTag}
         </span>
         <p className={cn("text-[9px]", isTransparent ? "text-black font-semibold" : "text-muted-foreground")}>
-          {data.description}
+          {displayDesc}
         </p>
       </div>
 

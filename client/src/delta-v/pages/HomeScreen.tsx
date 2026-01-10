@@ -1858,6 +1858,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={sulfurFlowData}
               isTransparent={true}
+              controllerId="1530-F-2602"
             />
           </div>
         </Rnd>
@@ -1997,6 +1998,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={handControllerData}
               isTransparent={true}
+              controllerId="1540-H-4030"
             />
           </div>
         </Rnd>
@@ -2031,6 +2033,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={whbHandControllerData}
               isTransparent={true}
+              controllerId="1540-H-4283"
             />
           </div>
         </Rnd>
@@ -2065,6 +2068,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <ControllerFaceplate 
               data={jugValveHandControllerData}
               isTransparent={true}
+              controllerId="1540-H-4282"
             />
           </div>
         </Rnd>
