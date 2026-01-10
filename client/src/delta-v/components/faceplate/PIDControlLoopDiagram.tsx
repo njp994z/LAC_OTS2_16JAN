@@ -1,173 +1,214 @@
 const PIDControlLoopDiagram = () => {
   return (
     <svg
-      viewBox="0 0 800 500"
+      viewBox="0 0 1100 340"
       className="w-full h-auto"
-      style={{ maxHeight: '500px' }}
+      style={{ maxHeight: '340px' }}
     >
       <defs>
-        {/* Arrow marker for signal lines */}
+        <marker
+          id="arrowBlack"
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="3"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M0,0 L0,6 L8,3 z" fill="#374151" />
+        </marker>
         <marker
           id="arrowCyan"
-          markerWidth="10"
-          markerHeight="10"
-          refX="9"
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
           refY="3"
           orient="auto"
           markerUnits="strokeWidth"
         >
-          <path d="M0,0 L0,6 L9,3 z" fill="hsl(var(--faceplate-border))" />
-        </marker>
-        <marker
-          id="arrowWhite"
-          markerWidth="10"
-          markerHeight="10"
-          refX="9"
-          refY="3"
-          orient="auto"
-          markerUnits="strokeWidth"
-        >
-          <path d="M0,0 L0,6 L9,3 z" fill="white" />
-        </marker>
-        <marker
-          id="arrowOrange"
-          markerWidth="10"
-          markerHeight="10"
-          refX="9"
-          refY="3"
-          orient="auto"
-          markerUnits="strokeWidth"
-        >
-          <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+          <path d="M0,0 L0,6 L8,3 z" fill="hsl(var(--faceplate-border))" />
         </marker>
       </defs>
 
       {/* Background */}
-      <rect x="0" y="0" width="800" height="500" fill="hsl(222 47% 11%)" rx="8" />
+      <rect x="0" y="0" width="1100" height="340" fill="hsl(222 47% 98%)" rx="4" />
 
-      {/* Title */}
-      <text x="400" y="30" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="14" fontFamily="monospace" fontWeight="bold">
-        Single-Loop Temperature Control with HX Bypass + Positioner + Dead Time
-      </text>
+      {/* === LEFT SIDE: Controller Block === */}
+      <rect x="20" y="70" width="100" height="55" fill="white" stroke="#374151" strokeWidth="1.5" rx="2" />
+      <text x="70" y="90" textAnchor="middle" fill="#374151" fontSize="9" fontFamily="sans-serif" fontWeight="500">Control Loop</text>
+      <text x="70" y="103" textAnchor="middle" fill="#374151" fontSize="9" fontFamily="sans-serif" fontWeight="500">Sulfur Flow Controller</text>
 
-      {/* === TOP ROW: Control Elements === */}
+      {/* SP: (gpm) label */}
+      <text x="25" y="145" textAnchor="start" fill="#374151" fontSize="9" fontFamily="sans-serif">SP: (gpm)</text>
+
+      {/* Summing junction for SP-PV */}
+      <text x="70" y="165" textAnchor="middle" fill="#374151" fontSize="10" fontFamily="sans-serif">Σ: +/-</text>
+
+      {/* e(t) signal from controller to PID */}
+      <line x1="120" y1="97" x2="155" y2="97" stroke="#374151" strokeWidth="1" markerEnd="url(#arrowBlack)" />
+      <text x="138" y="90" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif">e(t)</text>
+
+      {/* === PID CONTROLLER SECTION === */}
+      <rect x="160" y="35" width="155" height="145" fill="none" stroke="#374151" strokeWidth="1" strokeDasharray="4,2" rx="2" />
+      <text x="237" y="28" textAnchor="middle" fill="#374151" fontSize="9" fontFamily="sans-serif" fontStyle="italic">PID Controller</text>
+
+      {/* Kp block (top path) */}
+      <rect x="175" y="50" width="35" height="25" fill="white" stroke="#374151" strokeWidth="1" rx="1" />
+      <text x="192" y="67" textAnchor="middle" fill="#374151" fontSize="10" fontFamily="sans-serif">K<tspan fontSize="7" baselineShift="sub">p</tspan></text>
+
+      {/* Triangle amplifier after Kp */}
+      <polygon points="225,50 225,75 250,62.5" fill="white" stroke="#374151" strokeWidth="1" />
+      <text x="252" y="48" textAnchor="start" fill="#374151" fontSize="8" fontFamily="sans-serif">e(t)</text>
+
+      {/* Kp output line */}
+      <line x1="210" y1="62" x2="225" y2="62" stroke="#374151" strokeWidth="1" />
+      <line x1="250" y1="62" x2="270" y2="62" stroke="#374151" strokeWidth="1" />
+
+      {/* Ki block (middle path) */}
+      <rect x="175" y="85" width="35" height="25" fill="white" stroke="#374151" strokeWidth="1" rx="1" />
+      <text x="192" y="102" textAnchor="middle" fill="#374151" fontSize="10" fontFamily="sans-serif">K<tspan fontSize="7" baselineShift="sub">i</tspan></text>
+
+      {/* Triangle integrator after Ki */}
+      <polygon points="225,85 225,110 250,97.5" fill="white" stroke="#374151" strokeWidth="1" />
+      <text x="235" y="100" textAnchor="middle" fill="#374151" fontSize="7" fontFamily="sans-serif">∫e(t) dt</text>
+
+      {/* Ki output line */}
+      <line x1="210" y1="97" x2="225" y2="97" stroke="#374151" strokeWidth="1" />
+      <line x1="250" y1="97" x2="270" y2="97" stroke="#374151" strokeWidth="1" />
+
+      {/* Kd block (bottom path) */}
+      <rect x="175" y="120" width="35" height="25" fill="white" stroke="#374151" strokeWidth="1" rx="1" />
+      <text x="192" y="137" textAnchor="middle" fill="#374151" fontSize="10" fontFamily="sans-serif">K<tspan fontSize="7" baselineShift="sub">D</tspan></text>
+
+      {/* Triangle differentiator after Kd */}
+      <polygon points="225,120 225,145 250,132.5" fill="white" stroke="#374151" strokeWidth="1" />
+      <text x="235" y="135" textAnchor="middle" fill="#374151" fontSize="6" fontFamily="sans-serif">de(t)/dt</text>
+
+      {/* Kd output line */}
+      <line x1="210" y1="132" x2="225" y2="132" stroke="#374151" strokeWidth="1" />
+      <line x1="250" y1="132" x2="270" y2="132" stroke="#374151" strokeWidth="1" />
+
+      {/* Vertical connections to summing junction */}
+      <line x1="270" y1="62" x2="270" y2="132" stroke="#374151" strokeWidth="1" />
       
-      {/* Tsp label */}
-      <text x="45" y="85" textAnchor="middle" fill="white" fontSize="12" fontFamily="monospace">
-        T<tspan baselineShift="sub" fontSize="9">sp</tspan>
-      </text>
-      <line x1="60" y1="80" x2="85" y2="80" stroke="white" strokeWidth="2" markerEnd="url(#arrowWhite)" />
+      {/* Plus signs at junctions */}
+      <text x="275" y="65" textAnchor="start" fill="#374151" fontSize="8" fontFamily="sans-serif">+</text>
+      <text x="275" y="100" textAnchor="start" fill="#374151" fontSize="8" fontFamily="sans-serif">+</text>
 
-      {/* Summing Junction (circle with Σ) */}
-      <circle cx="105" cy="80" r="18" fill="hsl(222 47% 18%)" stroke="hsl(var(--faceplate-border))" strokeWidth="2" />
-      <text x="105" y="85" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="16" fontFamily="monospace">Σ</text>
-      
-      {/* e (error) signal */}
-      <line x1="123" y1="80" x2="165" y2="80" stroke="white" strokeWidth="2" markerEnd="url(#arrowWhite)" />
-      <text x="145" y="72" textAnchor="middle" fill="white" fontSize="11" fontFamily="monospace">e</text>
+      {/* PID Summing block */}
+      <circle cx="290" cy="97" r="12" fill="white" stroke="#374151" strokeWidth="1" />
+      <text x="290" y="101" textAnchor="middle" fill="#374151" fontSize="12" fontFamily="sans-serif">Σ</text>
 
-      {/* PID Block */}
-      <rect x="170" y="60" width="70" height="40" fill="hsl(222 47% 18%)" stroke="hsl(var(--faceplate-border))" strokeWidth="2" rx="4" />
-      <text x="205" y="85" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="13" fontFamily="monospace" fontWeight="bold">PID</text>
+      {/* Low-Pass Filter (under derivative) */}
+      <rect x="175" y="155" width="80" height="18" fill="white" stroke="#374151" strokeWidth="1" rx="1" />
+      <text x="215" y="167" textAnchor="middle" fill="#374151" fontSize="7" fontFamily="sans-serif">1 / (1 + τ<tspan fontSize="5" baselineShift="sub">LPF</tspan>(s))</text>
+      <text x="215" y="185" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif" fontStyle="italic">Low-Pass Filter</text>
+      <text x="215" y="195" textAnchor="middle" fill="#6B7280" fontSize="6" fontFamily="sans-serif" fontStyle="italic">(Removes Chatter, for the Derivative Function)</text>
 
-      {/* u (control signal) */}
-      <line x1="240" y1="80" x2="285" y2="80" stroke="hsl(var(--faceplate-border))" strokeWidth="2" markerEnd="url(#arrowCyan)" />
-      <text x="263" y="72" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="11" fontFamily="monospace">u</text>
+      {/* u(t) output from PID */}
+      <line x1="302" y1="97" x2="335" y2="97" stroke="#374151" strokeWidth="1" markerEnd="url(#arrowBlack)" />
+      <text x="318" y="90" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif">u(t)</text>
+      <text x="318" y="112" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">4-20 mA</text>
 
-      {/* Positioner Block Gpos(s) */}
-      <rect x="290" y="60" width="90" height="40" fill="hsl(222 47% 18%)" stroke="hsl(var(--faceplate-border))" strokeWidth="2" rx="4" />
-      <text x="335" y="85" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="12" fontFamily="monospace">G<tspan baselineShift="sub" fontSize="9">pos</tspan>(s)</text>
+      {/* === POSITIONER FUNCTION === */}
+      <rect x="340" y="60" width="80" height="75" fill="none" stroke="#374151" strokeWidth="1" strokeDasharray="4,2" rx="2" />
+      <text x="380" y="53" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif" fontStyle="italic">Positioner</text>
+      <text x="380" y="62" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif" fontStyle="italic">Function</text>
 
-      {/* Connection to Valve */}
-      <line x1="380" y1="80" x2="425" y2="80" stroke="hsl(var(--faceplate-border))" strokeWidth="2" markerEnd="url(#arrowCyan)" />
+      {/* Positioner transfer function block */}
+      <rect x="350" y="75" width="60" height="30" fill="white" stroke="#374151" strokeWidth="1" rx="1" />
+      <text x="380" y="88" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif">K<tspan fontSize="6" baselineShift="sub">POS</tspan></text>
+      <line x1="355" y1="95" x2="405" y2="95" stroke="#374151" strokeWidth="0.5" />
+      <text x="380" y="103" textAnchor="middle" fill="#374151" fontSize="7" fontFamily="sans-serif">1 + τ<tspan fontSize="5" baselineShift="sub">POS</tspan>(s)</text>
 
-      {/* Valve Block Gv(s) */}
-      <rect x="430" y="60" width="80" height="40" fill="hsl(222 47% 18%)" stroke="hsl(var(--faceplate-border))" strokeWidth="2" rx="4" />
-      <text x="470" y="85" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="12" fontFamily="monospace">G<tspan baselineShift="sub" fontSize="9">v</tspan>(s)</text>
+      {/* x(t) output */}
+      <line x1="420" y1="97" x2="460" y2="97" stroke="#374151" strokeWidth="1" markerEnd="url(#arrowBlack)" />
+      <text x="440" y="90" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif">x(t)</text>
+      <text x="440" y="112" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">0.0 - 1.0</text>
 
-      {/* x (valve position) output */}
-      <line x1="510" y1="80" x2="570" y2="80" stroke="hsl(var(--faceplate-border))" strokeWidth="2" markerEnd="url(#arrowCyan)" />
-      <text x="540" y="72" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="11" fontFamily="monospace">x</text>
+      {/* === OVERALL TRANSFER FUNCTION SECTION === */}
+      <rect x="465" y="35" width="540" height="175" fill="none" stroke="hsl(var(--faceplate-border))" strokeWidth="1" strokeDasharray="4,2" rx="2" />
+      <text x="735" y="28" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="9" fontFamily="sans-serif" fontStyle="italic">Overall Transfer Function</text>
 
-      {/* === SPLIT JUNCTION === */}
-      <rect x="575" y="60" width="100" height="40" fill="hsl(222 47% 18%)" stroke="#F59E0B" strokeWidth="2" rx="4" />
-      <text x="625" y="77" textAnchor="middle" fill="#F59E0B" fontSize="10" fontFamily="monospace">Split</text>
-      <text x="625" y="90" textAnchor="middle" fill="#F59E0B" fontSize="10" fontFamily="monospace">Junction</text>
+      {/* Cv Calculation label */}
+      <text x="530" y="53" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif" fontStyle="italic">C<tspan fontSize="6" baselineShift="sub">v</tspan> Calculation</text>
 
-      {/* Branch down to HX (1-x flow) */}
-      <line x1="600" y1="100" x2="600" y2="160" stroke="#F59E0B" strokeWidth="2" markerEnd="url(#arrowOrange)" />
-      <text x="570" y="135" textAnchor="middle" fill="#F59E0B" fontSize="10" fontFamily="monospace">(1-x)</text>
+      {/* Cv block */}
+      <rect x="480" y="60" width="100" height="35" fill="white" stroke="hsl(var(--faceplate-border))" strokeWidth="1" rx="1" />
+      <text x="530" y="82" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="9" fontFamily="sans-serif">Cv = f(x, R, Cv<tspan fontSize="6" baselineShift="sub">max</tspan>)</text>
 
-      {/* Branch down to bypass (x flow) */}
-      <line x1="650" y1="100" x2="650" y2="310" stroke="#F59E0B" strokeWidth="2" strokeDasharray="5,3" />
-      <text x="680" y="135" textAnchor="start" fill="#F59E0B" fontSize="10" fontFamily="monospace">x</text>
-      <text x="680" y="148" textAnchor="start" fill="#F59E0B" fontSize="9" fontFamily="monospace">(bypass)</text>
+      {/* Connection from Cv to process */}
+      <line x1="580" y1="77" x2="615" y2="77" stroke="hsl(var(--faceplate-border))" strokeWidth="1" />
+      <line x1="615" y1="77" x2="615" y2="140" stroke="hsl(var(--faceplate-border))" strokeWidth="1" />
 
-      {/* === HEAT EXCHANGER === */}
-      <rect x="530" y="165" width="140" height="70" fill="hsl(222 47% 18%)" stroke="#F59E0B" strokeWidth="2" rx="4" />
-      <text x="600" y="190" textAnchor="middle" fill="#F59E0B" fontSize="12" fontFamily="monospace" fontWeight="bold">Heat Exchanger</text>
-      <text x="600" y="205" textAnchor="middle" fill="#F59E0B" fontSize="11" fontFamily="monospace">(HX)</text>
-      <text x="600" y="225" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10" fontFamily="monospace">process + θ (dead time)</text>
+      {/* Qsulfur label */}
+      <text x="478" y="145" textAnchor="end" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">Q<tspan fontSize="6" baselineShift="sub">Sulfur</tspan></text>
 
-      {/* Tin input to HX */}
-      <line x1="450" y1="200" x2="525" y2="200" stroke="#F59E0B" strokeWidth="2" markerEnd="url(#arrowOrange)" />
-      <text x="460" y="193" textAnchor="start" fill="#F59E0B" fontSize="11" fontFamily="monospace">T<tspan baselineShift="sub" fontSize="8">in</tspan></text>
+      {/* Static Head block */}
+      <rect x="490" y="130" width="55" height="30" fill="white" stroke="hsl(var(--faceplate-border))" strokeWidth="1" rx="1" />
+      <text x="517" y="148" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">dP = f(Q)</text>
+      <text x="517" y="175" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">Static</text>
+      <text x="517" y="185" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">Head</text>
 
-      {/* Thx output from HX */}
-      <line x1="600" y1="235" x2="600" y2="290" stroke="#F59E0B" strokeWidth="2" markerEnd="url(#arrowOrange)" />
-      <text x="615" y="265" textAnchor="start" fill="#F59E0B" fontSize="11" fontFamily="monospace">T<tspan baselineShift="sub" fontSize="8">hx</tspan></text>
+      {/* Arrow to Sulfur Pump */}
+      <line x1="545" y1="145" x2="570" y2="145" stroke="hsl(var(--faceplate-border))" strokeWidth="1" markerEnd="url(#arrowCyan)" />
 
-      {/* Bypass label - Tin goes through */}
-      <text x="680" y="250" textAnchor="start" fill="hsl(var(--muted-foreground))" fontSize="9" fontFamily="monospace">T<tspan baselineShift="sub" fontSize="7">bypass</tspan>=T<tspan baselineShift="sub" fontSize="7">in</tspan></text>
+      {/* Sulfur Pump block */}
+      <rect x="575" y="130" width="55" height="30" fill="white" stroke="hsl(var(--faceplate-border))" strokeWidth="1" rx="1" />
+      <text x="602" y="148" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">dP = f(Q)</text>
+      <text x="602" y="175" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">Sulfur Pump</text>
 
-      {/* === MIXING JUNCTION === */}
-      <rect x="530" y="295" width="140" height="55" fill="hsl(222 47% 18%)" stroke="#F59E0B" strokeWidth="2" rx="4" />
-      <text x="600" y="315" textAnchor="middle" fill="#F59E0B" fontSize="11" fontFamily="monospace" fontWeight="bold">Mixing Junction</text>
-      <text x="600" y="340" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10" fontFamily="monospace">T<tspan baselineShift="sub" fontSize="8">out</tspan> = x·T<tspan baselineShift="sub" fontSize="8">in</tspan> + (1-x)·T<tspan baselineShift="sub" fontSize="8">hx</tspan></text>
+      {/* Arrow to dP Line Losses */}
+      <line x1="630" y1="145" x2="655" y2="145" stroke="hsl(var(--faceplate-border))" strokeWidth="1" markerEnd="url(#arrowCyan)" />
 
-      {/* Bypass line connects to mixing junction */}
-      <line x1="650" y1="310" x2="650" y2="322" stroke="#F59E0B" strokeWidth="2" strokeDasharray="5,3" />
-      <circle cx="650" cy="322" r="4" fill="#F59E0B" />
+      {/* dP Line Losses block */}
+      <rect x="660" y="130" width="70" height="30" fill="white" stroke="hsl(var(--faceplate-border))" strokeWidth="1" rx="1" />
+      <text x="695" y="148" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">dP = f(Cv, Q)</text>
+      <text x="695" y="175" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">Sulfur FCV</text>
 
-      {/* Tout output - horizontal then down to sensor */}
-      <line x1="670" y1="322" x2="720" y2="322" stroke="#F59E0B" strokeWidth="2" />
-      <text x="695" y="312" textAnchor="middle" fill="#F59E0B" fontSize="11" fontFamily="monospace">T<tspan baselineShift="sub" fontSize="8">out</tspan></text>
-      
-      {/* Vertical line down from Tout to sensor */}
-      <line x1="720" y1="322" x2="720" y2="385" stroke="#F59E0B" strokeWidth="2" markerEnd="url(#arrowOrange)" />
+      {/* Arrow to Sulfur FCV */}
+      <line x1="730" y1="145" x2="755" y2="145" stroke="hsl(var(--faceplate-border))" strokeWidth="1" markerEnd="url(#arrowCyan)" />
 
-      {/* === SENSOR/TRANSMITTER (positioned under Tout stream) === */}
-      <rect x="665" y="390" width="110" height="40" fill="hsl(222 47% 18%)" stroke="hsl(var(--faceplate-border))" strokeWidth="2" rx="4" />
-      <text x="720" y="415" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="11" fontFamily="monospace">Sensor / T<tspan baselineShift="sub" fontSize="8">x</tspan></text>
+      {/* dP Line Losses block 2 */}
+      <rect x="760" y="130" width="55" height="30" fill="white" stroke="hsl(var(--faceplate-border))" strokeWidth="1" rx="1" />
+      <text x="787" y="148" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">dP = f(Q)</text>
+      <text x="787" y="175" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">dP Line Losses</text>
+
+      {/* Arrow to Spray Nozzles */}
+      <line x1="815" y1="145" x2="840" y2="145" stroke="hsl(var(--faceplate-border))" strokeWidth="1" markerEnd="url(#arrowCyan)" />
+
+      {/* Spray Nozzles block */}
+      <rect x="845" y="130" width="55" height="30" fill="white" stroke="hsl(var(--faceplate-border))" strokeWidth="1" rx="1" />
+      <text x="872" y="148" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">dP = f(Q)</text>
+      <text x="872" y="175" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">Spray Nozzles</text>
+
+      {/* Arrow to Dead Time Lag */}
+      <line x1="900" y1="145" x2="930" y2="145" stroke="hsl(var(--faceplate-border))" strokeWidth="1" markerEnd="url(#arrowCyan)" />
+
+      {/* Dead Time Lag section */}
+      <rect x="935" y="115" width="60" height="60" fill="none" stroke="#374151" strokeWidth="1" strokeDasharray="4,2" rx="2" />
+      <text x="965" y="108" textAnchor="middle" fill="#374151" fontSize="8" fontFamily="sans-serif" fontStyle="italic">Dead Time Lag</text>
+
+      {/* Dead time block */}
+      <rect x="945" y="130" width="40" height="30" fill="white" stroke="#374151" strokeWidth="1" rx="1" />
+      <text x="965" y="140" textAnchor="middle" fill="#374151" fontSize="9" fontFamily="sans-serif">e</text>
+      <text x="980" y="140" textAnchor="start" fill="#374151" fontSize="7" fontFamily="sans-serif">-θ(s)</text>
+
+      {/* PV(t) output */}
+      <line x1="985" y1="145" x2="1020" y2="145" stroke="#374151" strokeWidth="1" markerEnd="url(#arrowBlack)" />
+      <text x="1040" y="140" textAnchor="start" fill="#374151" fontSize="9" fontFamily="sans-serif">PV(t)</text>
+      <text x="1055" y="153" textAnchor="start" fill="#374151" fontSize="8" fontFamily="sans-serif">Q<tspan fontSize="6" baselineShift="sub">Sulfur</tspan></text>
+      <text x="1055" y="165" textAnchor="start" fill="#6B7280" fontSize="7" fontFamily="sans-serif">(gpm)</text>
 
       {/* === FEEDBACK PATH === */}
-      {/* Down from sensor */}
-      <line x1="720" y1="430" x2="720" y2="465" stroke="hsl(var(--faceplate-border))" strokeWidth="2" strokeDasharray="6,3" />
-      
-      {/* Left along bottom */}
-      <line x1="720" y1="465" x2="105" y2="465" stroke="hsl(var(--faceplate-border))" strokeWidth="2" strokeDasharray="6,3" />
-      
-      {/* Up to summing junction */}
-      <line x1="105" y1="465" x2="105" y2="103" stroke="hsl(var(--faceplate-border))" strokeWidth="2" strokeDasharray="6,3" markerEnd="url(#arrowCyan)" />
+      {/* Horizontal feedback line at bottom */}
+      <line x1="1020" y1="145" x2="1020" y2="230" stroke="hsl(var(--faceplate-border))" strokeWidth="1" />
+      <line x1="1020" y1="230" x2="70" y2="230" stroke="hsl(var(--faceplate-border))" strokeWidth="1" />
+      <line x1="70" y1="230" x2="70" y2="130" stroke="hsl(var(--faceplate-border))" strokeWidth="1" markerEnd="url(#arrowCyan)" />
 
-      {/* Tmeas label on feedback */}
-      <text x="400" y="458" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="11" fontFamily="monospace">T<tspan baselineShift="sub" fontSize="8">meas</tspan></text>
-
-      {/* Negative sign at summing junction */}
-      <text x="88" y="108" textAnchor="middle" fill="white" fontSize="14" fontFamily="monospace">−</text>
-
-      {/* === LEGEND === */}
-      <rect x="20" y="420" width="150" height="70" fill="hsl(222 47% 15%)" stroke="hsl(var(--border))" strokeWidth="1" rx="4" />
-      <text x="95" y="438" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10" fontFamily="monospace">Legend</text>
-      
-      <line x1="30" y1="452" x2="55" y2="452" stroke="hsl(var(--faceplate-border))" strokeWidth="2" />
-      <text x="60" y="456" textAnchor="start" fill="hsl(var(--muted-foreground))" fontSize="9" fontFamily="monospace">Control Signal</text>
-      
-      <line x1="30" y1="467" x2="55" y2="467" stroke="#F59E0B" strokeWidth="2" />
-      <text x="60" y="471" textAnchor="start" fill="hsl(var(--muted-foreground))" fontSize="9" fontFamily="monospace">Process Flow</text>
-      
-      <line x1="30" y1="482" x2="55" y2="482" stroke="hsl(var(--faceplate-border))" strokeWidth="2" strokeDasharray="6,3" />
-      <text x="60" y="486" textAnchor="start" fill="hsl(var(--muted-foreground))" fontSize="9" fontFamily="monospace">Feedback</text>
+      {/* Measured PV(t) label */}
+      <text x="545" y="245" textAnchor="middle" fill="hsl(var(--faceplate-border))" fontSize="8" fontFamily="sans-serif">Measured PV(t)</text>
+      <text x="545" y="257" textAnchor="middle" fill="#6B7280" fontSize="7" fontFamily="sans-serif">(gpm)</text>
     </svg>
   );
 };
