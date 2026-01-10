@@ -1859,6 +1859,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               data={sulfurFlowData}
               isTransparent={true}
               controllerId="1530-F-2602"
+              showAlarmLimits={false}
             />
           </div>
         </Rnd>
