@@ -111,7 +111,18 @@ const StableNumberInput = ({
 
 const Faceplate3E = () => {
   const { controllerId } = useParams<{ controllerId?: string }>();
-  const activeControllerId = controllerId || 'default';
+  
+  // Detect controller ID from URL path if not passed as param
+  const getControllerIdFromPath = (): string => {
+    const path = window.location.pathname;
+    if (path.includes('sulfur-flow-controller')) return '1530-F-2602';
+    if (path.includes('hand-controller-4030')) return '1540-H-4030';
+    if (path.includes('hand-controller-4282')) return '1540-H-4282';
+    if (path.includes('hand-controller-4283')) return '1540-H-4283';
+    return 'default';
+  };
+  
+  const activeControllerId = controllerId || getControllerIdFromPath();
   
   const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits } = useControllerSync(activeControllerId);
   const { getControllerConfig, updateControllerConfig, getControllerData, updateControllerData, saveController } = useControllerConfig();
