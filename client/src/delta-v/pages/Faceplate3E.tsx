@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useParams } from 'wouter';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link, useParams, useSearch } from 'wouter';
 import { ArrowLeft, Sliders, Save } from 'lucide-react';
 import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
@@ -111,6 +111,11 @@ const StableNumberInput = ({
 
 const Faceplate3E = () => {
   const { controllerId } = useParams<{ controllerId?: string }>();
+  const searchString = useSearch();
+  
+  // Parse query params from search string
+  const queryParams = useMemo(() => new URLSearchParams(searchString), [searchString]);
+  const fromSource = queryParams.get('from');
   
   // Detect controller ID from URL path if not passed as param
   const getControllerIdFromPath = (): string => {
@@ -123,6 +128,30 @@ const Faceplate3E = () => {
   };
   
   const activeControllerId = controllerId || getControllerIdFromPath();
+  
+  // Determine back route based on source
+  const getBackRoute = (): string => {
+    if (fromSource === 'home-screen') {
+      return '/settings/controller-outputs/faceplates/home-screen';
+    }
+    if (fromSource === 'faceplate') {
+      // Return to the specific controller's faceplate page
+      return getControllerMetadata(activeControllerId).backRoute;
+    }
+    // Default fallback to the controller's metadata backRoute
+    return getControllerMetadata(activeControllerId).backRoute;
+  };
+  
+  // Determine back label based on source
+  const getBackLabel = (): string => {
+    if (fromSource === 'home-screen') {
+      return 'Home Screen';
+    }
+    if (fromSource === 'faceplate') {
+      return `${getControllerMetadata(activeControllerId).label} Faceplate`;
+    }
+    return getControllerMetadata(activeControllerId).label;
+  };
   
   const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits } = useControllerSync(activeControllerId);
   const { getControllerConfig, updateControllerConfig, getControllerData, updateControllerData, saveController } = useControllerConfig();
@@ -233,11 +262,11 @@ const Faceplate3E = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
         <Link
-          to={getControllerMetadata(activeControllerId).backRoute}
+          to={getBackRoute()}
           className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
         >
           <ArrowLeft size={18} />
-          <span>Back to {getControllerMetadata(activeControllerId).label}</span>
+          <span>Back to {getBackLabel()}</span>
         </Link>
 
         <div className="bg-card/80 backdrop-blur border border-border rounded-lg p-6 max-w-5xl mx-auto">

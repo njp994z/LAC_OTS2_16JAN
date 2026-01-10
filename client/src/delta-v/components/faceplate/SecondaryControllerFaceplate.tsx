@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/alert-dialog';
 
 // Helper function to route to independent pages for specific controllers
-const getRouteForController = (basePath: string, controllerId?: string): string => {
+const getRouteForController = (basePath: string, controllerId?: string, fromSource?: string): string => {
   const deltaVPrefix = '/settings/controller-outputs/faceplates';
+  const fromParam = fromSource ? `?from=${fromSource}` : '';
   
   if (controllerId === '1530-F-2602') {
     const routeMap: Record<string, string> = {
@@ -24,7 +25,7 @@ const getRouteForController = (basePath: string, controllerId?: string): string 
       'faceplate-3b': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3b`,
       'faceplate-3c': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3c`,
       'faceplate-3d': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3d`,
-      'faceplate-3e': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3e`,
+      'faceplate-3e': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3e${fromParam}`,
       'faceplate-3f': `${deltaVPrefix}/sulfur-flow-controller-faceplate-3f`,
     };
     return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
@@ -35,7 +36,7 @@ const getRouteForController = (basePath: string, controllerId?: string): string 
       'faceplate-3b': `${deltaVPrefix}/hand-controller-4030-faceplate-3b`,
       'faceplate-3c': `${deltaVPrefix}/hand-controller-4030-faceplate-3c`,
       'faceplate-3d': `${deltaVPrefix}/hand-controller-4030-faceplate-3d`,
-      'faceplate-3e': `${deltaVPrefix}/hand-controller-4030-faceplate-3e`,
+      'faceplate-3e': `${deltaVPrefix}/hand-controller-4030-faceplate-3e${fromParam}`,
       'faceplate-3f': `${deltaVPrefix}/hand-controller-4030-faceplate-3f`,
     };
     return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
@@ -46,7 +47,7 @@ const getRouteForController = (basePath: string, controllerId?: string): string 
       'faceplate-3b': `${deltaVPrefix}/hand-controller-4282-faceplate-3b`,
       'faceplate-3c': `${deltaVPrefix}/hand-controller-4282-faceplate-3c`,
       'faceplate-3d': `${deltaVPrefix}/hand-controller-4282-faceplate-3d`,
-      'faceplate-3e': `${deltaVPrefix}/hand-controller-4282-faceplate-3e`,
+      'faceplate-3e': `${deltaVPrefix}/hand-controller-4282-faceplate-3e${fromParam}`,
       'faceplate-3f': `${deltaVPrefix}/hand-controller-4282-faceplate-3f`,
     };
     return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
@@ -57,7 +58,7 @@ const getRouteForController = (basePath: string, controllerId?: string): string 
       'faceplate-3b': `${deltaVPrefix}/hand-controller-4283-faceplate-3b`,
       'faceplate-3c': `${deltaVPrefix}/hand-controller-4283-faceplate-3c`,
       'faceplate-3d': `${deltaVPrefix}/hand-controller-4283-faceplate-3d`,
-      'faceplate-3e': `${deltaVPrefix}/hand-controller-4283-faceplate-3e`,
+      'faceplate-3e': `${deltaVPrefix}/hand-controller-4283-faceplate-3e${fromParam}`,
       'faceplate-3f': `${deltaVPrefix}/hand-controller-4283-faceplate-3f`,
     };
     return routeMap[basePath] || `${deltaVPrefix}/${basePath}/${controllerId}`;
@@ -78,6 +79,7 @@ interface SecondaryControllerFaceplateProps {
   onModelockOverrideChange?: (active: boolean) => void;
   onBypassChange?: (active: boolean) => void;
   isTransparent?: boolean;
+  fromSource?: string; // Source page for back navigation (e.g., 'home-screen')
 }
 
 // Mode button styling config
@@ -101,7 +103,8 @@ export const SecondaryControllerFaceplate = ({
   onOutChange,
   onModelockOverrideChange,
   onBypassChange,
-  isTransparent = false
+  isTransparent = false,
+  fromSource
 }: SecondaryControllerFaceplateProps) => {
   const [showModelockConfirm, setShowModelockConfirm] = useState(false);
 
@@ -581,7 +584,7 @@ export const SecondaryControllerFaceplate = ({
           <ToolbarButton icon={<History size={12} />} title="Primary Control" to={getRouteForController('faceplate-3b', controllerId)} />
           <ToolbarButton icon={<Activity size={12} />} title="Trend" to={getRouteForController('faceplate-3c', controllerId)} />
           <ToolbarButton icon={<Link2 size={12} />} title="Control Studio" to={getRouteForController('faceplate-3d', controllerId)} />
-          <ToolbarButton icon={<Sliders size={12} />} title="Controller Input" to={getRouteForController('faceplate-3e', controllerId)} />
+          <ToolbarButton icon={<Sliders size={12} />} title="Controller Input" to={getRouteForController('faceplate-3e', controllerId, fromSource)} />
           <ToolbarButton icon={<Bell size={12} />} title="Acknowledge Alarm" to={getRouteForController('faceplate-3f', controllerId)} />
         </div>
       </div>

@@ -619,6 +619,7 @@ const MainCompressorHandControllerFaceplateMain = () => {
               onOutChange={handleOutChange}
               onModelockOverrideChange={handleModelockOverrideChange}
               onBypassChange={handleBypassChange}
+              fromSource="faceplate"
             />
           </section>
         </main>

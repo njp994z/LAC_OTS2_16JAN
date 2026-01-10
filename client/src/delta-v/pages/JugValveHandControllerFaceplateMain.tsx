@@ -646,6 +646,7 @@ const JugValveHandControllerFaceplateMain = () => {
               onOutChange={handleOutChange}
               onModelockOverrideChange={handleModelockOverrideChange}
               onBypassChange={handleBypassChange}
+              fromSource="faceplate"
             />
           </section>
         </main>
