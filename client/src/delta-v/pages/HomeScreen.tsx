@@ -1300,6 +1300,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setDashedLine3Rotation(dashedLine3.rotation || 0);
     }
     
+    const dashedLine4 = positionMap.get('dashed_line_4');
+    if (dashedLine4) {
+      setDashedLine4Position({ x: dashedLine4.x, y: dashedLine4.y });
+      setDashedLine4Size({ width: dashedLine4.width, height: dashedLine4.height });
+      setDashedLine4Rotation(dashedLine4.rotation || 0);
+    }
+    
     // Arrows - update from database
     setArrows(prev => prev.map(arrow => {
       const saved = positionMap.get(arrow.id);
