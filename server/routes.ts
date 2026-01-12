@@ -1,3 +1,7 @@
+// IMPORTANT: This file was recovered via checkpoint rollback on January 8, 2026
+// Prefer local (HEAD) version over remote changes unless upstream contains critical fixes
+// Reviewed and resolved manually - do not blindly overwrite in future merges
+
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { spawn } from "child_process";
@@ -2102,6 +2106,91 @@ Be professional, concise, and helpful. If asked about features not yet implement
     } catch (error) {
       console.error("Sulfur process nodes save error:", error);
       res.status(500).json({ message: "Failed to save sulfur process nodes" });
+    }
+  });
+
+  // ===== HOMESCREEN LAYOUT ENDPOINTS =====
+  
+  // Get homescreen layout positions for a screen
+  app.get('/api/homescreen-layout/:screenId', async (req: Request, res: Response) => {
+    try {
+      const { screenId } = req.params;
+      const layouts = await storage.getHomescreenLayout(screenId);
+      res.json({ layouts });
+    } catch (error) {
+      console.error("Homescreen layout fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch homescreen layout" });
+    }
+  });
+
+  // Save/update homescreen layout positions
+  app.put('/api/homescreen-layout/:screenId', async (req: Request, res: Response) => {
+    try {
+      const { screenId } = req.params;
+      const { layouts } = req.body;
+      if (!Array.isArray(layouts)) {
+        return res.status(400).json({ message: "Layouts must be an array" });
+      }
+      const saved = await storage.upsertHomescreenLayout(screenId, layouts);
+      res.json({ success: true, count: saved.length });
+    } catch (error) {
+      console.error("Homescreen layout save error:", error);
+      res.status(500).json({ message: "Failed to save homescreen layout" });
+    }
+  });
+
+  // ===== Controller Config Endpoints =====
+  
+  // Get all controller configs
+  app.get('/api/controller-configs', async (req: Request, res: Response) => {
+    try {
+      const configs = await storage.getAllControllerConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Get controller configs error:", error);
+      res.status(500).json({ message: "Failed to get controller configs" });
+    }
+  });
+
+  // Get a specific controller config by controllerId
+  app.get('/api/controller-configs/:controllerId', async (req: Request, res: Response) => {
+    try {
+      const { controllerId } = req.params;
+      const config = await storage.getControllerConfig(controllerId);
+      if (!config) {
+        return res.status(404).json({ message: "Controller config not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Get controller config error:", error);
+      res.status(500).json({ message: "Failed to get controller config" });
+    }
+  });
+
+  // Save or update a controller config
+  app.post('/api/controller-configs/:controllerId', async (req: Request, res: Response) => {
+    try {
+      const { controllerId } = req.params;
+      const { config, data } = req.body;
+      
+      if (!controllerId || typeof controllerId !== 'string') {
+        return res.status(400).json({ message: "Valid controllerId is required" });
+      }
+      
+      if (!config || typeof config !== 'object') {
+        return res.status(400).json({ message: "Config object is required" });
+      }
+      
+      // Basic validation of config structure
+      if (config.TAGNAME !== undefined && typeof config.TAGNAME !== 'string') {
+        return res.status(400).json({ message: "Invalid config: TAGNAME must be a string" });
+      }
+      
+      const saved = await storage.upsertControllerConfig(controllerId, config, data);
+      res.json(saved);
+    } catch (error) {
+      console.error("Save controller config error:", error);
+      res.status(500).json({ message: "Failed to save controller config" });
     }
   });
 

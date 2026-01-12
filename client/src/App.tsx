@@ -4,7 +4,126 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/contexts/SessionContext";
+import { ControllerSyncProvider } from "@/delta-v/contexts/ControllerSyncContext";
+import { ControllerConfigProvider } from "@/delta-v/contexts/ControllerConfigContext";
+import { CompressorProvider } from "@/delta-v/contexts/CompressorContext";
 import Landing from "@/pages/landing";
+
+import HomeScreen from "@/delta-v/pages/HomeScreen";
+import EquipmentFaceplates from "@/delta-v/pages/EquipmentFaceplates";
+import ControllerFaceplates from "@/delta-v/pages/ControllerFaceplates";
+import SensorFaceplate from "@/delta-v/pages/SensorFaceplate";
+import ValveFaceplate from "@/delta-v/pages/ValveFaceplate";
+import AlarmFaceplate from "@/delta-v/pages/AlarmFaceplate";
+import CompressorFaceplate from "@/delta-v/pages/CompressorFaceplate";
+import TemperatureControllerFaceplates from "@/delta-v/pages/TemperatureControllerFaceplates";
+import LevelControllerFaceplate from "@/delta-v/pages/LevelControllerFaceplate";
+import ConcentrationControllerFaceplate from "@/delta-v/pages/ConcentrationControllerFaceplate";
+import FlowControllerFaceplate from "@/delta-v/pages/FlowControllerFaceplate";
+import SulfurFlowControllerFaceplate from "@/delta-v/pages/SulfurFlowControllerFaceplate";
+import SulfurFlowControllerFaceplateMain from "@/delta-v/pages/SulfurFlowControllerFaceplateMain";
+import MainCompressorHandControllerFaceplate from "@/delta-v/pages/MainCompressorHandControllerFaceplate";
+import MainCompressorHandControllerFaceplateMain from "@/delta-v/pages/MainCompressorHandControllerFaceplateMain";
+import HandController4030Faceplate3A from "@/delta-v/pages/HandController4030Faceplate3A";
+import HandController4030Faceplate3B from "@/delta-v/pages/HandController4030Faceplate3B";
+import HandController4030Faceplate3C from "@/delta-v/pages/HandController4030Faceplate3C";
+import HandController4030Faceplate3D from "@/delta-v/pages/HandController4030Faceplate3D";
+import HandController4030Faceplate3E from "@/delta-v/pages/HandController4030Faceplate3E";
+import HandController4030Faceplate3F from "@/delta-v/pages/HandController4030Faceplate3F";
+import JugValveHandControllerFaceplate from "@/delta-v/pages/JugValveHandControllerFaceplate";
+import JugValveHandControllerFaceplateMain from "@/delta-v/pages/JugValveHandControllerFaceplateMain";
+import HandController4282Faceplate3A from "@/delta-v/pages/HandController4282Faceplate3A";
+import HandController4282Faceplate3B from "@/delta-v/pages/HandController4282Faceplate3B";
+import HandController4282Faceplate3C from "@/delta-v/pages/HandController4282Faceplate3C";
+import HandController4282Faceplate3D from "@/delta-v/pages/HandController4282Faceplate3D";
+import HandController4282Faceplate3E from "@/delta-v/pages/HandController4282Faceplate3E";
+import HandController4282Faceplate3F from "@/delta-v/pages/HandController4282Faceplate3F";
+import WHBOutletHandControllerFaceplate from "@/delta-v/pages/WHBOutletHandControllerFaceplate";
+import WHBOutletHandControllerFaceplateMain from "@/delta-v/pages/WHBOutletHandControllerFaceplateMain";
+import HandController4283Faceplate3A from "@/delta-v/pages/HandController4283Faceplate3A";
+import HandController4283Faceplate3B from "@/delta-v/pages/HandController4283Faceplate3B";
+import HandController4283Faceplate3C from "@/delta-v/pages/HandController4283Faceplate3C";
+import HandController4283Faceplate3D from "@/delta-v/pages/HandController4283Faceplate3D";
+import HandController4283Faceplate3E from "@/delta-v/pages/HandController4283Faceplate3E";
+import HandController4283Faceplate3F from "@/delta-v/pages/HandController4283Faceplate3F";
+import HandIndicatedControllerFaceplate from "@/delta-v/pages/HandIndicatedControllerFaceplate";
+import ControllerFaceplate from "@/delta-v/pages/ControllerFaceplate";
+import SecondaryControllerFaceplate from "@/delta-v/pages/SecondaryControllerFaceplate";
+import TemperatureSensorsPage from "@/delta-v/pages/TemperatureSensorsPage";
+import TempSensorDetail from "@/delta-v/pages/TempSensorDetail";
+import PressureSensorsPage from "@/delta-v/pages/PressureSensorsPage";
+import PressureSensorDetail from "@/delta-v/pages/PressureSensorDetail";
+import LevelSensorsPage from "@/delta-v/pages/LevelSensorsPage";
+import LevelSensorDetail from "@/delta-v/pages/LevelSensorDetail";
+import PositionSensorsPage from "@/delta-v/pages/PositionSensorsPage";
+import PositionSensorDetail from "@/delta-v/pages/PositionSensorDetail";
+import ValveTypeDetail from "@/delta-v/pages/ValveTypeDetail";
+import FlowControlValveDetail from "@/delta-v/pages/FlowControlValveDetail";
+import FlowControlValve3E from "@/delta-v/pages/FlowControlValve3E";
+import TempControlValveDetail from "@/delta-v/pages/TempControlValveDetail";
+import HandControlValveDetail from "@/delta-v/pages/HandControlValveDetail";
+import JugValveDetail from "@/delta-v/pages/JugValveDetail";
+import JugValve3E from "@/delta-v/pages/JugValve3E";
+import JugValvePositionerDetail from "@/delta-v/pages/JugValvePositionerDetail";
+import JugValvePositioner3E from "@/delta-v/pages/JugValvePositioner3E";
+import Faceplate3A from "@/delta-v/pages/Faceplate3A";
+import Faceplate3B from "@/delta-v/pages/Faceplate3B";
+import Faceplate3C from "@/delta-v/pages/Faceplate3C";
+import Faceplate3D from "@/delta-v/pages/Faceplate3D";
+import Faceplate3E from "@/delta-v/pages/Faceplate3E";
+import Faceplate3F from "@/delta-v/pages/Faceplate3F";
+import VFDSettings from "@/delta-v/pages/VFDSettings";
+import VFDHistory from "@/delta-v/pages/VFDHistory";
+import VFDTrends from "@/delta-v/pages/VFDTrends";
+import VFDLinks from "@/delta-v/pages/VFDLinks";
+import VFDCompare from "@/delta-v/pages/VFDCompare";
+import VFDAlarms from "@/delta-v/pages/VFDAlarms";
+import TempSensor5821Landing from "@/delta-v/pages/TempSensor5821Landing";
+import TempSensor5821Main from "@/delta-v/pages/TempSensor5821Main";
+import TempSensor5821Faceplate3A from "@/delta-v/pages/TempSensor5821Faceplate3A";
+import TempSensor5821Faceplate3B from "@/delta-v/pages/TempSensor5821Faceplate3B";
+import TempSensor5821Faceplate3C from "@/delta-v/pages/TempSensor5821Faceplate3C";
+import TempSensor5821Faceplate3D from "@/delta-v/pages/TempSensor5821Faceplate3D";
+import TempSensor5821Faceplate3E from "@/delta-v/pages/TempSensor5821Faceplate3E";
+import TempSensor5821Faceplate3F from "@/delta-v/pages/TempSensor5821Faceplate3F";
+import TempSensor4200ALanding from "@/delta-v/pages/TempSensor4200ALanding";
+import TempSensor4200AMain from "@/delta-v/pages/TempSensor4200AMain";
+import TempSensor4200AFaceplate3A from "@/delta-v/pages/TempSensor4200AFaceplate3A";
+import TempSensor4200AFaceplate3B from "@/delta-v/pages/TempSensor4200AFaceplate3B";
+import TempSensor4200AFaceplate3C from "@/delta-v/pages/TempSensor4200AFaceplate3C";
+import TempSensor4200AFaceplate3D from "@/delta-v/pages/TempSensor4200AFaceplate3D";
+import TempSensor4200AFaceplate3E from "@/delta-v/pages/TempSensor4200AFaceplate3E";
+import TempSensor4200AFaceplate3F from "@/delta-v/pages/TempSensor4200AFaceplate3F";
+import TempSensor4200BLanding from "@/delta-v/pages/TempSensor4200BLanding";
+import TempSensor4200BMain from "@/delta-v/pages/TempSensor4200BMain";
+import TempSensor4200BFaceplate3A from "@/delta-v/pages/TempSensor4200BFaceplate3A";
+import TempSensor4200BFaceplate3B from "@/delta-v/pages/TempSensor4200BFaceplate3B";
+import TempSensor4200BFaceplate3C from "@/delta-v/pages/TempSensor4200BFaceplate3C";
+import TempSensor4200BFaceplate3D from "@/delta-v/pages/TempSensor4200BFaceplate3D";
+import TempSensor4200BFaceplate3E from "@/delta-v/pages/TempSensor4200BFaceplate3E";
+import TempSensor4200BFaceplate3F from "@/delta-v/pages/TempSensor4200BFaceplate3F";
+import TempSensor4200CLanding from "@/delta-v/pages/TempSensor4200CLanding";
+import TempSensor4200CMain from "@/delta-v/pages/TempSensor4200CMain";
+import TempSensor4200CFaceplate3A from "@/delta-v/pages/TempSensor4200CFaceplate3A";
+import TempSensor4200CFaceplate3B from "@/delta-v/pages/TempSensor4200CFaceplate3B";
+import TempSensor4200CFaceplate3C from "@/delta-v/pages/TempSensor4200CFaceplate3C";
+import TempSensor4200CFaceplate3D from "@/delta-v/pages/TempSensor4200CFaceplate3D";
+import TempSensor4200CFaceplate3F from "@/delta-v/pages/TempSensor4200CFaceplate3F";
+import TempSensor4820Landing from "@/delta-v/pages/TempSensor4820Landing";
+import TempSensor4820Main from "@/delta-v/pages/TempSensor4820Main";
+import TempSensor4820Faceplate3C from "@/delta-v/pages/TempSensor4820Faceplate3C";
+import TempSensor4820Faceplate3D from "@/delta-v/pages/TempSensor4820Faceplate3D";
+import TempSensor4820Faceplate3F from "@/delta-v/pages/TempSensor4820Faceplate3F";
+import TempSensor4825Landing from "@/delta-v/pages/TempSensor4825Landing";
+import TempSensor4825Main from "@/delta-v/pages/TempSensor4825Main";
+import TempSensor4825Faceplate3C from "@/delta-v/pages/TempSensor4825Faceplate3C";
+import TempSensor4825Faceplate3D from "@/delta-v/pages/TempSensor4825Faceplate3D";
+import TempSensor4825Faceplate3F from "@/delta-v/pages/TempSensor4825Faceplate3F";
+import TempSensor4827Landing from "@/delta-v/pages/TempSensor4827Landing";
+import TempSensor4827Main from "@/delta-v/pages/TempSensor4827Main";
+import TempSensor4827Faceplate3C from "@/delta-v/pages/TempSensor4827Faceplate3C";
+import TempSensor4827Faceplate3D from "@/delta-v/pages/TempSensor4827Faceplate3D";
+import TempSensor4827Faceplate3F from "@/delta-v/pages/TempSensor4827Faceplate3F";
 import Login from "@/pages/login";
 import Demo from "@/pages/demo";
 import Settings from "@/pages/settings";
@@ -174,6 +293,164 @@ function Router() {
       <Route path="/settings/unit-operations" component={UnitOperationsSettings} />
       <Route path="/settings/run-historian" component={RunHistorian} />
       <Route path="/settings/controller-outputs/faceplates" component={Faceplates} />
+      
+      {/* Delta-V Faceplate Routes - Main Entry Points */}
+      <Route path="/settings/controller-outputs/faceplates/home-screen" component={HomeScreen} />
+      <Route path="/settings/controller-outputs/faceplates/rotating-equipment" component={EquipmentFaceplates} />
+      <Route path="/settings/controller-outputs/faceplates/controller-blocks" component={ControllerFaceplates} />
+      <Route path="/settings/controller-outputs/faceplates/sensor-blocks" component={SensorFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks" component={ValveFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/:valveType" component={ValveTypeDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602/3e" component={FlowControlValve3E} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1520-fcv-5870" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1520-fcv-6770" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1520-fcv-6670" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/temperature-control/:id" component={TempControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/:id" component={HandControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282" component={JugValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282/3e" component={JugValve3E} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4281" component={JugValvePositionerDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4281/3e" component={JugValvePositioner3E} />
+      <Route path="/settings/controller-outputs/faceplates/alarm-blocks" component={AlarmFaceplate} />
+      
+      {/* Delta-V Controller Faceplates */}
+      <Route path="/settings/controller-outputs/faceplates/temperature-controller" component={TemperatureControllerFaceplates} />
+      <Route path="/settings/controller-outputs/faceplates/controller-6622" component={ControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/level-controller" component={LevelControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/concentration-controller" component={ConcentrationControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/flow-controller" component={FlowControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller" component={SulfurFlowControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-main" component={SulfurFlowControllerFaceplateMain} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3a" component={Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3b" component={Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3c" component={Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3d" component={Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3e" component={Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/sulfur-flow-controller-faceplate-3f" component={Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030" component={MainCompressorHandControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-main" component={MainCompressorHandControllerFaceplateMain} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3a" component={HandController4030Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3b" component={HandController4030Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3c" component={HandController4030Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3d" component={HandController4030Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3e" component={HandController4030Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3f" component={HandController4030Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-jug" component={JugValveHandControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-main" component={JugValveHandControllerFaceplateMain} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3a" component={HandController4282Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3b" component={HandController4282Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3c" component={HandController4282Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3d" component={HandController4282Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3e" component={HandController4282Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3f" component={HandController4282Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-whb" component={WHBOutletHandControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-main" component={WHBOutletHandControllerFaceplateMain} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3a" component={HandController4283Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3b" component={HandController4283Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3c" component={HandController4283Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3d" component={HandController4283Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3e" component={HandController4283Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/hand-controller-4283-faceplate-3f" component={HandController4283Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/hand-indicated-controller" component={HandIndicatedControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/controller" component={ControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/controller-secondary" component={SecondaryControllerFaceplate} />
+      
+      {/* Delta-V Sensor Faceplates */}
+      <Route path="/settings/controller-outputs/faceplates/temperature-sensors" component={TemperatureSensorsPage} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/:sensorId" component={TempSensorDetail} />
+      <Route path="/settings/controller-outputs/faceplates/pressure-sensors" component={PressureSensorsPage} />
+      <Route path="/settings/controller-outputs/faceplates/pressure-sensor/:sensorId" component={PressureSensorDetail} />
+      <Route path="/settings/controller-outputs/faceplates/level-sensors" component={LevelSensorsPage} />
+      <Route path="/settings/controller-outputs/faceplates/level-sensor/:sensorId" component={LevelSensorDetail} />
+      <Route path="/settings/controller-outputs/faceplates/position-sensors" component={PositionSensorsPage} />
+      <Route path="/settings/controller-outputs/faceplates/position-sensor/:sensorId" component={PositionSensorDetail} />
+      
+      {/* Delta-V Temperature Sensor Detail Pages */}
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821" component={TempSensor5821Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-main" component={TempSensor5821Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3a" component={TempSensor5821Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3b" component={TempSensor5821Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3c" component={TempSensor5821Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3d" component={TempSensor5821Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3e" component={TempSensor5821Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3f" component={TempSensor5821Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-main" component={TempSensor4200AMain} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-faceplate-3a" component={TempSensor4200AFaceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-faceplate-3b" component={TempSensor4200AFaceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-faceplate-3c" component={TempSensor4200AFaceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-faceplate-3d" component={TempSensor4200AFaceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-faceplate-3e" component={TempSensor4200AFaceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200a-faceplate-3f" component={TempSensor4200AFaceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200B" component={TempSensor4200BLanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-main" component={TempSensor4200BMain} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-faceplate-3a" component={TempSensor4200BFaceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-faceplate-3b" component={TempSensor4200BFaceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-faceplate-3c" component={TempSensor4200BFaceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-faceplate-3d" component={TempSensor4200BFaceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-faceplate-3e" component={TempSensor4200BFaceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200b-faceplate-3f" component={TempSensor4200BFaceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200C" component={TempSensor4200CLanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-main" component={TempSensor4200CMain} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3a" component={TempSensor4200CFaceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3b" component={TempSensor4200CFaceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3c" component={TempSensor4200CFaceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3d" component={TempSensor4200CFaceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3f" component={TempSensor4200CFaceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-landing" component={TempSensor4820Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-main" component={TempSensor4820Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3c" component={TempSensor4820Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3d" component={TempSensor4820Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3f" component={TempSensor4820Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4825-landing" component={TempSensor4825Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4825-main" component={TempSensor4825Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4825-faceplate-3c" component={TempSensor4825Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4825-faceplate-3d" component={TempSensor4825Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4825-faceplate-3f" component={TempSensor4825Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-landing" component={TempSensor4827Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-main" component={TempSensor4827Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3c" component={TempSensor4827Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3d" component={TempSensor4827Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3f" component={TempSensor4827Faceplate3F} />
+      
+      {/* Delta-V Valve Faceplates */}
+      <Route path="/settings/controller-outputs/faceplates/valve/:valveType" component={ValveTypeDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve/flow-control/:valveId" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve/flow-control/:valveId/3e" component={FlowControlValve3E} />
+      <Route path="/settings/controller-outputs/faceplates/valve/temperature-control/:valveId" component={TempControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve/hand-control/:valveId" component={HandControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/jug-valve" component={JugValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/jug-valve/3e" component={JugValve3E} />
+      <Route path="/settings/controller-outputs/faceplates/jug-valve-positioner" component={JugValvePositionerDetail} />
+      <Route path="/settings/controller-outputs/faceplates/jug-valve-positioner/3e" component={JugValvePositioner3E} />
+      
+      {/* Delta-V Equipment Faceplates */}
+      <Route path="/settings/controller-outputs/faceplates/compressor-faceplate" component={CompressorFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/faceplate-3a/:controllerId?" component={Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/faceplate-3b/:controllerId?" component={Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/faceplate-3c/:controllerId?" component={Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/faceplate-3d/:controllerId?" component={Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/faceplate-3e/:controllerId?" component={Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/faceplate-3f/:controllerId?" component={Faceplate3F} />
+      
+      {/* Short Path Redirects for Convenience */}
+      <Route path="/delta-v/faceplate/3A" component={Faceplate3A} />
+      <Route path="/delta-v/faceplate/3B" component={Faceplate3B} />
+      <Route path="/delta-v/faceplate/3C" component={Faceplate3C} />
+      <Route path="/delta-v/faceplate/3D" component={Faceplate3D} />
+      <Route path="/delta-v/faceplate/3E" component={Faceplate3E} />
+      <Route path="/delta-v/faceplate/3F" component={Faceplate3F} />
+      
+      {/* Delta-V VFD Pages */}
+      <Route path="/settings/controller-outputs/faceplates/vfd-settings" component={VFDSettings} />
+      <Route path="/settings/controller-outputs/faceplates/vfd-history" component={VFDHistory} />
+      <Route path="/settings/controller-outputs/faceplates/vfd-trends" component={VFDTrends} />
+      <Route path="/settings/controller-outputs/faceplates/vfd-links" component={VFDLinks} />
+      <Route path="/settings/controller-outputs/faceplates/vfd-compare" component={VFDCompare} />
+      <Route path="/settings/controller-outputs/faceplates/vfd-alarms" component={VFDAlarms} />
+      
       <Route path="/settings/controller-outputs/pv-output-messages" component={PvOutputMessages} />
       <Route path="/settings/controller-outputs/valve-status" component={ValveStatus} />
       <Route path="/settings/controller-outputs/symbols" component={Symbols} />
@@ -213,8 +490,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SessionProvider>
-          <Toaster />
-          <Router />
+          <ControllerSyncProvider>
+            <ControllerConfigProvider>
+              <CompressorProvider>
+                <Toaster />
+                <Router />
+              </CompressorProvider>
+            </ControllerConfigProvider>
+          </ControllerSyncProvider>
         </SessionProvider>
       </TooltipProvider>
     </QueryClientProvider>

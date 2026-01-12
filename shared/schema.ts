@@ -1,5 +1,11 @@
+// IMPORTANT: This file was recovered via checkpoint rollback on January 8, 2026
+// Prefer local (HEAD) version over remote changes unless upstream contains critical fixes
+// Reviewed and resolved manually - do not blindly overwrite in future merges
+
+
 import { sql } from "drizzle-orm";
 import {
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -326,3 +332,45 @@ export interface PsychrometricData {
   cached: boolean;
   fetchedAt: string;
 }
+
+// Homescreen Layout table - stores icon positions for the DeltaV HomeScreen
+export const homescreenLayout = pgTable("homescreen_layout", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  screenId: text("screen_id").notNull(),
+  elementId: text("element_id").notNull(),
+  positionX: doublePrecision("position_x").notNull(),
+  positionY: doublePrecision("position_y").notNull(),
+  width: doublePrecision("width").notNull(),
+  height: doublePrecision("height").notNull(),
+  rotation: integer("rotation").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertHomescreenLayoutSchema = createInsertSchema(homescreenLayout).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertHomescreenLayout = z.infer<typeof insertHomescreenLayoutSchema>;
+export type HomescreenLayout = typeof homescreenLayout.$inferSelect;
+
+// Controller Configs table - stores faceplate controller configurations
+export const controllerConfigs = pgTable("controller_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  controllerId: text("controller_id").notNull().unique(),
+  config: jsonb("config").notNull(),
+  data: jsonb("data"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertControllerConfigSchema = createInsertSchema(controllerConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertControllerConfig = z.infer<typeof insertControllerConfigSchema>;
+export type ControllerConfig = typeof controllerConfigs.$inferSelect;

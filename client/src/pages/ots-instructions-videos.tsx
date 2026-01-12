@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, LogIn, PlayCircle, GraduationCap, ClipboardList, Wrench, Building2, ShieldCheck, FolderArchive, FlaskConical } from "lucide-react";
+import { ArrowLeft, PlayCircle, GraduationCap, ClipboardList, Wrench, Building2, ShieldCheck, FolderArchive, FlaskConical, FolderOpen } from "lucide-react";
 
 interface OTSResource {
   id: string;
@@ -74,7 +74,7 @@ export default function OTSInstructionsVideos() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => window.history.back()}
+              onClick={() => setLocation("/simulator")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -88,12 +88,13 @@ export default function OTSInstructionsVideos() {
             </div>
           </div>
           <Button
-            onClick={() => setLocation("/login")}
-            data-testid="button-login-header"
+            variant="default"
+            onClick={() => setLocation("/settings/plant-document-library")}
+            data-testid="button-plant-document-library"
             className="gap-2"
           >
-            <LogIn className="w-4 h-4" />
-            Login
+            <FolderOpen className="w-4 h-4" />
+            Plant Document Library
           </Button>
         </div>
       </header>

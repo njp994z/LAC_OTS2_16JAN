@@ -29,7 +29,7 @@ const settingCategories: SettingCategory[] = [
   },
   {
     id: "controller-outputs",
-    title: "Delta V: Instrumentation Blocks",
+    title: "UI Screens, Instrument Blocks, and PID Controllers",
     description: "Reference guide for DeltaV controller status messages, PV conditions, output states, interlock indicators, and mode displays used throughout the simulation faceplates.",
     icon: Activity,
     path: "/settings/controller-outputs"

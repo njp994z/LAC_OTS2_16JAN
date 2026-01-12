@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Database, FlaskConical, Atom, Factory, Sliders, ClipboardList, Table2, Shield, Gauge, DollarSign, FolderOpen } from "lucide-react";
+import { ArrowLeft, Database, FlaskConical, Atom, Factory, Sliders, ClipboardList, Table2, Shield, Gauge, DollarSign } from "lucide-react";
 
 interface DatabaseCategory {
   id: string;
@@ -105,15 +105,6 @@ export default function Databases() {
               <p className="text-xs text-muted-foreground">Technical reference databases for simulation calculations</p>
             </div>
           </div>
-          <Button
-            variant="default"
-            onClick={() => setLocation("/settings/plant-document-library")}
-            data-testid="button-plant-document-library"
-            className="gap-2"
-          >
-            <FolderOpen className="w-4 h-4" />
-            Plant Document Library
-          </Button>
         </div>
       </header>
 

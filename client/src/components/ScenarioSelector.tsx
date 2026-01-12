@@ -3,14 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PlayCircle, AlertTriangle, CheckCircle2, BarChart3, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocation } from "wouter";
 
 type ButtonVariant = "default" | "warning" | "destructive";
 
 const scenarios = [
   {
     id: 1,
-    name: "Normal Operations",
-    description: "Learn how operational parameters are inter-related and understand steady-state.",
+    name: "Static Plant Operations",
+    description: "Learn the inter-relations between each of the Process Variables (PV) when the acid plant operates in a Static Mode where the Set Points (SP) are always equal to the PVs.",
     difficulty: "Beginner",
     status: "available",
     icon: CheckCircle2,
@@ -57,6 +58,8 @@ interface ScenarioSelectorProps {
 }
 
 export default function ScenarioSelector({ onSelectScenario, selectedScenario }: ScenarioSelectorProps) {
+  const [, setLocation] = useLocation();
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {scenarios.map((scenario) => (
@@ -104,7 +107,13 @@ export default function ScenarioSelector({ onSelectScenario, selectedScenario }:
                 size="sm"
                 variant={scenario.buttonVariant === "warning" ? "default" : scenario.buttonVariant}
                 onClick={() => {
-                  if ('externalLink' in scenario && scenario.externalLink) {
+                  if (scenario.id === 1) {
+                    // Static Plant Operations - navigate to home-screen with mode=static
+                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=static");
+                  } else if (scenario.id === 2) {
+                    // Dynamic Operations - navigate to home-screen with mode=dynamic
+                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=dynamic");
+                  } else if ('externalLink' in scenario && scenario.externalLink) {
                     window.open(scenario.externalLink, "_blank", "noopener,noreferrer");
                   } else {
                     onSelectScenario(scenario.id);
