@@ -259,10 +259,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [dashedLine3Position, setDashedLine3Position] = useState({ x: 100, y: 600 });
   const [dashedLine3Size, setDashedLine3Size] = useState({ width: 200, height: 4 });
   
+  // Dashed Line 4 position/size
+  const [dashedLine4Position, setDashedLine4Position] = useState({ x: 100, y: 750 });
+  const [dashedLine4Size, setDashedLine4Size] = useState({ width: 200, height: 4 });
+  
   // Dashed Line Rotations
   const [dashedLine1Rotation, setDashedLine1Rotation] = useState(0);
   const [dashedLine2Rotation, setDashedLine2Rotation] = useState(0);
   const [dashedLine3Rotation, setDashedLine3Rotation] = useState(0);
+  const [dashedLine4Rotation, setDashedLine4Rotation] = useState(0);
   
   // Converter 4 position/size
   const [converter4Position, setConverter4Position] = useState({ x: 1400, y: 300 });
@@ -1361,6 +1366,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'dashed_line_1', positionX: Math.round(dashedLine1Position.x), positionY: Math.round(dashedLine1Position.y), width: dashedLine1Size.width, height: dashedLine1Size.height, rotation: dashedLine1Rotation },
         { elementId: 'dashed_line_2', positionX: Math.round(dashedLine2Position.x), positionY: Math.round(dashedLine2Position.y), width: dashedLine2Size.width, height: dashedLine2Size.height, rotation: dashedLine2Rotation },
         { elementId: 'dashed_line_3', positionX: Math.round(dashedLine3Position.x), positionY: Math.round(dashedLine3Position.y), width: dashedLine3Size.width, height: dashedLine3Size.height, rotation: dashedLine3Rotation },
+        { elementId: 'dashed_line_4', positionX: Math.round(dashedLine4Position.x), positionY: Math.round(dashedLine4Position.y), width: dashedLine4Size.width, height: dashedLine4Size.height, rotation: dashedLine4Rotation },
         // Add all arrows
         ...arrows.map(arrow => ({
           elementId: arrow.id,
@@ -2765,6 +2771,58 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   setDashedLine3Rotation((prev) => (prev + 90) % 360);
                 }}
                 title={`Rotate 90° (current: ${dashedLine3Rotation}°)`}
+              >
+                <RotateCw className="w-3 h-3 text-white" />
+              </button>
+            )}
+          </div>
+        </Rnd>
+
+        {/* Dashed Line 4 */}
+        <Rnd
+          position={dashedLine4Position}
+          size={dashedLine4Size}
+          onDragStop={(e, d) => setDashedLine4Position({ x: d.x, y: d.y })}
+          onResizeStop={(e, dir, ref, delta, position) => {
+            setDashedLine4Size({
+              width: parseInt(ref.style.width),
+              height: parseInt(ref.style.height)
+            });
+            setDashedLine4Position(position);
+          }}
+          minWidth={50}
+          minHeight={2}
+          bounds="parent"
+          disableDragging={isLocked}
+          enableResizing={!isLocked}
+          className={isLocked ? "cursor-default" : "cursor-move"}
+        >
+          <div className="relative w-full h-full group">
+            <div 
+              className="w-full h-full flex items-center"
+              style={{ 
+                borderTop: '3px dashed black',
+                transform: `rotate(${dashedLine4Rotation}deg)`,
+                transformOrigin: 'center'
+              }}
+            />
+            {!isLocked && (
+              <button
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                           w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800 
+                           flex items-center justify-center shadow-lg 
+                           transition-all duration-200 z-10
+                           opacity-0 group-hover:opacity-100"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setDashedLine4Rotation((prev) => (prev + 90) % 360);
+                }}
+                title={`Rotate 90° (current: ${dashedLine4Rotation}°)`}
               >
                 <RotateCw className="w-3 h-3 text-white" />
               </button>
