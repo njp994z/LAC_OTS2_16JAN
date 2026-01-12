@@ -1363,9 +1363,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         });
       }
     });
-    if (savedVerticalLines.length > 0) {
-      setVerticalLines(savedVerticalLines);
-    }
+    // Always set vertical lines from saved layout (including empty array to clear removed lines)
+    setVerticalLines(savedVerticalLines);
     
   }, [layoutData]);
 
