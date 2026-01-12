@@ -48,6 +48,7 @@ import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta
 import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
+import { VerticalLine } from "@/delta-v/components/VerticalLine";
 import {
   Dialog,
   DialogContent,
@@ -164,6 +165,15 @@ const HomeScreen = () => {
   }>>([
     { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150 },
   ]);
+  
+  // Vertical lines (without arrowheads) - narrow width, variable height
+  const [verticalLines, setVerticalLines] = useState<Array<{
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>>([]);
   
   const [isLocked, setIsLocked] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
@@ -1340,6 +1350,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setVerticalArrows(savedVerticalArrows);
     }
     
+    // Vertical lines - load from database (dynamically created elements)
+    const savedVerticalLines: Array<{ id: string; x: number; y: number; width: number; height: number }> = [];
+    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number }) => {
+      if (layout.elementId.startsWith('v_line_')) {
+        savedVerticalLines.push({
+          id: layout.elementId,
+          x: layout.positionX,
+          y: layout.positionY,
+          width: layout.width,
+          height: layout.height,
+        });
+      }
+    });
+    if (savedVerticalLines.length > 0) {
+      setVerticalLines(savedVerticalLines);
+    }
+    
   }, [layoutData]);
 
   const handleSaveLayout = async () => {
@@ -1390,6 +1417,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           positionY: Math.round(va.y),
           width: va.width,
           height: va.height,
+          rotation: 0,
+        })),
+        // Add all vertical lines
+        ...verticalLines.map(vl => ({
+          elementId: vl.id,
+          positionX: Math.round(vl.x),
+          positionY: Math.round(vl.y),
+          width: vl.width,
+          height: vl.height,
           rotation: 0,
         })),
       ];
@@ -1452,6 +1488,19 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       height: 150,
     }]);
     toast({ title: "Vertical Arrow Added", description: "A new vertical arrow has been added to the canvas." });
+  };
+
+  // Add a new vertical line (without arrowhead)
+  const handleAddVerticalLine = () => {
+    const newId = `v_line_${Date.now()}`;
+    setVerticalLines(prev => [...prev, {
+      id: newId,
+      x: 150,
+      y: 100,
+      width: 24,
+      height: 150,
+    }]);
+    toast({ title: "Vertical Line Added", description: "A new vertical line has been added to the canvas." });
   };
 
   return (
@@ -1646,6 +1695,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </TooltipTrigger>
               <TooltipContent side="bottom">
                 <p>Add Vertical Arrow</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            {/* Add Vertical Line Button (no arrowhead) */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-gray-200"
+                  onClick={handleAddVerticalLine}
+                  disabled={isLocked}
+                  data-testid="button-add-vertical-line"
+                >
+                  <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                    <line x1="12" y1="4" x2="12" y2="20" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Add Vertical Line</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -2624,6 +2694,50 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <VerticalArrow 
               width={vArrow.width} 
               height={vArrow.height} 
+              color="#53B1D8"
+            />
+          </Rnd>
+        ))}
+
+        {/* Render vertical lines (without arrowheads) */}
+        {verticalLines.map((vLine) => (
+          <Rnd
+            key={vLine.id}
+            position={{ x: vLine.x, y: vLine.y }}
+            size={{ width: vLine.width, height: vLine.height }}
+            onDragStop={(e, d) => {
+              setVerticalLines(prev => prev.map(vl => 
+                vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
+              ));
+            }}
+            onResizeStop={(e, dir, ref, delta, position) => {
+              setVerticalLines(prev => prev.map(vl => 
+                vl.id === vLine.id 
+                  ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                  : vl
+              ));
+            }}
+            minWidth={24}
+            minHeight={50}
+            maxWidth={24}
+            bounds="window"
+            disableDragging={isLocked}
+            enableResizing={!isLocked ? { 
+              top: true, 
+              bottom: true, 
+              left: false, 
+              right: false,
+              topLeft: false,
+              topRight: false,
+              bottomLeft: false,
+              bottomRight: false
+            } : false}
+            className={isLocked ? "cursor-default" : "cursor-move"}
+            style={{ zIndex: 35 }}
+          >
+            <VerticalLine 
+              width={vLine.width} 
+              height={vLine.height} 
               color="#53B1D8"
             />
           </Rnd>
