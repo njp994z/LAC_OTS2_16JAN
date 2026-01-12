@@ -74,7 +74,7 @@ export default function OTSInstructionsVideos() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => window.history.back()}
+              onClick={() => setLocation("/settings/controller-outputs/faceplates/home-screen")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
