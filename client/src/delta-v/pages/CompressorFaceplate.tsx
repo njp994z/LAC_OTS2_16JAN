@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
@@ -7,19 +6,7 @@ import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 
 const CompressorFaceplate = () => {
-  const [vfdConfig] = useState<{
-    tagName: string;
-    description: string;
-    unit: string;
-    transparentBackground: boolean;
-  }>({
-    tagName: "VFD-001",
-    description: "Variable Frequency Drive",
-    unit: "U-505",
-    transparentBackground: false,
-  });
-
-  // Use shared compressor context
+  // Use shared compressor context with VFD config
   const {
     compressorData,
     handleStart,
@@ -29,6 +16,7 @@ const CompressorFaceplate = () => {
     handleClearAlarm,
     setPermitActive,
     setFailAlarm,
+    vfdConfig,
   } = useCompressor();
 
   return (
@@ -75,7 +63,13 @@ const CompressorFaceplate = () => {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Equipment Overview
             </h2>
-            <PrimaryCompressorFaceplate data={compressorData} transparentBackground={vfdConfig?.transparentBackground ?? false} />
+            <PrimaryCompressorFaceplate 
+              data={compressorData} 
+              transparentBackground={vfdConfig?.transparentBackground ?? false}
+              configTagName={vfdConfig?.tagName}
+              configDescription={vfdConfig?.description}
+              configUnit={vfdConfig?.unit}
+            />
           </div>
 
           {/* Secondary VFD Faceplate - Control Interface */}
@@ -90,6 +84,9 @@ const CompressorFaceplate = () => {
               onModeChange={handleModeChange}
               onSpeedSPChange={handleSpeedSPChange}
               onClearAlarm={handleClearAlarm}
+              configTagName={vfdConfig?.tagName}
+              configDescription={vfdConfig?.description}
+              configUnit={vfdConfig?.unit}
             />
           </div>
         </div>
@@ -108,6 +105,7 @@ const CompressorFaceplate = () => {
                   ? "bg-emerald-600 text-white"
                   : "bg-slate-700 text-slate-400"
               )}
+              data-testid="button-toggle-permit"
             >
               Permit: {compressorData.permitActive ? "ON" : "OFF"}
             </button>
@@ -119,6 +117,7 @@ const CompressorFaceplate = () => {
                   ? "bg-red-600 text-white"
                   : "bg-slate-700 text-slate-400"
               )}
+              data-testid="button-toggle-fail-alarm"
             >
               Fail Alarm: {compressorData.failAlarm ? "ACTIVE" : "OFF"}
             </button>

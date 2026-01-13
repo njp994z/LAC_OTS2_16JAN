@@ -1,5 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { defaultCompressorData, type CompressorData, type CompressorMode } from "@/delta-v/types/compressor";
+
+interface VFDConfig {
+  tagName: string;
+  description: string;
+  unit: string;
+  engineeringUnits: string;
+  transparentBackground: boolean;
+}
+
+const DEFAULT_VFD_CONFIG: VFDConfig = {
+  tagName: "VFD-001",
+  description: "Variable Frequency Drive",
+  unit: "U-505",
+  engineeringUnits: "Hz",
+  transparentBackground: false,
+};
 
 interface CompressorContextType {
   compressorData: CompressorData;
@@ -10,6 +29,10 @@ interface CompressorContextType {
   handleClearAlarm: () => void;
   setPermitActive: (active: boolean) => void;
   setFailAlarm: (active: boolean) => void;
+  vfdConfig: VFDConfig;
+  updateVFDConfig: (newConfig: Partial<VFDConfig>) => Promise<void>;
+  isVFDConfigSaving: boolean;
+  isVFDConfigLoading: boolean;
 }
 
 const CompressorContext = createContext<CompressorContextType | undefined>(undefined);
@@ -23,7 +46,55 @@ export const useCompressor = () => {
 };
 
 export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { toast } = useToast();
+  const controllerId = "VFD-001";
   const [compressorData, setCompressorData] = useState<CompressorData>(defaultCompressorData);
+  const [localVFDConfig, setLocalVFDConfig] = useState<VFDConfig>(DEFAULT_VFD_CONFIG);
+
+  // Fetch VFD config from server
+  const { data: serverVFDConfig, isLoading: isVFDConfigLoading } = useQuery({
+    queryKey: ["/api/controller-configs", controllerId],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/controller-configs/${controllerId}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.config as VFDConfig;
+      } catch (e) {
+        return null;
+      }
+    },
+  });
+
+  // Sync server config to local state
+  useEffect(() => {
+    if (serverVFDConfig) {
+      setLocalVFDConfig(serverVFDConfig);
+    }
+  }, [serverVFDConfig]);
+
+  // Mutation to save VFD config
+  const vfdConfigMutation = useMutation({
+    mutationFn: async (newConfig: VFDConfig) => {
+      await apiRequest("POST", "/api/controller-configs", {
+        controllerId,
+        config: newConfig,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/controller-configs", controllerId] });
+      toast({ title: "Success", description: "VFD settings saved" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save VFD settings", variant: "destructive" });
+    },
+  });
+
+  const updateVFDConfig = async (newConfig: Partial<VFDConfig>) => {
+    const updated = { ...localVFDConfig, ...newConfig };
+    setLocalVFDConfig(updated);
+    await vfdConfigMutation.mutateAsync(updated);
+  };
 
   const handleStart = () => {
     if (!compressorData.permitActive) return;
@@ -115,6 +186,10 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         handleClearAlarm,
         setPermitActive,
         setFailAlarm,
+        vfdConfig: localVFDConfig,
+        updateVFDConfig,
+        isVFDConfigSaving: vfdConfigMutation.isPending,
+        isVFDConfigLoading,
       }}
     >
       {children}

@@ -11,6 +11,9 @@ interface VFDFaceplateProps {
   onSpeedSPChange: (value: number) => void;
   onClearAlarm: () => void;
   onClose?: () => void;
+  configTagName?: string;
+  configDescription?: string;
+  configUnit?: string;
 }
 
 // Horizontal Bar Graph component
@@ -127,10 +130,18 @@ export const VFDFaceplate = ({
   onModeChange,
   onClearAlarm,
   onClose,
+  configTagName,
+  configDescription,
+  configUnit,
 }: VFDFaceplateProps) => {
   const isRunning = data.state === "RUNNING" || data.state === "STARTING";
   const isStopped = data.state === "STOPPED";
   const isStopping = data.state === "STOPPING";
+  
+  // Use config values if provided, otherwise fall back to data values
+  const displayTag = configTagName || data.tag;
+  const displayDescription = configDescription || data.description;
+  const displayUnit = configUnit || "U-505";
 
   // Mock alarm entries for demonstration
   const alarmEntries: AlarmEntry[] = data.failAlarm 
@@ -155,9 +166,9 @@ export const VFDFaceplate = ({
         {/* Controller Tag & Description */}
         <div className="text-center border-b border-border/30 pb-2">
           <h2 className={cn("font-mono font-bold text-base tracking-widest", "text-faceplate-border glow-text")}>
-            {data.tag}
+            {displayTag}
           </h2>
-          <p className="text-xs text-muted-foreground">{data.description}</p>
+          <p className="text-xs text-muted-foreground">{displayDescription}</p>
         </div>
 
 
@@ -289,7 +300,7 @@ export const VFDFaceplate = ({
           <span className="text-xs text-slate-400 font-medium">Unit:</span>
           <input 
             type="text" 
-            value={data.tag}
+            value={displayUnit}
             readOnly
             className="flex-1 bg-slate-500 border border-slate-400 rounded px-2 py-1 text-xs text-black text-center"
           />

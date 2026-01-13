@@ -5,11 +5,24 @@ import compressorEquipment from "@assets/delta-v/icons/compressor-equipment.png"
 interface PrimaryCompressorFaceplateProps {
   data: CompressorData;
   transparentBackground?: boolean;
+  configTagName?: string;
+  configDescription?: string;
+  configUnit?: string;
 }
 
-export const PrimaryCompressorFaceplate = ({ data, transparentBackground = false }: PrimaryCompressorFaceplateProps) => {
+export const PrimaryCompressorFaceplate = ({ 
+  data, 
+  transparentBackground = false,
+  configTagName,
+  configDescription,
+  configUnit,
+}: PrimaryCompressorFaceplateProps) => {
   const isRunning = data.state === "RUNNING" || data.state === "STARTING";
   const isStopped = data.state === "STOPPED" || data.state === "STOPPING";
+  
+  // Use config values if provided, otherwise fall back to data values
+  const displayTag = configTagName || data.tag;
+  const displayDescription = configDescription || data.description;
 
   return (
     <div
@@ -66,8 +79,8 @@ export const PrimaryCompressorFaceplate = ({ data, transparentBackground = false
       {/* Tag and Status */}
       <div className="flex items-center justify-between mt-1.5 px-1">
         <div>
-          <p className={cn("font-mono text-xs font-bold", transparentBackground ? "text-cyan-600" : "text-cyan-400")}>{data.tag}</p>
-          <p className={cn("text-[9px]", transparentBackground ? "text-slate-600" : "text-muted-foreground")}>{data.description}</p>
+          <p className={cn("font-mono text-xs font-bold", transparentBackground ? "text-cyan-600" : "text-cyan-400")}>{displayTag}</p>
+          <p className={cn("text-[9px]", transparentBackground ? "text-slate-600" : "text-muted-foreground")}>{displayDescription}</p>
         </div>
         <div
           className={cn(

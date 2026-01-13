@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { Settings, ArrowLeft, ExternalLink, Save, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 import {
   Select,
   SelectContent,
@@ -14,29 +13,19 @@ import {
 } from "@/components/ui/select";
 
 const VFDSettings = () => {
-  const [config, setConfig] = useState({
-    tagName: "VFD-001",
-    description: "Variable Frequency Drive",
-    unit: "U-505",
-    engineeringUnits: "Hz",
-    transparentBackground: false,
-  });
-  const [isLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
+  const { vfdConfig, updateVFDConfig, isVFDConfigSaving, isVFDConfigLoading } = useCompressor();
 
   const handleChange = (field: string, value: string | boolean) => {
-    setConfig((prev) => ({ ...prev, [field]: value }));
+    updateVFDConfig({ [field]: value });
   };
 
-  const handleApplyChanges = async () => {
-    setIsSaving(true);
-    // Simulate saving - in the future this could be connected to backend storage
-    setTimeout(() => {
-      toast({ title: "Success", description: "Settings saved successfully" });
-      setIsSaving(false);
-    }, 500);
-  };
+  if (isVFDConfigLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -54,23 +43,14 @@ const VFDSettings = () => {
               <h1 className="text-2xl font-bold">VFD Settings</h1>
             </div>
           </div>
-          <Button 
-            onClick={handleApplyChanges} 
-            disabled={isSaving || isLoading}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <div className="flex items-center gap-2">
+            {isVFDConfigSaving && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Saving...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Apply Changes
-              </>
+              </span>
             )}
-          </Button>
+          </div>
         </div>
 
         <div className="grid gap-4">
@@ -83,34 +63,37 @@ const VFDSettings = () => {
               <div className="flex justify-between items-center px-4 py-3 bg-slate-800/50">
                 <span className="text-slate-300 text-sm">Tag Name</span>
                 <Input
-                  value={config.tagName}
+                  value={vfdConfig.tagName}
                   onChange={(e) => handleChange("tagName", e.target.value)}
                   className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm"
+                  data-testid="input-vfd-tag-name"
                 />
               </div>
               <div className="flex justify-between items-center px-4 py-3">
                 <span className="text-slate-300 text-sm">Description</span>
                 <Input
-                  value={config.description}
+                  value={vfdConfig.description}
                   onChange={(e) => handleChange("description", e.target.value)}
                   className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm"
+                  data-testid="input-vfd-description"
                 />
               </div>
               <div className="flex justify-between items-center px-4 py-3 bg-slate-800/50">
                 <span className="text-slate-300 text-sm">Unit</span>
                 <Input
-                  value={config.unit}
+                  value={vfdConfig.unit}
                   onChange={(e) => handleChange("unit", e.target.value)}
                   className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm"
+                  data-testid="input-vfd-unit"
                 />
               </div>
               <div className="flex justify-between items-center px-4 py-3">
                 <span className="text-slate-300 text-sm">Engineering Units</span>
                 <Select
-                  value={config.engineeringUnits}
+                  value={vfdConfig.engineeringUnits}
                   onValueChange={(value) => handleChange("engineeringUnits", value)}
                 >
-                  <SelectTrigger className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm">
+                  <SelectTrigger className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm" data-testid="select-vfd-engineering-units">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-600">
@@ -126,9 +109,10 @@ const VFDSettings = () => {
               <div className="flex justify-between items-center px-4 py-3 bg-slate-800/50">
                 <span className="text-slate-300 text-sm">Transparent Background</span>
                 <Switch
-                  checked={config.transparentBackground}
+                  checked={vfdConfig.transparentBackground}
                   onCheckedChange={(checked) => handleChange("transparentBackground", checked)}
                   className="data-[state=checked]:bg-cyan-500"
+                  data-testid="switch-vfd-transparent-bg"
                 />
               </div>
             </div>
@@ -143,6 +127,7 @@ const VFDSettings = () => {
               <Link 
                 to="/settings/controller-outputs/faceplates/compressor-faceplate" 
                 className="flex justify-between items-center px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 transition-colors"
+                data-testid="link-primary-vfd-panel"
               >
                 <span className="text-slate-300 text-sm">Primary VFD Control Panel</span>
                 <ExternalLink className="text-cyan-400" size={16} />
@@ -150,6 +135,7 @@ const VFDSettings = () => {
               <Link 
                 to="/settings/controller-outputs/faceplates/vfd-compare" 
                 className="flex justify-between items-center px-4 py-3 hover:bg-slate-700/50 transition-colors"
+                data-testid="link-vfd-compare"
               >
                 <span className="text-slate-300 text-sm">VFD Compare (Primary & Backup)</span>
                 <ExternalLink className="text-cyan-400" size={16} />
@@ -163,7 +149,7 @@ const VFDSettings = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Device Name</span>
-                <span className="font-medium">{config.tagName}</span>
+                <span className="font-medium">{vfdConfig.tagName}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Max Speed</span>

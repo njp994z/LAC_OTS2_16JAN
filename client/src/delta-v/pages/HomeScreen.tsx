@@ -787,6 +787,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     handleModeChange,
     handleSpeedSPChange,
     handleClearAlarm,
+    vfdConfig,
   } = useCompressor();
 
   const handleCompressorClick = () => {
@@ -1918,6 +1919,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             <PrimaryCompressorFaceplate 
               data={compressorData} 
               transparentBackground={true}
+              configTagName={vfdConfig?.tagName}
+              configDescription={vfdConfig?.description}
+              configUnit={vfdConfig?.unit}
             />
           </div>
         </Rnd>
@@ -3017,6 +3021,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onSpeedSPChange={handleSpeedSPChange}
             onClearAlarm={handleClearAlarm}
             onClose={() => setIsVFDModalOpen(false)}
+            configTagName={vfdConfig?.tagName}
+            configDescription={vfdConfig?.description}
+            configUnit={vfdConfig?.unit}
           />
         </DialogContent>
       </Dialog>
