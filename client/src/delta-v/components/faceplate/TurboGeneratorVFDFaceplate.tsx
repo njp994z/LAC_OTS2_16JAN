@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { CompressorData } from "@/delta-v/types/compressor";
 import { Link } from "wouter";
+import { useTurboGenerator } from "@/delta-v/contexts/TurboGeneratorContext";
 import { 
   X, 
   Check, 
@@ -125,6 +126,7 @@ export const TurboGeneratorVFDFaceplate = ({
   onClearAlarm,
   onClose,
 }: TurboGeneratorVFDFaceplateProps) => {
+  const { config } = useTurboGenerator();
   const isRunning = data.state === "RUNNING" || data.state === "STARTING";
   const isStopped = data.state === "STOPPED";
   const isStopping = data.state === "STOPPING";
@@ -151,9 +153,9 @@ export const TurboGeneratorVFDFaceplate = ({
         {/* Controller Tag & Description */}
         <div className="text-center border-b border-border/30 pb-2">
           <h2 className={cn("font-mono font-bold text-base tracking-widest", "text-faceplate-border glow-text")}>
-            {data.tag}
+            {config.tagName}
           </h2>
-          <p className="text-xs text-muted-foreground">{data.description}</p>
+          <p className="text-xs text-muted-foreground">{config.description}</p>
         </div>
 
         {/* Main Control Section */}
@@ -252,7 +254,7 @@ export const TurboGeneratorVFDFaceplate = ({
           <HorizontalBarGraph 
             label="Power Output" 
             value={(data.motorPowerHP ?? 0) * 0.3} 
-            unit="MW" 
+            unit={config.engineeringUnits} 
             maxValue={50} 
             color="cyan" 
           />
@@ -284,7 +286,7 @@ export const TurboGeneratorVFDFaceplate = ({
           <span className="text-xs text-slate-400 font-medium">Unit:</span>
           <input 
             type="text" 
-            value={data.tag}
+            value={config.unit}
             readOnly
             className="flex-1 bg-slate-500 border border-slate-400 rounded px-2 py-1 text-xs text-black text-center"
           />

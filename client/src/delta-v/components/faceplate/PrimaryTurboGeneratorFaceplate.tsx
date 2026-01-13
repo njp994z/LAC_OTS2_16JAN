@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { CompressorData } from "@/delta-v/types/compressor";
 import turboGeneratorEquipment from "@assets/TG_Icon1_1768332816403.png";
+import { useTurboGenerator } from "@/delta-v/contexts/TurboGeneratorContext";
 
 interface PrimaryTurboGeneratorFaceplateProps {
   data: CompressorData;
@@ -8,8 +9,11 @@ interface PrimaryTurboGeneratorFaceplateProps {
 }
 
 export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = false }: PrimaryTurboGeneratorFaceplateProps) => {
+  const { config } = useTurboGenerator();
   const isRunning = data.state === "RUNNING" || data.state === "STARTING";
   const isStopped = data.state === "STOPPED" || data.state === "STOPPING";
+
+  const activeTransparent = config.transparentBackground || transparentBackground;
 
   return (
     <div
@@ -20,7 +24,7 @@ export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = f
         data.failAlarm && "border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]"
       )}
       style={{
-        background: transparentBackground 
+        background: activeTransparent 
           ? "#FFFFFF" 
           : "linear-gradient(135deg, hsl(220 15% 18%) 0%, hsl(220 15% 12%) 100%)",
       }}
@@ -36,13 +40,13 @@ export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = f
       <div className="flex justify-end gap-6 mt-1 pr-2">
         {/* Turbine Speed Bar */}
         <div className="w-16">
-          <p className={cn("text-[6px] font-mono mb-0.5", transparentBackground ? "text-cyan-600" : "text-cyan-400")}>Turbine Speed</p>
-          <div className={cn("h-3 rounded border relative overflow-hidden", transparentBackground ? "bg-slate-200 border-slate-300" : "bg-slate-900 border-slate-700")}>
+          <p className={cn("text-[6px] font-mono mb-0.5", activeTransparent ? "text-cyan-600" : "text-cyan-400")}>Turbine Speed</p>
+          <div className={cn("h-3 rounded border relative overflow-hidden", activeTransparent ? "bg-slate-200 border-slate-300" : "bg-slate-900 border-slate-700")}>
             <div 
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
               style={{ width: `${data.speedPV}%` }}
             />
-            <span className={cn("absolute inset-0 flex items-center justify-center text-[7px] font-mono z-10 font-bold", transparentBackground ? "text-slate-800" : "text-white")}>
+            <span className={cn("absolute inset-0 flex items-center justify-center text-[7px] font-mono z-10 font-bold", activeTransparent ? "text-slate-800" : "text-white")}>
               {data.speedPV.toFixed(0)}%
             </span>
           </div>
@@ -50,13 +54,13 @@ export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = f
         
         {/* Generator Output Bar */}
         <div className="w-16">
-          <p className={cn("text-[6px] font-mono mb-0.5", transparentBackground ? "text-cyan-600" : "text-cyan-400")}>Gen Output</p>
-          <div className={cn("h-3 rounded border relative overflow-hidden", transparentBackground ? "bg-slate-200 border-slate-300" : "bg-slate-900 border-slate-700")}>
+          <p className={cn("text-[6px] font-mono mb-0.5", activeTransparent ? "text-cyan-600" : "text-cyan-400")}>Gen Output</p>
+          <div className={cn("h-3 rounded border relative overflow-hidden", activeTransparent ? "bg-slate-200 border-slate-300" : "bg-slate-900 border-slate-700")}>
             <div 
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
               style={{ width: `${Math.min((data.currentPV / 50) * 100, 100)}%` }}
             />
-            <span className={cn("absolute inset-0 flex items-center justify-center text-[7px] font-mono z-10 font-bold", transparentBackground ? "text-slate-800" : "text-white")}>
+            <span className={cn("absolute inset-0 flex items-center justify-center text-[7px] font-mono z-10 font-bold", activeTransparent ? "text-slate-800" : "text-white")}>
               {data.currentPV.toFixed(1)}MW
             </span>
           </div>
@@ -66,8 +70,8 @@ export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = f
       {/* Tag and Status */}
       <div className="flex items-center justify-between mt-1.5 px-1">
         <div>
-          <p className={cn("font-mono text-xs font-bold", transparentBackground ? "text-cyan-600" : "text-cyan-400")}>{data.tag}</p>
-          <p className={cn("text-[9px]", transparentBackground ? "text-slate-600" : "text-muted-foreground")}>{data.description}</p>
+          <p className={cn("font-mono text-xs font-bold", activeTransparent ? "text-cyan-600" : "text-cyan-400")}>{config.tagName}</p>
+          <p className={cn("text-[9px]", activeTransparent ? "text-slate-600" : "text-muted-foreground")}>{config.description}</p>
         </div>
         <div
           className={cn(

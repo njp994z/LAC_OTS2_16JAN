@@ -85,6 +85,7 @@ import TurboGeneratorTrends from "@/delta-v/pages/TurboGeneratorTrends";
 import TurboGeneratorLinks from "@/delta-v/pages/TurboGeneratorLinks";
 import TurboGeneratorCompare from "@/delta-v/pages/TurboGeneratorCompare";
 import TurboGeneratorAlarms from "@/delta-v/pages/TurboGeneratorAlarms";
+import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
 import TempSensor5821Landing from "@/delta-v/pages/TempSensor5821Landing";
 import TempSensor5821Main from "@/delta-v/pages/TempSensor5821Main";
 import TempSensor5821Faceplate3A from "@/delta-v/pages/TempSensor5821Faceplate3A";
@@ -460,7 +461,11 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/vfd-alarms" component={VFDAlarms} />
       
       {/* Turbo Generator Pages */}
-      <Route path="/settings/controller-outputs/faceplates/turbo-generator-settings" component={TurboGeneratorSettings} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-settings">
+        <TurboGeneratorProvider>
+          <TurboGeneratorSettings />
+        </TurboGeneratorProvider>
+      </Route>
       <Route path="/settings/controller-outputs/faceplates/turbo-generator-history" component={TurboGeneratorHistory} />
       <Route path="/settings/controller-outputs/faceplates/turbo-generator-trends" component={TurboGeneratorTrends} />
       <Route path="/settings/controller-outputs/faceplates/turbo-generator-links" component={TurboGeneratorLinks} />

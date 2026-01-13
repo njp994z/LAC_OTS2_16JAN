@@ -5,27 +5,17 @@ import { ArrowLeft } from "lucide-react";
 import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
 import { TurboGeneratorVFDFaceplate } from "@/delta-v/components/faceplate/TurboGeneratorVFDFaceplate";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
+import { TurboGeneratorProvider, useTurboGenerator } from "@/delta-v/contexts/TurboGeneratorContext";
 
-const TurboGeneratorFaceplate = () => {
-  const [vfdConfig] = useState<{
-    tagName: string;
-    description: string;
-    unit: string;
-    transparentBackground: boolean;
-  }>({
-    tagName: "TG-001",
-    description: "Turbo Generator Set",
-    unit: "U-1560",
-    transparentBackground: false,
-  });
-
+const TurboGeneratorContent = () => {
+  const { config } = useTurboGenerator();
+  
   // Use shared compressor context (reusing for turbo generator)
   const {
     compressorData,
     handleStart,
     handleStop,
     handleModeChange,
-    handleSpeedSPChange,
     handleClearAlarm,
     setPermitActive,
     setFailAlarm,
@@ -61,7 +51,7 @@ const TurboGeneratorFaceplate = () => {
               "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent"
             )}
           >
-            1560-TG-001 Turbo Generator Set
+            {config.tagName} {config.description}
           </h1>
           <p className="text-muted-foreground mt-2">
             Turbo Generator Control Interface
@@ -75,7 +65,7 @@ const TurboGeneratorFaceplate = () => {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Equipment Overview
             </h2>
-            <PrimaryTurboGeneratorFaceplate data={compressorData} transparentBackground={vfdConfig?.transparentBackground ?? false} />
+            <PrimaryTurboGeneratorFaceplate data={compressorData} />
           </div>
 
           {/* Secondary Turbo Generator Faceplate - Control Interface */}
@@ -125,6 +115,14 @@ const TurboGeneratorFaceplate = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const TurboGeneratorFaceplate = () => {
+  return (
+    <TurboGeneratorProvider>
+      <TurboGeneratorContent />
+    </TurboGeneratorProvider>
   );
 };
 

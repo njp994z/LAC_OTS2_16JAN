@@ -46,6 +46,35 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Controller Configs API
+  app.get('/api/controller-configs/:controllerId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { controllerId } = req.params;
+      const config = await storage.getControllerConfig(controllerId);
+      if (!config) {
+        return res.status(404).json({ message: "Controller configuration not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching controller config:", error);
+      res.status(500).json({ message: "Failed to fetch controller config" });
+    }
+  });
+
+  app.post('/api/controller-configs', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { controllerId, config, data } = req.body;
+      if (!controllerId || !config) {
+        return res.status(400).json({ message: "controllerId and config are required" });
+      }
+      const updated = await storage.upsertControllerConfig(controllerId, config, data);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error upserting controller config:", error);
+      res.status(500).json({ message: "Failed to save controller config" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time session broadcasting

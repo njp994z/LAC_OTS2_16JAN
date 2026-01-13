@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Settings, ArrowLeft, ExternalLink, Save, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings as SettingsIcon, ArrowLeft, ExternalLink, Save, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useTurboGenerator } from "@/delta-v/contexts/TurboGeneratorContext";
 import {
   Select,
   SelectContent,
@@ -14,28 +14,28 @@ import {
 } from "@/components/ui/select";
 
 const TurboGeneratorSettings = () => {
-  const [config, setConfig] = useState({
-    tagName: "1560-TG-001",
-    description: "Turbo Generator Set",
-    unit: "U-1560",
-    engineeringUnits: "MW",
-    transparentBackground: false,
-  });
-  const [isLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
+  const { config: sharedConfig, updateConfig, isSaving, isLoading } = useTurboGenerator();
+  const [localConfig, setLocalConfig] = useState(sharedConfig);
+
+  useEffect(() => {
+    setLocalConfig(sharedConfig);
+  }, [sharedConfig]);
 
   const handleChange = (field: string, value: string | boolean) => {
-    setConfig((prev) => ({ ...prev, [field]: value }));
+    setLocalConfig((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleApplyChanges = async () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      toast({ title: "Success", description: "Settings saved successfully" });
-      setIsSaving(false);
-    }, 500);
+    await updateConfig(localConfig);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -49,13 +49,13 @@ const TurboGeneratorSettings = () => {
               <ArrowLeft size={20} />
             </Link>
             <div className="flex items-center gap-2">
-              <Settings className="text-primary" size={24} />
+              <SettingsIcon className="text-primary" size={24} />
               <h1 className="text-2xl font-bold">Turbo Generator Settings</h1>
             </div>
           </div>
           <Button 
             onClick={handleApplyChanges} 
-            disabled={isSaving || isLoading}
+            disabled={isSaving}
             className="bg-cyan-600 hover:bg-cyan-700 text-white"
           >
             {isSaving ? (
@@ -82,7 +82,7 @@ const TurboGeneratorSettings = () => {
               <div className="flex justify-between items-center px-4 py-3 bg-slate-800/50">
                 <span className="text-slate-300 text-sm">Tag Name</span>
                 <Input
-                  value={config.tagName}
+                  value={localConfig.tagName}
                   onChange={(e) => handleChange("tagName", e.target.value)}
                   className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm"
                 />
@@ -90,7 +90,7 @@ const TurboGeneratorSettings = () => {
               <div className="flex justify-between items-center px-4 py-3">
                 <span className="text-slate-300 text-sm">Description</span>
                 <Input
-                  value={config.description}
+                  value={localConfig.description}
                   onChange={(e) => handleChange("description", e.target.value)}
                   className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm"
                 />
@@ -98,7 +98,7 @@ const TurboGeneratorSettings = () => {
               <div className="flex justify-between items-center px-4 py-3 bg-slate-800/50">
                 <span className="text-slate-300 text-sm">Unit</span>
                 <Input
-                  value={config.unit}
+                  value={localConfig.unit}
                   onChange={(e) => handleChange("unit", e.target.value)}
                   className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm"
                 />
@@ -106,7 +106,7 @@ const TurboGeneratorSettings = () => {
               <div className="flex justify-between items-center px-4 py-3">
                 <span className="text-slate-300 text-sm">Engineering Units</span>
                 <Select
-                  value={config.engineeringUnits}
+                  value={localConfig.engineeringUnits}
                   onValueChange={(value) => handleChange("engineeringUnits", value)}
                 >
                   <SelectTrigger className="w-48 h-8 bg-slate-900 border-slate-600 text-slate-100 text-sm">
@@ -126,7 +126,7 @@ const TurboGeneratorSettings = () => {
               <div className="flex justify-between items-center px-4 py-3 bg-slate-800/50">
                 <span className="text-slate-300 text-sm">Transparent Background</span>
                 <Switch
-                  checked={config.transparentBackground}
+                  checked={localConfig.transparentBackground}
                   onCheckedChange={(checked) => handleChange("transparentBackground", checked)}
                   className="data-[state=checked]:bg-cyan-500"
                 />
@@ -163,7 +163,7 @@ const TurboGeneratorSettings = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Device Name</span>
-                <span className="font-medium">{config.tagName}</span>
+                <span className="font-medium">{localConfig.tagName}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Max Power Output</span>
@@ -176,24 +176,6 @@ const TurboGeneratorSettings = () => {
               <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">Rated Speed</span>
                 <span className="font-medium">3600 RPM</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card border border-border rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-4">Control Parameters</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-border/50">
-                <span className="text-muted-foreground">Ramp Up Time</span>
-                <span className="font-medium">30 sec</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-border/50">
-                <span className="text-muted-foreground">Ramp Down Time</span>
-                <span className="font-medium">45 sec</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">Control Mode</span>
-                <span className="font-medium">Power Control</span>
               </div>
             </div>
           </div>
