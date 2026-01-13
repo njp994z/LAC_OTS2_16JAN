@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
-import { PrimaryCompressorFaceplate } from "@/delta-v/components/faceplate/PrimaryCompressorFaceplate";
+import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
 import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 
@@ -75,7 +75,7 @@ const TurboGeneratorFaceplate = () => {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Equipment Overview
             </h2>
-            <PrimaryCompressorFaceplate data={compressorData} transparentBackground={vfdConfig?.transparentBackground ?? false} />
+            <PrimaryTurboGeneratorFaceplate data={compressorData} transparentBackground={vfdConfig?.transparentBackground ?? false} />
           </div>
 
           {/* Secondary VFD Faceplate - Control Interface */}
