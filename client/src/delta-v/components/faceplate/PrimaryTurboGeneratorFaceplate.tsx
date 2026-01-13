@@ -29,12 +29,15 @@ export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = f
           : "linear-gradient(135deg, hsl(220 15% 18%) 0%, hsl(220 15% 12%) 100%)",
       }}
     >
-      {/* Equipment Graphic */}
-      <img 
-        src={turboGeneratorEquipment} 
-        alt="Turbo Generator Equipment" 
-        className="w-full h-auto max-w-[200px] mx-auto"
-      />
+      {/* Equipment Graphic - cropped to remove top/bottom whitespace */}
+      <div className="overflow-hidden" style={{ height: '120px' }}>
+        <img 
+          src={turboGeneratorEquipment} 
+          alt="Turbo Generator Equipment" 
+          className="w-full max-w-[200px] mx-auto object-cover object-center"
+          style={{ marginTop: '-30px', marginBottom: '-30px' }}
+        />
+      </div>
 
       {/* Two Blue Range Bars - Positioned under turbine and generator */}
       <div className="flex justify-end gap-6 mt-1 pr-2">
