@@ -8,10 +8,6 @@ import { Activity, LogIn } from "lucide-react";
 export default function Landing() {
   const [, setLocation] = useLocation();
   
-  const handleViewDemo = () => {
-    setLocation("/demo");
-  };
-  
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
@@ -31,7 +27,7 @@ export default function Landing() {
       </header>
       
       <main>
-        <HeroSection onViewDemo={handleViewDemo} />
+        <HeroSection />
         
         <div id="features">
           <FeaturesGrid />

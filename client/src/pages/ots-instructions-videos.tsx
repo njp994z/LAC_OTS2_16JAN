@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlayCircle, GraduationCap, ClipboardList, Wrench, Building2, ShieldCheck, FolderArchive, FlaskConical, FolderOpen } from "lucide-react";
+import { ArrowLeft, PlayCircle, GraduationCap, ClipboardList, Wrench, Building2, ShieldCheck, FolderArchive, FlaskConical, FolderOpen, Play } from "lucide-react";
 
 interface OTSResource {
   id: string;
@@ -87,15 +87,26 @@ export default function OTSInstructionsVideos() {
               </div>
             </div>
           </div>
-          <Button
-            variant="default"
-            onClick={() => setLocation("/settings/plant-document-library")}
-            data-testid="button-plant-document-library"
-            className="gap-2"
-          >
-            <FolderOpen className="w-4 h-4" />
-            Plant Document Library
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="default"
+              onClick={() => setLocation("/simulator")}
+              data-testid="button-1st-gen-simulation"
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" />
+              1st Generation Simulation
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => setLocation("/settings/plant-document-library")}
+              data-testid="button-plant-document-library"
+              className="gap-2"
+            >
+              <FolderOpen className="w-4 h-4" />
+              Plant Document Library
+            </Button>
+          </div>
         </div>
       </header>
 

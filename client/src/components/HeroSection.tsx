@@ -1,9 +1,4 @@
-import { Button } from "@/components/ui/button";
 import { Activity, TrendingUp } from "lucide-react";
-
-interface HeroSectionProps {
-  onViewDemo: () => void;
-}
 
 const BellCurveIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,7 +8,7 @@ const BellCurveIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default function HeroSection({ onViewDemo }: HeroSectionProps) {
+export default function HeroSection() {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-card">
       <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
@@ -34,18 +29,7 @@ export default function HeroSection({ onViewDemo }: HeroSectionProps) {
           High-fidelity dynamic Operator Training Simulator (OTS) with dynamic simulations customized for Lithium America's new sulfuric acid plant.      
         </p>
         
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
-          <Button 
-            size="lg" 
-            onClick={onViewDemo}
-            data-testid="button-view-demo"
-            className="min-w-[160px]"
-          >
-            View Demo
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-16">
           <div className="flex flex-col items-center gap-2 p-6 rounded-md bg-card border border-card-border">
             <TrendingUp className="w-6 h-6 text-chart-2" />
             <span className="text-sm font-medium text-foreground">Operator Training Simulator</span>
