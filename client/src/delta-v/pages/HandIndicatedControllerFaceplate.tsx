@@ -38,7 +38,6 @@ const HandIndicatedControllerFaceplate = () => {
         <div className="flex flex-col gap-4 items-center">
           {[
             { to: "/settings/controller-outputs/faceplates/hand-controller-4030", label: "1540-H-4030 Main Compressor Hand Controller" },
-            { to: "/settings/controller-outputs/faceplates/turbo-generator-001", label: "1560-TG-001 Turbo Generator Set" },
             { to: "/settings/controller-outputs/faceplates/hand-controller-4282-jug", label: "1540-H-4282 Jug Valve Hand Controller" },
             { to: "/settings/controller-outputs/faceplates/hand-controller-4283-whb", label: "1540-H-4283 WHB Outlet dP Hand Controller" },
           ].map(({ to, label }) => (
