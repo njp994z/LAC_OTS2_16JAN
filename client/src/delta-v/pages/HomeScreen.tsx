@@ -1173,6 +1173,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setCompressorSize({ width: compressor.width, height: compressor.height });
     }
     
+    const turboGenerator = positionMap.get('turbo_generator');
+    if (turboGenerator) {
+      setTurboGeneratorPosition({ x: turboGenerator.x, y: turboGenerator.y });
+      setTurboGeneratorSize({ width: turboGenerator.width, height: turboGenerator.height });
+    }
+    
     const sulfurFlow = positionMap.get('sulfur_flow');
     if (sulfurFlow) {
       setSulfurFlowPosition({ x: sulfurFlow.x, y: sulfurFlow.y });
@@ -1413,6 +1419,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'dashed_line_2', positionX: Math.round(dashedLine2Position.x), positionY: Math.round(dashedLine2Position.y), width: dashedLine2Size.width, height: dashedLine2Size.height, rotation: dashedLine2Rotation },
         { elementId: 'dashed_line_3', positionX: Math.round(dashedLine3Position.x), positionY: Math.round(dashedLine3Position.y), width: dashedLine3Size.width, height: dashedLine3Size.height, rotation: dashedLine3Rotation },
         { elementId: 'dashed_line_4', positionX: Math.round(dashedLine4Position.x), positionY: Math.round(dashedLine4Position.y), width: dashedLine4Size.width, height: dashedLine4Size.height, rotation: dashedLine4Rotation },
+        { elementId: 'turbo_generator', positionX: Math.round(turboGeneratorPosition.x), positionY: Math.round(turboGeneratorPosition.y), width: turboGeneratorSize.width, height: turboGeneratorSize.height, rotation: 0 },
         // Add all arrows
         ...arrows.map(arrow => ({
           elementId: arrow.id,
