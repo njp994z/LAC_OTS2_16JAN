@@ -39,6 +39,8 @@ import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/Sec
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { TempSensorPrimaryFaceplate } from "@/delta-v/components/faceplate/TempSensorPrimaryFaceplate";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
+import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
+import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
@@ -318,6 +320,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Industrial Filter position/size
   const [filterPosition, setFilterPosition] = useState({ x: 1550, y: 300 });
   const [filterSize, setFilterSize] = useState({ width: 80, height: 120 });
+  
+  // Turbo Generator position/size
+  const [turboGeneratorPosition, setTurboGeneratorPosition] = useState({ x: 1700, y: 100 });
+  const [turboGeneratorSize, setTurboGeneratorSize] = useState({ width: 220, height: 180 });
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -828,6 +834,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const handleJugValveHandControllerClick = () => {
     if (isLocked) {
       setIsJugValveHandControllerModalOpen(true);
+    }
+  };
+
+  const handleTurboGeneratorClick = () => {
+    if (isLocked) {
+      setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
     }
   };
 
@@ -1909,6 +1921,38 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             />
           </div>
         </Rnd>
+
+        {/* Turbo Generator Faceplate */}
+        <TurboGeneratorProvider>
+          <Rnd
+            position={turboGeneratorPosition}
+            size={turboGeneratorSize}
+            onDragStop={(e, d) => setTurboGeneratorPosition({ x: d.x, y: d.y })}
+            onResizeStop={(e, dir, ref, delta, position) => {
+              setTurboGeneratorSize({
+                width: parseInt(ref.style.width),
+                height: parseInt(ref.style.height)
+              });
+              setTurboGeneratorPosition(position);
+            }}
+            minWidth={150}
+            minHeight={120}
+            bounds="parent"
+            disableDragging={isLocked}
+            enableResizing={!isLocked}
+            className={isLocked ? "cursor-default" : "cursor-move"}
+          >
+            <div 
+              className={`w-full h-full flex items-center justify-center ${isLocked ? 'cursor-pointer' : ''}`}
+              onClick={handleTurboGeneratorClick}
+            >
+              <PrimaryTurboGeneratorFaceplate 
+                data={compressorData} 
+                transparentBackground={true}
+              />
+            </div>
+          </Rnd>
+        </TurboGeneratorProvider>
 
         {/* Sulfur Flow Controller Faceplate */}
         <Rnd
