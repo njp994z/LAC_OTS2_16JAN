@@ -29,13 +29,13 @@ export const PrimaryTurboGeneratorFaceplate = ({ data, transparentBackground = f
           : "linear-gradient(135deg, hsl(220 15% 18%) 0%, hsl(220 15% 12%) 100%)",
       }}
     >
-      {/* Equipment Graphic - cropped to remove top/bottom whitespace */}
-      <div className="overflow-hidden" style={{ height: '120px' }}>
+      {/* Equipment Graphic - cropped to remove top whitespace only */}
+      <div className="overflow-hidden" style={{ height: '130px' }}>
         <img 
           src={turboGeneratorEquipment} 
           alt="Turbo Generator Equipment" 
-          className="w-full max-w-[200px] mx-auto object-cover object-center"
-          style={{ marginTop: '-30px', marginBottom: '-30px' }}
+          className="w-full max-w-[200px] mx-auto"
+          style={{ marginTop: '-50px' }}
         />
       </div>
 
