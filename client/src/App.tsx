@@ -16,6 +16,7 @@ import SensorFaceplate from "@/delta-v/pages/SensorFaceplate";
 import ValveFaceplate from "@/delta-v/pages/ValveFaceplate";
 import AlarmFaceplate from "@/delta-v/pages/AlarmFaceplate";
 import CompressorFaceplate from "@/delta-v/pages/CompressorFaceplate";
+import TurboGeneratorFaceplate from "@/delta-v/pages/TurboGeneratorFaceplate";
 import TemperatureControllerFaceplates from "@/delta-v/pages/TemperatureControllerFaceplates";
 import LevelControllerFaceplate from "@/delta-v/pages/LevelControllerFaceplate";
 import ConcentrationControllerFaceplate from "@/delta-v/pages/ConcentrationControllerFaceplate";
@@ -428,6 +429,7 @@ function Router() {
       
       {/* Delta-V Equipment Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/compressor-faceplate" component={CompressorFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-faceplate" component={TurboGeneratorFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/faceplate-3a/:controllerId?" component={Faceplate3A} />
       <Route path="/settings/controller-outputs/faceplates/faceplate-3b/:controllerId?" component={Faceplate3B} />
       <Route path="/settings/controller-outputs/faceplates/faceplate-3c/:controllerId?" component={Faceplate3C} />

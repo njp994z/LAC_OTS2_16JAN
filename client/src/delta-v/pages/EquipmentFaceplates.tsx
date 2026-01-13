@@ -41,6 +41,7 @@ const EquipmentFaceplates = () => {
         <div className="flex flex-col gap-4 items-center">
           {[
             { to: "/settings/controller-outputs/faceplates/compressor-faceplate", label: "1510-GB-001 Main Compressor Faceplate" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-faceplate", label: "1560-TG-001 Turbo Generator Set" },
           ].map(({ to, label }) => (
             <Link
               key={to}
