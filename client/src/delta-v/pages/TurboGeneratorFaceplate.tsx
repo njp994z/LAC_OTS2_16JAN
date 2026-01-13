@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
-import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
+import { TurboGeneratorVFDFaceplate } from "@/delta-v/components/faceplate/TurboGeneratorVFDFaceplate";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 
 const TurboGeneratorFaceplate = () => {
@@ -78,17 +78,16 @@ const TurboGeneratorFaceplate = () => {
             <PrimaryTurboGeneratorFaceplate data={compressorData} transparentBackground={vfdConfig?.transparentBackground ?? false} />
           </div>
 
-          {/* Secondary VFD Faceplate - Control Interface */}
+          {/* Secondary Turbo Generator Faceplate - Control Interface */}
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Generator Control Panel
             </h2>
-            <VFDFaceplate
+            <TurboGeneratorVFDFaceplate
               data={compressorData}
               onStart={handleStart}
               onStop={handleStop}
               onModeChange={handleModeChange}
-              onSpeedSPChange={handleSpeedSPChange}
               onClearAlarm={handleClearAlarm}
             />
           </div>

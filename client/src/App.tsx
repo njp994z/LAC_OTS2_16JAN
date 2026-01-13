@@ -79,6 +79,12 @@ import VFDTrends from "@/delta-v/pages/VFDTrends";
 import VFDLinks from "@/delta-v/pages/VFDLinks";
 import VFDCompare from "@/delta-v/pages/VFDCompare";
 import VFDAlarms from "@/delta-v/pages/VFDAlarms";
+import TurboGeneratorSettings from "@/delta-v/pages/TurboGeneratorSettings";
+import TurboGeneratorHistory from "@/delta-v/pages/TurboGeneratorHistory";
+import TurboGeneratorTrends from "@/delta-v/pages/TurboGeneratorTrends";
+import TurboGeneratorLinks from "@/delta-v/pages/TurboGeneratorLinks";
+import TurboGeneratorCompare from "@/delta-v/pages/TurboGeneratorCompare";
+import TurboGeneratorAlarms from "@/delta-v/pages/TurboGeneratorAlarms";
 import TempSensor5821Landing from "@/delta-v/pages/TempSensor5821Landing";
 import TempSensor5821Main from "@/delta-v/pages/TempSensor5821Main";
 import TempSensor5821Faceplate3A from "@/delta-v/pages/TempSensor5821Faceplate3A";
@@ -452,6 +458,14 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/vfd-links" component={VFDLinks} />
       <Route path="/settings/controller-outputs/faceplates/vfd-compare" component={VFDCompare} />
       <Route path="/settings/controller-outputs/faceplates/vfd-alarms" component={VFDAlarms} />
+      
+      {/* Turbo Generator Pages */}
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-settings" component={TurboGeneratorSettings} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-history" component={TurboGeneratorHistory} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-trends" component={TurboGeneratorTrends} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-links" component={TurboGeneratorLinks} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-compare" component={TurboGeneratorCompare} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-alarms" component={TurboGeneratorAlarms} />
       
       <Route path="/settings/controller-outputs/pv-output-messages" component={PvOutputMessages} />
       <Route path="/settings/controller-outputs/valve-status" component={ValveStatus} />
