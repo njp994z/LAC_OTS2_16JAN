@@ -24,6 +24,8 @@ import SulfurFlowControllerFaceplate from "@/delta-v/pages/SulfurFlowControllerF
 import SulfurFlowControllerFaceplateMain from "@/delta-v/pages/SulfurFlowControllerFaceplateMain";
 import MainCompressorHandControllerFaceplate from "@/delta-v/pages/MainCompressorHandControllerFaceplate";
 import MainCompressorHandControllerFaceplateMain from "@/delta-v/pages/MainCompressorHandControllerFaceplateMain";
+import TurboGeneratorFaceplate from "@/delta-v/pages/TurboGeneratorFaceplate";
+import TurboGeneratorFaceplateMain from "@/delta-v/pages/TurboGeneratorFaceplateMain";
 import HandController4030Faceplate3A from "@/delta-v/pages/HandController4030Faceplate3A";
 import HandController4030Faceplate3B from "@/delta-v/pages/HandController4030Faceplate3B";
 import HandController4030Faceplate3C from "@/delta-v/pages/HandController4030Faceplate3C";
@@ -336,6 +338,14 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3d" component={HandController4030Faceplate3D} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3e" component={HandController4030Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4030-faceplate-3f" component={HandController4030Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001" component={TurboGeneratorFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-main" component={TurboGeneratorFaceplateMain} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3a" component={HandController4030Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3b" component={HandController4030Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3c" component={HandController4030Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3d" component={HandController4030Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3e" component={HandController4030Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3f" component={HandController4030Faceplate3F} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-jug" component={JugValveHandControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-main" component={JugValveHandControllerFaceplateMain} />
       <Route path="/settings/controller-outputs/faceplates/hand-controller-4282-faceplate-3a" component={HandController4282Faceplate3A} />

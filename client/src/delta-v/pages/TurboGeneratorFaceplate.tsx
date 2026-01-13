@@ -1,8 +1,8 @@
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 
-const HandIndicatedControllerFaceplate = () => {
+const TurboGeneratorFaceplate = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-8">
       <div className="fixed inset-0 opacity-5">
@@ -17,11 +17,11 @@ const HandIndicatedControllerFaceplate = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/settings/controller-outputs/faceplates/controller-blocks"
+          to="/settings/controller-outputs/faceplates/hand-indicated-controller"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Controller Faceplates
+          Back to Hand Indicated Controllers
         </Link>
 
         <h1
@@ -30,17 +30,22 @@ const HandIndicatedControllerFaceplate = () => {
             "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent",
           )}
         >
-          Delta V Hand-Indicated Controller
+          1560-TG-001 Turbo Generator Set
         </h1>
 
-        <p className="text-muted-foreground mb-12">Hand-Indicated Controller HMI Components</p>
+        <p className="text-muted-foreground text-lg mb-12 tracking-wide">
+          Turbo Generator Set HMI Components
+        </p>
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/settings/controller-outputs/faceplates/hand-controller-4030", label: "1540-H-4030 Main Compressor Hand Controller" },
-            { to: "/settings/controller-outputs/faceplates/turbo-generator-001", label: "1560-TG-001 Turbo Generator Set" },
-            { to: "/settings/controller-outputs/faceplates/hand-controller-4282-jug", label: "1540-H-4282 Jug Valve Hand Controller" },
-            { to: "/settings/controller-outputs/faceplates/hand-controller-4283-whb", label: "1540-H-4283 WHB Outlet dP Hand Controller" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-main", label: "1560-TG-001 Turbo Generator Set Faceplate" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3d", label: "Faceplate 3D - Control Studio" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3e", label: "Faceplate 3E - Controller Input GUI" },
+            { to: "/settings/controller-outputs/faceplates/turbo-generator-001-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
           ].map(({ to, label }) => (
             <Link
               key={to}
@@ -64,4 +69,4 @@ const HandIndicatedControllerFaceplate = () => {
   );
 };
 
-export default HandIndicatedControllerFaceplate;
+export default TurboGeneratorFaceplate;
