@@ -161,6 +161,7 @@ const HomeScreen = () => {
   
   // Vertical arrows - narrow width, variable height, positioned near edges
   // Each arrow has a 'screen' property to track which view it belongs to
+  // Rotation is stored in degrees (0, 90, 180, 270)
   const [verticalArrows, setVerticalArrows] = useState<Array<{
     id: string;
     x: number;
@@ -168,8 +169,9 @@ const HomeScreen = () => {
     width: number;
     height: number;
     screen: string;
+    rotation: number;
   }>>([
-    { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150, screen: 'L1 – System Overview' },
+    { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150, screen: 'L1 – System Overview', rotation: 0 },
   ]);
   
   // Vertical lines (without arrowheads) - narrow width, variable height
@@ -1399,8 +1401,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     
     // Vertical arrows - load from database (dynamically created elements)
     // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
-    const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
-    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number; viewScreen?: string | null }) => {
+    const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
+    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number; rotation?: number; viewScreen?: string | null }) => {
       if (layout.elementId.startsWith('v_arrow_')) {
         savedVerticalArrows.push({
           id: layout.elementId,
@@ -1409,6 +1411,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           width: layout.width,
           height: layout.height,
           screen: layout.viewScreen || 'L1 – System Overview',
+          rotation: layout.rotation || 0,
         });
       }
     });
@@ -1478,14 +1481,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           height: arrow.height,
           rotation: arrow.rotation,
         })),
-        // Add all vertical arrows (include viewScreen property for persistence)
+        // Add all vertical arrows (include viewScreen and rotation for persistence)
         ...verticalArrows.map(va => ({
           elementId: va.id,
           positionX: Math.round(va.x),
           positionY: Math.round(va.y),
           width: va.width,
           height: va.height,
-          rotation: 0,
+          rotation: va.rotation,
           viewScreen: va.screen,
         })),
         // Add all vertical lines (include viewScreen property for persistence)
@@ -1576,8 +1579,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       width: 24,
       height: 150,
       screen: selectedScreen,
+      rotation: 0,
     }]);
     toast({ title: "Vertical Arrow Added", description: `A new vertical arrow has been added to ${selectedScreen}.` });
+  };
+
+  // Rotate a vertical arrow by 90 degrees clockwise
+  const handleRotateVerticalArrow = (arrowId: string) => {
+    setVerticalArrows(prev => prev.map(va => 
+      va.id === arrowId 
+        ? { ...va, rotation: (va.rotation + 90) % 360 }
+        : va
+    ));
   };
 
   // Add a new vertical line (without arrowhead) to the current screen
@@ -2017,34 +2030,71 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             {/* Render vertical arrows for L4-Converter */}
             {verticalArrows.filter(va => va.screen === 'L4-Converter').map((vArrow) => (
               <Rnd
-                key={vArrow.id}
+                key={`${vArrow.id}-${vArrow.rotation}`}
                 position={{ x: vArrow.x, y: vArrow.y }}
-                size={{ width: vArrow.width, height: vArrow.height }}
+                size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
                 onDragStop={(e, d) => {
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
+                  const isHorizontal = vArrow.rotation % 180 !== 0;
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id 
-                      ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      ? { 
+                          ...va, 
+                          height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
+                          x: position.x, 
+                          y: position.y 
+                        }
                       : va
                   ));
                 }}
-                minWidth={24}
-                minHeight={50}
-                maxWidth={24}
+                minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+                minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+                maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+                maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
                 disableDragging={isLockedL4}
                 enableResizing={!isLockedL4 ? { 
-                  top: true, bottom: true, left: false, right: false,
+                  top: vArrow.rotation % 180 === 0, 
+                  bottom: vArrow.rotation % 180 === 0, 
+                  left: vArrow.rotation % 180 !== 0, 
+                  right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={isLockedL4 ? "cursor-default" : "cursor-move"}
+                className={`${isLockedL4 ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
-                <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+                <div className="relative w-full h-full">
+                  <div 
+                    style={{ 
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                      width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
+                      height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
+                    }}
+                  >
+                    <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+                  </div>
+                  {!isLockedL4 && (
+                    <button
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                 w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                 flex items-center justify-center shadow-lg 
+                                 transition-all duration-200 z-10
+                                 opacity-0 group-hover:opacity-100"
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                      title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                    >
+                      <RotateCw className="w-3 h-3 text-white" />
+                    </button>
+                  )}
+                </div>
               </Rnd>
             ))}
 
@@ -2097,34 +2147,71 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             {/* Render vertical arrows for L2-Furnace Area */}
             {verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map((vArrow) => (
               <Rnd
-                key={vArrow.id}
+                key={`${vArrow.id}-${vArrow.rotation}`}
                 position={{ x: vArrow.x, y: vArrow.y }}
-                size={{ width: vArrow.width, height: vArrow.height }}
+                size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
                 onDragStop={(e, d) => {
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
+                  const isHorizontal = vArrow.rotation % 180 !== 0;
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id 
-                      ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      ? { 
+                          ...va, 
+                          height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
+                          x: position.x, 
+                          y: position.y 
+                        }
                       : va
                   ));
                 }}
-                minWidth={24}
-                minHeight={50}
-                maxWidth={24}
+                minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+                minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+                maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+                maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
                 disableDragging={isLocked}
                 enableResizing={!isLocked ? { 
-                  top: true, bottom: true, left: false, right: false,
+                  top: vArrow.rotation % 180 === 0, 
+                  bottom: vArrow.rotation % 180 === 0, 
+                  left: vArrow.rotation % 180 !== 0, 
+                  right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={isLocked ? "cursor-default" : "cursor-move"}
+                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
-                <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+                <div className="relative w-full h-full">
+                  <div 
+                    style={{ 
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                      width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
+                      height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
+                    }}
+                  >
+                    <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+                  </div>
+                  {!isLocked && (
+                    <button
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                 w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                 flex items-center justify-center shadow-lg 
+                                 transition-all duration-200 z-10
+                                 opacity-0 group-hover:opacity-100"
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                      title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                    >
+                      <RotateCw className="w-3 h-3 text-white" />
+                    </button>
+                  )}
+                </div>
               </Rnd>
             ))}
 
@@ -2177,34 +2264,71 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             {/* Render vertical arrows for L3-Compressor Area */}
             {verticalArrows.filter(va => va.screen === 'L3 – Compressor Area').map((vArrow) => (
               <Rnd
-                key={vArrow.id}
+                key={`${vArrow.id}-${vArrow.rotation}`}
                 position={{ x: vArrow.x, y: vArrow.y }}
-                size={{ width: vArrow.width, height: vArrow.height }}
+                size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
                 onDragStop={(e, d) => {
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
+                  const isHorizontal = vArrow.rotation % 180 !== 0;
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id 
-                      ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      ? { 
+                          ...va, 
+                          height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
+                          x: position.x, 
+                          y: position.y 
+                        }
                       : va
                   ));
                 }}
-                minWidth={24}
-                minHeight={50}
-                maxWidth={24}
+                minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+                minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+                maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+                maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
                 disableDragging={isLocked}
                 enableResizing={!isLocked ? { 
-                  top: true, bottom: true, left: false, right: false,
+                  top: vArrow.rotation % 180 === 0, 
+                  bottom: vArrow.rotation % 180 === 0, 
+                  left: vArrow.rotation % 180 !== 0, 
+                  right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={isLocked ? "cursor-default" : "cursor-move"}
+                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
-                <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+                <div className="relative w-full h-full">
+                  <div 
+                    style={{ 
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                      width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
+                      height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
+                    }}
+                  >
+                    <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+                  </div>
+                  {!isLocked && (
+                    <button
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                 w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                 flex items-center justify-center shadow-lg 
+                                 transition-all duration-200 z-10
+                                 opacity-0 group-hover:opacity-100"
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                      title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                    >
+                      <RotateCw className="w-3 h-3 text-white" />
+                    </button>
+                  )}
+                </div>
               </Rnd>
             ))}
 
@@ -3085,44 +3209,78 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         {/* Render vertical arrows for this screen */}
         {verticalArrows.filter(va => va.screen === 'L1 – System Overview').map((vArrow) => (
           <Rnd
-            key={vArrow.id}
+            key={`${vArrow.id}-${vArrow.rotation}`}
             position={{ x: vArrow.x, y: vArrow.y }}
-            size={{ width: vArrow.width, height: vArrow.height }}
+            size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
             onDragStop={(e, d) => {
               setVerticalArrows(prev => prev.map(va => 
                 va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
               ));
             }}
             onResizeStop={(e, dir, ref, delta, position) => {
+              const isHorizontal = vArrow.rotation % 180 !== 0;
               setVerticalArrows(prev => prev.map(va => 
                 va.id === vArrow.id 
-                  ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                  ? { 
+                      ...va, 
+                      height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
+                      x: position.x, 
+                      y: position.y 
+                    }
                   : va
               ));
             }}
-            minWidth={24}
-            minHeight={50}
-            maxWidth={24}
+            minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+            minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+            maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+            maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
             bounds="window"
             disableDragging={isLocked}
             enableResizing={!isLocked ? { 
-              top: true, 
-              bottom: true, 
-              left: false, 
-              right: false,
+              top: vArrow.rotation % 180 === 0, 
+              bottom: vArrow.rotation % 180 === 0, 
+              left: vArrow.rotation % 180 !== 0, 
+              right: vArrow.rotation % 180 !== 0,
               topLeft: false,
               topRight: false,
               bottomLeft: false,
               bottomRight: false
             } : false}
-            className={isLocked ? "cursor-default" : "cursor-move"}
+            className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
             style={{ zIndex: 35 }}
           >
-            <VerticalArrow 
-              width={vArrow.width} 
-              height={vArrow.height} 
-              color="#53B1D8"
-            />
+            <div className="relative w-full h-full">
+              <div 
+                style={{ 
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                  width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
+                  height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
+                }}
+              >
+                <VerticalArrow 
+                  width={vArrow.width} 
+                  height={vArrow.height} 
+                  color="#53B1D8"
+                />
+              </div>
+              {!isLocked && (
+                <button
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                             w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                             flex items-center justify-center shadow-lg 
+                             transition-all duration-200 z-10
+                             opacity-0 group-hover:opacity-100"
+                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                  title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                >
+                  <RotateCw className="w-3 h-3 text-white" />
+                </button>
+              )}
+            </div>
           </Rnd>
         ))}
 
