@@ -23,6 +23,7 @@ import sh4aImg from "@assets/delta-v/process-diagrams/sh4a.png";
 import ec3bImg from "@assets/delta-v/process-diagrams/ec3b.png";
 import sh1bImg from "@assets/delta-v/process-diagrams/sh1b.png";
 import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-filter.png";
+import converter4L4Img from "@assets/Converter_4_1768410819363.png";
 import menuIconImg from "@assets/image_1767651932939.png";
 import {
   Menubar,
@@ -324,6 +325,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Turbo Generator position/size
   const [turboGeneratorPosition, setTurboGeneratorPosition] = useState({ x: 1700, y: 100 });
   const [turboGeneratorSize, setTurboGeneratorSize] = useState({ width: 220, height: 180 });
+  
+  // L4-Converter: Converter 4 position/size
+  const [converter4L4Position, setConverter4L4Position] = useState({ x: 200, y: 100 });
+  const [converter4L4Size, setConverter4L4Size] = useState({ width: 300, height: 800 });
+  const [isSavingL4, setIsSavingL4] = useState(false);
+  const [isLockedL4, setIsLockedL4] = useState(true);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -1145,6 +1152,39 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     queryKey: ['/api/homescreen-layout/L1'],
   });
 
+  // Fetch saved L4 layout positions from database
+  const { data: layoutDataL4 } = useQuery<{ layouts: Array<{
+    elementId: string;
+    positionX: number;
+    positionY: number;
+    width: number;
+    height: number;
+    rotation: number;
+  }> }>({
+    queryKey: ['/api/homescreen-layout/L4'],
+  });
+
+  // Apply loaded L4 positions to state when data arrives
+  useEffect(() => {
+    if (!layoutDataL4?.layouts || layoutDataL4.layouts.length === 0) return;
+    
+    const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
+    layoutDataL4.layouts.forEach((item) => {
+      positionMap.set(item.elementId, {
+        x: item.positionX,
+        y: item.positionY,
+        width: item.width,
+        height: item.height,
+      });
+    });
+
+    const converter4L4 = positionMap.get('converter4_l4');
+    if (converter4L4) {
+      setConverter4L4Position({ x: converter4L4.x, y: converter4L4.y });
+      setConverter4L4Size({ width: converter4L4.width, height: converter4L4.height });
+    }
+  }, [layoutDataL4]);
+
   // Apply loaded positions to state when data arrives
   useEffect(() => {
     if (!layoutData?.layouts || layoutData.layouts.length === 0) return;
@@ -1458,6 +1498,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       toast({ title: "Error", description: "Failed to save layout positions.", variant: "destructive" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Save L4-Converter layout to database
+  const handleSaveL4Layout = async () => {
+    setIsSavingL4(true);
+    try {
+      const layouts = [
+        { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
+      ];
+
+      await apiRequest('PUT', '/api/homescreen-layout/L4', { layouts });
+      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L4'] });
+      toast({ title: "Layout saved", description: "L4 Converter layout saved to database." });
+    } catch (error) {
+      console.error('Failed to save L4 layout:', error);
+      toast({ title: "Error", description: "Failed to save L4 layout positions.", variant: "destructive" });
+    } finally {
+      setIsSavingL4(false);
     }
   };
 
@@ -1859,15 +1918,82 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
       {/* Main content area - scrollable container */}
       <div className="flex-1 overflow-auto">
-        {/* L4-Converter View - Blank Canvas */}
+        {/* L4-Converter View - Canvas with Converter 4 */}
         {selectedScreen === "L4-Converter" && (
           <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-gray-400">
-                <p className="text-2xl font-semibold">L4-Converter</p>
-                <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
-              </div>
+            {/* Save and Lock Controls for L4 */}
+            <div className="absolute top-4 right-4 z-50 flex gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsLockedL4(!isLockedL4)}
+                      className="bg-white"
+                      data-testid="button-l4-lock-toggle"
+                    >
+                      {isLockedL4 ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isLockedL4 ? 'Unlock Layout' : 'Lock Layout'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSaveL4Layout}
+                      disabled={isSavingL4 || isLockedL4}
+                      className="bg-white"
+                      data-testid="button-l4-save-layout"
+                    >
+                      {isSavingL4 ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Save L4 Layout</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
+            
+            {/* Converter 4 Graphic */}
+            <Rnd
+              position={converter4L4Position}
+              size={converter4L4Size}
+              onDragStop={(e, d) => setConverter4L4Position({ x: d.x, y: d.y })}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setConverter4L4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setConverter4L4Position(position);
+              }}
+              minWidth={100}
+              minHeight={200}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={converter4L4Img} 
+                alt="Converter 4" 
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            </Rnd>
           </div>
         )}
 
