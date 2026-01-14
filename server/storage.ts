@@ -279,6 +279,7 @@ export class DatabaseStorage implements IStorage {
             width: layout.width ?? 100,
             height: layout.height ?? 100,
             rotation: layout.rotation ?? 0,
+            viewScreen: (layout as { viewScreen?: string }).viewScreen ?? null,
             updatedAt: new Date(),
           })
           .where(eq(homescreenLayout.id, existing[0].id))
@@ -295,6 +296,7 @@ export class DatabaseStorage implements IStorage {
             width: layout.width ?? 100,
             height: layout.height ?? 100,
             rotation: layout.rotation ?? 0,
+            viewScreen: (layout as { viewScreen?: string }).viewScreen ?? null,
           })
           .returning();
         results.push(inserted);

@@ -343,6 +343,7 @@ export const homescreenLayout = pgTable("homescreen_layout", {
   width: doublePrecision("width").notNull(),
   height: doublePrecision("height").notNull(),
   rotation: integer("rotation").default(0),
+  viewScreen: text("view_screen"), // For dynamically added elements - which view they belong to (L1, L2, L3, L4, etc.)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

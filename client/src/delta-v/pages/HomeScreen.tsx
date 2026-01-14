@@ -160,23 +160,27 @@ const HomeScreen = () => {
   ]);
   
   // Vertical arrows - narrow width, variable height, positioned near edges
+  // Each arrow has a 'screen' property to track which view it belongs to
   const [verticalArrows, setVerticalArrows] = useState<Array<{
     id: string;
     x: number;
     y: number;
     width: number;
     height: number;
+    screen: string;
   }>>([
-    { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150 },
+    { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150, screen: 'L1 – System Overview' },
   ]);
   
   // Vertical lines (without arrowheads) - narrow width, variable height
+  // Each line has a 'screen' property to track which view it belongs to
   const [verticalLines, setVerticalLines] = useState<Array<{
     id: string;
     x: number;
     y: number;
     width: number;
     height: number;
+    screen: string;
   }>>([]);
   
   const [isLocked, setIsLocked] = useState(true);
@@ -1394,8 +1398,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }));
     
     // Vertical arrows - load from database (dynamically created elements)
-    const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number }> = [];
-    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number }) => {
+    // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
+    const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
+    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number; viewScreen?: string | null }) => {
       if (layout.elementId.startsWith('v_arrow_')) {
         savedVerticalArrows.push({
           id: layout.elementId,
@@ -1403,6 +1408,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           y: layout.positionY,
           width: layout.width,
           height: layout.height,
+          screen: layout.viewScreen || 'L1 – System Overview',
         });
       }
     });
@@ -1411,8 +1417,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
     
     // Vertical lines - load from database (dynamically created elements)
-    const savedVerticalLines: Array<{ id: string; x: number; y: number; width: number; height: number }> = [];
-    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number }) => {
+    // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
+    const savedVerticalLines: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
+    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number; viewScreen?: string | null }) => {
       if (layout.elementId.startsWith('v_line_')) {
         savedVerticalLines.push({
           id: layout.elementId,
@@ -1420,6 +1427,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           y: layout.positionY,
           width: layout.width,
           height: layout.height,
+          screen: layout.viewScreen || 'L1 – System Overview',
         });
       }
     });
@@ -1470,7 +1478,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           height: arrow.height,
           rotation: arrow.rotation,
         })),
-        // Add all vertical arrows
+        // Add all vertical arrows (include viewScreen property for persistence)
         ...verticalArrows.map(va => ({
           elementId: va.id,
           positionX: Math.round(va.x),
@@ -1478,8 +1486,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           width: va.width,
           height: va.height,
           rotation: 0,
+          viewScreen: va.screen,
         })),
-        // Add all vertical lines
+        // Add all vertical lines (include viewScreen property for persistence)
         ...verticalLines.map(vl => ({
           elementId: vl.id,
           positionX: Math.round(vl.x),
@@ -1487,6 +1496,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           width: vl.width,
           height: vl.height,
           rotation: 0,
+          viewScreen: vl.screen,
         })),
       ];
 
@@ -1556,7 +1566,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ));
   };
   
-  // Add a new vertical arrow
+  // Add a new vertical arrow to the current screen
   const handleAddVerticalArrow = () => {
     const newId = `v_arrow_${Date.now()}`;
     setVerticalArrows(prev => [...prev, {
@@ -1565,11 +1575,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       y: 100,
       width: 24,
       height: 150,
+      screen: selectedScreen,
     }]);
-    toast({ title: "Vertical Arrow Added", description: "A new vertical arrow has been added to the canvas." });
+    toast({ title: "Vertical Arrow Added", description: `A new vertical arrow has been added to ${selectedScreen}.` });
   };
 
-  // Add a new vertical line (without arrowhead)
+  // Add a new vertical line (without arrowhead) to the current screen
   const handleAddVerticalLine = () => {
     const newId = `v_line_${Date.now()}`;
     setVerticalLines(prev => [...prev, {
@@ -1578,8 +1589,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       y: 100,
       width: 24,
       height: 150,
+      screen: selectedScreen,
     }]);
-    toast({ title: "Vertical Line Added", description: "A new vertical line has been added to the canvas." });
+    toast({ title: "Vertical Line Added", description: `A new vertical line has been added to ${selectedScreen}.` });
   };
 
   return (
@@ -2001,30 +2013,234 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 draggable={false}
               />
             </Rnd>
+
+            {/* Render vertical arrows for L4-Converter */}
+            {verticalArrows.filter(va => va.screen === 'L4-Converter').map((vArrow) => (
+              <Rnd
+                key={vArrow.id}
+                position={{ x: vArrow.x, y: vArrow.y }}
+                size={{ width: vArrow.width, height: vArrow.height }}
+                onDragStop={(e, d) => {
+                  setVerticalArrows(prev => prev.map(va => 
+                    va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
+                  ));
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setVerticalArrows(prev => prev.map(va => 
+                    va.id === vArrow.id 
+                      ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      : va
+                  ));
+                }}
+                minWidth={24}
+                minHeight={50}
+                maxWidth={24}
+                bounds="parent"
+                disableDragging={isLockedL4}
+                enableResizing={!isLockedL4 ? { 
+                  top: true, bottom: true, left: false, right: false,
+                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
+                } : false}
+                className={isLockedL4 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 35 }}
+              >
+                <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+              </Rnd>
+            ))}
+
+            {/* Render vertical lines for L4-Converter */}
+            {verticalLines.filter(vl => vl.screen === 'L4-Converter').map((vLine) => (
+              <Rnd
+                key={vLine.id}
+                position={{ x: vLine.x, y: vLine.y }}
+                size={{ width: vLine.width, height: vLine.height }}
+                onDragStop={(e, d) => {
+                  setVerticalLines(prev => prev.map(vl => 
+                    vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
+                  ));
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setVerticalLines(prev => prev.map(vl => 
+                    vl.id === vLine.id 
+                      ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      : vl
+                  ));
+                }}
+                minWidth={24}
+                minHeight={50}
+                maxWidth={24}
+                bounds="parent"
+                disableDragging={isLockedL4}
+                enableResizing={!isLockedL4 ? { 
+                  top: true, bottom: true, left: false, right: false,
+                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
+                } : false}
+                className={isLockedL4 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 35 }}
+              >
+                <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+              </Rnd>
+            ))}
           </div>
         )}
 
         {/* L2 - Furnace Area View - Blank Canvas (half area of L1) */}
         {selectedScreen === "L2 – Furnace Area" && (
           <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center text-gray-400">
                 <p className="text-2xl font-semibold">L2 – Furnace Area</p>
                 <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
               </div>
             </div>
+
+            {/* Render vertical arrows for L2-Furnace Area */}
+            {verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map((vArrow) => (
+              <Rnd
+                key={vArrow.id}
+                position={{ x: vArrow.x, y: vArrow.y }}
+                size={{ width: vArrow.width, height: vArrow.height }}
+                onDragStop={(e, d) => {
+                  setVerticalArrows(prev => prev.map(va => 
+                    va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
+                  ));
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setVerticalArrows(prev => prev.map(va => 
+                    va.id === vArrow.id 
+                      ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      : va
+                  ));
+                }}
+                minWidth={24}
+                minHeight={50}
+                maxWidth={24}
+                bounds="parent"
+                disableDragging={isLocked}
+                enableResizing={!isLocked ? { 
+                  top: true, bottom: true, left: false, right: false,
+                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
+                } : false}
+                className={isLocked ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 35 }}
+              >
+                <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+              </Rnd>
+            ))}
+
+            {/* Render vertical lines for L2-Furnace Area */}
+            {verticalLines.filter(vl => vl.screen === 'L2 – Furnace Area').map((vLine) => (
+              <Rnd
+                key={vLine.id}
+                position={{ x: vLine.x, y: vLine.y }}
+                size={{ width: vLine.width, height: vLine.height }}
+                onDragStop={(e, d) => {
+                  setVerticalLines(prev => prev.map(vl => 
+                    vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
+                  ));
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setVerticalLines(prev => prev.map(vl => 
+                    vl.id === vLine.id 
+                      ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      : vl
+                  ));
+                }}
+                minWidth={24}
+                minHeight={50}
+                maxWidth={24}
+                bounds="parent"
+                disableDragging={isLocked}
+                enableResizing={!isLocked ? { 
+                  top: true, bottom: true, left: false, right: false,
+                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
+                } : false}
+                className={isLocked ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 35 }}
+              >
+                <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+              </Rnd>
+            ))}
           </div>
         )}
 
         {/* L3 - Compressor Area View - Blank Canvas */}
         {selectedScreen === "L3 – Compressor Area" && (
           <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center text-gray-400">
                 <p className="text-2xl font-semibold">L3 – Compressor Area</p>
                 <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
               </div>
             </div>
+
+            {/* Render vertical arrows for L3-Compressor Area */}
+            {verticalArrows.filter(va => va.screen === 'L3 – Compressor Area').map((vArrow) => (
+              <Rnd
+                key={vArrow.id}
+                position={{ x: vArrow.x, y: vArrow.y }}
+                size={{ width: vArrow.width, height: vArrow.height }}
+                onDragStop={(e, d) => {
+                  setVerticalArrows(prev => prev.map(va => 
+                    va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
+                  ));
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setVerticalArrows(prev => prev.map(va => 
+                    va.id === vArrow.id 
+                      ? { ...va, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      : va
+                  ));
+                }}
+                minWidth={24}
+                minHeight={50}
+                maxWidth={24}
+                bounds="parent"
+                disableDragging={isLocked}
+                enableResizing={!isLocked ? { 
+                  top: true, bottom: true, left: false, right: false,
+                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
+                } : false}
+                className={isLocked ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 35 }}
+              >
+                <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
+              </Rnd>
+            ))}
+
+            {/* Render vertical lines for L3-Compressor Area */}
+            {verticalLines.filter(vl => vl.screen === 'L3 – Compressor Area').map((vLine) => (
+              <Rnd
+                key={vLine.id}
+                position={{ x: vLine.x, y: vLine.y }}
+                size={{ width: vLine.width, height: vLine.height }}
+                onDragStop={(e, d) => {
+                  setVerticalLines(prev => prev.map(vl => 
+                    vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
+                  ));
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setVerticalLines(prev => prev.map(vl => 
+                    vl.id === vLine.id 
+                      ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
+                      : vl
+                  ));
+                }}
+                minWidth={24}
+                minHeight={50}
+                maxWidth={24}
+                bounds="parent"
+                disableDragging={isLocked}
+                enableResizing={!isLocked ? { 
+                  top: true, bottom: true, left: false, right: false,
+                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
+                } : false}
+                className={isLocked ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 35 }}
+              >
+                <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+              </Rnd>
+            ))}
           </div>
         )}
 
@@ -2866,8 +3082,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           </Rnd>
         ))}
 
-        {/* Render vertical arrows */}
-        {verticalArrows.map((vArrow) => (
+        {/* Render vertical arrows for this screen */}
+        {verticalArrows.filter(va => va.screen === 'L1 – System Overview').map((vArrow) => (
           <Rnd
             key={vArrow.id}
             position={{ x: vArrow.x, y: vArrow.y }}
@@ -2910,8 +3126,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           </Rnd>
         ))}
 
-        {/* Render vertical lines (without arrowheads) */}
-        {verticalLines.map((vLine) => (
+        {/* Render vertical lines (without arrowheads) for this screen */}
+        {verticalLines.filter(vl => vl.screen === 'L1 – System Overview').map((vLine) => (
           <Rnd
             key={vLine.id}
             position={{ x: vLine.x, y: vLine.y }}
