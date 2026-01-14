@@ -1814,7 +1814,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 hover:bg-gray-200"
-                      disabled={isLocked}
+                      disabled={selectedScreen === "L4-Converter" ? isLockedL4 : isLocked}
                       data-testid="dropdown-add-shapes"
                     >
                       <Shapes className="h-5 w-5 text-cyan-500" />
