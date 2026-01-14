@@ -303,6 +303,7 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates" component={Faceplates} />
       
       {/* Delta-V Faceplate Routes - Main Entry Points */}
+      <Route path="/delta-v" component={HomeScreen} />
       <Route path="/settings/controller-outputs/faceplates/home-screen" component={HomeScreen} />
       <Route path="/settings/controller-outputs/faceplates/rotating-equipment" component={EquipmentFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/controller-blocks" component={ControllerFaceplates} />
