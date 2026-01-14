@@ -1951,7 +1951,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       <div className="flex-1 overflow-auto">
         {/* L4-Converter View - Canvas with Converter 4 */}
         {selectedScreen === "L4-Converter" && (
-          <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+          <div className="relative bg-gray-50" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
             {/* Save and Lock Controls for L4 */}
             <div className="absolute top-4 right-4 z-50 flex gap-2">
               <TooltipProvider>
