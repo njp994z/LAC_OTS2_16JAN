@@ -78,6 +78,7 @@ import {
   Save,
   RotateCw,
   ArrowUp,
+  Shapes,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -1757,46 +1758,51 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </TooltipContent>
             </Tooltip>
             
-            {/* Add Vertical Arrow Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-gray-200"
-                  onClick={handleAddVerticalArrow}
-                  disabled={isLocked}
-                  data-testid="button-add-vertical-arrow"
-                >
-                  <ArrowUp className="h-5 w-5 text-cyan-500" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Add Vertical Arrow</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            {/* Add Vertical Line Button (no arrowhead) */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-gray-200"
-                  onClick={handleAddVerticalLine}
-                  disabled={isLocked}
-                  data-testid="button-add-vertical-line"
-                >
-                  <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                    <line x1="12" y1="4" x2="12" y2="20" />
-                  </svg>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Add Vertical Line</p>
-              </TooltipContent>
-            </Tooltip>
           </TooltipProvider>
+          
+          {/* Add Shapes Dropdown - combines arrow and line tools */}
+          <DropdownMenu>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-gray-200"
+                      disabled={isLocked}
+                      data-testid="dropdown-add-shapes"
+                    >
+                      <Shapes className="h-5 w-5 text-cyan-500" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Add Drawing Elements</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DropdownMenuContent className="bg-white z-50">
+              <DropdownMenuItem 
+                onClick={handleAddVerticalArrow}
+                className="flex items-center gap-2 cursor-pointer"
+                data-testid="dropdown-add-vertical-arrow"
+              >
+                <ArrowUp className="h-4 w-4 text-cyan-500" />
+                <span>Add Vertical Arrow</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleAddVerticalLine}
+                className="flex items-center gap-2 cursor-pointer"
+                data-testid="dropdown-add-vertical-line"
+              >
+                <svg className="h-4 w-4 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                  <line x1="12" y1="4" x2="12" y2="20" />
+                </svg>
+                <span>Add Vertical Line</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* View Dropdown */}
           <DropdownMenu>
