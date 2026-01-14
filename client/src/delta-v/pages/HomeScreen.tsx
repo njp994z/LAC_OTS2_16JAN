@@ -1520,16 +1520,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Save L4-Converter layout to database
   const handleSaveL4Layout = async () => {
-    console.log('L4 Save triggered - Position:', converter4L4Position, 'Size:', converter4L4Size);
     setIsSavingL4(true);
     try {
       const layouts = [
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
       ];
 
-      console.log('L4 Saving layouts:', layouts);
       await apiRequest('PUT', '/api/homescreen-layout/L4', { layouts });
-      console.log('L4 Save successful');
       // Clear dirty flag so refetched data can be applied
       setIsL4Dirty(false);
       await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L4'] });
