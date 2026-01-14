@@ -338,6 +338,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [converter4L4Size, setConverter4L4Size] = useState({ width: 300, height: 800 });
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(false);
+  const [isL4Dirty, setIsL4Dirty] = useState(false);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -1171,9 +1172,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     queryKey: ['/api/homescreen-layout/L4'],
   });
 
-  // Apply loaded L4 positions to state when data arrives
+  // Apply loaded L4 positions to state when data arrives (only when not dirty)
   useEffect(() => {
     if (!layoutDataL4?.layouts || layoutDataL4.layouts.length === 0) return;
+    // Only apply saved layout if user hasn't made local modifications
+    if (isL4Dirty) return;
     
     const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
     layoutDataL4.layouts.forEach((item) => {
@@ -1190,7 +1193,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setConverter4L4Position({ x: converter4L4.x, y: converter4L4.y });
       setConverter4L4Size({ width: converter4L4.width, height: converter4L4.height });
     }
-  }, [layoutDataL4]);
+  }, [layoutDataL4, isL4Dirty]);
 
   // Apply loaded positions to state when data arrives
   useEffect(() => {
@@ -1527,6 +1530,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       console.log('L4 Saving layouts:', layouts);
       await apiRequest('PUT', '/api/homescreen-layout/L4', { layouts });
       console.log('L4 Save successful');
+      // Clear dirty flag so refetched data can be applied
+      setIsL4Dirty(false);
       await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L4'] });
       toast({ title: "Layout saved", description: "L4 Converter layout saved to database." });
     } catch (error) {
@@ -1747,16 +1752,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </TooltipContent>
             </Tooltip>
 
-            {/* Lock Button */}
+            {/* Lock Button - screen-aware for L4 vs other screens */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0 hover:bg-gray-200"
-                  onClick={() => setIsLocked(!isLocked)}
+                  onClick={() => {
+                    if (selectedScreen === "L4-Converter") {
+                      setIsLockedL4(!isLockedL4);
+                    } else {
+                      setIsLocked(!isLocked);
+                    }
+                  }}
+                  data-testid="button-lock-toggle"
                 >
-                  {isLocked ? (
+                  {(selectedScreen === "L4-Converter" ? isLockedL4 : isLocked) ? (
                     <Lock className="h-5 w-5 text-yellow-600" />
                   ) : (
                     <LockOpen className="h-5 w-5 text-gray-500" />
@@ -1764,25 +1776,32 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{isLocked ? "Unlock Icons" : "Lock Icons"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
               </TooltipContent>
             </Tooltip>
 
-            {/* Save Button */}
+            {/* Save Button - screen-aware for L4 vs other screens */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0 hover:bg-gray-200"
-                  onClick={handleSaveLayout}
-                  disabled={isSaving}
+                  onClick={() => {
+                    if (selectedScreen === "L4-Converter") {
+                      handleSaveL4Layout();
+                    } else {
+                      handleSaveLayout();
+                    }
+                  }}
+                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : isSaving}
+                  data-testid="button-save-layout"
                 >
-                  <Save className={`h-5 w-5 ${isSaving ? 'text-gray-400' : 'text-green-600'}`} />
+                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{isSaving ? "Saving..." : "Save Layout"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : isSaving) ? "Saving..." : "Save Layout"}</p>
               </TooltipContent>
             </Tooltip>
             
@@ -1955,64 +1974,22 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         {/* L4-Converter View - Canvas with Converter 4 */}
         {selectedScreen === "L4-Converter" && (
           <div className="relative bg-gray-50" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
-            {/* Save and Lock Controls for L4 */}
-            <div className="absolute top-4 right-4 z-50 flex gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsLockedL4(!isLockedL4)}
-                      className="bg-white"
-                      data-testid="button-l4-lock-toggle"
-                    >
-                      {isLockedL4 ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{isLockedL4 ? 'Unlock Layout' : 'Lock Layout'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSaveL4Layout}
-                      disabled={isSavingL4}
-                      className="bg-white"
-                      data-testid="button-l4-save-layout"
-                    >
-                      {isSavingL4 ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Save L4 Layout</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            
             {/* Converter 4 Graphic */}
             <Rnd
-              key={`converter4-l4-${isLockedL4}`}
+              key="converter4-l4"
               position={converter4L4Position}
               size={converter4L4Size}
-              onDragStop={(e, d) => setConverter4L4Position({ x: d.x, y: d.y })}
+              onDragStop={(e, d) => {
+                setConverter4L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
               onResizeStop={(e, dir, ref, delta, position) => {
                 setConverter4L4Size({
                   width: parseInt(ref.style.width),
                   height: parseInt(ref.style.height)
                 });
                 setConverter4L4Position(position);
+                setIsL4Dirty(true);
               }}
               minWidth={100}
               minHeight={200}
