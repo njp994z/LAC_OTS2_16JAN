@@ -109,7 +109,7 @@ const homescreenOptions = [
   { id: "L1", label: "L1 – System Overview" },
   { id: "L2", label: "L2 – Furnace Area" },
   { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4 – Cooling System" },
+  { id: "L4", label: "L4-Converter" },
 ];
 
 const HomeScreen = () => {
@@ -1859,12 +1859,36 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
       {/* Main content area - scrollable container */}
       <div className="flex-1 overflow-auto">
+        {/* L4-Converter View - Blank Canvas */}
+        {selectedScreen === "L4-Converter" && (
+          <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <p className="text-2xl font-semibold">L4-Converter</p>
+                <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* L2 - Furnace Area View - Blank Canvas (half area of L1) */}
         {selectedScreen === "L2 – Furnace Area" && (
           <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-gray-400">
                 <p className="text-2xl font-semibold">L2 – Furnace Area</p>
+                <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* L3 - Compressor Area View - Blank Canvas */}
+        {selectedScreen === "L3 – Compressor Area" && (
+          <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <p className="text-2xl font-semibold">L3 – Compressor Area</p>
                 <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
               </div>
             </div>
