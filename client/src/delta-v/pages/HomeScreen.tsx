@@ -330,7 +330,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [converter4L4Position, setConverter4L4Position] = useState({ x: 200, y: 100 });
   const [converter4L4Size, setConverter4L4Size] = useState({ width: 300, height: 800 });
   const [isSavingL4, setIsSavingL4] = useState(false);
-  const [isLockedL4, setIsLockedL4] = useState(true);
+  const [isLockedL4, setIsLockedL4] = useState(false);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -1969,6 +1969,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             
             {/* Converter 4 Graphic */}
             <Rnd
+              key={`converter4-l4-${isLockedL4}`}
               position={converter4L4Position}
               size={converter4L4Size}
               onDragStop={(e, d) => setConverter4L4Position({ x: d.x, y: d.y })}
