@@ -1168,6 +1168,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     width: number;
     height: number;
     rotation: number;
+    viewScreen?: string;
   }> }>({
     queryKey: ['/api/homescreen-layout/L4'],
   });
@@ -1178,13 +1179,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     // Only apply saved layout if user hasn't made local modifications
     if (isL4Dirty) return;
     
-    const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
+    const positionMap = new Map<string, { x: number; y: number; width: number; height: number; rotation: number; viewScreen?: string }>();
     layoutDataL4.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
         x: item.positionX,
         y: item.positionY,
         width: item.width,
         height: item.height,
+        rotation: item.rotation || 0,
+        viewScreen: item.viewScreen,
       });
     });
 
@@ -1192,6 +1195,51 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (converter4L4) {
       setConverter4L4Position({ x: converter4L4.x, y: converter4L4.y });
       setConverter4L4Size({ width: converter4L4.width, height: converter4L4.height });
+    }
+
+    // Restore vertical arrows for L4-Converter
+    const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
+    layoutDataL4.layouts.forEach((item) => {
+      if (item.elementId.startsWith('v_arrow_') && item.viewScreen === 'L4-Converter') {
+        l4Arrows.push({
+          id: item.elementId,
+          x: item.positionX,
+          y: item.positionY,
+          width: item.width,
+          height: item.height,
+          screen: item.viewScreen,
+          rotation: item.rotation || 0,
+        });
+      }
+    });
+    if (l4Arrows.length > 0) {
+      setVerticalArrows(prev => {
+        // Remove existing L4 arrows and add loaded ones
+        const nonL4Arrows = prev.filter(a => a.screen !== 'L4-Converter');
+        return [...nonL4Arrows, ...l4Arrows];
+      });
+    }
+
+    // Restore vertical lines for L4-Converter
+    const l4Lines: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
+    layoutDataL4.layouts.forEach((item) => {
+      if (item.elementId.startsWith('v_line_') && item.viewScreen === 'L4-Converter') {
+        l4Lines.push({
+          id: item.elementId,
+          x: item.positionX,
+          y: item.positionY,
+          width: item.width,
+          height: item.height,
+          screen: item.viewScreen,
+        });
+      }
+    });
+    if (l4Lines.length > 0) {
+      setVerticalLines(prev => {
+        // Remove existing L4 lines and add loaded ones
+        const nonL4Lines = prev.filter(l => l.screen !== 'L4-Converter');
+        return [...nonL4Lines, ...l4Lines];
+      });
     }
   }, [layoutDataL4, isL4Dirty]);
 
@@ -1524,6 +1572,26 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     try {
       const layouts = [
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
+        // Add vertical arrows for L4-Converter screen
+        ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
+          elementId: va.id,
+          positionX: Math.round(va.x),
+          positionY: Math.round(va.y),
+          width: va.width,
+          height: va.height,
+          rotation: va.rotation,
+          viewScreen: va.screen,
+        })),
+        // Add vertical lines for L4-Converter screen
+        ...verticalLines.filter(vl => vl.screen === 'L4-Converter').map(vl => ({
+          elementId: vl.id,
+          positionX: Math.round(vl.x),
+          positionY: Math.round(vl.y),
+          width: vl.width,
+          height: vl.height,
+          rotation: 0,
+          viewScreen: vl.screen,
+        })),
       ];
 
       await apiRequest('PUT', '/api/homescreen-layout/L4', { layouts });
