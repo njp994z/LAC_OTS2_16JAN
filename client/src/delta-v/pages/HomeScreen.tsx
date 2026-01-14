@@ -1980,7 +1980,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                       variant="outline"
                       size="sm"
                       onClick={handleSaveL4Layout}
-                      disabled={isSavingL4 || isLockedL4}
+                      disabled={isSavingL4}
                       className="bg-white"
                       data-testid="button-l4-save-layout"
                     >
