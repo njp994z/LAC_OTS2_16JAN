@@ -79,12 +79,14 @@ import {
   RotateCw,
   ArrowUp,
   Shapes,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
@@ -1680,6 +1682,46 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     toast({ title: "Vertical Line Added", description: `A new vertical line has been added to ${selectedScreen}.` });
   };
 
+  // Delete a specific vertical arrow by id
+  const handleDeleteVerticalArrow = (arrowId: string) => {
+    setVerticalArrows(prev => prev.filter(va => va.id !== arrowId));
+    if (selectedScreen === 'L4-Converter') {
+      setIsL4Dirty(true);
+    }
+    toast({ title: "Arrow Deleted", description: "The vertical arrow has been removed." });
+  };
+
+  // Delete a specific vertical line by id
+  const handleDeleteVerticalLine = (lineId: string) => {
+    setVerticalLines(prev => prev.filter(vl => vl.id !== lineId));
+    if (selectedScreen === 'L4-Converter') {
+      setIsL4Dirty(true);
+    }
+    toast({ title: "Line Deleted", description: "The vertical line has been removed." });
+  };
+
+  // Delete the last added vertical arrow on the current screen
+  const handleDeleteLastArrow = () => {
+    const screenArrows = verticalArrows.filter(va => va.screen === selectedScreen);
+    if (screenArrows.length === 0) {
+      toast({ title: "No Arrows", description: `No arrows to delete on ${selectedScreen}.`, variant: "destructive" });
+      return;
+    }
+    const lastArrow = screenArrows[screenArrows.length - 1];
+    handleDeleteVerticalArrow(lastArrow.id);
+  };
+
+  // Delete the last added vertical line on the current screen
+  const handleDeleteLastLine = () => {
+    const screenLines = verticalLines.filter(vl => vl.screen === selectedScreen);
+    if (screenLines.length === 0) {
+      toast({ title: "No Lines", description: `No lines to delete on ${selectedScreen}.`, variant: "destructive" });
+      return;
+    }
+    const lastLine = screenLines[screenLines.length - 1];
+    handleDeleteVerticalLine(lastLine.id);
+  };
+
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Traditional Menu Bar */}
@@ -1913,6 +1955,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </svg>
                 <span>Add Vertical Line</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleDeleteLastArrow}
+                className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-700"
+                data-testid="dropdown-delete-last-arrow"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Last Arrow</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleDeleteLastLine}
+                className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-700"
+                data-testid="dropdown-delete-last-line"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Last Line</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -2126,18 +2185,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
                   </div>
                   {!isLockedL4 && (
-                    <button
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                 w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                                 flex items-center justify-center shadow-lg 
-                                 transition-all duration-200 z-10
-                                 opacity-0 group-hover:opacity-100"
-                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                      title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                    >
-                      <RotateCw className="w-3 h-3 text-white" />
-                    </button>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                      <button
+                        className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                   flex items-center justify-center shadow-lg"
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                        title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                      >
+                        <RotateCw className="w-3 h-3 text-white" />
+                      </button>
+                      <button
+                        className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                   flex items-center justify-center shadow-lg"
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
+                        title="Delete arrow"
+                      >
+                        <Trash2 className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </Rnd>
@@ -2170,10 +2238,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={isLockedL4 ? "cursor-default" : "cursor-move"}
+                className={`${isLockedL4 ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
-                <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+                <div className="relative w-full h-full">
+                  <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+                  {!isLockedL4 && (
+                    <button
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                 w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                 flex items-center justify-center shadow-lg 
+                                 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
+                      title="Delete line"
+                    >
+                      <Trash2 className="w-3 h-3 text-white" />
+                    </button>
+                  )}
+                </div>
               </Rnd>
             ))}
           </div>
@@ -2243,18 +2326,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
                   </div>
                   {!isLocked && (
-                    <button
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                 w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                                 flex items-center justify-center shadow-lg 
-                                 transition-all duration-200 z-10
-                                 opacity-0 group-hover:opacity-100"
-                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                      title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                    >
-                      <RotateCw className="w-3 h-3 text-white" />
-                    </button>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                      <button
+                        className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                   flex items-center justify-center shadow-lg"
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                        title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                      >
+                        <RotateCw className="w-3 h-3 text-white" />
+                      </button>
+                      <button
+                        className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                   flex items-center justify-center shadow-lg"
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
+                        title="Delete arrow"
+                      >
+                        <Trash2 className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </Rnd>
@@ -2287,10 +2379,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={isLocked ? "cursor-default" : "cursor-move"}
+                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
-                <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+                <div className="relative w-full h-full">
+                  <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+                  {!isLocked && (
+                    <button
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                 w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                 flex items-center justify-center shadow-lg 
+                                 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
+                      title="Delete line"
+                    >
+                      <Trash2 className="w-3 h-3 text-white" />
+                    </button>
+                  )}
+                </div>
               </Rnd>
             ))}
           </div>
@@ -2360,18 +2467,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
                   </div>
                   {!isLocked && (
-                    <button
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                 w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                                 flex items-center justify-center shadow-lg 
-                                 transition-all duration-200 z-10
-                                 opacity-0 group-hover:opacity-100"
-                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                      title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                    >
-                      <RotateCw className="w-3 h-3 text-white" />
-                    </button>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                      <button
+                        className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                   flex items-center justify-center shadow-lg"
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                        title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                      >
+                        <RotateCw className="w-3 h-3 text-white" />
+                      </button>
+                      <button
+                        className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                   flex items-center justify-center shadow-lg"
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
+                        title="Delete arrow"
+                      >
+                        <Trash2 className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </Rnd>
@@ -2404,10 +2520,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={isLocked ? "cursor-default" : "cursor-move"}
+                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
-                <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+                <div className="relative w-full h-full">
+                  <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
+                  {!isLocked && (
+                    <button
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                 w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                 flex items-center justify-center shadow-lg 
+                                 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
+                      title="Delete line"
+                    >
+                      <Trash2 className="w-3 h-3 text-white" />
+                    </button>
+                  )}
+                </div>
               </Rnd>
             ))}
           </div>
@@ -3312,18 +3443,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 />
               </div>
               {!isLocked && (
-                <button
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                             w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                             flex items-center justify-center shadow-lg 
-                             transition-all duration-200 z-10
-                             opacity-0 group-hover:opacity-100"
-                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                  title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                >
-                  <RotateCw className="w-3 h-3 text-white" />
-                </button>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                  <button
+                    className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                               flex items-center justify-center shadow-lg"
+                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
+                    title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                  >
+                    <RotateCw className="w-3 h-3 text-white" />
+                  </button>
+                  <button
+                    className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                               flex items-center justify-center shadow-lg"
+                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
+                    title="Delete arrow"
+                  >
+                    <Trash2 className="w-3 h-3 text-white" />
+                  </button>
+                </div>
               )}
             </div>
           </Rnd>
@@ -3362,14 +3502,29 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bottomLeft: false,
               bottomRight: false
             } : false}
-            className={isLocked ? "cursor-default" : "cursor-move"}
+            className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
             style={{ zIndex: 35 }}
           >
-            <VerticalLine 
-              width={vLine.width} 
-              height={vLine.height} 
-              color="#53B1D8"
-            />
+            <div className="relative w-full h-full">
+              <VerticalLine 
+                width={vLine.width} 
+                height={vLine.height} 
+                color="#53B1D8"
+              />
+              {!isLocked && (
+                <button
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                             w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                             flex items-center justify-center shadow-lg 
+                             opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
+                  title="Delete line"
+                >
+                  <Trash2 className="w-3 h-3 text-white" />
+                </button>
+              )}
+            </div>
           </Rnd>
         ))}
 
