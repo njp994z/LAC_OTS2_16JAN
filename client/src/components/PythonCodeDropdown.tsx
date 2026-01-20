@@ -15,7 +15,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Code, Copy, Check, ChevronDown, ExternalLink } from 'lucide-react';
+import { Code, Copy, Check, ChevronDown, ExternalLink, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CodeFile {
   id: string;
@@ -146,6 +147,7 @@ export function PythonCodeDropdown({
   const [, setLocation] = useLocation();
   const [selectedFile, setSelectedFile] = useState<CodeFile | null>(null);
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   
   const highlightedCode = useMemo(() => {
     if (!selectedFile) return [];
@@ -156,7 +158,28 @@ export function PythonCodeDropdown({
     if (!selectedFile) return;
     await navigator.clipboard.writeText(selectedFile.code);
     setCopied(true);
+    toast({
+      title: "Copied to clipboard",
+      description: "Python code has been copied to your clipboard.",
+    });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = (file: CodeFile) => {
+    const blob = new Blob([file.code], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${file.id}.py`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Download started",
+      description: `Downloading ${file.id}.py`,
+    });
   };
 
   const handleItemClick = (item: DropdownItem) => {
@@ -177,20 +200,36 @@ export function PythonCodeDropdown({
             <ChevronDown className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuContent align="start" className="w-64">
           {files.map((item) => (
-            <DropdownMenuItem 
-              key={item.id} 
-              onClick={() => handleItemClick(item)}
-              data-testid={`dropdown-item-${item.id}`}
-            >
-              {isLinkItem(item) ? (
-                <ExternalLink className="w-4 h-4 mr-2" />
-              ) : (
-                <Code className="w-4 h-4 mr-2" />
+            <div key={item.id} className="flex items-center gap-1 px-1">
+              <DropdownMenuItem 
+                className="flex-1"
+                onClick={() => handleItemClick(item)}
+                data-testid={`dropdown-item-${item.id}`}
+              >
+                {isLinkItem(item) ? (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                ) : (
+                  <Code className="w-4 h-4 mr-2" />
+                )}
+                {item.title}
+              </DropdownMenuItem>
+              {!isLinkItem(item) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(item as CodeFile);
+                  }}
+                  data-testid={`button-download-${item.id}`}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
               )}
-              {item.title}
-            </DropdownMenuItem>
+            </div>
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -198,9 +237,23 @@ export function PythonCodeDropdown({
       <Dialog open={!!selectedFile} onOpenChange={(open) => !open && setSelectedFile(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Code className="w-5 h-5" />
-              {selectedFile?.title}
+            <DialogTitle className="flex items-center justify-between pr-8">
+              <div className="flex items-center gap-2">
+                <Code className="w-5 h-5" />
+                {selectedFile?.title}
+              </div>
+              {selectedFile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => handleDownload(selectedFile)}
+                  data-testid="button-download-dialog"
+                >
+                  <Download className="w-4 h-4" />
+                  Download .py
+                </Button>
+              )}
             </DialogTitle>
             <DialogDescription>{selectedFile?.description}</DialogDescription>
           </DialogHeader>
