@@ -1946,6 +1946,71 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Drying Tower Mass Balance Calculation endpoint
+  app.post('/api/drying-tower-calc', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      // Validate required fields
+      if (pythonInput.x_H2SO4_AD0 === undefined || pythonInput.Flow_AD0 === undefined) {
+        return res.status(400).json({ message: "Missing required drying tower input parameters" });
+      }
+
+      // Run Python drying tower calculator
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'drying_tower_calc.py');
+      
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        pythonProcess.stdin.write(JSON.stringify(pythonInput));
+        pythonProcess.stdin.end();
+        
+        pythonProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            console.error('Python drying tower calculator error:', stderr);
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+            return;
+          }
+          
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse Python output:', stdout);
+            reject(new Error('Failed to parse drying tower calculation results'));
+          }
+        });
+        
+        pythonProcess.on('error', (err) => {
+          console.error('Failed to start Python process:', err);
+          reject(err);
+        });
+      });
+
+      if (result.error) {
+        return res.status(500).json({ message: result.error });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Drying tower calculation error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Drying tower calculation failed" 
+      });
+    }
+  });
+
   // Sulfur Control Hydraulics - Static endpoint
   app.post('/api/sulfur-control/static', async (req: Request, res: Response) => {
     try {

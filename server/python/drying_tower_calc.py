@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+"""
+drying_tower_calc.py
+Core calculation logic for Sulfuric Acid Drying Tower simulation
+"""
+
+import math
+import json
+import sys
+
+# ── Constants ────────────────────────────────────────────────────────────────
+SG_ACID = 1.84                  # Specific gravity of sulfuric acid (~95-96%)
+EFFICIENCY_BASE = 0.99          # Base SO3 absorption efficiency
+GAS_TOTAL_SCFM = 100000         # Assumed inlet gas total flow (scfm) - adjust as needed
+X_SO3 = 0.05                    # Inlet SO3 mole fraction (example)
+X_SO2 = 0.005
+X_O2 = 0.08
+X_N2 = 0.86 - X_SO3             # Balance to ~1.0
+X_H2O = 0.005
+X_H2SO4 = 0.0
+MW_SO3 = 80.0
+MW_H2SO4 = 98.0
+MW_H2O = 18.0
+SCF_PER_LBMOLE = 379.0          # Standard cubic feet per lb-mole at 60°F, 1 atm
+
+
+def calculate_tower(inputs):
+    """
+    Perform static calculation for the drying tower.
+    
+    Parameters:
+        inputs (dict): Dictionary containing all required input values
+        
+    Returns:
+        dict: Results dictionary with calculated values for GUI update
+    """
+    results = {}
+    
+    try:
+        # Acid inlet parameters
+        x_h2so4_in = float(inputs.get("x_H2SO4_AD0", 0.95))
+        x_h2o_in   = float(inputs.get("x_H2O_AD0", 0.05))
+        temp_f     = float(inputs.get("Temp_AD0", 275))
+        pressure_psig = float(inputs.get("Pressure_AD0", 0))
+        flow_gpm   = float(inputs.get("Flow_AD0", 0))
+        
+        # System parameters
+        dp_inwc       = float(inputs.get("dP_BME", 5.0))
+        packing_depth = float(inputs.get("Packing_Depth_ft", 8.0))
+        
+        # Adjust efficiency slightly based on packing depth
+        efficiency = min(0.90 + 0.01 * packing_depth, EFFICIENCY_BASE)
+        
+        # Inlet acid mass flow (lb/hr)
+        mass_in_lbhr = flow_gpm * 60 * 8.34 * SG_ACID
+        m_total_klbhr_in = mass_in_lbhr / 1000
+        
+        h2so4_in_lbhr = mass_in_lbhr * x_h2so4_in
+        h2o_in_lbhr   = mass_in_lbhr * x_h2o_in
+        
+        # Inlet gas composition (scfm)
+        so3_scfm_in  = GAS_TOTAL_SCFM * X_SO3
+        so2_scfm_in  = GAS_TOTAL_SCFM * X_SO2
+        o2_scfm_in   = GAS_TOTAL_SCFM * X_O2
+        n2_scfm_in   = GAS_TOTAL_SCFM * X_N2
+        h2o_scfm_in  = GAS_TOTAL_SCFM * X_H2O
+        h2so4_scfm_in = GAS_TOTAL_SCFM * X_H2SO4
+        total_scfm_in = GAS_TOTAL_SCFM
+        
+        # Absorbed SO3 (lb/hr)
+        moles_so3_in_per_min = so3_scfm_in / SCF_PER_LBMOLE
+        mass_so3_absorbed_lbhr = moles_so3_in_per_min * MW_SO3 * efficiency * 60
+        
+        # Stoichiometric consumption and formation
+        mass_h2o_consumed_lbhr = mass_so3_absorbed_lbhr * (MW_H2O / MW_SO3)
+        mass_h2so4_formed_lbhr = mass_so3_absorbed_lbhr * (MW_H2SO4 / MW_SO3)
+        
+        # Outlet acid
+        mass_out_lbhr    = mass_in_lbhr + mass_so3_absorbed_lbhr
+        h2so4_out_lbhr   = h2so4_in_lbhr + mass_h2so4_formed_lbhr
+        h2o_out_lbhr     = h2o_in_lbhr - mass_h2o_consumed_lbhr
+        
+        x_h2so4_out = h2so4_out_lbhr / mass_out_lbhr if mass_out_lbhr > 0 else 0
+        x_h2o_out   = h2o_out_lbhr   / mass_out_lbhr if mass_out_lbhr > 0 else 0
+        
+        m_total_klbhr_out = mass_out_lbhr / 1000
+        flow_gpm_out = flow_gpm * (mass_out_lbhr / mass_in_lbhr) if mass_in_lbhr > 0 else 0
+        
+        pressure_out_psig = pressure_psig - (dp_inwc / 27.68)  # approximate conversion
+        
+        # ── Prepare results for GUI ──────────────────────────────────────────
+        results.update({
+            # Acid section
+            "x_H2SO4_ADX1": round(x_h2so4_out, 3),
+            "x_H2SO4_AD1":  round(x_h2so4_out, 3),
+            "x_H2O_ADX1":   round(x_h2o_out, 3),
+            "x_H2O_AD1":    round(x_h2o_out, 3),
+            "m_Total_AD0":  round(m_total_klbhr_in, 1),
+            "m_Total_ADX1": round(m_total_klbhr_out, 1),
+            "m_Total_AD1":  round(m_total_klbhr_out, 1),
+            "Pressure_ADX1": round(pressure_out_psig, 1),
+            "Pressure_AD1":  round(pressure_out_psig, 1),
+            "Temp_ADX1":     round(temp_f, 0),
+            "Temp_AD1":      round(temp_f, 0),
+            "Flow_ADX1":     round(flow_gpm_out, 1),
+            "Flow_AD1":      round(flow_gpm_out, 1),
+            
+            # Gas section - Inlet
+            "SO2_GD0":    round(so2_scfm_in, 0),
+            "SO3_GD0":    round(so3_scfm_in, 0),
+            "O2_GD0":     round(o2_scfm_in, 0),
+            "N2_GD0":     round(n2_scfm_in, 0),
+            "H2O_GD0":    round(h2o_scfm_in, 0),
+            "H2SO4_GD0":  round(h2so4_scfm_in, 0),
+            "TOTAL_GD0":  round(total_scfm_in, 0),
+            "PRESSURE_GD0": 0,
+            "TEMPERATURE_GD0": round(temp_f, 0),
+            
+            # Gas section - Outlet (and Packing Outlet ≈ Outlet)
+            "SO2_GD1":    round(so2_scfm_in, 0),           # SO2 unchanged
+            "SO3_GD1":    round(so3_scfm_in * (1 - efficiency), 0),
+            "O2_GD1":     round(o2_scfm_in, 0),
+            "N2_GD1":     round(n2_scfm_in, 0),
+            "H2O_GD1":    round(h2o_scfm_in, 0),
+            "H2SO4_GD1":  round(h2so4_scfm_in, 0),
+            "TOTAL_GD1":  round(total_scfm_in - mass_so3_absorbed_lbhr / (MW_SO3 / SCF_PER_LBMOLE * 60), 0),
+            "PRESSURE_GD1": round(-dp_inwc, 1),
+            "TEMPERATURE_GD1": round(temp_f, 0),
+            
+            # Packing outlet (midway pressure assumption)
+            "PRESSURE_Packing": round(-dp_inwc / 2, 1),
+            
+            # Additional calculated values
+            "efficiency": round(efficiency * 100, 1),
+            "mass_so3_absorbed_lbhr": round(mass_so3_absorbed_lbhr, 1),
+            "mass_h2so4_formed_lbhr": round(mass_h2so4_formed_lbhr, 1),
+        })
+        
+    except (ValueError, ZeroDivisionError, TypeError) as e:
+        results["error"] = f"Calculation error: {str(e)}"
+    
+    return results
+
+
+if __name__ == "__main__":
+    # Read JSON input from stdin
+    input_data = json.loads(sys.stdin.read())
+    result = calculate_tower(input_data)
+    print(json.dumps(result))
