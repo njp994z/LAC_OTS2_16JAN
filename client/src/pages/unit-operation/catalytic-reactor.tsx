@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Settings, Play, Save, FolderOpen, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Settings, Play, Save, FolderOpen, Loader2, ChevronDown, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -2366,6 +2366,60 @@ export default function CatalyticReactor() {
                 >
                   Differential Equations and Catalytic Reactor Engineering
                 </Button>
+              </div>
+
+              {/* Technical Papers & Reference Documentation */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">Technical Papers & Reference Documentation</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="justify-start gap-2 h-auto py-3 px-4"
+                    onClick={() => window.open("/attached_assets/cep_so2_oxidation_1950_1768945307183.pdf", "_blank")}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">SO2 Oxidation in Commercial Converters (1950)</span>
+                      <span className="text-xs text-muted-foreground">Chemical Engineering Progress - Olson, Schuler & Smith</span>
+                    </div>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="justify-start gap-2 h-auto py-3 px-4"
+                    onClick={() => window.open("/attached_assets/sulfuricacid_fogler2_1768945307183.pdf", "_blank")}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">Nonadiabatic Reactor Operation: SO2 Oxidation</span>
+                      <span className="text-xs text-muted-foreground">Industrial Example - Fogler 2nd Edition</span>
+                    </div>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="justify-start gap-2 h-auto py-3 px-4"
+                    onClick={() => window.open("/attached_assets/Topsoe_Paper_1768945307184.pdf", "_blank")}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">Design of Industrial Catalysts (Haldor Topsøe)</span>
+                      <span className="text-xs text-muted-foreground">Kurt A. Christensen - Haldor Topsøe A/S</span>
+                    </div>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="justify-start gap-2 h-auto py-3 px-4"
+                    onClick={() => window.open("/attached_assets/_Dynamic_Converter_Modeling_R0.2_1768945307182.pdf", "_blank")}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">Dynamic Converter Modeling (R0.2)</span>
+                      <span className="text-xs text-muted-foreground">Internal Technical Documentation</span>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
