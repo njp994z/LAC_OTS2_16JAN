@@ -2076,6 +2076,71 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // FAT (Final Absorption Tower) Calculation endpoint
+  app.post('/api/fat-calc', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      // Validate required fields
+      if (pythonInput.x_H2SO4_AF0 === undefined || pythonInput.Flow_AF0 === undefined) {
+        return res.status(400).json({ message: "Missing required FAT input parameters" });
+      }
+
+      // Run Python FAT calculator
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'fat_calc.py');
+      
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        pythonProcess.stdin.write(JSON.stringify(pythonInput));
+        pythonProcess.stdin.end();
+        
+        pythonProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            console.error('Python FAT calculator error:', stderr);
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+            return;
+          }
+          
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse Python output:', stdout);
+            reject(new Error('Failed to parse FAT calculation results'));
+          }
+        });
+        
+        pythonProcess.on('error', (err) => {
+          console.error('Failed to start Python process:', err);
+          reject(err);
+        });
+      });
+
+      if (result.error) {
+        return res.status(500).json({ message: result.error });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('FAT calculation error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "FAT calculation failed" 
+      });
+    }
+  });
+
   // Sulfur Control Hydraulics - Static endpoint
   app.post('/api/sulfur-control/static', async (req: Request, res: Response) => {
     try {
