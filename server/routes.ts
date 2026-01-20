@@ -2017,7 +2017,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonInput = req.body;
 
       // Validate required fields
-      if (pythonInput.x_H2SO4_AD0 === undefined || pythonInput.Flow_AD0 === undefined) {
+      if (pythonInput.x_H2SO4_AI0 === undefined || pythonInput.Flow_AI0 === undefined) {
         return res.status(400).json({ message: "Missing required IPAT input parameters" });
       }
 
