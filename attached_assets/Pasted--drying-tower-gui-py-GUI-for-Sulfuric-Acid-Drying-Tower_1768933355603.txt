@@ -1,0 +1,209 @@
+# drying_tower_gui.py
+# GUI for Sulfuric Acid Drying Tower simulation
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import math
+from drying_tower_calc import calculate_tower
+
+root = tk.Tk()
+root.title("Drying Tower Simulator")
+root.geometry("920x720")
+
+# ── Mode Selection ───────────────────────────────────────────────────────────
+mode_frame = ttk.LabelFrame(root, text="Simulation Mode", padding=10)
+mode_frame.pack(fill="x", padx=10, pady=8)
+
+mode_var = tk.StringVar(value="Static")
+ttk.Radiobutton(mode_frame, text="Static Calculation", variable=mode_var, value="Static").pack(side="left", padx=25)
+ttk.Radiobutton(mode_frame, text="Dynamic Simulation", variable=mode_var, value="Dynamic").pack(side="left", padx=25)
+
+# ── Acid Parameters (exactly as in first picture) ────────────────────────────
+acid_frame = ttk.LabelFrame(root, text="Acid Parameters", padding=10)
+acid_frame.pack(fill="x", padx=10, pady=5)
+
+acid_headers = ["", "Units", "Tower Acid Inlet\nAD0", "Acid Packing Outlet\nADX1", "Tower Acid Outlet\nAD1"]
+for col, text in enumerate(acid_headers):
+    ttk.Label(acid_frame, text=text).grid(row=0, column=col, padx=8, pady=5)
+
+acid_rows = [
+    ("x_H2SO4",  "", "0.05", "", ""),
+    ("x_H2O",    "", "0.00", "", ""),
+    ("m_Total",  "Klb/hr", "0", "", ""),
+    ("Pressure", "psig",   "0", "", ""),
+    ("Temp.",    "F",     "275", "275", "275"),
+    ("Flow",     "gpm",    "0", "", ""),
+]
+
+acid_entries = {}
+acid_labels  = {}
+for row_idx, (param, unit, ad0_val, adx1_val, ad1_val) in enumerate(acid_rows, start=1):
+    ttk.Label(acid_frame, text=param).grid(row=row_idx, column=1, sticky="e", padx=5, pady=4)
+    ttk.Label(acid_frame, text=unit).grid(row=row_idx, column=2, sticky="w", padx=5, pady=4)
+
+    # AD0 - input
+    entry = ttk.Entry(acid_frame, width=12)
+    entry.insert(0, ad0_val)
+    entry.grid(row=row_idx, column=3, padx=8, pady=4)
+    acid_entries[f"{param}_AD0"] = entry
+
+    # ADX1 & AD1 - output
+    for col, suffix, val in zip([4,5], ["ADX1","AD1"], [adx1_val, ad1_val]):
+        lbl = ttk.Label(acid_frame, text=val if val else "---")
+        lbl.grid(row=row_idx, column=col, padx=8, pady=4)
+        acid_labels[f"{param}_{suffix}"] = lbl
+
+# ── System Parameters ────────────────────────────────────────────────────────
+system_frame = ttk.LabelFrame(root, text="System Parameters", padding=10)
+system_frame.pack(fill="x", padx=10, pady=5)
+
+system_params = [
+    ("Tower Diameter (ft)",        "23.5"),
+    ("Packing Depth (ft)",          "8.0"),
+    ("dP BME at Design (IN WC)",    "5.0"),
+    ("Barometric P (psia)",        "14.3"),
+    ("Weather ZIP Code",           "89801"),
+]
+
+for i, (label, default) in enumerate(system_params):
+    ttk.Label(system_frame, text=label).grid(row=i, column=0, padx=10, pady=4, sticky="e")
+    entry = ttk.Entry(system_frame, width=12)
+    entry.insert(0, default)
+    entry.grid(row=i, column=1, padx=10, pady=4, sticky="w")
+    system_params_dict = {label.replace(" ", "_").replace("(", "").replace(")", ""): entry for label, _ in system_params}
+
+# ── Gas Outputs ──────────────────────────────────────────────────────────────
+gas_frame = ttk.LabelFrame(root, text="Simulation Outputs - Static Mode", padding=10)
+gas_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+gas_headers = ["", "Units", "Tower Inlet\n1520-PI-5801\nGD0", "Packing Outlet", "Tower Outlet\n1520-PI-5804\nGD1"]
+for col, text in enumerate(gas_headers):
+    ttk.Label(gas_frame, text=text).grid(row=0, column=col, padx=8, pady=5)
+
+gas_rows = [
+    ("SO2",      "scfm"),
+    ("SO3",      "scfm"),
+    ("O2",       "scfm"),
+    ("N2",       "scfm"),
+    ("H2O",      "scfm"),
+    ("H2SO4",    "scfm"),
+    ("TOTAL",    "scfm"),
+    ("PRESSURE", "in. wc."),
+    ("TEMPERATURE", "F"),
+]
+
+gas_entries = {}  # only for GD0
+gas_labels  = {}
+for row_idx, (param, unit) in enumerate(gas_rows, start=1):
+    ttk.Label(gas_frame, text=param).grid(row=row_idx, column=1, sticky="e", padx=5, pady=3)
+    ttk.Label(gas_frame, text=unit).grid(row=row_idx, column=2, sticky="w", padx=5, pady=3)
+
+    # GD0 - input
+    entry = ttk.Entry(gas_frame, width=12)
+    entry.insert(0, "0")
+    entry.grid(row=row_idx, column=3, padx=8, pady=3)
+    gas_entries[f"{param}_GD0"] = entry
+
+    # Packing & GD1 - output
+    for col, suffix in zip([4,5], ["Packing", "GD1"]):
+        lbl = ttk.Label(gas_frame, text="---")
+        lbl.grid(row=row_idx, column=col, padx=8, pady=3)
+        gas_labels[f"{param}_{suffix}"] = lbl
+
+# ── Calculation & Update ─────────────────────────────────────────────────────
+def perform_calculation():
+    inputs = {}
+    for key, widget in acid_entries.items():
+        inputs[key] = widget.get()
+    for key, widget in gas_entries.items():
+        inputs[key] = widget.get()
+    for key, widget in system_params_dict.items():
+        inputs[key] = widget.get()
+
+    results = calculate_tower(inputs)
+
+    if "error" in results:
+        messagebox.showerror("Calculation Error", results["error"])
+        return
+
+    for key, value in results.items():
+        if key in acid_labels:
+            acid_labels[key].config(text=str(value))
+        if key in gas_labels:
+            gas_labels[key].config(text=str(value))
+
+# ── Dynamic Simulation (simple ramp on acid flow) ────────────────────────────
+dynamic_frame = ttk.LabelFrame(root, text="Dynamic Parameters", padding=10)
+
+dyn_params = [
+    ("Time Constant (s)", "tau", "6.0"),
+    ("Timestep dt (s)",   "dt",  "0.5"),
+]
+
+dyn_entries = {}
+for i, (label, key, default) in enumerate(dyn_params):
+    ttk.Label(dynamic_frame, text=label).grid(row=i, column=0, padx=10, pady=5, sticky="e")
+    entry = ttk.Entry(dynamic_frame, width=12)
+    entry.insert(0, default)
+    entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
+    dyn_entries[key] = entry
+
+running = False
+current_flow = 0.0
+
+def start_dynamic():
+    global running, current_flow
+    running = True
+    try:
+        current_flow = float(acid_entries["Flow_AD0"].get() or "0")
+    except:
+        current_flow = 0.0
+    update_dynamic()
+
+def pause_dynamic():
+    global running
+    running = False
+
+def reset_dynamic():
+    global running, current_flow
+    running = False
+    current_flow = 0.0
+    acid_entries["Flow_AD0"].delete(0, tk.END)
+    acid_entries["Flow_AD0"].insert(0, "0")
+    perform_calculation()
+
+def update_dynamic():
+    global current_flow
+    if not running:
+        return
+    target = 1200.0  # example target flow in gpm
+    tau = float(dyn_entries["tau"].get() or 6.0)
+    dt  = float(dyn_entries["dt"].get() or 0.5)
+
+    current_flow += (target - current_flow) * (1 - math.exp(-dt / tau))
+    acid_entries["Flow_AD0"].delete(0, tk.END)
+    acid_entries["Flow_AD0"].insert(0, f"{current_flow:.1f}")
+
+    perform_calculation()
+    root.after(int(dt * 1000), update_dynamic)
+
+# ── Buttons ──────────────────────────────────────────────────────────────────
+btn_frame = ttk.Frame(root)
+btn_frame.pack(pady=12)
+
+ttk.Button(btn_frame, text="Calculate", command=perform_calculation).pack(side="left", padx=12)
+ttk.Button(btn_frame, text="Start Dynamic", command=start_dynamic).pack(side="left", padx=12)
+ttk.Button(btn_frame, text="Pause", command=pause_dynamic).pack(side="left", padx=12)
+ttk.Button(btn_frame, text="Reset", command=reset_dynamic).pack(side="left", padx=12)
+
+# ── Mode Toggle ──────────────────────────────────────────────────────────────
+def toggle_mode(*args):
+    if mode_var.get() == "Static":
+        dynamic_frame.pack_forget()
+    else:
+        dynamic_frame.pack(fill="x", padx=10, pady=5, after=system_frame)
+
+mode_var.trace_add("write", toggle_mode)
+toggle_mode()
+
+root.mainloop()
