@@ -274,6 +274,79 @@ export default function MainCompressor() {
             </CardContent>
           </Card>
 
+          {/* Common Input Parameters */}
+          <Card className="max-w-sm mx-auto mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Common Input Parameters</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="w-24 text-right text-foreground">Temp:</span>
+                  <Input
+                    type="number"
+                    value={inputParams.temp}
+                    onChange={(e) => handleInputChange("temp", e.target.value)}
+                    className="w-24 text-primary font-medium text-center"
+                    placeholder="150"
+                    data-testid="input-temp"
+                  />
+                  <span className="text-foreground">F</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="w-24 text-right text-foreground">Pressure:</span>
+                  <Input
+                    type="number"
+                    value={inputParams.pressure}
+                    onChange={(e) => handleInputChange("pressure", e.target.value)}
+                    className="w-24 text-primary font-medium text-center"
+                    placeholder="-12"
+                    data-testid="input-pressure"
+                  />
+                  <span className="text-foreground">IN WC</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="w-24 text-right text-foreground whitespace-nowrap">Barometric<br/>Pressure:</span>
+                  <Input
+                    type="number"
+                    value={inputParams.barometricPressure}
+                    onChange={(e) => handleInputChange("barometricPressure", e.target.value)}
+                    className="w-24 text-primary font-medium text-center"
+                    placeholder="0.85"
+                    disabled={realtimeBarometric === "yes"}
+                    data-testid="input-barometric-pressure"
+                  />
+                  <span className="text-foreground">ATM</span>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="w-24 text-right text-foreground text-sm">Realtime<br/>Barometric:</span>
+                  <Select 
+                    value={realtimeBarometric} 
+                    onValueChange={handleRealtimeChange}
+                    disabled={isLoadingBarometric}
+                  >
+                    <SelectTrigger 
+                      className="w-24" 
+                      data-testid="select-realtime-barometric"
+                    >
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes" data-testid="select-item-yes">Yes</SelectItem>
+                      <SelectItem value="no" data-testid="select-item-no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isLoadingBarometric && (
+                    <span className="text-muted-foreground text-sm">Loading...</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Mode-specific panels */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
             {/* Static Calculation Panel */}
