@@ -91,10 +91,10 @@ export default function FinalTowerAbsorption() {
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
     x_H2SO4_AF0: "0.985",
     x_H2O_AF0: "0.015",
-    m_Total_AF0: "71.156",
-    Pressure_AF0: "10",
+    m_Total_AF0: "44.583",
+    Pressure_AF0: "2",
     Temp_AF0: "180",
-    Flow_AF0: "4800",
+    Flow_AF0: "3000",
   });
 
   const [acidOutputs, setAcidOutputs] = useState<AcidOutputs>({
@@ -113,15 +113,15 @@ export default function FinalTowerAbsorption() {
   });
 
   const [gasInputs, setGasInputs] = useState<GasInputs>({
-    SO2_GF0: "480",
-    SO3_GF0: "6074",
-    O2_GF0: "4300",
+    SO2_GF0: "18",
+    SO3_GF0: "462",
+    O2_GF0: "4069",
     N2_GF0: "86808",
     H2O_GF0: "0",
     H2SO4_GF0: "0",
-    TOTAL_GF0: "97662",
-    PRESSURE_GF0: "85",
-    TEMPERATURE_GF0: "330",
+    TOTAL_GF0: "91357",
+    PRESSURE_GF0: "32",
+    TEMPERATURE_GF0: "275",
   });
 
   const [gasOutputs, setGasOutputs] = useState<GasOutputs>({
@@ -146,9 +146,9 @@ export default function FinalTowerAbsorption() {
   });
 
   const [systemParams, setSystemParams] = useState<SystemParams>({
-    Tower_Diameter_ft: "28.0",
-    Packing_Depth_ft: "12.0",
-    dP_BME_inWC: "6.0",
+    Tower_Diameter_ft: "21.0",
+    Packing_Depth_ft: "8.0",
+    dP_BME_inWC: "12.0",
     Barometric_P_psia: "14.3",
     Weather_ZIP_Code: "89801",
   });

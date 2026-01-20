@@ -1,10 +1,17 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Layers, FlaskConical, Gauge, Activity } from "lucide-react";
+import { ArrowLeft, Layers } from "lucide-react";
 
 export default function ConverterSimulations() {
   const [, setLocation] = useLocation();
+
+  const passes = [
+    { id: 1, title: "Converter Pass 1", path: "/unit-operation/converter-pass-1" },
+    { id: 2, title: "Converter Pass 2", path: "/unit-operation/converter-pass-2" },
+    { id: 3, title: "Converter Pass 3", path: "/unit-operation/converter-pass-3" },
+    { id: 4, title: "Converter Pass 4", path: "/unit-operation/converter-pass-4" },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,7 +31,7 @@ export default function ConverterSimulations() {
               <div>
                 <h1 className="text-2xl font-bold">Converter Simulations</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Stand Alone, Static, and Dynamic converter simulation modes
+                  Stand Alone interactive simulation for each converter pass
                 </p>
               </div>
             </div>
@@ -33,66 +40,33 @@ export default function ConverterSimulations() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-md mx-auto">
           <Card>
-            <CardHeader>
-              <CardTitle>Converter Simulation Modes</CardTitle>
+            <CardHeader className="text-center">
+              <CardTitle>Converter Simulation Pass Selection</CardTitle>
               <CardDescription>
-                Choose from three different converter simulation approaches based on your training objectives
+                Select a converter pass to launch the interactive training simulator
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 gap-4">
-                <Button
-                  variant="default"
-                  className="h-auto py-4 px-5 justify-start text-left"
-                  onClick={() => setLocation("/unit-operation/catalytic-reactor")}
-                  data-testid="button-stand-alone"
-                >
-                  <FlaskConical className="w-6 h-6 mr-4 flex-shrink-0" />
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">Stand-Alone Converter</span>
-                    <span className="text-xs opacity-80 font-normal whitespace-normal">
-                      Isolated converter simulation using coupled differential equations to solve for 
-                      conversion, temperature, and pressure across multiple catalyst passes.
-                    </span>
-                  </div>
-                </Button>
-
-                <Button
-                  variant="default"
-                  className="h-auto py-4 px-5 justify-start text-left"
-                  onClick={() => setLocation("/static-simulation")}
-                  data-testid="button-static"
-                >
-                  <Gauge className="w-6 h-6 mr-4 flex-shrink-0" />
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">Static Simulation</span>
-                    <span className="text-xs opacity-80 font-normal whitespace-normal">
-                      Steady-state heat and material balance calculations for the complete acid plant 
-                      including sulfur burner, converter, and absorption systems.
-                    </span>
-                  </div>
-                </Button>
-
-                <Button
-                  variant="default"
-                  className="h-auto py-4 px-5 justify-start text-left"
-                  onClick={() => setLocation("/dynamic-simulation")}
-                  data-testid="button-dynamic"
-                >
-                  <Activity className="w-6 h-6 mr-4 flex-shrink-0" />
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">Dynamic Simulation</span>
-                    <span className="text-xs opacity-80 font-normal whitespace-normal">
-                      Real-time PID controller simulation with Manual and Automatic modes for 
-                      process control training and operator response scenarios.
-                    </span>
-                  </div>
-                </Button>
+            <CardContent className="space-y-4 px-8 pb-10">
+              <div className="flex flex-col gap-4">
+                {passes.map((pass) => (
+                  <Button
+                    key={pass.id}
+                    variant="default"
+                    className="h-20 bg-[#1a5f7a] hover:bg-[#154d63] text-white rounded-xl text-xl font-medium flex flex-col items-center justify-center transition-all shadow-md active-elevate-2"
+                    onClick={() => setLocation(pass.path)}
+                    data-testid={`button-pass-${pass.id}`}
+                  >
+                    <div className="text-center leading-tight">
+                      <div>Converter</div>
+                      <div>Pass {pass.id}</div>
+                    </div>
+                  </Button>
+                ))}
               </div>
 
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center pt-6">
                 <Button
                   variant="outline"
                   onClick={() => setLocation("/unit-operation-simulator")}
