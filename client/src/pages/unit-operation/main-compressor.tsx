@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Code, Play, Loader2, Calculator, Activity, Pause, RotateCcw, Monitor } from "lucide-react";
+import { ArrowLeft, FileText, Code, Play, Loader2, Calculator, Activity, Pause, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-type SimulationMode = "static" | "dynamic" | "standalone";
+type SimulationMode = "static" | "dynamic";
 
 interface InputParams {
   rpms: string;
@@ -257,12 +257,6 @@ export default function MainCompressor() {
                   <SelectValue placeholder="Select mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="standalone" data-testid="select-item-standalone">
-                    <div className="flex items-center gap-2">
-                      <Monitor className="h-4 w-4" />
-                      Stand-Alone
-                    </div>
-                  </SelectItem>
                   <SelectItem value="static" data-testid="select-item-static">
                     <div className="flex items-center gap-2">
                       <Calculator className="h-4 w-4" />
@@ -434,115 +428,6 @@ export default function MainCompressor() {
           </div>
 
           <div className="space-y-8">
-            {/* Input Parameters */}
-            <div className={`border border-border rounded-2xl p-6 max-w-lg mx-auto ${mode !== "standalone" ? "opacity-50" : ""}`}>
-              <h2 className="text-center underline text-foreground mb-6" data-testid="text-input-params-title">
-                Stand-Alone Compressor Input Parameters
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="w-28 text-right text-foreground">RPMs:</span>
-                  <Input
-                    type="number"
-                    value={inputParams.rpms}
-                    onChange={(e) => handleInputChange("rpms", e.target.value)}
-                    className="w-24 text-primary font-medium text-center"
-                    placeholder="4000"
-                    disabled={mode !== "standalone"}
-                    data-testid="input-rpms"
-                  />
-                  <span className="text-foreground">1/min</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="w-28 text-right text-foreground">Temp:</span>
-                  <Input
-                    type="number"
-                    value={inputParams.temp}
-                    onChange={(e) => handleInputChange("temp", e.target.value)}
-                    className="w-24 text-primary font-medium text-center"
-                    placeholder="150"
-                    disabled={mode !== "standalone"}
-                    data-testid="input-temp"
-                  />
-                  <span className="text-foreground">F</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="w-28 text-right text-foreground">Pressure:</span>
-                  <Input
-                    type="number"
-                    value={inputParams.pressure}
-                    onChange={(e) => handleInputChange("pressure", e.target.value)}
-                    className="w-24 text-primary font-medium text-center"
-                    placeholder="-12"
-                    disabled={mode !== "standalone"}
-                    data-testid="input-pressure"
-                  />
-                  <span className="text-foreground">IN WC</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="w-28 text-right text-foreground whitespace-nowrap">Barometric<br/>Pressure:</span>
-                  <Input
-                    type="number"
-                    value={inputParams.barometricPressure}
-                    onChange={(e) => handleInputChange("barometricPressure", e.target.value)}
-                    className="w-24 text-primary font-medium text-center"
-                    placeholder="0.85"
-                    disabled={mode !== "standalone" || realtimeBarometric === "yes"}
-                    data-testid="input-barometric-pressure"
-                  />
-                  <span className="text-foreground">ATM</span>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <span className="w-28 text-right text-foreground text-sm">Realtime<br/>Barometric:</span>
-                  <Select 
-                    value={realtimeBarometric} 
-                    onValueChange={handleRealtimeChange}
-                    disabled={mode !== "standalone" || isLoadingBarometric}
-                  >
-                    <SelectTrigger 
-                      className="w-24" 
-                      data-testid="select-realtime-barometric"
-                    >
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes" data-testid="select-item-yes">Yes</SelectItem>
-                      <SelectItem value="no" data-testid="select-item-no">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {isLoadingBarometric && (
-                    <span className="text-muted-foreground text-sm">Loading...</span>
-                  )}
-                </div>
-
-                <div className="flex justify-center pt-6">
-                  <Button 
-                    onClick={runSimulation}
-                    disabled={mode !== "standalone" || isRunningSimulation}
-                    className="gap-2 px-8"
-                    data-testid="button-run-simulation"
-                  >
-                    {isRunningSimulation ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Calculating...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4" />
-                        Run Simulation
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
             {/* Simulation Outputs - Static Mode Table */}
             <Card className="bg-card border-border max-w-4xl mx-auto">
               <CardHeader className="pb-4">
@@ -665,109 +550,6 @@ export default function MainCompressor() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Output Parameters */}
-            <div className={`border border-border rounded-2xl p-6 max-w-xl mx-auto ${mode !== "standalone" ? "opacity-50" : ""}`}>
-              <h2 className="text-center underline text-foreground mb-4" data-testid="text-output-params-title">
-                Stand-Alone Compressor Output Parameters
-              </h2>
-              
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Inlet Flow:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-inlet-flow-imperial">{outputParams.inletFlowAcfm}</span>
-                  <span className="w-12 text-muted-foreground">acfm</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-inlet-flow-metric">{outputParams.inletFlowAm3hr}</span>
-                  <span className="w-14 text-muted-foreground">Am3/hr</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Outlet Temp:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-outlet-temp-imperial">{outputParams.outletTempF}</span>
-                  <span className="w-12 text-muted-foreground">F</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-outlet-temp-metric">{outputParams.outletTempC}</span>
-                  <span className="w-14 text-muted-foreground">C</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Outlet Pressure:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-outlet-pressure-imperial">{outputParams.outletPressureInwc}</span>
-                  <span className="w-12 text-muted-foreground">IN WC</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-outlet-pressure-metric">{outputParams.outletPressureMmwg}</span>
-                  <span className="w-14 text-muted-foreground">mm wg</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Temp. Rise:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-temp-rise-imperial">{outputParams.tempRiseF}</span>
-                  <span className="w-12 text-muted-foreground">F</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-temp-rise-metric">{outputParams.tempRiseC}</span>
-                  <span className="w-14 text-muted-foreground">C</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Pressure Rise:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-pressure-rise-imperial">{outputParams.pressureRiseInwc}</span>
-                  <span className="w-12 text-muted-foreground">IN WC</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-pressure-rise-metric">{outputParams.pressureRiseMmwg}</span>
-                  <span className="w-14 text-muted-foreground">mm wg</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Standard Flow:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-standard-flow-imperial">{outputParams.standardFlowScfm}</span>
-                  <span className="w-12 text-muted-foreground">scfm</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-standard-flow-metric">{outputParams.standardFlowNm3hr}</span>
-                  <span className="w-14 text-muted-foreground">Nm3/hr</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Outlet Flow:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-outlet-flow-imperial">{outputParams.outletFlowAcfm}</span>
-                  <span className="w-12 text-muted-foreground">acfm</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-outlet-flow-metric">{outputParams.outletFlowAm3hr}</span>
-                  <span className="w-14 text-muted-foreground">Am3/hr</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Mass Flow:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-mass-flow-imperial">{outputParams.massFlowKlbhr}</span>
-                  <span className="w-12 text-muted-foreground">klb/hr</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-mass-flow-metric">{outputParams.massFlowMThr}</span>
-                  <span className="w-14 text-muted-foreground">MT/hr</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Isentropic Head:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-isentropic-head-imperial">{outputParams.isentropicHeadFtlblb}</span>
-                  <span className="w-12 text-muted-foreground">ftlb/lb</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-isentropic-head-metric">{outputParams.isentropicHeadKJkg}</span>
-                  <span className="w-14 text-muted-foreground">KJ/Kg</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Brake Power:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-brake-power-imperial">{outputParams.brakePowerHp}</span>
-                  <span className="w-12 text-muted-foreground">hp</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-brake-power-metric">{outputParams.brakePowerMW}</span>
-                  <span className="w-14 text-muted-foreground">MW</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Motor Power:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-motor-power-imperial">{outputParams.motorPowerHp}</span>
-                  <span className="w-12 text-muted-foreground">hp</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-motor-power-metric">{outputParams.motorPowerMW}</span>
-                  <span className="w-14 text-muted-foreground">MW</span>
-                </div>
-                
-                <div className="flex items-center gap-2 py-1">
-                  <span className="w-32 text-right text-foreground">Driver Speed:</span>
-                  <span className="w-14 text-center text-primary" data-testid="text-driver-speed">{outputParams.driverSpeed}</span>
-                  <span className="w-12 text-muted-foreground">1/min</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </main>
