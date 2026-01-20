@@ -1,16 +1,40 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Layers } from "lucide-react";
+import { ArrowLeft, Layers, FlaskConical, Beaker, TestTube, Atom } from "lucide-react";
 
 export default function ConverterSimulations() {
   const [, setLocation] = useLocation();
 
   const passes = [
-    { id: 1, title: "Converter Pass 1", path: "/unit-operation/converter-pass-1" },
-    { id: 2, title: "Converter Pass 2", path: "/unit-operation/converter-pass-2" },
-    { id: 3, title: "Converter Pass 3", path: "/unit-operation/converter-pass-3" },
-    { id: 4, title: "Converter Pass 4", path: "/unit-operation/converter-pass-4" },
+    { 
+      id: 1, 
+      title: "Converter Pass 1", 
+      icon: FlaskConical,
+      description: "First catalyst bed simulation. Model SO2 oxidation kinetics, temperature rise, and conversion for the initial high-temperature reaction stage.",
+      path: "/unit-operation/converter-pass-1" 
+    },
+    { 
+      id: 2, 
+      title: "Converter Pass 2", 
+      icon: Beaker,
+      description: "Second catalyst bed after interstage cooling. Simulate continued SO2 conversion with optimized inlet temperature for improved equilibrium.",
+      path: "/unit-operation/converter-pass-2" 
+    },
+    { 
+      id: 3, 
+      title: "Converter Pass 3", 
+      icon: TestTube,
+      description: "Third catalyst bed simulation. Model the approach to high overall conversion before intermediate absorption in double-contact processes.",
+      path: "/unit-operation/converter-pass-3" 
+    },
+    { 
+      id: 4, 
+      title: "Converter Pass 4", 
+      icon: Atom,
+      description: "Final polishing catalyst bed. Simulate the last conversion stage to achieve low-emission performance and meet environmental regulations.",
+      path: "/unit-operation/converter-pass-4" 
+    },
   ];
 
   return (
@@ -40,33 +64,36 @@ export default function ConverterSimulations() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Card>
-            <CardHeader className="text-center">
-              <CardTitle>Converter Simulation Pass Selection</CardTitle>
+            <CardHeader>
+              <CardTitle>Converter Pass Selection</CardTitle>
               <CardDescription>
                 Select a converter pass to launch the interactive training simulator
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 px-8 pb-10">
-              <div className="flex flex-col gap-4">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
                 {passes.map((pass) => (
                   <Button
                     key={pass.id}
                     variant="default"
-                    className="h-20 bg-[#1a5f7a] hover:bg-[#154d63] text-white rounded-xl text-xl font-medium flex flex-col items-center justify-center transition-all shadow-md active-elevate-2"
+                    className="h-auto py-4 px-5 justify-start text-left"
                     onClick={() => setLocation(pass.path)}
                     data-testid={`button-pass-${pass.id}`}
                   >
-                    <div className="text-center leading-tight">
-                      <div>Converter</div>
-                      <div>Pass {pass.id}</div>
+                    <pass.icon className="w-6 h-6 mr-4 flex-shrink-0" />
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold">{pass.title}</span>
+                      <span className="text-xs opacity-80 font-normal whitespace-normal">
+                        {pass.description}
+                      </span>
                     </div>
                   </Button>
                 ))}
               </div>
 
-              <div className="flex justify-center pt-6">
+              <div className="flex justify-center pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setLocation("/unit-operation-simulator")}
