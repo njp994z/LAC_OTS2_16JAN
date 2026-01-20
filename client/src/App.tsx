@@ -172,6 +172,7 @@ import DryingTowerCircuitPythonCode from "@/pages/unit-operation/drying-tower-ci
 import DryingTower from "@/pages/unit-operation/drying-tower";
 import DryingTowerPythonCode from "@/pages/unit-operation/drying-tower-python-code";
 import InterpassAbsorptionTower from "@/pages/unit-operation/interpass-absorption-tower";
+import InterpassAbsorptionTowerPythonCode from "@/pages/unit-operation/interpass-absorption-tower-python-code";
 import FinalTowerAbsorption from "@/pages/unit-operation/final-tower-absorption";
 import ProfitMaximizer from "@/pages/profit-maximizer";
 import ESDTrainer from "@/pages/esd-trainer";
@@ -273,6 +274,7 @@ function Router() {
       <Route path="/unit-operation/acid-hydraulics" component={AcidHydraulics} />
       <Route path="/unit-operation/drying-tower/python-code" component={DryingTowerPythonCode} />
       <Route path="/unit-operation/drying-tower" component={DryingTower} />
+      <Route path="/unit-operation/interpass-absorption-tower/python-code" component={InterpassAbsorptionTowerPythonCode} />
       <Route path="/unit-operation/interpass-absorption-tower" component={InterpassAbsorptionTower} />
       <Route path="/unit-operation/final-tower-absorption" component={FinalTowerAbsorption} />
       <Route path="/profit-maximizer" component={ProfitMaximizer} />
