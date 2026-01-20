@@ -2141,6 +2141,71 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Converter Pass Simulation endpoint (Single pass SO2 oxidation)
+  app.post('/api/converter-pass-simulation', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      // Validate required fields
+      if (pythonInput.inlet_T_C === undefined || pythonInput.inlet_so2_pct === undefined) {
+        return res.status(400).json({ message: "Missing required converter pass input parameters" });
+      }
+
+      // Run Python pass solver
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'pass_solver.py');
+      
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        pythonProcess.stdin.write(JSON.stringify(pythonInput));
+        pythonProcess.stdin.end();
+        
+        pythonProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            console.error('Python pass solver error:', stderr);
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+            return;
+          }
+          
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse Python output:', stdout);
+            reject(new Error('Failed to parse converter pass simulation results'));
+          }
+        });
+        
+        pythonProcess.on('error', (err) => {
+          console.error('Failed to start Python process:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Simulation failed" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Converter pass simulation error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Converter pass simulation failed" 
+      });
+    }
+  });
+
   // Sulfur Control Hydraulics - Static endpoint
   app.post('/api/sulfur-control/static', async (req: Request, res: Response) => {
     try {
