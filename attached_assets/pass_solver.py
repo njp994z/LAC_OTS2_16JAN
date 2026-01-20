@@ -1,0 +1,230 @@
+# pass_solver.py
+# Core solver for a single catalytic pass (SO2 → SO3 oxidation)
+
+import math
+import numpy as np
+from catalyst_database import get_catalyst, CatalystProperties
+
+# Constants
+R_GAS = 10.7316             # ft³·psia/(lbmol·°R)
+ATM_TO_PSIA = 14.696
+INWC_TO_PSI = 1 / 27.68
+FT3_PER_L = 0.0353146667
+
+# Reaction: SO2 + 0.5 O2 → SO3   → Δν = -0.5
+DELTA_NU = -0.5
+
+# Approximate Cp (J/mol·K) – average
+CP = {"SO2": 45.0, "O2": 36.0, "SO3": 60.0, "N2": 35.0}
+
+# ΔH_rxn (J/mol SO2 converted) – exothermic
+DH_RXN = -99000.0
+
+
+def bed_volume_ft3(liters: float) -> float:
+    return liters * FT3_PER_L
+
+
+def cross_section_area_ft2(diameter_ft: float) -> float:
+    return math.pi * (diameter_ft ** 2) / 4.0
+
+
+def bed_depth_ft(volume_liters: float, diameter_ft: float) -> float:
+    V = bed_volume_ft3(volume_liters)
+    A = cross_section_area_ft2(diameter_ft)
+    return V / max(A, 1e-10)
+
+
+def actual_flow_acfm(n_total_lbmol_hr: float, T_C: float, P_psia: float) -> float:
+    T_R = (T_C + 273.15) * 9/5
+    return n_total_lbmol_hr * R_GAS * T_R / max(P_psia, 1e-6)
+
+
+def superficial_velocity_fts(acfm: float, diameter_ft: float) -> float:
+    A = cross_section_area_ft2(diameter_ft)
+    v_fpm = acfm / max(A, 1e-10)
+    return v_fpm / 60.0
+
+
+def mole_fractions_at_X(y0: dict, X: float) -> dict:
+    denom = 1.0 + DELTA_NU * y0["SO2"] * X
+    y = {
+        "SO2": y0["SO2"] * (1 - X) / denom,
+        "O2" : (y0["O2"]  - 0.5 * y0["SO2"] * X) / denom,
+        "SO3": (y0["SO3"] + y0["SO2"] * X) / denom,
+        "N2" : y0["N2"] / denom
+    }
+    y["O2"]  = max(y["O2"],  0.0)
+    y["SO2"] = max(y["SO2"], 1e-12)
+    y["SO3"] = max(y["SO3"], 1e-12)
+    return y
+
+
+def equilibrium_conversion(T_C: float, P_atm: float, y0: dict) -> float:
+    """Approximate Kp → Xeq (simplified Eklund correlation)"""
+    T_R = (T_C + 273.15) * 9/5
+    ln_Kp = 42311 / (1.987 * T_R) - 11.24
+    Kp = math.exp(ln_Kp)
+    yO2_0 = y0["O2"]
+    ySO2_0 = y0["SO2"]
+    a = Kp * P_atm**0.5
+    b = ySO2_0 + yO2_0 + 0.5 * ySO2_0
+    Xeq = (a * math.sqrt(yO2_0) - math.sqrt(ySO2_0)) / (a * math.sqrt(yO2_0) + math.sqrt(ySO2_0)) if b > 0 else 0.0
+    return max(0.0, min(0.999, Xeq))
+
+
+def reaction_rate_eklund(T_C: float, X: float, P_atm: float, y0: dict, activity: float) -> float:
+    """Simplified Eklund rate (mol SO2 / (kg cat · s))"""
+    y = mole_fractions_at_X(y0, X)
+    pSO2 = y["SO2"] * P_atm
+    pSO3 = y["SO3"] * P_atm
+    pO2  = y["O2"]  * P_atm
+
+    T_R = (T_C + 273.15) * 9/5
+    k = math.exp(912.8 - 110.1 * math.log(T_R) - 176008 / T_R)
+    rate = k * (pSO2 - pSO3 / (Kp_eklund(T_C) * math.sqrt(pO2))) * activity
+    return max(0.0, rate)
+
+
+def Kp_eklund(T_C: float) -> float:
+    T_R = (T_C + 273.15) * 9/5
+    return math.exp(42311 / (1.987 * T_R) - 11.24)
+
+
+def simulate_pass(
+    inlet_T_C: float,
+    inlet_P_inwc: float,
+    inlet_so2_pct: float,
+    inlet_o2_pct: float,
+    inlet_n2_pct: float = 79.0,
+    inlet_so3_pct: float = 0.0,
+    inlet_total_scfm: float = 150000.0,
+    diameter_ft: float = 42.0,
+    catalyst_volume_liters: float = 89200.0,
+    catalyst_name: str = "MECS GR330"
+) -> dict:
+    cat: CatalystProperties = get_catalyst(catalyst_name)
+    activity = cat.activity_fresh
+
+    # Inlet conditions
+    P_in_psia = 14.3 + inlet_P_inwc * INWC_TO_PSI   # approx baro 14.3 psia
+    P_in_atm  = P_in_psia / ATM_TO_PSIA
+
+    y0 = {
+        "SO2": inlet_so2_pct / 100,
+        "O2" : inlet_o2_pct  / 100,
+        "SO3": inlet_so3_pct / 100,
+        "N2" : inlet_n2_pct  / 100
+    }
+    sum_y = sum(y0.values())
+    if abs(sum_y - 1.0) > 0.01:
+        y0 = {k: v/sum_y for k,v in y0.items()}
+
+    total_lbmol_hr = inlet_total_scfm / 379.5   # approx standard ft³/lbmol
+
+    # Bed geometry
+    bed_depth_total_ft = bed_depth_ft(catalyst_volume_liters, diameter_ft)
+
+    # Integration points (5 segments → 0,25,50,75,100%)
+    n_points = 5
+    z_points = np.linspace(0, bed_depth_total_ft, n_points)
+    dz_ft = z_points[1] - z_points[0]
+
+    # Catalyst mass per segment (assume uniform)
+    mass_total_kg = catalyst_volume_liters * cat.bulk_density_kg_m3 / 1000
+    W_seg_kg = mass_total_kg / (n_points - 1)
+
+    # Results arrays
+    T_C_arr   = np.zeros(n_points)
+    X_arr     = np.zeros(n_points)
+    P_inwc_arr = np.zeros(n_points)
+    v_fts_arr = np.zeros(n_points)
+    so2_pct   = np.zeros(n_points)
+    o2_pct    = np.zeros(n_points)
+
+    T_C_arr[0]   = inlet_T_C
+    X_arr[0]     = 0.0
+    P_inwc_arr[0] = inlet_P_inwc
+    acfm_0 = actual_flow_acfm(total_lbmol_hr, inlet_T_C, P_in_psia)
+    v_fts_arr[0] = superficial_velocity_fts(acfm_0, diameter_ft)
+    so2_pct[0] = inlet_so2_pct
+    o2_pct[0]  = inlet_o2_pct
+
+    X = 0.0
+    T_C = inlet_T_C
+    P_psia = P_in_psia
+
+    for i in range(1, n_points):
+        # Approximate average conditions in segment
+        y_avg = mole_fractions_at_X(y0, X)
+        mu = 2.0e-5   # approximate viscosity Pa·s
+        rho = P_psia * 28.96 / (R_GAS * (T_C + 459.67))  # lb/ft³ approx
+        acfm = actual_flow_acfm(total_lbmol_hr * (1 + DELTA_NU * y0["SO2"] * X), T_C, P_psia)
+        v_fts = superficial_velocity_fts(acfm, diameter_ft)
+
+        rate = reaction_rate_eklund(T_C, X, P_in_atm, y0, activity)
+        dX = rate * W_seg_kg / (total_lbmol_hr * y0["SO2"] * 3600)   # rough scaling
+
+        X = min(0.999, X + dX)
+        Xeq = equilibrium_conversion(T_C, P_in_atm, y0)
+        X = min(X, Xeq)
+
+        # Temperature rise (adiabatic)
+        dT = -DH_RXN * (dX * total_lbmol_hr * y0["SO2"]) / (total_lbmol_hr * 40.0)   # rough Cp ~40 J/molK
+        T_C += dT
+
+        # Pressure drop (simple linear for GUI)
+        dP_psi = 0.65 * INWC_TO_PSI   # example ~0.65 inwc per segment
+        P_psia -= dP_psi
+        P_inwc_arr[i] = P_psia / INWC_TO_PSI - 14.3 * 27.68  # gauge approx
+
+        T_C_arr[i]   = T_C
+        X_arr[i]     = X * 100
+        v_fts_arr[i] = v_fts
+        y_out = mole_fractions_at_X(y0, X)
+        so2_pct[i] = y_out["SO2"] * 100
+        o2_pct[i]  = y_out["O2"]  * 100
+
+    # Outlet gas flows (approximate)
+    total_out_scfm = inlet_total_scfm * (1 + DELTA_NU * y0["SO2"] * (X/100))
+    so2_out_scfm = inlet_total_scfm * y_out["SO2"]
+    so3_out_scfm = inlet_total_scfm * y_out["SO3"]
+    o2_out_scfm  = inlet_total_scfm * y_out["O2"]
+    n2_out_scfm  = inlet_total_scfm * y_out["N2"]
+    h2o_out_scfm = 0.0
+    h2so4_out_scfm = 0.0
+
+    results = {
+        "bed_depths_ft": [round(z, 1) for z in z_points],
+        "temps_C": [round(t, 1) for t in T_C_arr],
+        "overall_conv_pct": [round(x, 2) for x in X_arr],
+        "bed_conv_pct": [round(x - X_arr[i-1] if i>0 else 0.0, 2) for i,x in enumerate(X_arr)],
+        "pressures_inwc": [round(p, 2) for p in P_inwc_arr],
+        "velocities_fts": [round(v, 1) for v in v_fts_arr],
+        "so2_pct": [round(s, 2) for s in so2_pct],
+        "o2_pct": [round(o, 2) for o in o2_pct],
+
+        "inlet": {
+            "SO2": round(inlet_total_scfm * y0["SO2"], 0),
+            "SO3": round(inlet_total_scfm * y0["SO3"], 0),
+            "O2" : round(inlet_total_scfm * y0["O2"], 0),
+            "N2" : round(inlet_total_scfm * y0["N2"], 0),
+            "H2O": 0,
+            "H2SO4": 0,
+            "TOTAL": round(inlet_total_scfm, 0),
+            "PRESSURE": round(inlet_P_inwc, 1),
+            "TEMPERATURE": round(inlet_T_C * 9/5 + 32, 0)   # °F
+        },
+        "outlet": {
+            "SO2": round(so2_out_scfm, 0),
+            "SO3": round(so3_out_scfm, 0),
+            "O2" : round(o2_out_scfm, 0),
+            "N2" : round(n2_out_scfm, 0),
+            "H2O": 0,
+            "H2SO4": 0,
+            "TOTAL": round(total_out_scfm, 0),
+            "PRESSURE": round(P_inwc_arr[-1], 1),
+            "TEMPERATURE": round(T_C_arr[-1] * 9/5 + 32, 0)
+        }
+    }
+    return results

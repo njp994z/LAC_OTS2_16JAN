@@ -1,7 +1,13 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Layers, FlaskConical, Beaker, TestTube, Atom } from "lucide-react";
+import { ArrowLeft, Layers, FlaskConical, Beaker, TestTube, Atom, Code, ChevronDown, ExternalLink, Database } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ConverterSimulations() {
   const [, setLocation] = useLocation();
@@ -93,7 +99,7 @@ export default function ConverterSimulations() {
                 ))}
               </div>
 
-              <div className="flex justify-center pt-4">
+              <div className="flex flex-wrap justify-center items-center gap-4 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setLocation("/unit-operation-simulator")}
@@ -101,6 +107,65 @@ export default function ConverterSimulations() {
                 >
                   Return to Unit Operations
                 </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="default" data-testid="button-python-code-resources">
+                      <Code className="w-4 h-4 mr-2" />
+                      Python Code Resources
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-[380px]">
+                    <DropdownMenuItem 
+                      onClick={() => window.open("/attached_assets/pass_solver.py", "_blank")}
+                      className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                      data-testid="menu-item-pass-solver"
+                    >
+                      <div className="flex items-center gap-2 font-medium">
+                        <Code className="w-4 h-4" />
+                        <span data-testid="text-pass-solver-title">pass_solver.py</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-6" data-testid="text-pass-solver-desc">Core solver for single catalytic pass (SO2 → SO3 oxidation)</span>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem 
+                      onClick={() => window.open("/attached_assets/converter_pass_gui.py", "_blank")}
+                      className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                      data-testid="menu-item-converter-pass-gui"
+                    >
+                      <div className="flex items-center gap-2 font-medium">
+                        <Code className="w-4 h-4" />
+                        <span data-testid="text-converter-pass-gui-title">converter_pass_gui.py</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-6" data-testid="text-converter-pass-gui-desc">GUI for single catalytic converter pass simulation (Tkinter)</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem 
+                      onClick={() => window.open("/attached_assets/rk-solver-py_1768945806708.py", "_blank")}
+                      className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                      data-testid="menu-item-rk-solver"
+                    >
+                      <div className="flex items-center gap-2 font-medium">
+                        <Code className="w-4 h-4" />
+                        <span data-testid="text-rk-solver-title">rk_solver.py</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-6" data-testid="text-rk-solver-desc">RK4 solver for plug-flow SO2→SO3 adiabatic bed with Ergun pressure drop</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem 
+                      onClick={() => setLocation("/catalyst-parameter-database")}
+                      className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                      data-testid="menu-item-catalyst-database"
+                    >
+                      <div className="flex items-center gap-2 font-medium">
+                        <Database className="w-4 h-4" />
+                        <span data-testid="text-catalyst-database-title">Catalyst Parameter Database</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-6" data-testid="text-catalyst-database-desc">View and configure catalyst properties (MECS, Topsøe, etc.)</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardContent>
           </Card>
