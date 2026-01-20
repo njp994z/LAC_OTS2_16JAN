@@ -169,6 +169,9 @@ import SulfurControlPythonCodeDynamic from "@/pages/unit-operation/sulfur-contro
 import AbsorbingTowerCircuit from "@/pages/unit-operation/absorbing-tower-circuit";
 import DryingTowerCircuit from "@/pages/unit-operation/drying-tower-circuit";
 import DryingTowerCircuitPythonCode from "@/pages/unit-operation/drying-tower-circuit-python-code";
+import DryingTower from "@/pages/unit-operation/drying-tower";
+import InterpassAbsorptionTower from "@/pages/unit-operation/interpass-absorption-tower";
+import FinalTowerAbsorption from "@/pages/unit-operation/final-tower-absorption";
 import ProfitMaximizer from "@/pages/profit-maximizer";
 import ESDTrainer from "@/pages/esd-trainer";
 import OTSLearningHub from "@/pages/ots-learning-hub";
@@ -267,6 +270,9 @@ function Router() {
       <Route path="/unit-operation/sulfur-control-hydraulics/python-code/dynamic" component={SulfurControlPythonCodeDynamic} />
       <Route path="/unit-operation/acid-hydraulics/drying-tower-circuit" component={DryingTowerCircuit} />
       <Route path="/unit-operation/acid-hydraulics" component={AcidHydraulics} />
+      <Route path="/unit-operation/drying-tower" component={DryingTower} />
+      <Route path="/unit-operation/interpass-absorption-tower" component={InterpassAbsorptionTower} />
+      <Route path="/unit-operation/final-tower-absorption" component={FinalTowerAbsorption} />
       <Route path="/profit-maximizer" component={ProfitMaximizer} />
       <Route path="/esd-trainer" component={ESDTrainer} />
       <Route path="/ots-learning-hub" component={OTSLearningHub} />

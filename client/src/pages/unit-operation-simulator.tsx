@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, FlaskConical, ArrowLeftRight, Droplets, Flame, Thermometer, Wind, Gauge, Waves, Zap, Fan, Snowflake, Fuel, Settings2, PipetteIcon, Layers } from "lucide-react";
+import { ArrowLeft, FlaskConical, ArrowLeftRight, Droplets, Flame, Thermometer, Wind, Gauge, Waves, Zap, Fan, Snowflake, Fuel, Settings2, PipetteIcon, Layers, Factory } from "lucide-react";
 
 const unitOperations = [
   {
@@ -45,6 +45,27 @@ const unitOperations = [
     description: "Master SO₃ absorption in sulfuric acid and product concentration control.",
     path: "/unit-operation/sulfuric-acid-tower",
     icon: Droplets
+  },
+  {
+    id: "drying-tower",
+    title: "Drying Tower (DT)",
+    description: "Remove moisture from process gas streams before sulfur combustion using concentrated sulfuric acid.",
+    path: "/unit-operation/drying-tower",
+    icon: Droplets
+  },
+  {
+    id: "interpass-absorption-tower",
+    title: "Interpass Absorption Tower (IPAT)",
+    description: "Absorb SO₃ between converter passes to shift equilibrium and drive higher overall conversion.",
+    path: "/unit-operation/interpass-absorption-tower",
+    icon: Layers
+  },
+  {
+    id: "final-tower-absorption",
+    title: "Final Tower Absorption (FAT)",
+    description: "Capture remaining SO₃ after final converter pass to achieve product specs and emission limits.",
+    path: "/unit-operation/final-tower-absorption",
+    icon: Factory
   },
   {
     id: "acid-hydraulics",
