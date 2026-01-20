@@ -9,7 +9,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Code, Copy, Check } from 'lucide-react';
+import { Code, Copy, Check, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PythonCodeViewerProps {
   title: string;
@@ -17,6 +18,7 @@ interface PythonCodeViewerProps {
   code: string;
   buttonVariant?: 'default' | 'outline' | 'ghost' | 'secondary';
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+  filename?: string;
 }
 
 function highlightPython(code: string): JSX.Element[] {
@@ -129,30 +131,81 @@ export function PythonCodeViewer({
   code,
   buttonVariant = 'outline',
   buttonSize = 'default',
+  filename = 'calculation.py'
 }: PythonCodeViewerProps) {
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   
   const highlightedCode = useMemo(() => highlightPython(code), [code]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
+    toast({
+      title: "Copied to clipboard",
+      description: "Python code has been copied to your clipboard.",
+    });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Download started",
+      description: `Downloading ${filename}`,
+    });
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant={buttonVariant} size={buttonSize} className="gap-2" data-testid="button-view-python-code">
-          <Code className="w-4 h-4" />
-          View Python Code
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant={buttonVariant} size={buttonSize} className="gap-2" data-testid="button-view-python-code">
+            <Code className="w-4 h-4" />
+            View Python Code
+          </Button>
+          <Button 
+            variant="outline" 
+            size={buttonSize} 
+            className="gap-2" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDownload();
+            }}
+            data-testid="button-download-python-code-main"
+          >
+            <Download className="w-4 h-4" />
+            Download .py
+          </Button>
+        </div>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[85vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Code className="w-5 h-5" />
-            {title}
+          <DialogTitle className="flex items-center justify-between pr-8">
+            <div className="flex items-center gap-2">
+              <Code className="w-5 h-5" />
+              {title}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleDownload}
+              data-testid="button-download-code-dialog"
+            >
+              <Download className="w-4 h-4" />
+              Download .py
+            </Button>
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
