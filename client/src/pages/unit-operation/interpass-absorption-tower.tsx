@@ -19,17 +19,17 @@ interface AcidInputs {
 }
 
 interface AcidOutputs {
-  x_H2SO4_AIX1: string;
+  x_H2SO4_AIX0: string;
   x_H2SO4_AI1: string;
-  x_H2O_AIX1: string;
+  x_H2O_AIX0: string;
   x_H2O_AI1: string;
-  m_Total_AIX1: string;
+  m_Total_AIX0: string;
   m_Total_AI1: string;
-  Pressure_AIX1: string;
+  Pressure_AIX0: string;
   Pressure_AI1: string;
-  Temp_AIX1: string;
+  Temp_AIX0: string;
   Temp_AI1: string;
-  Flow_AIX1: string;
+  Flow_AIX0: string;
   Flow_AI1: string;
 }
 
@@ -46,23 +46,23 @@ interface GasInputs {
 }
 
 interface GasOutputs {
-  SO2_Packing: string;
+  SO2_GIX0: string;
   SO2_GI1: string;
-  SO3_Packing: string;
+  SO3_GIX0: string;
   SO3_GI1: string;
-  O2_Packing: string;
+  O2_GIX0: string;
   O2_GI1: string;
-  N2_Packing: string;
+  N2_GIX0: string;
   N2_GI1: string;
-  H2O_Packing: string;
+  H2O_GIX0: string;
   H2O_GI1: string;
-  H2SO4_Packing: string;
+  H2SO4_GIX0: string;
   H2SO4_GI1: string;
-  TOTAL_Packing: string;
+  TOTAL_GIX0: string;
   TOTAL_GI1: string;
-  PRESSURE_Packing: string;
+  PRESSURE_GIX0: string;
   PRESSURE_GI1: string;
-  TEMPERATURE_Packing: string;
+  TEMPERATURE_GIX0: string;
   TEMPERATURE_GI1: string;
 }
 
@@ -98,17 +98,17 @@ export default function InterpassAbsorptionTower() {
   });
 
   const [acidOutputs, setAcidOutputs] = useState<AcidOutputs>({
-    x_H2SO4_AIX1: "---",
+    x_H2SO4_AIX0: "---",
     x_H2SO4_AI1: "---",
-    x_H2O_AIX1: "---",
+    x_H2O_AIX0: "---",
     x_H2O_AI1: "---",
-    m_Total_AIX1: "---",
+    m_Total_AIX0: "---",
     m_Total_AI1: "---",
-    Pressure_AIX1: "---",
+    Pressure_AIX0: "---",
     Pressure_AI1: "---",
-    Temp_AIX1: "200",
+    Temp_AIX0: "200",
     Temp_AI1: "200",
-    Flow_AIX1: "---",
+    Flow_AIX0: "---",
     Flow_AI1: "---",
   });
 
@@ -125,23 +125,23 @@ export default function InterpassAbsorptionTower() {
   });
 
   const [gasOutputs, setGasOutputs] = useState<GasOutputs>({
-    SO2_Packing: "---",
+    SO2_GIX0: "---",
     SO2_GI1: "---",
-    SO3_Packing: "---",
+    SO3_GIX0: "---",
     SO3_GI1: "---",
-    O2_Packing: "---",
+    O2_GIX0: "---",
     O2_GI1: "---",
-    N2_Packing: "---",
+    N2_GIX0: "---",
     N2_GI1: "---",
-    H2O_Packing: "---",
+    H2O_GIX0: "---",
     H2O_GI1: "---",
-    H2SO4_Packing: "---",
+    H2SO4_GIX0: "---",
     H2SO4_GI1: "---",
-    TOTAL_Packing: "---",
+    TOTAL_GIX0: "---",
     TOTAL_GI1: "---",
-    PRESSURE_Packing: "---",
+    PRESSURE_GIX0: "---",
     PRESSURE_GI1: "---",
-    TEMPERATURE_Packing: "---",
+    TEMPERATURE_GIX0: "---",
     TEMPERATURE_GI1: "---",
   });
 
@@ -203,38 +203,38 @@ export default function InterpassAbsorptionTower() {
       }
 
       setAcidOutputs({
-        x_H2SO4_AIX1: formatValue(data.x_H2SO4_AIX1, 4),
+        x_H2SO4_AIX0: formatValue(data.x_H2SO4_AIX0, 4),
         x_H2SO4_AI1: formatValue(data.x_H2SO4_AI1, 4),
-        x_H2O_AIX1: formatValue(data.x_H2O_AIX1, 4),
+        x_H2O_AIX0: formatValue(data.x_H2O_AIX0, 4),
         x_H2O_AI1: formatValue(data.x_H2O_AI1, 4),
-        m_Total_AIX1: formatValue(data.m_Total_AIX1, 1),
+        m_Total_AIX0: formatValue(data.m_Total_AIX0, 1),
         m_Total_AI1: formatValue(data.m_Total_AI1, 1),
-        Pressure_AIX1: formatValue(data.Pressure_AIX1, 1),
+        Pressure_AIX0: formatValue(data.Pressure_AIX0, 1),
         Pressure_AI1: formatValue(data.Pressure_AI1, 1),
-        Temp_AIX1: formatValue(data.Temp_AIX1, 0),
+        Temp_AIX0: formatValue(data.Temp_AIX0, 0),
         Temp_AI1: formatValue(data.Temp_AI1, 0),
-        Flow_AIX1: formatValue(data.Flow_AIX1, 1),
+        Flow_AIX0: formatValue(data.Flow_AIX0, 1),
         Flow_AI1: formatValue(data.Flow_AI1, 1),
       });
 
       setGasOutputs({
-        SO2_Packing: formatValue(data.SO2_Packing, 0),
+        SO2_GIX0: formatValue(data.SO2_GIX0, 0),
         SO2_GI1: formatValue(data.SO2_GI1, 0),
-        SO3_Packing: formatValue(data.SO3_Packing, 0),
+        SO3_GIX0: formatValue(data.SO3_GIX0, 0),
         SO3_GI1: formatValue(data.SO3_GI1, 0),
-        O2_Packing: formatValue(data.O2_Packing, 0),
+        O2_GIX0: formatValue(data.O2_GIX0, 0),
         O2_GI1: formatValue(data.O2_GI1, 0),
-        N2_Packing: formatValue(data.N2_Packing, 0),
+        N2_GIX0: formatValue(data.N2_GIX0, 0),
         N2_GI1: formatValue(data.N2_GI1, 0),
-        H2O_Packing: formatValue(data.H2O_Packing, 0),
+        H2O_GIX0: formatValue(data.H2O_GIX0, 0),
         H2O_GI1: formatValue(data.H2O_GI1, 0),
-        H2SO4_Packing: formatValue(data.H2SO4_Packing, 0),
+        H2SO4_GIX0: formatValue(data.H2SO4_GIX0, 0),
         H2SO4_GI1: formatValue(data.H2SO4_GI1, 0),
-        TOTAL_Packing: formatValue(data.TOTAL_Packing, 0),
+        TOTAL_GIX0: formatValue(data.TOTAL_GIX0, 0),
         TOTAL_GI1: formatValue(data.TOTAL_GI1, 0),
-        PRESSURE_Packing: formatValue(data.PRESSURE_Packing, 1),
+        PRESSURE_GIX0: formatValue(data.PRESSURE_GIX0, 1),
         PRESSURE_GI1: formatValue(data.PRESSURE_GI1, 1),
-        TEMPERATURE_Packing: formatValue(data.TEMPERATURE_Packing, 0),
+        TEMPERATURE_GIX0: formatValue(data.TEMPERATURE_GIX0, 0),
         TEMPERATURE_GI1: formatValue(data.TEMPERATURE_GI1, 0),
       });
 
@@ -320,24 +320,24 @@ export default function InterpassAbsorptionTower() {
   }, []);
 
   const acidRows = [
-    { param: "x_H2SO4", unit: "", inputKey: "x_H2SO4_AI0", outputKey1: "x_H2SO4_AIX1", outputKey2: "x_H2SO4_AI1" },
-    { param: "x_H2O", unit: "", inputKey: "x_H2O_AI0", outputKey1: "x_H2O_AIX1", outputKey2: "x_H2O_AI1" },
-    { param: "m_Total", unit: "Klb/hr", inputKey: "m_Total_AI0", outputKey1: "m_Total_AIX1", outputKey2: "m_Total_AI1" },
-    { param: "Pressure", unit: "psig", inputKey: "Pressure_AI0", outputKey1: "Pressure_AIX1", outputKey2: "Pressure_AI1" },
-    { param: "Temp.", unit: "F", inputKey: "Temp_AI0", outputKey1: "Temp_AIX1", outputKey2: "Temp_AI1" },
-    { param: "Flow", unit: "gpm", inputKey: "Flow_AI0", outputKey1: "Flow_AIX1", outputKey2: "Flow_AI1" },
+    { param: "x_H2SO4", unit: "", inputKey: "x_H2SO4_AI0", outputKey1: "x_H2SO4_AIX0", outputKey2: "x_H2SO4_AI1" },
+    { param: "x_H2O", unit: "", inputKey: "x_H2O_AI0", outputKey1: "x_H2O_AIX0", outputKey2: "x_H2O_AI1" },
+    { param: "m_Total", unit: "Klb/hr", inputKey: "m_Total_AI0", outputKey1: "m_Total_AIX0", outputKey2: "m_Total_AI1" },
+    { param: "Pressure", unit: "psig", inputKey: "Pressure_AI0", outputKey1: "Pressure_AIX0", outputKey2: "Pressure_AI1" },
+    { param: "Temp.", unit: "F", inputKey: "Temp_AI0", outputKey1: "Temp_AIX0", outputKey2: "Temp_AI1" },
+    { param: "Flow", unit: "gpm", inputKey: "Flow_AI0", outputKey1: "Flow_AIX0", outputKey2: "Flow_AI1" },
   ];
 
   const gasRows = [
-    { param: "SO2", unit: "scfm", inputKey: "SO2_GI0", packingKey: "SO2_Packing", outputKey: "SO2_GI1" },
-    { param: "SO3", unit: "scfm", inputKey: "SO3_GI0", packingKey: "SO3_Packing", outputKey: "SO3_GII1" },
-    { param: "O2", unit: "scfm", inputKey: "O2_GI0", packingKey: "O2_Packing", outputKey: "O2_GI1" },
-    { param: "N2", unit: "scfm", inputKey: "N2_GI0", packingKey: "N2_Packing", outputKey: "N2_GI1" },
-    { param: "H2O", unit: "scfm", inputKey: "H2O_GI0", packingKey: "H2O_Packing", outputKey: "H2O_GI1" },
-    { param: "H2SO4", unit: "scfm", inputKey: "H2SO4_GI0", packingKey: "H2SO4_Packing", outputKey: "H2SO4_GI1" },
-    { param: "TOTAL", unit: "scfm", inputKey: "TOTAL_GI0", packingKey: "TOTAL_Packing", outputKey: "TOTAL_GI1" },
-    { param: "PRESSURE", unit: "in. wc.", inputKey: "PRESSURE_GI0", packingKey: "PRESSURE_Packing", outputKey: "PRESSURE_GI1" },
-    { param: "TEMPERATURE", unit: "F", inputKey: "TEMPERATURE_GI0", packingKey: "TEMPERATURE_Packing", outputKey: "TEMPERATURE_GI1" },
+    { param: "SO2", unit: "scfm", inputKey: "SO2_GI0", packingKey: "SO2_GIX0", outputKey: "SO2_GI1" },
+    { param: "SO3", unit: "scfm", inputKey: "SO3_GI0", packingKey: "SO3_GIX0", outputKey: "SO3_GI1" },
+    { param: "O2", unit: "scfm", inputKey: "O2_GI0", packingKey: "O2_GIX0", outputKey: "O2_GI1" },
+    { param: "N2", unit: "scfm", inputKey: "N2_GI0", packingKey: "N2_GIX0", outputKey: "N2_GI1" },
+    { param: "H2O", unit: "scfm", inputKey: "H2O_GI0", packingKey: "H2O_GIX0", outputKey: "H2O_GI1" },
+    { param: "H2SO4", unit: "scfm", inputKey: "H2SO4_GI0", packingKey: "H2SO4_GIX0", outputKey: "H2SO4_GI1" },
+    { param: "TOTAL", unit: "scfm", inputKey: "TOTAL_GI0", packingKey: "TOTAL_GIX0", outputKey: "TOTAL_GI1" },
+    { param: "PRESSURE", unit: "in. wc.", inputKey: "PRESSURE_GI0", packingKey: "PRESSURE_GIX0", outputKey: "PRESSURE_GI1" },
+    { param: "TEMPERATURE", unit: "F", inputKey: "TEMPERATURE_GI0", packingKey: "TEMPERATURE_GIX0", outputKey: "TEMPERATURE_GI1" },
   ];
 
   return (
@@ -422,7 +422,7 @@ export default function InterpassAbsorptionTower() {
                         </th>
                         <th className="text-center py-2 px-2 font-medium">
                           <div>Acid Packing Outlet</div>
-                          <div className="text-xs text-muted-foreground font-normal">AIX1</div>
+                          <div className="text-xs text-muted-foreground font-normal">AIX0</div>
                         </th>
                         <th className="text-center py-2 px-2 font-medium">
                           <div>Tower Acid Outlet</div>
@@ -537,15 +537,16 @@ export default function InterpassAbsorptionTower() {
                         <th className="text-center py-2 px-2 font-medium">
                           <div>Tower Inlet</div>
                           <div className="text-xs text-muted-foreground font-normal">From Converter</div>
-                          <div className="text-xs text-muted-foreground font-normal">GD0</div>
+                          <div className="text-xs text-muted-foreground font-normal">GI0</div>
                         </th>
                         <th className="text-center py-2 px-2 font-medium">
                           <div>Packing Outlet</div>
+                          <div className="text-xs text-muted-foreground font-normal">GIX0</div>
                         </th>
                         <th className="text-center py-2 px-2 font-medium">
                           <div>Tower Outlet</div>
                           <div className="text-xs text-muted-foreground font-normal">To Converter</div>
-                          <div className="text-xs text-muted-foreground font-normal">GD1</div>
+                          <div className="text-xs text-muted-foreground font-normal">GI1</div>
                         </th>
                       </tr>
                     </thead>
