@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Code, Play, Loader2, Calculator, Activity, Pause, RotateCcw } from "lucide-react";
+import { ArrowLeft, FileText, Code, Play, Loader2, Calculator, Activity, Pause, RotateCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -224,7 +224,7 @@ export default function MainCompressor() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold text-foreground mb-6 text-center" data-testid="text-page-title">Compressor Block</h1>
           
-          <div className="flex justify-center gap-4 mb-10">
+          <div className="flex flex-wrap justify-center gap-4 mb-10">
             <a 
               href="/assets/howden-compressor-curves.pdf" 
               target="_blank" 
@@ -242,6 +242,22 @@ export default function MainCompressor() {
                 Python code link
               </Button>
             </Link>
+            <Link href="/unit-operation/main-compressor/tsx-code" data-testid="link-tsx-code">
+              <Button variant="default" className="gap-2" data-testid="button-tsx-code">
+                <Code className="h-4 w-4" />
+                TypeScript code link
+              </Button>
+            </Link>
+            <a 
+              href="/api/download/compressor-codes" 
+              download
+              data-testid="link-download-codes"
+            >
+              <Button variant="outline" className="gap-2" data-testid="button-download-codes">
+                <Download className="h-4 w-4" />
+                Download Both Codes
+              </Button>
+            </a>
           </div>
 
           {/* Simulation Mode Selection */}

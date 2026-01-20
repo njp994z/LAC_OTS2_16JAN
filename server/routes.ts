@@ -6,6 +6,8 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { spawn } from "child_process";
 import path from "path";
+import fs from "fs";
+import archiver from "archiver";
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { hashPassword, comparePassword, validatePassword, validateUsername } from "./passwordUtils";
@@ -1841,6 +1843,32 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Compressor simulation failed" 
       });
+    }
+  });
+
+  // Download compressor codes (Python and TypeScript)
+  app.get('/api/download/compressor-codes', async (req: Request, res: Response) => {
+    try {
+      const pythonPath = path.join(import.meta.dirname, 'python', 'compressor_calculator.py');
+      const tsxPath = path.join(import.meta.dirname, '..', 'client', 'src', 'pages', 'unit-operation', 'main-compressor.tsx');
+      
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename=compressor-codes.zip');
+      
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.pipe(res);
+      
+      if (fs.existsSync(pythonPath)) {
+        archive.file(pythonPath, { name: 'compressor_calculator.py' });
+      }
+      if (fs.existsSync(tsxPath)) {
+        archive.file(tsxPath, { name: 'main-compressor.tsx' });
+      }
+      
+      await archive.finalize();
+    } catch (error) {
+      console.error('Download error:', error);
+      res.status(500).json({ message: 'Failed to create download archive' });
     }
   });
 
