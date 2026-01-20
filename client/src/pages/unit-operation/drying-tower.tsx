@@ -89,12 +89,12 @@ export default function DryingTower() {
   const currentFlowRef = useRef<number>(0);
 
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
-    x_H2SO4_AD0: "0.05",
-    x_H2O_AD0: "0.00",
+    x_H2SO4_AD0: "0.985",
+    x_H2O_AD0: "0.015",
     m_Total_AD0: "0",
-    Pressure_AD0: "0",
-    Temp_AD0: "275",
-    Flow_AD0: "0",
+    Pressure_AD0: "10",
+    Temp_AD0: "150",
+    Flow_AD0: "3500",
   });
 
   const [acidOutputs, setAcidOutputs] = useState<AcidOutputs>({
@@ -115,13 +115,13 @@ export default function DryingTower() {
   const [gasInputs, setGasInputs] = useState<GasInputs>({
     SO2_GD0: "0",
     SO3_GD0: "0",
-    O2_GD0: "0",
-    N2_GD0: "0",
-    H2O_GD0: "0",
+    O2_GD0: "23003",
+    N2_GD0: "868080",
+    H2O_GD0: "1999",
     H2SO4_GD0: "0",
-    TOTAL_GD0: "0",
-    PRESSURE_GD0: "0",
-    TEMPERATURE_GD0: "0",
+    TOTAL_GD0: "111809",
+    PRESSURE_GD0: "-3",
+    TEMPERATURE_GD0: "93",
   });
 
   const [gasOutputs, setGasOutputs] = useState<GasOutputs>({
