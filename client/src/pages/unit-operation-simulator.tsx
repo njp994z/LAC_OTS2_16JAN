@@ -39,14 +39,7 @@ const unitOperations = [
     path: "/unit-operation/sulfur-furnace",
     icon: Flame
   },
-  {
-    id: "sulfuric-acid-tower",
-    title: "Sulfuric Acid Tower",
-    description: "Master SO₃ absorption in sulfuric acid and product concentration control.",
-    path: "/unit-operation/sulfuric-acid-tower",
-    icon: Droplets
-  },
-  {
+    {
     id: "drying-tower",
     title: "Drying Tower (DT)",
     description: "Remove moisture from process gas streams before sulfur combustion using concentrated sulfuric acid.",
