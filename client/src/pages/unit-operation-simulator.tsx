@@ -75,10 +75,10 @@ const unitOperations = [
     icon: ArrowLeftRight
   },
   {
-    id: "waste-heat-boiler",
-    title: "Waste Heat Boiler (WHB)",
-    description: "Recover thermal energy from hot process gases to generate high-pressure steam.",
-    path: "/unit-operation/waste-heat-boiler",
+    id: "jug-valve-whb",
+    title: "Jug Valve & Waste Heat Boiler - Hotside",
+    description: "Model jug valve bypass around WHB hot-side with flow splits, pressure drops, and temperature mixing.",
+    path: "/unit-operation/jug-valve-whb",
     icon: Flame
   },
   {

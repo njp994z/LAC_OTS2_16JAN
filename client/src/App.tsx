@@ -180,6 +180,7 @@ import InterpassAbsorptionTower from "@/pages/unit-operation/interpass-absorptio
 import InterpassAbsorptionTowerPythonCode from "@/pages/unit-operation/interpass-absorption-tower-python-code";
 import FinalTowerAbsorption from "@/pages/unit-operation/final-tower-absorption";
 import FinalTowerAbsorptionPythonCode from "@/pages/unit-operation/final-tower-absorption-python-code";
+import JugValveWHB from "@/pages/unit-operation/jug-valve-whb";
 import ProfitMaximizer from "@/pages/profit-maximizer";
 import ESDTrainer from "@/pages/esd-trainer";
 import OTSLearningHub from "@/pages/ots-learning-hub";
@@ -289,6 +290,7 @@ function Router() {
       <Route path="/unit-operation/interpass-absorption-tower" component={InterpassAbsorptionTower} />
       <Route path="/unit-operation/final-tower-absorption/python-code" component={FinalTowerAbsorptionPythonCode} />
       <Route path="/unit-operation/final-tower-absorption" component={FinalTowerAbsorption} />
+      <Route path="/unit-operation/jug-valve-whb" component={JugValveWHB} />
       <Route path="/profit-maximizer" component={ProfitMaximizer} />
       <Route path="/esd-trainer" component={ESDTrainer} />
       <Route path="/ots-learning-hub" component={OTSLearningHub} />

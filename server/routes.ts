@@ -2511,5 +2511,92 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Jug Valve & WHB Hot-side Simulation
+  app.post('/api/jug-valve-simulation', async (req: Request, res: Response) => {
+    try {
+      const {
+        furnace_outlet_scfm_dry,
+        furnace_outlet_so2,
+        furnace_outlet_so3,
+        furnace_outlet_o2,
+        furnace_outlet_n2,
+        furnace_outlet_temp_f,
+        furnace_outlet_press_inwc,
+        jug_open_pct,
+        positioner_open_pct,
+        cv_max,
+        u_value,
+        whb_area,
+        baro_psia
+      } = req.body;
+
+      if (jug_open_pct === undefined || positioner_open_pct === undefined) {
+        return res.status(400).json({ message: "Missing required valve opening percentages" });
+      }
+
+      const jugOpenVal = parseFloat(jug_open_pct);
+      const posOpenVal = parseFloat(positioner_open_pct);
+
+      if (isNaN(jugOpenVal) || isNaN(posOpenVal)) {
+        return res.status(400).json({ message: "Valve opening percentages must be valid numbers" });
+      }
+
+      if (jugOpenVal < 0 || jugOpenVal > 100 || posOpenVal < 0 || posOpenVal > 100) {
+        return res.status(400).json({ message: "Valve opening percentages must be between 0 and 100" });
+      }
+
+      const pythonInput = {
+        furnace_outlet_scfm_dry: parseFloat(furnace_outlet_scfm_dry) || 109697,
+        furnace_outlet_so2: parseFloat(furnace_outlet_so2) || 12401,
+        furnace_outlet_so3: parseFloat(furnace_outlet_so3) || 227,
+        furnace_outlet_o2: parseFloat(furnace_outlet_o2) || 10261,
+        furnace_outlet_n2: parseFloat(furnace_outlet_n2) || 86808,
+        furnace_outlet_temp_f: parseFloat(furnace_outlet_temp_f) || 2080,
+        furnace_outlet_press_inwc: parseFloat(furnace_outlet_press_inwc) || 196,
+        jug_open_pct: jugOpenVal,
+        positioner_open_pct: posOpenVal,
+        cv_max: parseFloat(cv_max) || 12500,
+        u_value: parseFloat(u_value) || 16.0,
+        whb_area: parseFloat(whb_area) || 9800,
+        baro_psia: parseFloat(baro_psia) || 14.3
+      };
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'jug_valve_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => { stdout += data.toString(); });
+      pythonProcess.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('Jug valve Python error:', stderr);
+          return res.status(500).json({ message: 'Calculation failed', error: stderr });
+        }
+
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          res.status(500).json({ message: 'Failed to parse simulation results' });
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('Python process error:', error);
+        res.status(500).json({ message: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('Jug valve simulation error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   return httpServer;
 }

@@ -1,0 +1,116 @@
+# jug_valve_calc.py
+# Calculation logic for Jug Valve (WHB hot-side bypass) simulation
+
+def calculate_jug_valve_flows(
+    furnace_outlet_scfm_dry: float,
+    furnace_outlet_so2: float,
+    furnace_outlet_so3: float,
+    furnace_outlet_o2: float,
+    furnace_outlet_n2: float,
+    furnace_outlet_temp_f: float,
+    furnace_outlet_press_inwc: float,
+    jug_open_pct: float,
+    positioner_open_pct: float,
+    cv_max: float = 12500,
+    u_value: float = 16.0,
+    whb_area: float = 9800,
+    baro_psia: float = 14.3
+) -> dict:
+    """
+    Simplified static calculation for jug valve bypass around WHB.
+    Returns dictionary with flow/pressure/temperature for each stream.
+    """
+
+    # Convert percentages to fractions
+    jug_frac = jug_open_pct / 100.0
+    pos_frac = positioner_open_pct / 100.0   # currently not heavily used
+
+    # Total furnace outlet flow (dry basis from HMB stream 9)
+    total_dry_scfm = furnace_outlet_scfm_dry
+
+    # Approximate total flow split (very simplified - real model would iterate ΔP)
+    # Assume jug valve takes majority when open due to lower resistance
+    jug_flow_scfm = total_dry_scfm * jug_frac * 0.92   # bias toward jug when open
+    whb_flow_scfm = total_dry_scfm - jug_flow_scfm
+
+    # Pressure drop estimation (very approximate)
+    # Assume small ΔP across WHB and jug valve when jug is partially open
+    delta_p_inwc = 16.0 * (1 - jug_frac * 0.5)   # less drop when jug more open
+    inlet_press_inwc = furnace_outlet_press_inwc
+    whb_out_press_inwc = inlet_press_inwc - delta_p_inwc
+    jug_out_press_inwc = whb_out_press_inwc   # assume same downstream
+
+    # Temperature (assume adiabatic mixing downstream)
+    # Very rough: WHB cools gas significantly, jug stays hot
+    whb_out_temp_f = 705.0   # from HMB
+    jug_out_temp_f = furnace_outlet_temp_f
+    mixed_temp_f = (whb_flow_scfm * whb_out_temp_f + jug_flow_scfm * jug_out_temp_f) / total_dry_scfm
+
+    # Composition remains the same in all branches (no reaction)
+    so2_scfm = furnace_outlet_so2
+    so3_scfm = furnace_outlet_so3
+    o2_scfm  = furnace_outlet_o2
+    n2_scfm  = furnace_outlet_n2
+    h2o_scfm = 0.0   # dry basis
+
+    # Build results dictionary matching GUI labels
+    results = {}
+
+    # Furnace Outlet (GF1) - input
+    results["TOTAL_GF1"] = round(total_dry_scfm)
+    results["SO2_GF1"]   = round(so2_scfm)
+    results["SO3_GF1"]   = round(so3_scfm)
+    results["O2_GF1"]    = round(o2_scfm)
+    results["N2_GF1"]    = round(n2_scfm)
+    results["H2O_GF1"]   = round(h2o_scfm)
+    results["H2SO4_GF1"] = 0
+    results["PRESSURE_GF1"] = round(inlet_press_inwc, 1)
+    results["TEMPERATURE_GF1"] = round(furnace_outlet_temp_f)
+
+    # WHB In (GB0) ≈ Furnace Outlet
+    for k in ["SO2", "SO3", "O2", "N2", "H2O", "H2SO4", "TOTAL"]:
+        results[f"{k}_GB0"] = results[f"{k}_GF1"]
+    results["PRESSURE_GB0"] = results["PRESSURE_GF1"]
+    results["TEMPERATURE_GB0"] = results["TEMPERATURE_GF1"]
+
+    # Jug Valve Inlet (GJV0) ≈ Furnace Outlet
+    for k in ["SO2", "SO3", "O2", "N2", "H2O", "H2SO4", "TOTAL"]:
+        results[f"{k}_GJV0"] = results[f"{k}_GF1"]
+    results["PRESSURE_GJV0"] = results["PRESSURE_GF1"]
+    results["TEMPERATURE_GJV0"] = results["TEMPERATURE_GF1"]
+
+    # WHB Out (GB1)
+    results["TOTAL_GB1"] = round(whb_flow_scfm)
+    results["SO2_GB1"]   = round(so2_scfm * whb_flow_scfm / total_dry_scfm)
+    results["SO3_GB1"]   = round(so3_scfm * whb_flow_scfm / total_dry_scfm)
+    results["O2_GB1"]    = round(o2_scfm  * whb_flow_scfm / total_dry_scfm)
+    results["N2_GB1"]    = round(n2_scfm  * whb_flow_scfm / total_dry_scfm)
+    results["H2O_GB1"]   = 0
+    results["H2SO4_GB1"] = 0
+    results["PRESSURE_GB1"] = round(whb_out_press_inwc, 1)
+    results["TEMPERATURE_GB1"] = round(whb_out_temp_f)
+
+    # Positioner Outlet (GPV1) - interpreted as positioner-controlled stream
+    # (could be a small trim or vent - here assumed same as jug for simplicity)
+    results["TOTAL_GPV1"] = round(jug_flow_scfm * pos_frac)
+    results["SO2_GPV1"]   = round(so2_scfm * jug_flow_scfm / total_dry_scfm * pos_frac)
+    results["SO3_GPV1"]   = round(so3_scfm * jug_flow_scfm / total_dry_scfm * pos_frac)
+    results["O2_GPV1"]    = round(o2_scfm  * jug_flow_scfm / total_dry_scfm * pos_frac)
+    results["N2_GPV1"]    = round(n2_scfm  * jug_flow_scfm / total_dry_scfm * pos_frac)
+    results["H2O_GPV1"]   = 0
+    results["H2SO4_GPV1"] = 0
+    results["PRESSURE_GPV1"] = round(jug_out_press_inwc, 1)
+    results["TEMPERATURE_GPV1"] = round(jug_out_temp_f)
+
+    # Gas Pass 1 Inlet (GP10) - mixed downstream
+    results["TOTAL_GP10"] = round(total_dry_scfm)
+    results["SO2_GP10"]   = round(so2_scfm)
+    results["SO3_GP10"]   = round(so3_scfm)
+    results["O2_GP10"]    = round(o2_scfm)
+    results["N2_GP10"]    = round(n2_scfm)
+    results["H2O_GP10"]   = 0
+    results["H2SO4_GP10"] = 0
+    results["PRESSURE_GP10"] = round(whb_out_press_inwc, 1)   # downstream pressure
+    results["TEMPERATURE_GP10"] = round(mixed_temp_f)
+
+    return results
