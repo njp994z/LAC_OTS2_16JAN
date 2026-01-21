@@ -29,9 +29,8 @@ DIRTY_MULTIPLIER = {"clean": 1.00, "dirty": 1.45}
 INLET_GAS_COMPOSITION = {
     "SO2": 0.0,
     "SO3": 0.0,
-    "O2": 20.95,
-    "N2": 78.09,
-    "H2O": 0.96,
+    "O2": 21.0,
+    "N2": 79.0,
     "H2SO4": 0.0
 }
 
@@ -41,7 +40,6 @@ class StreamComposition:
     SO3: float = 0.0
     O2: float = 0.0
     N2: float = 0.0
-    H2O: float = 0.0
     H2SO4: float = 0.0
     total: float = 0.0
     pressure: float = 0.0
@@ -172,7 +170,6 @@ def calculate_stream_compositions(standard_flow_scfm: float, inlet_pressure: flo
     inlet_stream.SO3 = total_scfm * INLET_GAS_COMPOSITION["SO3"] / 100.0
     inlet_stream.O2 = total_scfm * INLET_GAS_COMPOSITION["O2"] / 100.0
     inlet_stream.N2 = total_scfm * INLET_GAS_COMPOSITION["N2"] / 100.0
-    inlet_stream.H2O = total_scfm * INLET_GAS_COMPOSITION["H2O"] / 100.0
     inlet_stream.H2SO4 = total_scfm * INLET_GAS_COMPOSITION["H2SO4"] / 100.0
     inlet_stream.total = total_scfm
     inlet_stream.pressure = inlet_pressure
@@ -182,7 +179,6 @@ def calculate_stream_compositions(standard_flow_scfm: float, inlet_pressure: flo
     outlet_stream.SO3 = inlet_stream.SO3
     outlet_stream.O2 = inlet_stream.O2
     outlet_stream.N2 = inlet_stream.N2
-    outlet_stream.H2O = inlet_stream.H2O
     outlet_stream.H2SO4 = inlet_stream.H2SO4
     outlet_stream.total = total_scfm
     outlet_stream.pressure = outlet_pressure

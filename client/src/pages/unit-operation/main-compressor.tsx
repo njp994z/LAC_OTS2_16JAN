@@ -31,7 +31,6 @@ interface StreamData {
   SO3: string;
   O2: string;
   N2: string;
-  H2O: string;
   H2SO4: string;
   total: string;
   pressure: string;
@@ -65,7 +64,7 @@ export default function MainCompressor() {
 
   const defaultStream: StreamData = {
     SO2: "---", SO3: "---", O2: "---", N2: "---",
-    H2O: "---", H2SO4: "---", total: "---",
+    H2SO4: "---", total: "---",
     pressure: "---", temperature: "---"
   };
 
@@ -115,7 +114,6 @@ export default function MainCompressor() {
             SO3: formatValue(r.inlet_stream.SO3, 0),
             O2: formatValue(r.inlet_stream.O2, 0),
             N2: formatValue(r.inlet_stream.N2, 0),
-            H2O: formatValue(r.inlet_stream.H2O, 0),
             H2SO4: formatValue(r.inlet_stream.H2SO4, 0),
             total: formatValue(r.inlet_stream.total, 0),
             pressure: formatValue(r.inlet_stream.pressure, 1),
@@ -129,7 +127,6 @@ export default function MainCompressor() {
             SO3: formatValue(r.outlet_stream.SO3, 0),
             O2: formatValue(r.outlet_stream.O2, 0),
             N2: formatValue(r.outlet_stream.N2, 0),
-            H2O: formatValue(r.outlet_stream.H2O, 0),
             H2SO4: formatValue(r.outlet_stream.H2SO4, 0),
             total: formatValue(r.outlet_stream.total, 0),
             pressure: formatValue(r.outlet_stream.pressure, 1),
@@ -515,16 +512,6 @@ export default function MainCompressor() {
                       </td>
                       <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-n2">
                         <span className="bg-muted px-3 py-1 rounded">{outletStream.N2}</span>
-                      </td>
-                    </tr>
-                    <tr className="border-b" data-testid="row-h2o">
-                      <td className="py-3 px-4 font-medium" data-testid="label-h2o">H2O</td>
-                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-h2o">scfm</td>
-                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-h2o">
-                        <span className="bg-muted px-3 py-1 rounded">{inletStream.H2O}</span>
-                      </td>
-                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-h2o">
-                        <span className="bg-muted px-3 py-1 rounded">{outletStream.H2O}</span>
                       </td>
                     </tr>
                     <tr className="border-b" data-testid="row-h2so4">
