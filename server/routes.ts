@@ -2697,5 +2697,40 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Python file download endpoint
+  app.get('/api/download-python/:filename', (req: Request, res: Response) => {
+    const { filename } = req.params;
+    
+    // Whitelist of allowed Python files for security
+    const allowedFiles = [
+      'drying_tower_calc.py',
+      'drying_tower_solver.py',
+      'compressor_calculator.py',
+      'sulfur_furnace_calc.py',
+      'rk_solver.py',
+      'ipat_calc.py',
+      'fat_calc.py',
+      'jug_valve_calc.py',
+      'catalyst_database.py',
+      'pass_solver.py',
+      'sulfur_static_solver.py',
+      'sulfur_dynamic_solver.py'
+    ];
+    
+    if (!allowedFiles.includes(filename)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    const filePath = path.join(process.cwd(), 'server', 'python', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'text/x-python');
+    res.sendFile(filePath);
+  });
+
   return httpServer;
 }

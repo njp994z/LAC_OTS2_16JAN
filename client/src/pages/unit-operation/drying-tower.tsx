@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Droplets, Play, Pause, RotateCcw, Loader2, Code, Calculator, ChevronDown } from "lucide-react";
+import { ArrowLeft, Droplets, Play, Pause, RotateCcw, Loader2, Code, Calculator, ChevronDown, Download, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -372,16 +374,33 @@ export default function DryingTower() {
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Drying Tower</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
                   <Link href="/unit-operation/drying-tower/python-code" data-testid="link-drying-tower-python">
-                    Drying Tower Python Code
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Code
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <a href="/api/download-python/drying_tower_calc.py" download data-testid="link-download-drying-tower">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download drying_tower_calc.py
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Main Compressor</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
                   <Link href="/unit-operation/main-compressor/python-code" data-testid="link-compressor-python">
-                    Main Compressor Python Code
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Code
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/api/download-python/compressor_calculator.py" download data-testid="link-download-compressor">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download compressor_calculator.py
+                  </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
