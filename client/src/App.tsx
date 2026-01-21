@@ -391,6 +391,12 @@ function Router() {
       
       {/* Delta-V Sensor Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/temperature-sensors" component={TemperatureSensorsPage} />
+      
+      {/* Specific Temperature Sensor Detail Pages - MUST come BEFORE generic :sensorId route */}
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821" component={TempSensor5821Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
+      
+      {/* Generic sensor routes - catch-all for sensors without specific landing pages */}
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/:sensorId" component={TempSensorDetail} />
       <Route path="/settings/controller-outputs/faceplates/pressure-sensors" component={PressureSensorsPage} />
       <Route path="/settings/controller-outputs/faceplates/pressure-sensor/:sensorId" component={PressureSensorDetail} />
@@ -398,10 +404,6 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/level-sensor/:sensorId" component={LevelSensorDetail} />
       <Route path="/settings/controller-outputs/faceplates/position-sensors" component={PositionSensorsPage} />
       <Route path="/settings/controller-outputs/faceplates/position-sensor/:sensorId" component={PositionSensorDetail} />
-      
-      {/* Delta-V Temperature Sensor Detail Pages */}
-      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821" component={TempSensor5821Landing} />
-      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-main" component={TempSensor5821Main} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3a" component={TempSensor5821Faceplate3A} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3b" component={TempSensor5821Faceplate3B} />
