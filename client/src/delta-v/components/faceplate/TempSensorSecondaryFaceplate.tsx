@@ -52,6 +52,17 @@ const getRouteForSensor = (basePath: string, sensorId?: string): string => {
     };
     return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
   }
+  if (sensorId === '1540-TI-4825') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-4825-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-4825-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-4825-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-4825-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-4825-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-4825-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
   return `/${basePath}${sensorId ? `/${sensorId}` : ''}`;
 };
 

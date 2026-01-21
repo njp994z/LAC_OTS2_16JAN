@@ -67,12 +67,14 @@ const TemperatureSensorsPage = () => {
                   ? '/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821'
                   : sensor.tag === '1540-TI-4200A'
                   ? '/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A'
+                  : sensor.tag === '1540-TI-4825'
+                  ? '/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4825'
                   : `/settings/controller-outputs/faceplates/temp-sensor/${sensor.tag}`
               }
               className={cn(
                 "group relative flex flex-col items-center justify-center p-6 rounded-xl transition-all duration-300",
                 "bg-card/30 backdrop-blur-sm border border-border/50",
-                sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A'
+                sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A' || sensor.tag === '1540-TI-4825'
                   ? "hover:bg-blue-700/20 hover:border-blue-600/50 hover:shadow-lg hover:shadow-blue-700/20"
                   : "hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10",
                 "active:scale-95"
@@ -80,7 +82,7 @@ const TemperatureSensorsPage = () => {
             >
               <span className={cn(
                 "text-lg font-semibold transition-colors",
-                sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A'
+                sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A' || sensor.tag === '1540-TI-4825'
                   ? "text-blue-600 group-hover:text-blue-500"
                   : "text-foreground group-hover:text-cyan-400"
               )}>

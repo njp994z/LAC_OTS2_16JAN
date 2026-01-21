@@ -178,22 +178,26 @@ export const ControllerConfigProvider: React.FC<ControllerConfigProviderProps> =
   }, []);
 
   const saveController = useCallback(async (controllerId: string) => {
-    // Save to localStorage immediately
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    
-    // Also save to database
-    try {
-      const config = store.configs[controllerId];
-      const data = store.data[controllerId];
+    // Use setStore to get the latest store value and save it
+    setStore(currentStore => {
+      // Save to localStorage immediately with the current (latest) store
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStore));
+      console.log('Saved controller configs to localStorage:', currentStore);
+      
+      // Also save to database (fire and forget, using the current store)
+      const config = currentStore.configs[controllerId];
+      const data = currentStore.data[controllerId];
       
       if (config) {
-        await apiRequest('POST', `/api/controller-configs/${controllerId}`, { config, data });
-        console.log(`Saved controller ${controllerId} configuration to database`);
+        apiRequest('POST', `/api/controller-configs/${controllerId}`, { config, data })
+          .then(() => console.log(`Saved controller ${controllerId} configuration to database`))
+          .catch((e) => console.error(`Failed to save controller ${controllerId} to database:`, e));
       }
-    } catch (e) {
-      console.error(`Failed to save controller ${controllerId} to database:`, e);
-    }
-  }, [store]);
+      
+      // Return the same store (no mutation)
+      return currentStore;
+    });
+  }, []);
 
   return (
     <ControllerConfigContext.Provider

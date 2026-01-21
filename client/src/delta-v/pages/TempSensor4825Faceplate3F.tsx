@@ -23,6 +23,7 @@ const TempSensor4825Faceplate3F = () => {
   
   const prevAlarmStates = useRef(state.alarmStates);
 
+  // Monitor alarm state changes and log new alarms
   useEffect(() => {
     const prev = prevAlarmStates.current;
     const current = state.alarmStates;
@@ -31,6 +32,7 @@ const TempSensor4825Faceplate3F = () => {
       const wasActive = prev[alarmType as keyof typeof prev];
       const isActive = current[alarmType as keyof typeof current];
       
+      // Alarm just triggered (false -> true)
       if (!wasActive && isActive) {
         const info = ALARM_INFO[alarmType];
         const limit = alarmType === 'HH' ? config.ALM_HH_LIM
@@ -61,6 +63,7 @@ const TempSensor4825Faceplate3F = () => {
     prevAlarmStates.current = current;
   }, [state.alarmStates, state.syncedPV, config, addAlarmLogEntry]);
 
+  // Count alarms
   const criticalCount = state.alarmLog.filter(a => !a.acknowledged && a.priority === 'critical').length;
   const warningCount = state.alarmLog.filter(a => !a.acknowledged && a.priority === 'warning').length;
   const acknowledgedCount = state.alarmLog.filter(a => a.acknowledged).length;
@@ -75,6 +78,7 @@ const TempSensor4825Faceplate3F = () => {
     toast({ title: 'All Alarms Acknowledged', description: 'All alarms have been acknowledged.' });
   };
 
+  // Simulate alarm trigger for testing
   const simulateAlarm = (type: 'HH' | 'LL' | 'H' | 'L') => {
     updateAlarmStates({ ...state.alarmStates, [type]: true });
     setTimeout(() => {
@@ -82,13 +86,21 @@ const TempSensor4825Faceplate3F = () => {
     }, 3000);
   };
 
-  const formatTime = (date: Date) => date.toLocaleTimeString('en-US', { hour12: false });
-  const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour12: false });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
-        <Link href="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4825" className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6">
+        <Link
+          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4825"
+          className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
+        >
           <ArrowLeft size={18} />
           <span>Back to 1540-TI-4825 Temperature Sensor</span>
         </Link>
@@ -100,6 +112,7 @@ const TempSensor4825Faceplate3F = () => {
           </h1>
           <p className="text-muted-foreground mb-6">Faceplate 3F - Active alarms and acknowledgement</p>
 
+          {/* Test Buttons */}
           <div className="flex gap-2 mb-6">
             <span className="text-sm text-muted-foreground mr-2">Simulate:</span>
             <button onClick={() => simulateAlarm('HH')} className="px-3 py-1 text-xs bg-red-600/50 hover:bg-red-600 text-white rounded transition-colors">HH</button>
@@ -109,6 +122,7 @@ const TempSensor4825Faceplate3F = () => {
           </div>
 
           <div className="space-y-6">
+            {/* Summary Cards */}
             <div className="grid grid-cols-3 gap-4">
               <div className={`rounded-lg p-4 border text-center ${criticalCount > 0 ? 'bg-red-500/20 border-red-500/50 animate-pulse' : 'bg-red-500/10 border-red-500/30'}`}>
                 <h3 className="text-sm font-medium text-red-400 mb-2">Critical Alarms</h3>
@@ -124,6 +138,7 @@ const TempSensor4825Faceplate3F = () => {
               </div>
             </div>
 
+            {/* Alarm Table */}
             <div className="bg-muted/20 rounded-lg border border-border/50 overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-muted/30">
@@ -139,11 +154,22 @@ const TempSensor4825Faceplate3F = () => {
                 <tbody className="font-mono">
                   {state.alarmLog.length === 0 ? (
                     <tr className="border-b border-border/30">
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No alarm history</td>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        No alarm history
+                      </td>
                     </tr>
                   ) : (
                     state.alarmLog.map((alarm) => (
-                      <tr key={alarm.id} className={`border-b border-border/30 ${!alarm.acknowledged ? (alarm.priority === 'critical' ? 'bg-red-500/10' : 'bg-yellow-500/10') : ''}`}>
+                      <tr
+                        key={alarm.id}
+                        className={`border-b border-border/30 ${
+                          !alarm.acknowledged
+                            ? alarm.priority === 'critical'
+                              ? 'bg-red-500/10'
+                              : 'bg-yellow-500/10'
+                            : ''
+                        }`}
+                      >
                         <td className="px-4 py-2 text-muted-foreground">
                           <div>{formatTime(alarm.timestamp)}</div>
                           <div className="text-xs opacity-60">{formatDate(alarm.timestamp)}</div>
@@ -151,8 +177,15 @@ const TempSensor4825Faceplate3F = () => {
                         <td className="px-4 py-2 text-cyan-400">{alarm.tag}</td>
                         <td className="px-4 py-2">
                           <div className="flex items-center gap-2">
-                            {!alarm.acknowledged && <AlertTriangle size={14} className={alarm.priority === 'critical' ? 'text-red-400 animate-pulse' : 'text-yellow-400 animate-pulse'} />}
-                            <span className={alarm.priority === 'critical' ? 'text-red-400' : 'text-yellow-400'}>{alarm.alarmType}</span>
+                            {!alarm.acknowledged && (
+                              <AlertTriangle
+                                size={14}
+                                className={alarm.priority === 'critical' ? 'text-red-400 animate-pulse' : 'text-yellow-400 animate-pulse'}
+                              />
+                            )}
+                            <span className={alarm.priority === 'critical' ? 'text-red-400' : 'text-yellow-400'}>
+                              {alarm.alarmType}
+                            </span>
                             <span className="text-muted-foreground">- {alarm.alarmName}</span>
                           </div>
                         </td>
@@ -161,15 +194,29 @@ const TempSensor4825Faceplate3F = () => {
                           <span className="text-muted-foreground text-xs ml-1">(lim: {alarm.limit})</span>
                         </td>
                         <td className="px-4 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${alarm.priority === 'critical' ? 'bg-red-500/30 text-red-400' : 'bg-yellow-500/30 text-yellow-400'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              alarm.priority === 'critical'
+                                ? 'bg-red-500/30 text-red-400'
+                                : 'bg-yellow-500/30 text-yellow-400'
+                            }`}
+                          >
                             {alarm.priority.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
                           {alarm.acknowledged ? (
-                            <span className="text-emerald-400 flex items-center justify-center gap-1"><CheckCircle size={14} /><span className="text-xs">ACK</span></span>
+                            <span className="text-emerald-400 flex items-center justify-center gap-1">
+                              <CheckCircle size={14} />
+                              <span className="text-xs">ACK</span>
+                            </span>
                           ) : (
-                            <button onClick={() => handleAcknowledge(alarm.id)} className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs rounded transition-colors">ACK</button>
+                            <button
+                              onClick={() => handleAcknowledge(alarm.id)}
+                              className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs rounded transition-colors"
+                            >
+                              ACK
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -179,8 +226,13 @@ const TempSensor4825Faceplate3F = () => {
               </table>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex justify-center gap-4">
-              <button onClick={handleAcknowledgeAll} disabled={criticalCount + warningCount === 0} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/30 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+              <button
+                onClick={handleAcknowledgeAll}
+                disabled={criticalCount + warningCount === 0}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
                 <CheckCircle size={18} />
                 Acknowledge All
               </button>
