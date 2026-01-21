@@ -338,6 +338,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L4-Converter: Converter 4 position/size
   const [converter4L4Position, setConverter4L4Position] = useState({ x: 200, y: 100 });
   const [converter4L4Size, setConverter4L4Size] = useState({ width: 300, height: 800 });
+  // L4-Converter: 1540-TI-4825 Primary Faceplate position/size
+  const [faceplate4825L4Position, setFaceplate4825L4Position] = useState({ x: 600, y: 150 });
+  const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({ width: 160, height: 240 });
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(false);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
@@ -413,6 +416,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Get real-time synced state for Temperature Sensor 1540-TI-4200C
   const { state: tempSensor4200CSyncState, initializeController: initTempSensor4200C, updateAlarmLimits: updateTempSensor4200CAlarmLimits } = useControllerSync('1540-TI-4200C');
   const tempSensor4200CConfig = getControllerConfig('1540-TI-4200C');
+  
+  // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
+  const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
+  const tempSensor4825Config = getControllerConfig('1540-TI-4825');
   
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
@@ -495,6 +502,30 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor4200CConfig.ALM_HH_LIM ?? 2250,
     });
   }, [tempSensor4200CConfig.TYPICAL_PV, tempSensor4200CConfig.ALM_LL_LIM, tempSensor4200CConfig.ALM_L_LIM, tempSensor4200CConfig.ALM_H_LIM, tempSensor4200CConfig.ALM_HH_LIM, initTempSensor4200C, updateTempSensor4200CAlarmLimits]);
+  
+  // Initialize temperature sensor 1540-TI-4825 (Pass 1 Catalyst In) with configured Typical PV and alarm limits
+  useEffect(() => {
+    // Use configured TYPICAL_PV if available and valid
+    const configPV = tempSensor4825Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) 
+      ? configPV 
+      : 750; // Default typical value for Pass 1 Catalyst In
+    
+    initTempSensor4825(
+      typicalPV,
+      typicalPV,
+      tempSensor4825Config.SP_LIM_LO ?? 0,
+      tempSensor4825Config.SP_LIM_HI ?? 2000
+    );
+    
+    // Sync alarm limits for automatic alarm state updates
+    updateTempSensor4825AlarmLimits({
+      LL: tempSensor4825Config.ALM_LL_LIM ?? 600,
+      L: tempSensor4825Config.ALM_L_LIM ?? 700,
+      H: tempSensor4825Config.ALM_H_LIM ?? 850,
+      HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
+    });
+  }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
   
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
   useEffect(() => {
@@ -1199,6 +1230,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setConverter4L4Size({ width: converter4L4.width, height: converter4L4.height });
     }
 
+    const faceplate4825L4 = positionMap.get('faceplate4825_l4');
+    if (faceplate4825L4) {
+      setFaceplate4825L4Position({ x: faceplate4825L4.x, y: faceplate4825L4.y });
+      setFaceplate4825L4Size({ width: faceplate4825L4.width, height: faceplate4825L4.height });
+    }
+
     // Restore vertical arrows for L4-Converter
     const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
     layoutDataL4.layouts.forEach((item) => {
@@ -1574,6 +1611,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     try {
       const layouts = [
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -2129,6 +2167,49 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
               />
+            </Rnd>
+
+            {/* 1540-TI-4825 Primary Faceplate (Pass 1 Catalyst In) */}
+            <Rnd
+              key="faceplate4825-l4"
+              position={faceplate4825L4Position}
+              size={faceplate4825L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4825L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4825L4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setFaceplate4825L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div className="flex flex-col items-center gap-1 w-full h-full" data-testid="faceplate-4825-l4-container">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
+                <TempSensorPrimaryFaceplate 
+                  data={{
+                    ...defaultControllerData,
+                    instrumentTag: tempSensor4825Config.TAGNAME || '1540-TI-4825',
+                    description: tempSensor4825Config.DESC || 'Pass 1 Catalyst In',
+                    pvUnits: tempSensor4825Config.EU || 'F',
+                    pvRangeMin: tempSensor4825Config.SP_LIM_LO ?? 0,
+                    pvRangeMax: tempSensor4825Config.SP_LIM_HI ?? 2000,
+                    pv: tempSensor4825SyncState.syncedPV,
+                    sp: tempSensor4825SyncState.syncedSP,
+                    out: tempSensor4825SyncState.syncedOUT,
+                  }}
+                />
+              </div>
             </Rnd>
 
             {/* Render vertical arrows for L4-Converter */}
