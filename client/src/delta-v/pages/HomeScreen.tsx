@@ -393,6 +393,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
   // 6.1 L3_1540 Converter: Secondary faceplate dialog visibility
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
+
+  // New states for dynamic sizing support
+  const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
+  const [faceplateSize4825, setFaceplateSize4825] = useState({ width: 160, height: 240 });
+  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+
+  // New states for dynamic sizing support
+  const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
+  const [faceplateSize4825, setFaceplateSize4825] = useState({ width: 160, height: 240 });
+  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
