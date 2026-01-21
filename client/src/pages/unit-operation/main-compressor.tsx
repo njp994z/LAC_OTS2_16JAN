@@ -26,6 +26,18 @@ interface OutputParams {
   driverSpeed: string;
 }
 
+interface StreamData {
+  SO2: string;
+  SO3: string;
+  O2: string;
+  N2: string;
+  H2O: string;
+  H2SO4: string;
+  total: string;
+  pressure: string;
+  temperature: string;
+}
+
 export default function MainCompressor() {
   const { toast } = useToast();
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
@@ -50,6 +62,15 @@ export default function MainCompressor() {
     brakePowerHp: "---",
     driverSpeed: "---"
   });
+
+  const defaultStream: StreamData = {
+    SO2: "---", SO3: "---", O2: "---", N2: "---",
+    H2O: "---", H2SO4: "---", total: "---",
+    pressure: "---", temperature: "---"
+  };
+
+  const [inletStream, setInletStream] = useState<StreamData>(defaultStream);
+  const [outletStream, setOutletStream] = useState<StreamData>(defaultStream);
 
   const handleInputChange = (field: keyof InputParams, value: string) => {
     setInputParams(prev => ({ ...prev, [field]: value }));
@@ -87,6 +108,34 @@ export default function MainCompressor() {
           brakePowerHp: formatValue(r.brake_power_hp, 0),
           driverSpeed: formatValue(r.driver_speed_rpm, 0)
         });
+
+        if (r.inlet_stream) {
+          setInletStream({
+            SO2: formatValue(r.inlet_stream.SO2, 0),
+            SO3: formatValue(r.inlet_stream.SO3, 0),
+            O2: formatValue(r.inlet_stream.O2, 0),
+            N2: formatValue(r.inlet_stream.N2, 0),
+            H2O: formatValue(r.inlet_stream.H2O, 0),
+            H2SO4: formatValue(r.inlet_stream.H2SO4, 0),
+            total: formatValue(r.inlet_stream.total, 0),
+            pressure: formatValue(r.inlet_stream.pressure, 1),
+            temperature: formatValue(r.inlet_stream.temperature, 1)
+          });
+        }
+
+        if (r.outlet_stream) {
+          setOutletStream({
+            SO2: formatValue(r.outlet_stream.SO2, 0),
+            SO3: formatValue(r.outlet_stream.SO3, 0),
+            O2: formatValue(r.outlet_stream.O2, 0),
+            N2: formatValue(r.outlet_stream.N2, 0),
+            H2O: formatValue(r.outlet_stream.H2O, 0),
+            H2SO4: formatValue(r.outlet_stream.H2SO4, 0),
+            total: formatValue(r.outlet_stream.total, 0),
+            pressure: formatValue(r.outlet_stream.pressure, 1),
+            temperature: formatValue(r.outlet_stream.temperature, 1)
+          });
+        }
 
         toast({
           title: "Simulation Complete",
@@ -396,6 +445,126 @@ export default function MainCompressor() {
                       <td className="py-3 px-4 text-muted-foreground" data-testid="unit-driver-speed">rpm</td>
                       <td className="py-3 px-4 text-center font-mono" data-testid="value-driver-speed">
                         {outputParams.driverSpeed}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="max-w-5xl mx-auto mt-8" data-testid="card-static-outputs">
+            <CardHeader>
+              <CardTitle data-testid="title-static-outputs">Simulation Outputs - Static Mode</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm" data-testid="table-static-outputs">
+                  <thead>
+                    <tr className="border-b" data-testid="row-static-header">
+                      <th className="text-left py-3 px-4 w-28" data-testid="header-static-blank"></th>
+                      <th className="text-left py-3 px-4 w-20" data-testid="header-static-units">Units</th>
+                      <th className="text-center py-3 px-4" data-testid="header-inlet-stream">
+                        <div className="text-blue-400" data-testid="text-inlet-title">Compressor Inlet</div>
+                        <div className="text-xs text-muted-foreground" data-testid="text-inlet-tag">1540-FI-4070</div>
+                        <div className="text-xs text-muted-foreground" data-testid="text-inlet-gc">GC0</div>
+                      </th>
+                      <th className="text-center py-3 px-4" data-testid="header-outlet-stream">
+                        <div className="text-blue-400" data-testid="text-outlet-title">Compressor Outlet</div>
+                        <div className="text-xs text-muted-foreground" data-testid="text-outlet-tag">1540-PI-4002</div>
+                        <div className="text-xs text-muted-foreground" data-testid="text-outlet-gc">GC1</div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b" data-testid="row-so2">
+                      <td className="py-3 px-4 font-medium" data-testid="label-so2">SO2</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-so2">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-so2">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.SO2}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-so2">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.SO2}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-so3">
+                      <td className="py-3 px-4 font-medium" data-testid="label-so3">SO3</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-so3">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-so3">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.SO3}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-so3">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.SO3}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-o2">
+                      <td className="py-3 px-4 font-medium" data-testid="label-o2">O2</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-o2">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-o2">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.O2}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-o2">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.O2}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-n2">
+                      <td className="py-3 px-4 font-medium" data-testid="label-n2">N2</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-n2">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-n2">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.N2}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-n2">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.N2}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-h2o">
+                      <td className="py-3 px-4 font-medium" data-testid="label-h2o">H2O</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-h2o">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-h2o">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.H2O}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-h2o">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.H2O}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-h2so4">
+                      <td className="py-3 px-4 font-medium" data-testid="label-h2so4">H2SO4</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-h2so4">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-h2so4">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.H2SO4}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-h2so4">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.H2SO4}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-total">
+                      <td className="py-3 px-4 font-bold" data-testid="label-total">TOTAL</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-total">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-total">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.total}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-total">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.total}</span>
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-stream-pressure">
+                      <td className="py-3 px-4 font-bold" data-testid="label-stream-pressure">PRESSURE</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-stream-pressure">in. wc.</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-pressure">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.pressure}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-pressure-stream">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.pressure}</span>
+                      </td>
+                    </tr>
+                    <tr data-testid="row-stream-temperature">
+                      <td className="py-3 px-4 font-bold" data-testid="label-stream-temperature">TEMPERATURE</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-stream-temperature">F</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-temperature">
+                        <span className="bg-muted px-3 py-1 rounded">{inletStream.temperature}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-outlet-temperature">
+                        <span className="bg-muted px-3 py-1 rounded">{outletStream.temperature}</span>
                       </td>
                     </tr>
                   </tbody>
