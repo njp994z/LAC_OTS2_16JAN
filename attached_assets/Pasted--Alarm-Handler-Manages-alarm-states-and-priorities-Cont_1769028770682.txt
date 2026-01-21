@@ -1,0 +1,84 @@
+"""
+Alarm Handler - Manages alarm states and priorities
+Controller: 1540-TI-4200A - Flow Controller
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, Optional
+import time
+
+class AlarmPriority(Enum):
+    CRITICAL = 1  # HH, LL
+    HIGH = 2      # H, L
+    MEDIUM = 3    # DH, DL
+    LOW = 4       # Informational
+
+@dataclass
+class AlarmLimit:
+    name: str
+    limit: float
+    priority: AlarmPriority
+    is_high: bool  # True for high alarms, False for low alarms
+    is_deviation: bool = False  # True for deviation alarms (DL, DH)
+
+class AlarmHandler:
+    def __init__(self, limits: dict):
+        self.limits = {
+            'LL': AlarmLimit('LL', limits.get('LL', 60), AlarmPriority.CRITICAL, False),
+            'L': AlarmLimit('L', limits.get('L', 70), AlarmPriority.HIGH, False),
+            'DL': AlarmLimit('DL', limits.get('DL', -5), AlarmPriority.MEDIUM, False, True),
+            'DH': AlarmLimit('DH', limits.get('DH', 5), AlarmPriority.MEDIUM, True, True),
+            'H': AlarmLimit('H', limits.get('H', 87), AlarmPriority.HIGH, True),
+            'HH': AlarmLimit('HH', limits.get('HH', 92), AlarmPriority.CRITICAL, True),
+        }
+        
+        self._active_alarms: dict[str, float] = {}  # alarm_name -> activation_time
+        self._acknowledged: set[str] = set()
+        self._callbacks: list[Callable] = []
+        
+    def check_alarms(self, pv: float, sp: float) -> dict[str, bool]:
+        deviation = pv - sp
+        results = {}
+        
+        for name, limit in self.limits.items():
+            if limit.is_deviation:
+                if limit.is_high:
+                    active = deviation >= limit.limit
+                else:
+                    active = deviation <= limit.limit
+            else:
+                if limit.is_high:
+                    active = pv >= limit.limit
+                else:
+                    active = pv <= limit.limit
+                    
+            results[f'ALM_{name}_ACT'] = active
+            
+            if active and name not in self._active_alarms:
+                self._active_alarms[name] = time.time()
+            elif not active and name in self._active_alarms:
+                del self._active_alarms[name]
+                self._acknowledged.discard(name)
+                
+        return results
+    
+    def acknowledge(self, alarm_name: str):
+        if alarm_name in self._active_alarms:
+            self._acknowledged.add(alarm_name)
+            
+    def acknowledge_all(self):
+        self._acknowledged.update(self._active_alarms.keys())
+
+
+# Example usage for 1540-TI-4200A
+if __name__ == "__main__":
+    handler = AlarmHandler({
+        'LL': 60, 'L': 70, 'DL': -5, 
+        'DH': 5, 'H': 87, 'HH': 92
+    })
+    
+    # Simulate PV changes for 1540-TI-4200A
+    for pv in [50, 87, 92, 50]:
+        states = handler.check_alarms(pv, sp=90)
+        print(f"PV={pv} F, States={states}")

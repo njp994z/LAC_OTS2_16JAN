@@ -1,0 +1,63 @@
+"""
+PID Controller - Main Control Algorithm
+Implements a standard PID controller with anti-windup
+Controller: 1540-TI-4200A
+"""
+
+class PIDController:
+    def __init__(self, kp=1.0, ki=0.1, kd=0.05, output_limits=(0, 100)):
+        self.kp = kp  # Proportional gain
+        self.ki = ki  # Integral gain (1/reset time)
+        self.kd = kd  # Derivative gain (rate time)
+        self.output_limits = output_limits
+        
+        self._integral = 0.0
+        self._last_error = 0.0
+        self._last_pv = None
+        
+    def compute(self, setpoint: float, process_value: float, dt: float) -> float:
+        error = setpoint - process_value
+        
+        # Proportional term
+        p_term = self.kp * error
+        
+        # Integral term with anti-windup
+        self._integral += error * dt
+        i_term = self.ki * self._integral
+        
+        # Derivative term (on PV to avoid derivative kick)
+        if self._last_pv is not None:
+            d_term = -self.kd * (process_value - self._last_pv) / dt
+        else:
+            d_term = 0.0
+        self._last_pv = process_value
+        
+        # Calculate output
+        output = p_term + i_term + d_term
+        
+        # Clamp output and apply anti-windup
+        output = max(self.output_limits[0], min(self.output_limits[1], output))
+        
+        return output
+    
+    def reset(self):
+        self._integral = 0.0
+        self._last_error = 0.0
+        self._last_pv = None
+
+
+# Example usage for 1540-TI-4200A
+if __name__ == "__main__":
+    pid = PIDController(kp=2.0, ki=0.5, kd=0.1, output_limits=(0, 100))
+    
+    # Simulation loop
+    sp = 90  # Setpoint (F)
+    pv = 50  # Initial process value (F)
+    dt = 0.1   # 100ms time step
+    
+    for _ in range(100):
+        output = pid.compute(sp, pv, dt)
+        print(f"SP={sp:.1f}, PV={pv:.1f}, OUT={output:.1f}%")
+        
+        # Simulate process response (simplified)
+        pv += (output - 50) * 0.05
