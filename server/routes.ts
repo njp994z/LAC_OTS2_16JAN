@@ -1855,6 +1855,94 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Sulfur Furnace Simulation endpoint
+  app.post('/api/sulfur-furnace-simulation', async (req: Request, res: Response) => {
+    try {
+      const { air_scfm, sulfur_klb_hr, mode, time_step_seconds, previous_temp } = req.body;
+
+      // Validate required fields
+      if (air_scfm === undefined || sulfur_klb_hr === undefined) {
+        return res.status(400).json({ message: "Missing required furnace input parameters" });
+      }
+
+      const airVal = parseFloat(air_scfm);
+      const sulfurVal = parseFloat(sulfur_klb_hr);
+      const timeStepVal = parseFloat(time_step_seconds) || 60.0;
+      const prevTempVal = parseFloat(previous_temp) || 2000.0;
+
+      // Validate numeric inputs
+      if (isNaN(airVal) || isNaN(sulfurVal)) {
+        return res.status(400).json({ message: "All inputs must be valid numbers" });
+      }
+
+      // Validate mode
+      const validModes = ["static", "dynamic"];
+      const simMode = validModes.includes(mode?.toLowerCase()) ? mode.toLowerCase() : "static";
+
+      // Prepare input for Python script
+      const pythonInput = {
+        air_scfm: airVal,
+        sulfur_klb_hr: sulfurVal,
+        mode: simMode,
+        time_step_seconds: timeStepVal,
+        previous_temp: prevTempVal
+      };
+
+      // Run Python sulfur furnace calculator
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_furnace_calc.py');
+      
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        pythonProcess.stdin.write(JSON.stringify(pythonInput));
+        pythonProcess.stdin.end();
+        
+        pythonProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            console.error('Python sulfur furnace calculator error:', stderr);
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+            return;
+          }
+          
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse Python output:', stdout);
+            reject(new Error('Failed to parse sulfur furnace simulation results'));
+          }
+        });
+        
+        pythonProcess.on('error', (err) => {
+          console.error('Failed to start Python process:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Sulfur furnace simulation failed" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Sulfur furnace simulation error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Sulfur furnace simulation failed" 
+      });
+    }
+  });
+
   // Download compressor codes (Python and TypeScript)
   app.get('/api/download/compressor-codes', async (req: Request, res: Response) => {
     try {

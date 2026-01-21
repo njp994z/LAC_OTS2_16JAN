@@ -1,0 +1,115 @@
+# sulfur_furnace_gui.py
+import tkinter as tk
+from tkinter import ttk
+from sulfur_furnace_backend import SulfurFurnaceModel
+
+class SulfurFurnaceGUI:
+    def __init__(self, master):
+        self.master = master
+        master.title("Sulfur Furnace Simulator")
+        master.geometry("820x720")
+
+        self.model = SulfurFurnaceModel()
+
+        # ── Input controls ───────────────────────────────────────────────
+        row = 0
+
+        tk.Label(master, text="Simulation Mode:").grid(row=row, column=0, padx=12, pady=6, sticky="e")
+        self.mode_var = tk.StringVar(value="Static")
+        mode_combo = ttk.Combobox(
+            master, textvariable=self.mode_var, values=["Static", "Dynamic"], state="readonly", width=12
+        )
+        mode_combo.grid(row=row, column=1, pady=6, sticky="w")
+        row += 1
+
+        tk.Label(master, text="Air Flow GF0 (scfm dry):").grid(row=row, column=0, padx=12, pady=6, sticky="e")
+        self.air_entry = tk.Entry(master, width=18)
+        self.air_entry.insert(0, "115301")
+        self.air_entry.grid(row=row, column=1, pady=6, sticky="w")
+        row += 1
+
+        tk.Label(master, text="Sulfur Flow (Klb/hr):").grid(row=row, column=0, padx=12, pady=6, sticky="e")
+        self.sulfur_entry = tk.Entry(master, width=18)
+        self.sulfur_entry.insert(0, "67.68")
+        self.sulfur_entry.grid(row=row, column=1, pady=6, sticky="w")
+        row += 1
+
+        tk.Label(master, text="Time step (s) – dynamic only:").grid(row=row, column=0, padx=12, pady=6, sticky="e")
+        self.dt_entry = tk.Entry(master, width=18)
+        self.dt_entry.insert(0, "60")
+        self.dt_entry.grid(row=row, column=1, pady=6, sticky="w")
+        row += 1
+
+        self.run_button = tk.Button(
+            master, text="Run Simulation", command=self.run_simulation, width=20
+        )
+        self.run_button.grid(row=row, column=0, columnspan=2, pady=16)
+        row += 1
+
+        # ── Output display ───────────────────────────────────────────────
+        self.output_text = tk.Text(master, height=24, width=92, font=("Consolas", 10))
+        self.output_text.grid(row=row, column=0, columnspan=2, padx=12, pady=8, sticky="nsew")
+
+        # Make window resizable
+        master.columnconfigure(0, weight=1)
+        master.rowconfigure(row, weight=1)
+
+    def run_simulation(self):
+        try:
+            air_scfm = float(self.air_entry.get())
+            sulfur_klb_hr = float(self.sulfur_entry.get())
+        except ValueError:
+            self._show_error("Please enter valid numeric values for air and sulfur flow.")
+            return
+
+        mode = self.mode_var.get()
+
+        if mode == "Static":
+            result = self.model.calculate_static(air_scfm, sulfur_klb_hr)
+        else:
+            try:
+                dt = float(self.dt_entry.get())
+                if dt <= 0:
+                    raise ValueError
+            except ValueError:
+                self._show_error("Please enter a positive number for time step (seconds).")
+                return
+            result = self.model.calculate_dynamic(air_scfm, sulfur_klb_hr, dt)
+
+        self._display_result(result)
+
+    def _display_result(self, r: dict):
+        self.output_text.delete(1.0, tk.END)
+
+        lines = [
+            "Sulfur Furnace Simulation Results",
+            "────────────────────────────────────────────────────────────",
+            f"Mode                  :  {r['mode']}",
+            f"Air Flow (GF0)        :  {r['air_scfm']:,.0f} scfm",
+            f"Sulfur Feed           :  {r['sulfur_klb_hr']:.2f} Klb/hr",
+            f"SO₂ Produced          :  {r['scfm_so2']:,.0f} scfm",
+            f"Dry Gas Outlet Total  :  {r['scfm_dry_total']:,.0f} scfm",
+            "",
+            "Dry Gas Composition (vol%):",
+            f"  SO₂                 :  {r['pct_so2']:6.2f} %",
+            f"  O₂                  :  {r['pct_o2']:6.2f} %",
+            f"  N₂                  :  {r['pct_n2']:6.2f} %",
+            "",
+            f"Furnace Outlet Temperature : {r['T_out_f']:,.0f} °F",
+            f"Estimated Outlet Pressure  : {r['P_out_inwc']:,.0f} in. w.c.",
+            "────────────────────────────────────────────────────────────",
+            "Note: Simplified model — assumes complete S → SO₂ conversion,",
+            "      adiabatic operation, constant average Cp, no minor SO₃."
+        ]
+
+        for line in lines:
+            self.output_text.insert(tk.END, line + "\n")
+
+    def _show_error(self, message: str):
+        self.output_text.delete(1.0, tk.END)
+        self.output_text.insert(tk.END, f"Error: {message}\n")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SulfurFurnaceGUI(root)
+    root.mainloop()
