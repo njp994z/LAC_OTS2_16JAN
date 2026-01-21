@@ -5,7 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Droplets, Play, Pause, RotateCcw, Loader2, Code, Calculator } from "lucide-react";
+import { ArrowLeft, Droplets, Play, Pause, RotateCcw, Loader2, Code, Calculator, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -358,12 +364,27 @@ export default function DryingTower() {
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/unit-operation/drying-tower/python-code" data-testid="link-python-code">
-              <Button variant="outline" size="sm">
-                <Code className="h-4 w-4 mr-2" />
-                View Python Code
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" data-testid="button-python-code-dropdown">
+                  <Code className="h-4 w-4 mr-2" />
+                  View Python Code
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/unit-operation/drying-tower/python-code" data-testid="link-drying-tower-python">
+                    Drying Tower Python Code
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/unit-operation/main-compressor/python-code" data-testid="link-compressor-python">
+                    Main Compressor Python Code
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
