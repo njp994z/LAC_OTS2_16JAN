@@ -24,6 +24,7 @@ import ec3bImg from "@assets/delta-v/process-diagrams/ec3b.png";
 import sh1bImg from "@assets/delta-v/process-diagrams/sh1b.png";
 import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-filter.png";
 import converter4L4Img from "@assets/image_1769028207381.png";
+import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
 import {
   Menubar,
@@ -382,6 +383,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(false);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
+  
+  // 6.1 L3_1540 Converter: Converter position/size
+  const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
+  const [converter61Size, setConverter61Size] = useState({ width: 400, height: 600 });
+  const [isLocked61, setIsLocked61] = useState(false);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -2660,6 +2666,58 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </div>
               </Rnd>
             ))}
+          </div>
+        )}
+
+        {/* 6.1 L3_1540 Converter View */}
+        {selectedScreen === "6.1 L3_1540 Converter" && (
+          <div className="relative bg-gray-900" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
+            {/* Lock/Unlock Button */}
+            <div className="absolute top-4 right-4 z-50 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsLocked61(!isLocked61)}
+                className={`${isLocked61 ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-green-500/20 border-green-500 text-green-400'}`}
+                data-testid="button-lock-toggle-61"
+              >
+                {isLocked61 ? <Lock className="w-4 h-4 mr-1" /> : <Unlock className="w-4 h-4 mr-1" />}
+                {isLocked61 ? 'Locked' : 'Unlocked'}
+              </Button>
+            </div>
+
+            {/* 4-Pass Converter Graphic */}
+            <Rnd
+              key="converter-61"
+              position={converter61Position}
+              size={converter61Size}
+              onDragStop={(e, d) => {
+                setConverter61Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setConverter61Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setConverter61Position(position);
+              }}
+              minWidth={200}
+              minHeight={300}
+              bounds="parent"
+              disableDragging={isLocked61}
+              enableResizing={!isLocked61}
+              className={isLocked61 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+              data-testid="converter-61-rnd"
+            >
+              <img 
+                src={converter4PassImg} 
+                alt="4-Pass Catalytic Converter" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-converter-61"
+              />
+            </Rnd>
           </div>
         )}
 
