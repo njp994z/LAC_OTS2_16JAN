@@ -399,11 +399,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplateSize4825, setFaceplateSize4825] = useState({ width: 160, height: 240 });
   const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
 
-  // New states for dynamic sizing support
-  const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
-  const [faceplateSize4825, setFaceplateSize4825] = useState({ width: 160, height: 240 });
-  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
-  
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { getControllerConfig } = useControllerConfig();
