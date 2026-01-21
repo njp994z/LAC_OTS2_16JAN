@@ -37,7 +37,7 @@ export const TempSensorPrimaryFaceplate = ({
         "p-1 cursor-pointer select-none",
         "transition-all duration-300",
         "hover:scale-[1.02] hover:shadow-2xl hover:shadow-faceplate-border/20",
-        "w-[160px]",
+        "w-full h-full min-w-[160px] min-h-[120px]",
         // Red silhouette when HH or LL alarm is active
         isCriticalAlarm && [
           "ring-4 ring-red-500",
