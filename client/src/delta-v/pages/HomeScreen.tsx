@@ -388,6 +388,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
   const [converter61Size, setConverter61Size] = useState({ width: 400, height: 600 });
   const [isLocked61, setIsLocked61] = useState(false);
+  // 6.1 L3_1540 Converter: 1540-TI-4825 Primary Faceplate position/size
+  const [faceplate4825_61Position, setFaceplate4825_61Position] = useState({ x: 850, y: 200 });
+  const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
+  // 6.1 L3_1540 Converter: Secondary faceplate dialog visibility
+  const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -1123,6 +1128,38 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ALM_H_LIM: tempSensor4200CConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: tempSensor4200CConfig.ALM_HH_LIM ?? 0,
     UNIT: tempSensor4200CConfig.UNIT || 'U-505',
+  };
+
+  // Build temperature sensor 1540-TI-4825 secondary faceplate data
+  const tempSensor4825SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4825SyncState.syncedPV,
+    SP: tempSensor4825SyncState.syncedSP,
+    TSP: tempSensor4825SyncState.syncedSP,
+    OUT_PCT: tempSensor4825SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4825SyncState.syncedMode === 'AUTO' || tempSensor4825SyncState.syncedMode === 'MAN' 
+      ? tempSensor4825SyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: tempSensor4825SyncState.alarmStates.HH,
+    ALM_H_ACT: tempSensor4825SyncState.alarmStates.H,
+    ALM_L_ACT: tempSensor4825SyncState.alarmStates.L,
+    ALM_LL_ACT: tempSensor4825SyncState.alarmStates.LL,
+  };
+
+  const tempSensor4825SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4825Config.TAGNAME || '1540-TI-4825',
+    DESC: tempSensor4825Config.DESC || 'Pass 1 Catalyst In',
+    EU: tempSensor4825Config.EU || '°F',
+    PV_SCALE_LO: tempSensor4825Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4825Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4825Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4825Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4825Config.ALM_LL_LIM ?? 600,
+    ALM_L_LIM: tempSensor4825Config.ALM_L_LIM ?? 700,
+    ALM_H_LIM: tempSensor4825Config.ALM_H_LIM ?? 850,
+    ALM_HH_LIM: tempSensor4825Config.ALM_HH_LIM ?? 900,
+    UNIT: tempSensor4825Config.UNIT || 'U-505',
   };
 
   // Build Hand Controller 1540-H-4030 secondary faceplate data
@@ -2718,6 +2755,67 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 data-testid="img-converter-61"
               />
             </Rnd>
+
+            {/* 1540-TI-4825 Primary Faceplate (Pass 1 Catalyst In) */}
+            <Rnd
+              key="faceplate4825-61"
+              position={faceplate4825_61Position}
+              size={faceplate4825_61Size}
+              onDragStop={(e, d) => {
+                setFaceplate4825_61Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4825_61Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setFaceplate4825_61Position(position);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLocked61}
+              enableResizing={!isLocked61}
+              className={isLocked61 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+              data-testid="faceplate-4825-61-rnd"
+            >
+              <div 
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
+                data-testid="button-faceplate-4825-61-open"
+                onClick={() => setShowSecondary4825_61(true)}
+              >
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
+                <TempSensorPrimaryFaceplate 
+                  data={{
+                    ...defaultControllerData,
+                    instrumentTag: tempSensor4825Config.TAGNAME || '1540-TI-4825',
+                    description: tempSensor4825Config.DESC || 'Pass 1 Catalyst In',
+                    pvUnits: tempSensor4825Config.EU || 'F',
+                    pvRangeMin: tempSensor4825Config.SP_LIM_LO ?? 0,
+                    pvRangeMax: tempSensor4825Config.SP_LIM_HI ?? 2000,
+                    pv: tempSensor4825SyncState.syncedPV,
+                    sp: tempSensor4825SyncState.syncedSP,
+                    out: tempSensor4825SyncState.syncedOUT,
+                  }}
+                />
+              </div>
+            </Rnd>
+
+            {/* Secondary Faceplate Dialog for 1540-TI-4825 */}
+            <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4825 Secondary Faceplate</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4825SecondaryData}
+                  config={tempSensor4825SecondaryConfig}
+                  sensorId="1540-TI-4825"
+                  onClose={() => setShowSecondary4825_61(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
