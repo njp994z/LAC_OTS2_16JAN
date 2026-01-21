@@ -1,0 +1,402 @@
+import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, FileText, Code, Play, Loader2, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface InputParams {
+  rpmPercent: string;
+  temp: string;
+  pressure: string;
+  barometricPressure: string;
+}
+
+interface OutputParams {
+  inletFlowAcfm: string;
+  inletFlowAm3hr: string;
+  outletTempF: string;
+  outletTempC: string;
+  outletPressureInwc: string;
+  outletPressureMmwg: string;
+  tempRiseF: string;
+  tempRiseC: string;
+  pressureRiseInwc: string;
+  pressureRiseMmwg: string;
+  standardFlowScfm: string;
+  standardFlowNm3hr: string;
+  outletFlowAcfm: string;
+  outletFlowAm3hr: string;
+  massFlowKlbhr: string;
+  massFlowMThr: string;
+  isentropicHeadFtlblb: string;
+  isentropicHeadKJkg: string;
+  brakePowerHp: string;
+  brakePowerMW: string;
+  motorPowerHp: string;
+  motorPowerMW: string;
+  driverSpeed: string;
+}
+
+export default function MainCompressor() {
+  const { toast } = useToast();
+  const [isRunningSimulation, setIsRunningSimulation] = useState(false);
+  const [plantCondition, setPlantCondition] = useState<"clean" | "dirty">("clean");
+  const [realtimeBarometric, setRealtimeBarometric] = useState<string>("no");
+  const [isLoadingBarometric, setIsLoadingBarometric] = useState(false);
+
+  const [inputParams, setInputParams] = useState<InputParams>({
+    rpmPercent: "88",
+    temp: "150",
+    pressure: "-12",
+    barometricPressure: "0.85"
+  });
+
+  const [outputParams, setOutputParams] = useState<OutputParams>({
+    inletFlowAcfm: "---",
+    inletFlowAm3hr: "---",
+    outletTempF: "---",
+    outletTempC: "---",
+    outletPressureInwc: "---",
+    outletPressureMmwg: "---",
+    tempRiseF: "---",
+    tempRiseC: "---",
+    pressureRiseInwc: "---",
+    pressureRiseMmwg: "---",
+    standardFlowScfm: "---",
+    standardFlowNm3hr: "---",
+    outletFlowAcfm: "---",
+    outletFlowAm3hr: "---",
+    massFlowKlbhr: "---",
+    massFlowMThr: "---",
+    isentropicHeadFtlblb: "---",
+    isentropicHeadKJkg: "---",
+    brakePowerHp: "---",
+    brakePowerMW: "---",
+    motorPowerHp: "---",
+    motorPowerMW: "---",
+    driverSpeed: "---"
+  });
+
+  const handleInputChange = (field: keyof InputParams, value: string) => {
+    setInputParams(prev => ({ ...prev, [field]: value }));
+  };
+
+  const formatValue = (value: number | null | undefined, decimals: number = 1): string => {
+    if (value === null || value === undefined || isNaN(value)) return "---";
+    if (Math.abs(value) >= 10000) return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (Math.abs(value) >= 100) return value.toFixed(decimals);
+    return value.toFixed(Math.max(decimals, 1));
+  };
+
+  const runSimulation = async () => {
+    setIsRunningSimulation(true);
+    try {
+      const response = await apiRequest('POST', '/api/compressor-simulation', {
+        rpm_percent: inputParams.rpmPercent,
+        temp: inputParams.temp,
+        pressure: inputParams.pressure,
+        barometricPressure: inputParams.barometricPressure,
+        plant_condition: plantCondition
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.results) {
+        const r = data.results;
+        setOutputParams({
+          inletFlowAcfm: formatValue(r.inlet_flow_acfm, 0),
+          inletFlowAm3hr: formatValue(r.inlet_flow_am3hr, 0),
+          outletTempF: formatValue(r.outlet_temp_F, 1),
+          outletTempC: formatValue(r.outlet_temp_C, 1),
+          outletPressureInwc: formatValue(r.outlet_pressure_inwc, 1),
+          outletPressureMmwg: formatValue(r.outlet_pressure_mmwg, 0),
+          tempRiseF: formatValue(r.temp_rise_F, 1),
+          tempRiseC: formatValue(r.temp_rise_C, 1),
+          pressureRiseInwc: formatValue(r.pressure_rise_inwc, 1),
+          pressureRiseMmwg: formatValue(r.pressure_rise_mmwg, 0),
+          standardFlowScfm: formatValue(r.standard_flow_scfm, 0),
+          standardFlowNm3hr: formatValue(r.standard_flow_nm3hr, 0),
+          outletFlowAcfm: formatValue(r.outlet_flow_acfm, 0),
+          outletFlowAm3hr: formatValue(r.outlet_flow_am3hr, 0),
+          massFlowKlbhr: formatValue(r.mass_flow_klbhr, 1),
+          massFlowMThr: formatValue(r.mass_flow_MThr, 1),
+          isentropicHeadFtlblb: formatValue(r.isentropic_head_ftlblb, 0),
+          isentropicHeadKJkg: formatValue(r.isentropic_head_kJkg, 1),
+          brakePowerHp: formatValue(r.brake_power_hp, 0),
+          brakePowerMW: formatValue(r.brake_power_MW, 2),
+          motorPowerHp: formatValue(r.motor_power_hp, 0),
+          motorPowerMW: formatValue(r.motor_power_MW, 2),
+          driverSpeed: formatValue(r.driver_speed_rpm, 0)
+        });
+
+        toast({
+          title: "Simulation Complete",
+          description: `Results calculated for ${plantCondition} plant condition at ${inputParams.rpmPercent}% speed.`,
+        });
+      } else {
+        throw new Error(data.error || data.message || "Simulation failed");
+      }
+    } catch (error) {
+      console.error('Simulation error:', error);
+      toast({
+        title: "Simulation Error",
+        description: error instanceof Error ? error.message : "Failed to run compressor simulation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRunningSimulation(false);
+    }
+  };
+
+  const fetchRealtimeBarometric = async () => {
+    setIsLoadingBarometric(true);
+    try {
+      const response = await fetch('/api/psychrometrics/current?zipCode=89414&countryCode=US');
+      if (!response.ok) throw new Error('Failed to fetch barometric data');
+      const data = await response.json();
+      const pressureHpa = data.conditions?.pressure;
+      if (pressureHpa) {
+        const pressureInHg = pressureHpa * 0.02953;
+        const pressureAtm = pressureInHg / 29.9213;
+        setInputParams(prev => ({
+          ...prev,
+          barometricPressure: pressureAtm.toFixed(4)
+        }));
+        toast({
+          title: "Barometric Pressure Updated",
+          description: `Live value: ${pressureAtm.toFixed(4)} ATM`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch live barometric pressure.",
+        variant: "destructive",
+      });
+      setRealtimeBarometric("no");
+    } finally {
+      setIsLoadingBarometric(false);
+    }
+  };
+
+  useEffect(() => {
+    if (realtimeBarometric === "yes") {
+      fetchRealtimeBarometric();
+    }
+  }, [realtimeBarometric]);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/unit-operation-simulator">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <span className="font-semibold text-lg">Lithium Americas</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="pt-24 pb-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold text-center mb-6">Compressor Block</h1>
+
+          <div className="flex flex-wrap justify-center gap-4 mb-10">
+            <a href="/assets/howden-compressor-curves.pdf" target="_blank" rel="noopener noreferrer">
+              <Button className="gap-2">
+                <FileText className="h-4 w-4" />
+                Compressor Data Sheet
+              </Button>
+            </a>
+            <a href="/api/download/compressor-codes" download>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Download Codes
+              </Button>
+            </a>
+          </div>
+
+          {/* Input Card */}
+          <Card className="max-w-lg mx-auto mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Operating Conditions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Speed (% of max)</label>
+                  <Input
+                    type="number"
+                    value={inputParams.rpmPercent}
+                    onChange={(e) => handleInputChange("rpmPercent", e.target.value)}
+                    placeholder="88"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Plant Condition</label>
+                  <Select value={plantCondition} onValueChange={(v) => setPlantCondition(v as "clean" | "dirty")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select condition" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="clean">Clean</SelectItem>
+                      <SelectItem value="dirty">Dirty</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Inlet Temp</label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={inputParams.temp}
+                      onChange={(e) => handleInputChange("temp", e.target.value)}
+                      className="w-20"
+                    />
+                    <span className="text-sm">°F</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Inlet Pressure</label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={inputParams.pressure}
+                      onChange={(e) => handleInputChange("pressure", e.target.value)}
+                      className="w-20"
+                    />
+                    <span className="text-sm">in wc</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Barometric</label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={inputParams.barometricPressure}
+                      onChange={(e) => handleInputChange("barometricPressure", e.target.value)}
+                      className="w-20"
+                      disabled={realtimeBarometric === "yes"}
+                    />
+                    <span className="text-sm">atm</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground w-32">Realtime Baro:</span>
+                <Select value={realtimeBarometric} onValueChange={setRealtimeBarometric}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+                {isLoadingBarometric && <span className="text-sm text-muted-foreground">Loading...</span>}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Run Button */}
+          <div className="flex justify-center mb-10">
+            <Button
+              size="lg"
+              onClick={runSimulation}
+              disabled={isRunningSimulation}
+              className="gap-2 px-10"
+            >
+              {isRunningSimulation ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Calculating...
+                </>
+              ) : (
+                <>
+                  <Play className="h-5 w-5" />
+                  Run Simulation
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Results Table */}
+          <Card className="max-w-5xl mx-auto">
+            <CardHeader>
+              <CardTitle>Simulation Results</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4">Parameter</th>
+                      <th className="text-left py-3 px-4">Units</th>
+                      <th className="text-center py-3 px-4">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Inlet Flow</td>
+                      <td className="py-3 px-4 text-muted-foreground">acfm</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.inletFlowAcfm}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Outlet Temperature</td>
+                      <td className="py-3 px-4 text-muted-foreground">°F</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.outletTempF}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Outlet Pressure</td>
+                      <td className="py-3 px-4 text-muted-foreground">in wc</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.outletPressureInwc}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Pressure Rise</td>
+                      <td className="py-3 px-4 text-muted-foreground">in wc</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.pressureRiseInwc}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Standard Flow</td>
+                      <td className="py-3 px-4 text-muted-foreground">scfm</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.standardFlowScfm}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Mass Flow</td>
+                      <td className="py-3 px-4 text-muted-foreground">klb/hr</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.massFlowKlbhr}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium">Brake Power</td>
+                      <td className="py-3 px-4 text-muted-foreground">hp</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.brakePowerHp}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 px-4 font-medium">Driver Speed</td>
+                      <td className="py-3 px-4 text-muted-foreground">rpm</td>
+                      <td className="py-3 px-4 text-center font-mono">{outputParams.driverSpeed}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}

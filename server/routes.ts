@@ -1770,26 +1770,35 @@ Be professional, concise, and helpful. If asked about features not yet implement
   // Main Compressor Simulation endpoint
   app.post('/api/compressor-simulation', async (req: Request, res: Response) => {
     try {
-      const { rpms, temp, pressure, barometricPressure } = req.body;
+      const { rpm_percent, temp, pressure, barometricPressure, plant_condition } = req.body;
 
       // Validate required fields
-      if (rpms === undefined || temp === undefined || pressure === undefined || barometricPressure === undefined) {
+      if (rpm_percent === undefined || temp === undefined || pressure === undefined || barometricPressure === undefined) {
         return res.status(400).json({ message: "Missing required compressor input parameters" });
       }
 
-      // Prepare input for Python script
-      const pythonInput = {
-        rpms: parseFloat(rpms),
-        temp: parseFloat(temp),
-        pressure: parseFloat(pressure),
-        barometricPressure: parseFloat(barometricPressure)
-      };
+      const rpmPercentVal = parseFloat(rpm_percent);
+      const tempVal = parseFloat(temp);
+      const pressureVal = parseFloat(pressure);
+      const baroVal = parseFloat(barometricPressure);
 
       // Validate numeric inputs
-      if (isNaN(pythonInput.rpms) || isNaN(pythonInput.temp) || 
-          isNaN(pythonInput.pressure) || isNaN(pythonInput.barometricPressure)) {
+      if (isNaN(rpmPercentVal) || isNaN(tempVal) || isNaN(pressureVal) || isNaN(baroVal)) {
         return res.status(400).json({ message: "All inputs must be valid numbers" });
       }
+
+      // Validate plant condition
+      const validConditions = ["clean", "dirty"];
+      const condition = validConditions.includes(plant_condition) ? plant_condition : "clean";
+
+      // Prepare input for Python script
+      const pythonInput = {
+        rpm_percent: rpmPercentVal,
+        temp: tempVal,
+        pressure: pressureVal,
+        barometricPressure: baroVal,
+        plant_condition: condition
+      };
 
       // Run Python compressor calculator
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'compressor_calculator.py');
