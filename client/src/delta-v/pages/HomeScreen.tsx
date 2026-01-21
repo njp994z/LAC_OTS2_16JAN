@@ -114,6 +114,44 @@ const homescreenOptions = [
   { id: "L2", label: "L2 – Furnace Area" },
   { id: "L3", label: "L3 – Compressor Area" },
   { id: "L4", label: "L4-Converter" },
+  // L2_1500 SULFUR UTILITY
+  { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
+  { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
+  { id: "2.2", label: "2.2 L3_1520 Fin Fan Expansion Tank" },
+  { id: "2.3", label: "2.3 L3_1550 AP Cooling Tower" },
+  { id: "2.4", label: "2.4 L3_1560 Water Distribution" },
+  { id: "2.5", label: "2.5 L3_1560 Water Treatment" },
+  // L2_1500 SULFUR TREATMENT
+  { id: "L2_1500_SULFUR_TREATMENT", label: "L2_1500 SULFUR TREATMENT" },
+  { id: "3.1", label: "3.1 L3_1510 Sulfur Scrubber" },
+  { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
+  { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
+  // L2_1520 ACID
+  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
+  { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
+  { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
+  { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
+  { id: "4.4", label: "4.4 L3_1520 Interpass Tower" },
+  // L2_1540 SULFUR BURNER
+  { id: "L2_1540_SULFUR_BURNER", label: "L2_1540 SULFUR BURNER" },
+  { id: "5.1", label: "5.1 L3_1510 Sulfur Storage" },
+  { id: "5.2", label: "5.2 L3_1540 Compressor" },
+  { id: "5.3", label: "5.3 L3_1540 Sulfur Furnace" },
+  // L2_1500 GAS
+  { id: "L2_1500_GAS", label: "L2_1500 GAS" },
+  { id: "6.1", label: "6.1 L3_1540 Converter" },
+  { id: "6.2", label: "6.2 L3_1540 Deaerator" },
+  { id: "6.3", label: "6.3 L3_1540 Waste Heat Boiler" },
+  // L2_1560 TURBO GENERATOR
+  { id: "L2_1560_TURBO_GENERATOR", label: "L2_1560 TURBO GENERATOR" },
+  { id: "7.1", label: "7.1 L3_1560 Air Cooled Condenser" },
+  { id: "7.2", label: "7.2 L3_1560 Generator" },
+  { id: "7.3", label: "7.3 L3_1560 IP Aux Boiler" },
+  // L2_1500 PRODUCT ACID
+  { id: "L2_1500_PRODUCT_ACID", label: "L2_1500 PRODUCT ACID" },
+  { id: "8.1", label: "8.1 L3_1520 Dilution Pump Tank" },
+  { id: "8.2", label: "8.2 L3_1570 Product Acid" },
+  { id: "8.3", label: "8.3 L3_1570 Startup Acid" },
 ];
 
 const HomeScreen = () => {
