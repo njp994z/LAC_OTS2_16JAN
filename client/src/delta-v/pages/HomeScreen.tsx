@@ -2671,7 +2671,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
         {/* 6.1 L3_1540 Converter View */}
         {selectedScreen === "6.1 L3_1540 Converter" && (
-          <div className="relative bg-gray-900" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
+          <div className="relative bg-white" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
             {/* Lock/Unlock Button */}
             <div className="absolute top-4 right-4 z-50 flex gap-2">
               <Button
