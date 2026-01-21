@@ -2681,7 +2681,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className={`${isLocked61 ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-green-500/20 border-green-500 text-green-400'}`}
                 data-testid="button-lock-toggle-61"
               >
-                {isLocked61 ? <Lock className="w-4 h-4 mr-1" /> : <Unlock className="w-4 h-4 mr-1" />}
+                {isLocked61 ? <Lock className="w-4 h-4 mr-1" /> : <LockOpen className="w-4 h-4 mr-1" />}
                 {isLocked61 ? 'Locked' : 'Unlocked'}
               </Button>
             </div>
