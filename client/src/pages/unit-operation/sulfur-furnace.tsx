@@ -13,37 +13,56 @@ type SimulationMode = "static" | "dynamic";
 interface InputParams {
   airScfm: string;
   sulfurKlbHr: string;
+  sulfurTempF: string;
   timeStepSeconds: string;
 }
 
-interface OutputParams {
+interface StreamData {
   scfmSo2: string;
-  scfmO2Out: string;
+  scfmSo3: string;
+  scfmO2: string;
   scfmN2: string;
   scfmDryTotal: string;
   pctSo2: string;
+  pctSo3: string;
   pctO2: string;
   pctN2: string;
-  tOutF: string;
-  tOutC: string;
-  pOutInwc: string;
-  heatReleaseBtuHr: string;
-  massFlowLbHr: string;
+  tF: string;
+  pInwc: string;
 }
 
-const defaultOutputs: OutputParams = {
+interface OutputParams {
+  mode: string;
+  airScfmGf0: string;
+  sulfurKlbHr: string;
+  sulfurTempF: string;
+  heatReleaseBtuHr: string;
+  stream5: StreamData;
+  stream6: StreamData;
+}
+
+const defaultStream: StreamData = {
   scfmSo2: "---",
-  scfmO2Out: "---",
+  scfmSo3: "---",
+  scfmO2: "---",
   scfmN2: "---",
   scfmDryTotal: "---",
   pctSo2: "---",
+  pctSo3: "---",
   pctO2: "---",
   pctN2: "---",
-  tOutF: "---",
-  tOutC: "---",
-  pOutInwc: "---",
+  tF: "---",
+  pInwc: "---"
+};
+
+const defaultOutputs: OutputParams = {
+  mode: "---",
+  airScfmGf0: "---",
+  sulfurKlbHr: "---",
+  sulfurTempF: "---",
   heatReleaseBtuHr: "---",
-  massFlowLbHr: "---"
+  stream5: { ...defaultStream },
+  stream6: { ...defaultStream }
 };
 
 export default function SulfurFurnace() {
@@ -54,7 +73,8 @@ export default function SulfurFurnace() {
 
   const [inputParams, setInputParams] = useState<InputParams>({
     airScfm: "115301",
-    sulfurKlbHr: "67.68",
+    sulfurKlbHr: "71.04",
+    sulfurTempF: "275",
     timeStepSeconds: "60"
   });
 
@@ -66,10 +86,24 @@ export default function SulfurFurnace() {
 
   const formatValue = (value: number | null | undefined, decimals: number = 2): string => {
     if (value === null || value === undefined || isNaN(value)) return "---";
-    if (Math.abs(value) >= 1000000) return value.toExponential(2);
-    if (Math.abs(value) >= 10000) return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (Math.abs(value) >= 1000000) return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (Math.abs(value) >= 1000) return value.toLocaleString('en-US', { maximumFractionDigits: decimals });
     return value.toFixed(decimals);
   };
+
+  const formatStream = (stream: any): StreamData => ({
+    scfmSo2: formatValue(stream?.scfm_so2, 0),
+    scfmSo3: formatValue(stream?.scfm_so3, 0),
+    scfmO2: formatValue(stream?.scfm_o2, 0),
+    scfmN2: formatValue(stream?.scfm_n2, 0),
+    scfmDryTotal: formatValue(stream?.scfm_dry_total, 0),
+    pctSo2: formatValue(stream?.pct_so2, 2),
+    pctSo3: formatValue(stream?.pct_so3, 2),
+    pctO2: formatValue(stream?.pct_o2, 2),
+    pctN2: formatValue(stream?.pct_n2, 2),
+    tF: formatValue(stream?.T_f, 0),
+    pInwc: formatValue(stream?.P_inwc, 0)
+  });
 
   const runSimulation = async () => {
     setIsRunningSimulation(true);
@@ -78,6 +112,7 @@ export default function SulfurFurnace() {
       const response = await apiRequest("POST", "/api/sulfur-furnace-simulation", {
         air_scfm: parseFloat(inputParams.airScfm),
         sulfur_klb_hr: parseFloat(inputParams.sulfurKlbHr),
+        sulfur_temp_f: parseFloat(inputParams.sulfurTempF),
         mode: simulationMode,
         time_step_seconds: parseFloat(inputParams.timeStepSeconds),
         previous_temp: previousTemp
@@ -92,18 +127,13 @@ export default function SulfurFurnace() {
       const r = data.results;
 
       setOutputParams({
-        scfmSo2: formatValue(r.scfm_so2, 0),
-        scfmO2Out: formatValue(r.scfm_o2_out, 0),
-        scfmN2: formatValue(r.scfm_n2, 0),
-        scfmDryTotal: formatValue(r.scfm_dry_total, 0),
-        pctSo2: formatValue(r.pct_so2, 2),
-        pctO2: formatValue(r.pct_o2, 2),
-        pctN2: formatValue(r.pct_n2, 2),
-        tOutF: formatValue(r.T_out_f, 0),
-        tOutC: formatValue(r.T_out_c, 0),
-        pOutInwc: formatValue(r.P_out_inwc, 0),
+        mode: r.mode || "Static",
+        airScfmGf0: formatValue(r.air_scfm_gf0, 0),
+        sulfurKlbHr: formatValue(r.sulfur_klb_hr, 2),
+        sulfurTempF: formatValue(r.sulfur_temp_f, 1),
         heatReleaseBtuHr: formatValue(r.heat_release_btu_hr, 0),
-        massFlowLbHr: formatValue(r.mass_flow_lb_hr, 0)
+        stream5: formatStream(r.stream5),
+        stream6: formatStream(r.stream6)
       });
 
       if (simulationMode === "dynamic" && r.new_temp) {
@@ -134,6 +164,62 @@ export default function SulfurFurnace() {
     });
   };
 
+  const StreamTable = ({ title, stream, testIdPrefix }: { title: string; stream: StreamData; testIdPrefix: string }) => (
+    <Card className="mb-4" data-testid={`card-${testIdPrefix}`}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg" data-testid={`text-${testIdPrefix}-title`}>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" data-testid={`table-${testIdPrefix}`}>
+            <thead>
+              <tr className="border-b" data-testid={`row-${testIdPrefix}-header`}>
+                <th className="text-left py-2 px-3 font-semibold">Component</th>
+                <th className="text-left py-2 px-3 font-semibold">Flow (scfm)</th>
+                <th className="text-left py-2 px-3 font-semibold">Vol %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b" data-testid={`row-${testIdPrefix}-so2`}>
+                <td className="py-2 px-3">SO₂</td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-scfm-so2`}>{stream.scfmSo2}</span></td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-pct-so2`}>{stream.pctSo2}%</span></td>
+              </tr>
+              <tr className="border-b" data-testid={`row-${testIdPrefix}-so3`}>
+                <td className="py-2 px-3">SO₃</td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-scfm-so3`}>{stream.scfmSo3}</span></td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-pct-so3`}>{stream.pctSo3}%</span></td>
+              </tr>
+              <tr className="border-b" data-testid={`row-${testIdPrefix}-o2`}>
+                <td className="py-2 px-3">O₂</td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-scfm-o2`}>{stream.scfmO2}</span></td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-pct-o2`}>{stream.pctO2}%</span></td>
+              </tr>
+              <tr className="border-b" data-testid={`row-${testIdPrefix}-n2`}>
+                <td className="py-2 px-3">N₂</td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-scfm-n2`}>{stream.scfmN2}</span></td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-pct-n2`}>{stream.pctN2}%</span></td>
+              </tr>
+              <tr className="border-b bg-muted/30" data-testid={`row-${testIdPrefix}-dry-total`}>
+                <td className="py-2 px-3 font-medium">Dry Total</td>
+                <td className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-dry-total`}>{stream.scfmDryTotal}</span></td>
+                <td className="py-2 px-3">-</td>
+              </tr>
+              <tr className="border-b" data-testid={`row-${testIdPrefix}-temp`}>
+                <td className="py-2 px-3 font-medium">Temperature</td>
+                <td colSpan={2} className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-temp`}>{stream.tF} °F</span></td>
+              </tr>
+              <tr data-testid={`row-${testIdPrefix}-pressure`}>
+                <td className="py-2 px-3 font-medium">Pressure</td>
+                <td colSpan={2} className="py-2 px-3 font-mono"><span className="bg-muted px-2 py-0.5 rounded" data-testid={`value-${testIdPrefix}-pressure`}>{stream.pInwc} in. w.c.</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-background" data-testid="page-sulfur-furnace">
       <header className="border-b bg-card" data-testid="header-sulfur-furnace">
@@ -147,7 +233,7 @@ export default function SulfurFurnace() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-4" data-testid="text-simulator-title">Sulfur Furnace Simulator</h2>
           <div className="flex justify-center gap-4 mb-6">
@@ -205,9 +291,19 @@ export default function SulfurFurnace() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground" data-testid="label-sulfur-temp">Sulfur Inlet Temp (°F)</label>
+                <Input
+                  type="text"
+                  value={inputParams.sulfurTempF}
+                  onChange={(e) => handleInputChange("sulfurTempF", e.target.value)}
+                  data-testid="input-sulfur-temp-f"
+                />
+              </div>
+
               {simulationMode === "dynamic" && (
                 <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground" data-testid="label-time-step">Time Step (seconds)</label>
+                  <label className="text-sm text-muted-foreground" data-testid="label-time-step">Time step (s) - dynamic only</label>
                   <Input
                     type="text"
                     value={inputParams.timeStepSeconds}
@@ -245,106 +341,47 @@ export default function SulfurFurnace() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-simulation-results">
+        <Card className="mb-6" data-testid="card-summary">
           <CardHeader>
-            <CardTitle data-testid="text-results-title">Simulation Results</CardTitle>
+            <CardTitle data-testid="text-summary-title">Simulation Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm" data-testid="table-results">
-                <thead>
-                  <tr className="border-b" data-testid="row-results-header">
-                    <th className="text-left py-3 px-4 font-semibold" data-testid="header-parameter">Parameter</th>
-                    <th className="text-left py-3 px-4 font-semibold" data-testid="header-value">Value</th>
-                    <th className="text-left py-3 px-4 font-semibold" data-testid="header-units">Units</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b" data-testid="row-mode">
-                    <td className="py-3 px-4 font-medium" data-testid="label-mode">Mode</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-mode">
-                      <span className="bg-muted px-3 py-1 rounded">{simulationMode === "static" ? "Static" : "Dynamic"}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-mode">-</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-so2-produced">
-                    <td className="py-3 px-4 font-medium" data-testid="label-so2-produced">SO₂ Produced</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-so2-produced">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.scfmSo2}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-so2-produced">scfm</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-dry-gas-total">
-                    <td className="py-3 px-4 font-medium" data-testid="label-dry-gas-total">Dry Gas Outlet Total</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-dry-gas-total">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.scfmDryTotal}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-dry-gas-total">scfm</td>
-                  </tr>
-                  <tr className="border-b bg-muted/30" data-testid="row-composition-header">
-                    <td colSpan={3} className="py-2 px-4 font-semibold" data-testid="label-composition-header">Dry Gas Composition (vol%)</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-pct-so2">
-                    <td className="py-3 px-4 pl-8" data-testid="label-pct-so2">SO₂</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-pct-so2">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.pctSo2}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-pct-so2">%</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-pct-o2">
-                    <td className="py-3 px-4 pl-8" data-testid="label-pct-o2">O₂</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-pct-o2">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.pctO2}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-pct-o2">%</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-pct-n2">
-                    <td className="py-3 px-4 pl-8" data-testid="label-pct-n2">N₂</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-pct-n2">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.pctN2}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-pct-n2">%</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-outlet-temp">
-                    <td className="py-3 px-4 font-medium" data-testid="label-outlet-temp">Furnace Outlet Temperature</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-outlet-temp">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.tOutF}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-outlet-temp">°F</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-outlet-pressure">
-                    <td className="py-3 px-4 font-medium" data-testid="label-outlet-pressure">Estimated Outlet Pressure</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-outlet-pressure">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.pOutInwc}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-outlet-pressure">in. w.c.</td>
-                  </tr>
-                  <tr className="border-b" data-testid="row-heat-release">
-                    <td className="py-3 px-4 font-medium" data-testid="label-heat-release">Heat Release</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-heat-release">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.heatReleaseBtuHr}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-heat-release">BTU/hr</td>
-                  </tr>
-                  <tr data-testid="row-mass-flow">
-                    <td className="py-3 px-4 font-medium" data-testid="label-mass-flow">Total Mass Flow</td>
-                    <td className="py-3 px-4 font-mono" data-testid="value-mass-flow">
-                      <span className="bg-muted px-3 py-1 rounded">{outputParams.massFlowLbHr}</span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground" data-testid="unit-mass-flow">lb/hr</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-6 p-4 bg-muted/50 rounded-md" data-testid="div-notes">
-              <p className="text-sm text-muted-foreground" data-testid="text-notes">
-                <strong>Note:</strong> Simplified model — assumes complete S → SO₂ conversion, 
-                adiabatic operation, constant average Cp, no minor SO₃.
-              </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-3 bg-muted/50 rounded-md" data-testid="summary-mode">
+                <div className="text-xs text-muted-foreground">Mode</div>
+                <div className="font-semibold" data-testid="value-summary-mode">{outputParams.mode}</div>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-md" data-testid="summary-air">
+                <div className="text-xs text-muted-foreground">Air Flow (GF0)</div>
+                <div className="font-semibold" data-testid="value-summary-air">{outputParams.airScfmGf0} scfm</div>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-md" data-testid="summary-sulfur">
+                <div className="text-xs text-muted-foreground">Sulfur Feed</div>
+                <div className="font-semibold" data-testid="value-summary-sulfur">{outputParams.sulfurKlbHr} Klb/hr</div>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-md" data-testid="summary-sulfur-temp">
+                <div className="text-xs text-muted-foreground">Sulfur Inlet Temp</div>
+                <div className="font-semibold" data-testid="value-summary-sulfur-temp">{outputParams.sulfurTempF} °F</div>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <StreamTable title="Stream 5 – Furnace Outlet" stream={outputParams.stream5} testIdPrefix="stream5" />
+          <StreamTable title="Stream 6 – Downstream Approximation" stream={outputParams.stream6} testIdPrefix="stream6" />
+        </div>
+
+        <div className="mt-6 p-4 bg-muted/50 rounded-md" data-testid="div-notes">
+          <p className="text-sm text-muted-foreground" data-testid="text-notes">
+            <strong>Notes:</strong>
+          </p>
+          <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
+            <li>Assumes complete S → SO₂ combustion with ~1.8% SO₃ formation</li>
+            <li>Temperature calibrated to match plant data (~2073°F at base case)</li>
+            <li>Stream 6 is an approximation with minor flow reduction</li>
+          </ul>
+        </div>
       </main>
     </div>
   );

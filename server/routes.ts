@@ -1858,7 +1858,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   // Sulfur Furnace Simulation endpoint
   app.post('/api/sulfur-furnace-simulation', async (req: Request, res: Response) => {
     try {
-      const { air_scfm, sulfur_klb_hr, mode, time_step_seconds, previous_temp } = req.body;
+      const { air_scfm, sulfur_klb_hr, sulfur_temp_f, mode, time_step_seconds, previous_temp } = req.body;
 
       // Validate required fields
       if (air_scfm === undefined || sulfur_klb_hr === undefined) {
@@ -1867,6 +1867,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       const airVal = parseFloat(air_scfm);
       const sulfurVal = parseFloat(sulfur_klb_hr);
+      const sulfurTempVal = parseFloat(sulfur_temp_f) || 275.0;
       const timeStepVal = parseFloat(time_step_seconds) || 60.0;
       const prevTempVal = parseFloat(previous_temp) || 2000.0;
 
@@ -1883,6 +1884,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonInput = {
         air_scfm: airVal,
         sulfur_klb_hr: sulfurVal,
+        sulfur_temp_f: sulfurTempVal,
         mode: simMode,
         time_step_seconds: timeStepVal,
         previous_temp: prevTempVal
