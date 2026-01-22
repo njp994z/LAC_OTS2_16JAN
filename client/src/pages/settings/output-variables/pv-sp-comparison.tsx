@@ -31,24 +31,24 @@ export default function PVSPComparison() {
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
               <GitCompare className="w-8 h-8 text-primary" />
-              <h1 className="text-3xl font-semibold text-foreground">PV vs. SP Comparison with Error Values</h1>
+              <h1 className="text-3xl font-semibold text-foreground">Static Heat & Material Balances</h1>
             </div>
             <p className="text-base text-muted-foreground leading-relaxed max-w-5xl">
-              Compare process variables against their setpoints with calculated error values.
+              Calculate and view steady-state heat and material balance results across the plant. This analysis provides mass flow rates, energy transfers, and thermodynamic properties at each process unit for design verification and optimization.
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>PV vs. SP Comparison</CardTitle>
+              <CardTitle>Static Heat & Material Balances</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
                 <GitCompare className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  This section will compare process variables against their setpoints, showing error values, 
-                  deviation trends, and controller performance metrics for optimization.
+                  This section will display steady-state heat and material balance calculations, showing mass flow rates, 
+                  energy transfers, and thermodynamic properties at each process unit.
                 </p>
               </div>
             </CardContent>
