@@ -187,6 +187,8 @@ import MainCompressor from "@/pages/unit-operation/main-compressor";
 import MainCompressorPythonCode from "@/pages/unit-operation/main-compressor-python-code";
 import MainCompressorTsxCode from "@/pages/unit-operation/main-compressor-tsx-code";
 import InletAirFilter from "@/pages/unit-operation/inlet-air-filter";
+import InletAirFilterGuiCode from "@/pages/unit-operation/inlet-air-filter-gui-code";
+import InletAirFilterSimCode from "@/pages/unit-operation/inlet-air-filter-sim-code";
 import AcidHydraulics from "@/pages/unit-operation/acid-hydraulics";
 import SulfurControlHydraulics from "@/pages/unit-operation/sulfur-control-hydraulics";
 import SulfurControlPythonCodeGui from "@/pages/unit-operation/sulfur-control-python-code-gui";
@@ -299,6 +301,8 @@ function Router() {
       <Route path="/unit-operation/main-compressor/tsx-code" component={MainCompressorTsxCode} />
       <Route path="/unit-operation/main-compressor" component={MainCompressor} />
       <Route path="/unit-operation/inlet-air-filter" component={InletAirFilter} />
+      <Route path="/unit-operation/inlet-air-filter/gui-code" component={InletAirFilterGuiCode} />
+      <Route path="/unit-operation/inlet-air-filter/simulation-code" component={InletAirFilterSimCode} />
       <Route path="/unit-operation/acid-hydraulics/absorbing-tower-circuit" component={AbsorbingTowerCircuit} />
       <Route path="/unit-operation/acid-hydraulics/drying-tower-circuit/python-code" component={DryingTowerCircuitPythonCode} />
       <Route path="/unit-operation/sulfur-control-hydraulics" component={SulfurControlHydraulics} />
