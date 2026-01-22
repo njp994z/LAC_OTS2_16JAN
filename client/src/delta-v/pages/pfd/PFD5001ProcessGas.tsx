@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, ChevronDown, Play } from "lucide-react";
+import { ArrowLeft, FileText, ChevronDown, Play, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -170,6 +171,15 @@ export default function PFD5001ProcessGas() {
                 >
                   <Play className="w-4 h-4" />
                   Simulate
+                </Button>
+                <Button
+                  asChild
+                  className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
+                >
+                  <Link href="/settings/output-variables/process-variables" data-testid="link-initial-pv-settings">
+                    <Settings className="w-4 h-4" />
+                    Initial PV Settings
+                  </Link>
                 </Button>
               </div>
             </div>
