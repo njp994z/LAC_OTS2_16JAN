@@ -1,8 +1,22 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, ChevronDown, Play } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PFDNavigation } from "../../components/PFDNavigation";
 import processGasDiagram from "@assets/image_1769045383009.png";
+
+const pvInputCases = [
+  { id: "case1", label: "Case 1", description: "PV_2480 STPD - Clean" },
+  { id: "case2", label: "Case 2", description: "PV_2480 STPD - Dirty" },
+  { id: "case3", label: "Case 3", description: "PV_1100 STPD - Clean" },
+  { id: "case4", label: "Case 4", description: "PV_1100 STPD - Dirty" },
+];
 
 const streamDataPart1 = {
   headers: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"],
@@ -76,6 +90,11 @@ export default function PFD5001ProcessGas() {
   const id = "5001";
   const documentNumber = "1540-PR-PFD-0000-EXP-5001";
   const title = "PROCESS GAS";
+  const [selectedCase, setSelectedCase] = useState(pvInputCases[0]);
+
+  const handleSimulate = () => {
+    console.log("Running simulation with:", selectedCase.id);
+  };
 
   return (
     <div
@@ -112,7 +131,45 @@ export default function PFD5001ProcessGas() {
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold" data-testid="text-section-streams-1-14">Stream Data - Streams 1-14</h2>
+            <div className="flex items-center gap-4 flex-wrap">
+              <h2 className="text-lg font-semibold" data-testid="text-section-streams-1-14">Stream Data - Streams 1-14</h2>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
+                      data-testid="dropdown-initial-pv-inputs"
+                    >
+                      Initial PV Inputs
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" data-testid="dropdown-content-pv-inputs">
+                    {pvInputCases.map((pvCase) => (
+                      <DropdownMenuItem
+                        key={pvCase.id}
+                        onClick={() => setSelectedCase(pvCase)}
+                        className={selectedCase.id === pvCase.id ? "bg-accent" : ""}
+                        data-testid={`dropdown-item-${pvCase.id}`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{pvCase.label}</span>
+                          <span className="text-xs text-muted-foreground">{pvCase.description}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
+                  onClick={handleSimulate}
+                  data-testid="button-simulate"
+                >
+                  <Play className="w-4 h-4" />
+                  Simulate
+                </Button>
+              </div>
+            </div>
             <div className="bg-card rounded-md border border-border p-2">
               <StreamTable headers={streamDataPart1.headers} rows={streamDataPart1.rows} title="streams-1-14" />
             </div>
