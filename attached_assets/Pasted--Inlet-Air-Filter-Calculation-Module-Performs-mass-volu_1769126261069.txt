@@ -1,0 +1,101 @@
+"""
+Inlet Air Filter Calculation Module
+====================================
+Performs mass & volumetric balance for inlet air filter in sulfuric acid plant context.
+Assumes essentially clean ambient air with only humidity as non-negligible component.
+Filter removes dust/particles but does not change gas composition significantly.
+"""
+
+from dataclasses import dataclass
+import math
+from typing import Tuple
+
+from .inlet_air_filter_gui import OperatingConditions, StreamData   # adjust import path if needed
+
+
+def calculate_inlet_air_filter(
+    cond: OperatingConditions
+) -> Tuple[StreamData, StreamData]:
+    """
+    Calculate inlet and outlet stream compositions and conditions for the inlet air filter.
+    
+    Assumptions:
+    •   Inlet air is clean ambient air (SO₂, SO₃, H₂SO₄ ≈ 0)
+    •   Filter removes particulate matter but does not chemically react with or adsorb gases
+    •   Pressure drop is applied across the filter
+    •   Temperature remains essentially constant (adiabatic filter, no heat exchange)
+    •   Humidity is given in grains per lb of dry air
+    
+    Returns:
+        Tuple[StreamData, StreamData]: (inlet_stream, outlet_stream)
+    """
+    inlet = StreamData()
+    outlet = StreamData()
+
+    # ───────────────────────────────────────────────
+    # 1. Input validation & basic derived quantities
+    # ───────────────────────────────────────────────
+    if cond.dry_air_flow_scfm <= 0:
+        raise ValueError("Dry air flow must be positive")
+
+    Q_dry_scfm = cond.dry_air_flow_scfm                # dry air @ standard conditions
+    humidity_gr_lb = cond.humidity_gr_lb               # grains H₂O / lb dry air
+
+    # Convert humidity to lb H₂O / lb dry air
+    lb_H2O_per_lb_dry = humidity_gr_lb / 7000.0        # 7000 gr = 1 lb
+
+    # Molar masses
+    MW_DRY_AIR = 28.96      # lb/mol (standard dry air)
+    MW_H2O     = 18.015     # lb/mol
+
+    # Moles H₂O per mole dry air
+    mol_H2O_per_mol_dry = lb_H2O_per_lb_dry * (MW_DRY_AIR / MW_H2O)
+
+    # Total moles per mole of dry air
+    total_mol_per_mol_dry = 1.0 + mol_H2O_per_mol_dry
+
+    # Mole fraction water vapor
+    y_H2O = mol_H2O_per_mol_dry / total_mol_per_mol_dry
+
+    # Dry air volumetric flow → total (wet) volumetric flow @ SC
+    Q_total_scfm = Q_dry_scfm * total_mol_per_mol_dry
+
+    # ───────────────────────────────────────────────
+    # 2. Inlet stream (before filter)
+    # ───────────────────────────────────────────────
+    inlet.SO2_scfm    = 0.0
+    inlet.SO3_scfm    = 0.0
+    inlet.H2SO4_scfm  = 0.0
+
+    inlet.O2_scfm     = Q_dry_scfm * 0.2095           # ≈21% vol O₂ (dry basis)
+    inlet.N2_scfm     = Q_dry_scfm * 0.7808           # ≈78% vol N₂ + Ar (dry basis)
+    inlet.H2O_scfm    = Q_total_scfm * y_H2O
+
+    inlet.total_scfm  = Q_total_scfm
+
+    # Pressure — inlet is essentially atmospheric
+    inlet.pressure_inwc = cond.barometric_atm * 407.19   # 1 atm ≈ 407.19 in wc (39.2 °F water column)
+
+    inlet.temperature_F = cond.inlet_temp_F
+
+    # ───────────────────────────────────────────────
+    # 3. Outlet stream (after filter)
+    # ───────────────────────────────────────────────
+    # Composition remains virtually identical (clean filter, no reaction)
+    outlet.SO2_scfm   = inlet.SO2_scfm
+    outlet.SO3_scfm   = inlet.SO3_scfm
+    outlet.O2_scfm    = inlet.O2_scfm
+    outlet.N2_scfm    = inlet.N2_scfm
+    outlet.H2O_scfm   = inlet.H2O_scfm
+    outlet.H2SO4_scfm = inlet.H2SO4_scfm
+
+    outlet.total_scfm = inlet.total_scfm
+
+    # Pressure drop applied
+    dp_inwc = cond.filter_dp_inwc
+    outlet.pressure_inwc = inlet.pressure_inwc - dp_inwc
+
+    # Temperature — assume no significant change across filter
+    outlet.temperature_F = inlet.temperature_F
+
+    return inlet, outlet
