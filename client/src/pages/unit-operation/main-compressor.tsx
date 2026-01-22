@@ -466,11 +466,13 @@ export default function MainCompressor() {
                       <th className="text-left py-3 px-4 w-20" data-testid="header-static-units">Units</th>
                       <th className="text-center py-3 px-4" data-testid="header-inlet-stream">
                         <div className="text-blue-400" data-testid="text-inlet-title">Compressor Inlet</div>
+                        <div className="inline-block bg-muted px-3 py-1 rounded text-sm font-medium my-1" data-testid="text-inlet-stream">Stream # 3</div>
                         <div className="text-xs text-muted-foreground" data-testid="text-inlet-tag">1540-FI-4070</div>
                         <div className="text-xs text-muted-foreground" data-testid="text-inlet-gc">GC0</div>
                       </th>
                       <th className="text-center py-3 px-4" data-testid="header-outlet-stream">
                         <div className="text-blue-400" data-testid="text-outlet-title">Compressor Outlet</div>
+                        <div className="inline-block bg-muted px-3 py-1 rounded text-sm font-medium my-1" data-testid="text-outlet-stream">Stream # 4</div>
                         <div className="text-xs text-muted-foreground" data-testid="text-outlet-tag">1540-PI-4002</div>
                         <div className="text-xs text-muted-foreground" data-testid="text-outlet-gc">GC1</div>
                       </th>
