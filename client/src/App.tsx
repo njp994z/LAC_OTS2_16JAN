@@ -135,6 +135,23 @@ import TempSensor4827Main from "@/delta-v/pages/TempSensor4827Main";
 import TempSensor4827Faceplate3C from "@/delta-v/pages/TempSensor4827Faceplate3C";
 import TempSensor4827Faceplate3D from "@/delta-v/pages/TempSensor4827Faceplate3D";
 import TempSensor4827Faceplate3F from "@/delta-v/pages/TempSensor4827Faceplate3F";
+import {
+  PFD5001ProcessGas,
+  PFD5002StrongAcid,
+  PFD5003TailgasTreatment,
+  PFD5004BFWAndSteam,
+  PFD5005CoolingWater,
+  PFD5010ProductAcid,
+  PFD5012Sulfur,
+  PFD5014FinFanCoolingSystem,
+  PFD5016AcidPlantCoolingTower,
+  PFD5018WaterTreatment,
+  PFD5020LPAuxBoilerAndTurbine,
+  PFD5026CausticUnloadingAndStorage,
+  PFD5028ScrubberEffluent,
+  PFD5030SulfurVaporScrubber,
+  PFD5032Propane,
+} from "@/delta-v/pages/pfd";
 import Login from "@/pages/login";
 import Demo from "@/pages/demo";
 import Settings from "@/pages/settings";
@@ -331,6 +348,23 @@ function Router() {
       
       {/* Delta-V Faceplate Routes - Main Entry Points */}
       <Route path="/delta-v" component={HomeScreen} />
+      
+      {/* Delta-V PFD Routes */}
+      <Route path="/delta-v/pfd/5001-process-gas" component={PFD5001ProcessGas} />
+      <Route path="/delta-v/pfd/5002-strong-acid" component={PFD5002StrongAcid} />
+      <Route path="/delta-v/pfd/5003-tailgas-treatment" component={PFD5003TailgasTreatment} />
+      <Route path="/delta-v/pfd/5004-bfw-and-steam" component={PFD5004BFWAndSteam} />
+      <Route path="/delta-v/pfd/5005-cooling-water" component={PFD5005CoolingWater} />
+      <Route path="/delta-v/pfd/5010-product-acid" component={PFD5010ProductAcid} />
+      <Route path="/delta-v/pfd/5012-sulfur" component={PFD5012Sulfur} />
+      <Route path="/delta-v/pfd/5014-fin-fan-cooling-system" component={PFD5014FinFanCoolingSystem} />
+      <Route path="/delta-v/pfd/5016-acid-plant-cooling-tower" component={PFD5016AcidPlantCoolingTower} />
+      <Route path="/delta-v/pfd/5018-water-treatment" component={PFD5018WaterTreatment} />
+      <Route path="/delta-v/pfd/5020-lp-aux-boiler-and-turbine" component={PFD5020LPAuxBoilerAndTurbine} />
+      <Route path="/delta-v/pfd/5026-caustic-unloading-and-storage" component={PFD5026CausticUnloadingAndStorage} />
+      <Route path="/delta-v/pfd/5028-scrubber-effluent" component={PFD5028ScrubberEffluent} />
+      <Route path="/delta-v/pfd/5030-sulfur-vapor-scrubber" component={PFD5030SulfurVaporScrubber} />
+      <Route path="/delta-v/pfd/5032-propane" component={PFD5032Propane} />
       <Route path="/settings/controller-outputs/faceplates/home-screen" component={HomeScreen} />
       <Route path="/settings/controller-outputs/faceplates/rotating-equipment" component={EquipmentFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/controller-blocks" component={ControllerFaceplates} />

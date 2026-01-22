@@ -52,6 +52,7 @@ import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta
 import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
+import { PFDNavigation } from "@/delta-v/components/PFDNavigation";
 import { VerticalLine } from "@/delta-v/components/VerticalLine";
 import {
   Dialog,
@@ -4184,6 +4185,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           />
         </DialogContent>
       </Dialog>
+      
+      {/* PFD Navigation */}
+      <PFDNavigation position="bottom-right" />
   </div>
   );
 };
