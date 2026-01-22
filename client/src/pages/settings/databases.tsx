@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Database, FlaskConical, Atom, Factory, Sliders, ClipboardList, Table2, Shield, Gauge, DollarSign } from "lucide-react";
+import { ArrowLeft, Database, FlaskConical, Atom, Factory, Sliders, ClipboardList, Shield, Gauge, DollarSign } from "lucide-react";
 
 interface DatabaseCategory {
   id: string;
@@ -40,14 +40,7 @@ const databaseCategories: DatabaseCategory[] = [
     icon: FlaskConical,
     path: "/settings/chemical-properties"
   },
-  {
-    id: "output-variables",
-    title: "Simulation Variables",
-    description: "View and customize the display of calculated process outputs including conversion rates, heat duties, mass balances, and equipment performance metrics.",
-    icon: Table2,
-    path: "/settings/output-variables"
-  },
-  {
+    {
     id: "equipment-sizes",
     title: "Acid Plant Equipment Sizes",
     description: "Define equipment dimensions and capacities for converters, heat exchangers, absorption towers, pumps, and other major process units in the simulation.",
