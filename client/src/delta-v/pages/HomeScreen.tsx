@@ -53,6 +53,7 @@ import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/se
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
 import { PFDNavigation } from "@/delta-v/components/PFDNavigation";
+import { pfdConfigs } from "@/delta-v/config/pfdConfig";
 import { VerticalLine } from "@/delta-v/components/VerticalLine";
 import {
   Dialog,
@@ -82,6 +83,7 @@ import {
   ArrowUp,
   Shapes,
   Trash2,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -2163,6 +2165,46 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               Start
             </Button>
           )}
+
+          {/* PFDs Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-blue-600 border border-blue-600 text-white gap-2"
+                data-testid="toolbar-pfd-dropdown"
+              >
+                <FileText className="h-4 w-4" />
+                PFDs
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-72 max-h-[70vh] overflow-y-auto">
+              <div className="text-xs font-semibold text-muted-foreground px-2 py-1">
+                PROCESS FLOW DIAGRAMS
+              </div>
+              <DropdownMenuSeparator />
+              {pfdConfigs.map((pfd) => (
+                <DropdownMenuItem key={pfd.id} asChild>
+                  <Link
+                    href={pfd.route}
+                    data-testid={`toolbar-pfd-link-${pfd.id}`}
+                  >
+                    <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <div className="flex flex-col items-start min-w-0 gap-0">
+                      <span className="text-[10px] text-muted-foreground font-mono truncate w-full leading-tight">
+                        {pfd.documentNumber}
+                      </span>
+                      <span className="text-xs font-medium truncate w-full leading-tight">
+                        {pfd.title}
+                      </span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Right side - Date, Time, User, Window controls */}
