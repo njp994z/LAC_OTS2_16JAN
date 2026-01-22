@@ -290,7 +290,8 @@ const HandController4030Faceplate3E = () => {
                         <TableCell>
                           <Switch 
                             checked={config.TRANSPARENT_BG} 
-                            onCheckedChange={(v) => updateConfigField('TRANSPARENT_BG', v)} 
+                            onCheckedChange={(v) => updateConfigField('TRANSPARENT_BG', v)}
+                            data-testid="switch-transparent-bg"
                           />
                         </TableCell>
                       </TableRow>
