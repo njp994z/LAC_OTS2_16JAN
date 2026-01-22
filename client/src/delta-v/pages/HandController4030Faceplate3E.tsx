@@ -220,7 +220,11 @@ const HandController4030Faceplate3E = () => {
               </h1>
               <p className="text-muted-foreground">Faceplate 3E - All inputs for Primary & Secondary Controllers</p>
             </div>
-            <Button onClick={handleApply} className="bg-cyan-600 hover:bg-cyan-500">
+            <Button 
+              onClick={handleApply} 
+              className="bg-cyan-600 hover:bg-cyan-500"
+              data-testid="button-apply-changes"
+            >
               <Save className="mr-2 h-4 w-4" />
               Apply Changes
             </Button>

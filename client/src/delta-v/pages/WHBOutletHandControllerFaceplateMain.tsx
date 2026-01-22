@@ -626,6 +626,7 @@ const WHBOutletHandControllerFaceplateMain = () => {
             </p>
             <ControllerFaceplate 
               data={controllerData}
+              controllerId="1540-H-4283"
               onSelect={() => console.log('Faceplate selected:', controllerData.instrumentTag)}
               isTransparent={config.TRANSPARENT_BG}
             />
