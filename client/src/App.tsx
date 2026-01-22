@@ -227,6 +227,7 @@ import SetPointVariables from "@/pages/settings/output-variables/set-point-varia
 import ManipulatedVariables from "@/pages/settings/output-variables/manipulated-variables";
 import ProcessVariables from "@/pages/settings/output-variables/process-variables";
 import PVSPComparison from "@/pages/settings/output-variables/pv-sp-comparison";
+import StaticHeatMaterialBalances from "@/pages/settings/static-heat-material-balances";
 import EquipmentSizesSettings from "@/pages/settings/equipment-sizes";
 import EquipmentList from "@/pages/settings/equipment-list";
 import InterlockLogic from "@/pages/settings/interlock-logic";
@@ -336,6 +337,7 @@ function Router() {
       <Route path="/settings/output-variables/manipulated-variables" component={ManipulatedVariables} />
       <Route path="/settings/output-variables/process-variables" component={ProcessVariables} />
       <Route path="/settings/output-variables/pv-sp-comparison" component={PVSPComparison} />
+      <Route path="/settings/static-heat-material-balances" component={StaticHeatMaterialBalances} />
       <Route path="/settings/equipment-sizes" component={EquipmentSizesSettings} />
       <Route path="/settings/equipment-sizes/equipment-list" component={EquipmentList} />
       <Route path="/settings/interlock-logic/logic-list" component={LogicList} />

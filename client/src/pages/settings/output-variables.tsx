@@ -32,12 +32,12 @@ export default function OutputVariables() {
       testId: "button-process-variables"
     },
     {
-      id: "pv-sp-comparison",
+      id: "static-heat-material-balances",
       title: "Static Heat & Material Balances",
       description: "Calculate and view steady-state heat and material balance results across the plant. This analysis provides mass flow rates, energy transfers, and thermodynamic properties at each process unit for design verification and optimization.",
       icon: GitCompare,
-      path: "/settings/output-variables/pv-sp-comparison",
-      testId: "button-pv-sp-comparison"
+      path: "/settings/static-heat-material-balances",
+      testId: "button-static-heat-material-balances"
     }
   ];
 
