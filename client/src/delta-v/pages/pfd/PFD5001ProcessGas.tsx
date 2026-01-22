@@ -144,7 +144,7 @@ export default function PFD5001ProcessGas() {
                       className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
                       data-testid="dropdown-initial-pv-inputs"
                     >
-                      Initial PV Inputs
+                      {selectedCase.label}: {selectedCase.description}
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
