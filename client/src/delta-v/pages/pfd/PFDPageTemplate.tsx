@@ -1,4 +1,3 @@
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText } from "lucide-react";
 import { PFDNavigation } from "../../components/PFDNavigation";
@@ -20,11 +19,15 @@ export function PFDPageTemplate({
       data-testid={`pfd-page-${id}`}
     >
       <header className="bg-card border-b border-border px-4 py-3 flex items-center gap-4">
-        <Button asChild variant="ghost" size="sm" className="gap-2">
-          <Link href="/delta-v" data-testid="link-back-home">
-            <ArrowLeft className="w-4 h-4" />
-            Home
-          </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+          onClick={() => window.history.back()}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
         </Button>
         <div className="flex items-center gap-3">
           <FileText className="w-5 h-5 text-muted-foreground" />
