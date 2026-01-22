@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Blocks, Activity, Palette, Database } from "lucide-react";
+import { ArrowLeft, Blocks, Activity, Palette, Database, Table2 } from "lucide-react";
 import { EngineIcon } from "@/components/icons/EngineIcon";
 
 interface SettingCategory {
@@ -47,6 +47,13 @@ const settingCategories: SettingCategory[] = [
     description: "Access technical reference databases including catalyst parameters, thermodynamic properties, equipment specifications, and material data used throughout the simulation calculations.",
     icon: Database,
     path: "/settings/databases"
+  },
+  {
+    id: "material-balances",
+    title: "Material Balances",
+    description: "View and customize the display of calculated process outputs including conversion rates, heat duties, mass balances, and equipment performance metrics.",
+    icon: Table2,
+    path: "/settings/output-variables"
   }
 ];
 

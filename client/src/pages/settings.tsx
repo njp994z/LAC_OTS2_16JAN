@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, ArrowLeft, User, Bell, Lock, Palette, Table2 } from "lucide-react";
+import { Settings as SettingsIcon, ArrowLeft, User, Bell, Lock, Palette } from "lucide-react";
 
 export default function Settings() {
   return (
@@ -130,34 +130,6 @@ export default function Settings() {
                 </div>
                 <Button variant="outline" data-testid="button-edit-appearance">
                   Customize Appearance
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Table2 className="w-5 h-5 text-primary" />
-                  <CardTitle data-testid="title-material-balances">Material Balances</CardTitle>
-                </div>
-                <CardDescription>
-                  View and customize process material balance calculations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <p className="mb-2">Material balance settings include:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Mass flow calculations</li>
-                    <li>Conversion rates and yields</li>
-                    <li>Heat duties and energy balances</li>
-                    <li>Equipment performance metrics</li>
-                  </ul>
-                </div>
-                <Button asChild variant="outline">
-                  <Link href="/settings/output-variables" data-testid="link-material-balances">
-                    Configure Material Balances
-                  </Link>
                 </Button>
               </CardContent>
             </Card>
