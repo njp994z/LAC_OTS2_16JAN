@@ -110,7 +110,7 @@ export default function ProcessVariables() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocation("/settings/output-variables")}
+              onClick={() => window.history.back()}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
