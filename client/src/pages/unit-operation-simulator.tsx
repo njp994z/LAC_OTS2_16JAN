@@ -26,6 +26,13 @@ const unitOperations = [
     icon: Settings2
   },
   {
+    id: "inlet-air-filter",
+    title: "Inlet Air Filter",
+    description: "Model inlet air filtration system including pressure drop calculations, filter efficiency, and air quality parameters for process gas preparation.",
+    path: "/unit-operation/inlet-air-filter",
+    icon: Wind
+  },
+  {
     id: "sulfur-control-hydraulics",
     title: "Sulfur Control Hydraulics",
     description: "Model sulfur flow control systems including valve sizing, pressure regulation, and flow distribution for molten sulfur handling.",
