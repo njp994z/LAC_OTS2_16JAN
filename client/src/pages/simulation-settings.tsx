@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Blocks, Activity, Palette, Database, Table2 } from "lucide-react";
+import { ArrowLeft, Blocks, Activity, Database, Table2 } from "lucide-react";
 import { EngineIcon } from "@/components/icons/EngineIcon";
 
 interface SettingCategory {
@@ -33,13 +33,6 @@ const settingCategories: SettingCategory[] = [
     description: "Reference guide for DeltaV controller status messages, PV conditions, output states, interlock indicators, and mode displays used throughout the simulation faceplates.",
     icon: Activity,
     path: "/settings/controller-outputs"
-  },
-  {
-    id: "model-pallet",
-    title: "Model Pallet",
-    description: "Build and customize DCS (Distributed Control System) GUI pages with pre-configured controls, faceplates, and display elements for process visualization and operator interface design.",
-    icon: Palette,
-    path: "/settings/model-pallet"
   },
   {
     id: "databases",
