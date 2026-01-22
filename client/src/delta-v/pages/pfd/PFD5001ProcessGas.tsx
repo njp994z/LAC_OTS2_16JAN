@@ -1,11 +1,133 @@
-import { PFDPageTemplate } from "./PFDPageTemplate";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, FileText } from "lucide-react";
+import { PFDNavigation } from "../../components/PFDNavigation";
+import processGasDiagram from "@assets/image_1769045383009.png";
+
+const streamDataPart1 = {
+  headers: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"],
+  rows: [
+    { component: "SO2", unit: "SCFM", values: [0, 0, 0, 0, 13020, 12369, 651, 12369, 13020, 4900, 4900, 1416, 1416, 518] },
+    { component: "SO3", unit: "SCFM", values: [0, 0, 0, 0, 239, 227, 12, 227, 239, 8360, 8360, 11844, 11844, 12742] },
+    { component: "O2", unit: "SCFM", values: [24153, 24153, 24153, 24153, 10774, 10235, 539, 10235, 10774, 6713, 6713, 4971, 4971, 4522] },
+    { component: "N2", unit: "SCFM", values: [91148, 91148, 91148, 91148, 91148, 86591, 4557, 86591, 91148, 91148, 91148, 91148, 91148, 91148] },
+    { component: "DRY TOTAL", unit: "SCFM", values: [115301, 115301, 115301, 115301, 115182, 109422, 5759, 109422, 115182, 111121, 111121, 109379, 109379, 108930] },
+    { component: "H2O", unit: "SCFM", values: [2098, 2098, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    { component: "WET TOTAL", unit: "SCFM", values: [117400, 117400, 115301, 115301, 115182, 109422, 5759, 109422, 115182, 111121, 111121, 109379, 109379, 108930] },
+    { component: "PRESSURE", unit: "IN W.C.", values: [0, -2, -13, 186, 176, 176, 176, 159, 158, 154, 144, 139, 125, 119] },
+    { component: "TEMPERATURE", unit: "°F", values: [93, 93, 150, 254, 2073, 2073, 2073, 706, 779, 1145, 806, 964, 806, 847] },
+  ],
+};
+
+const streamDataPart2 = {
+  headers: ["15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27"],
+  rows: [
+    { component: "SO2", unit: "SCFM", values: [518, 518, 518, 518, 19, 19, 19, 19, 19, 0, 0.65, 0, 0] },
+    { component: "SO3", unit: "SCFM", values: [12742, 12742, 0, 0, 0, 498, 498, 498, 498, 0, 0, 0, 0] },
+    { component: "O2", unit: "SCFM", values: [4522, 4522, 4522, 4522, 4522, 4273, 4273, 4273, 4273, 4273, 4378, 115, 115] },
+    { component: "N2", unit: "SCFM", values: [91148, 91148, 91148, 91148, 91148, 91148, 91148, 91148, 91148, 91148, 91581, 432, 432] },
+    { component: "DRY TOTAL", unit: "SCFM", values: [108930, 108930, 96188, 96188, 96188, 95939, 95939, 95939, 95939, 95440, 95960, 547, 547] },
+    { component: "H2O", unit: "SCFM", values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3594, 10, 41] },
+    { component: "WET TOTAL", unit: "SCFM", values: [108930, 108930, 96188, 96188, 96188, 95939, 95939, 95939, 95939, 95440, 99554, 557, 588] },
+    { component: "PRESSURE", unit: "IN W.C.", values: [106, 96, 73, 64, 54, 49, 40, 37, 33, 17, 0, 0, 343] },
+    { component: "TEMPERATURE", unit: "°F", values: [547, 330, 180, 573, 779, 809, 641, 460, 275, 172, 76, 93, 120] },
+  ],
+};
+
+function StreamTable({ headers, rows, title }: { headers: string[]; rows: typeof streamDataPart1.rows; title: string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs border-collapse" data-testid={`table-${title}`}>
+        <thead>
+          <tr className="border-b border-border">
+            <th className="text-left p-2 bg-muted font-semibold sticky left-0 z-10 min-w-[120px]">STREAM NUMBER</th>
+            <th className="text-left p-2 bg-muted font-semibold min-w-[60px]"></th>
+            {headers.map((h) => (
+              <th key={h} className="text-center p-2 bg-muted font-semibold min-w-[70px]">{h}</th>
+            ))}
+          </tr>
+          <tr className="border-b border-border">
+            <th className="text-left p-2 bg-muted/50 font-medium sticky left-0 z-10">COMPONENT</th>
+            <th className="text-left p-2 bg-muted/50 font-medium"></th>
+            {headers.map((h) => (
+              <th key={`blank-${h}`} className="p-2 bg-muted/50"></th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, idx) => (
+            <tr key={row.component} className={idx % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+              <td className="p-2 font-medium sticky left-0 z-10 bg-inherit">{row.component}</td>
+              <td className="p-2 text-muted-foreground">{row.unit}</td>
+              {row.values.map((val, i) => (
+                <td key={i} className="p-2 text-center tabular-nums">
+                  {typeof val === 'number' ? val.toLocaleString() : val}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function PFD5001ProcessGas() {
+  const id = "5001";
+  const documentNumber = "1540-PR-PFD-0000-EXP-5001";
+  const title = "PROCESS GAS";
+
   return (
-    <PFDPageTemplate
-      id="5001"
-      documentNumber="1540-PR-PFD-0000-EXP-5001"
-      title="PROCESS GAS"
-    />
+    <div
+      className="min-h-screen bg-background flex flex-col"
+      data-testid={`pfd-page-${id}`}
+    >
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center gap-4">
+        <Button asChild variant="ghost" size="sm" className="gap-2">
+          <Link href="/delta-v" data-testid="link-back-home">
+            <ArrowLeft className="w-4 h-4" />
+            Home
+          </Link>
+        </Button>
+        <div className="flex items-center gap-3">
+          <FileText className="w-5 h-5 text-muted-foreground" />
+          <div>
+            <div className="text-xs text-muted-foreground font-mono" data-testid="text-document-number">
+              {documentNumber}
+            </div>
+            <h1 className="text-lg font-semibold" data-testid="text-page-title">{title}</h1>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-auto p-4">
+        <div className="space-y-6">
+          <div className="bg-white rounded-md overflow-hidden border border-border">
+            <img
+              src={processGasDiagram}
+              alt="Process Gas PFD Diagram"
+              className="w-full h-auto"
+              data-testid="img-process-gas-diagram"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold" data-testid="text-section-streams-1-14">Stream Data - Streams 1-14</h2>
+            <div className="bg-card rounded-md border border-border p-2">
+              <StreamTable headers={streamDataPart1.headers} rows={streamDataPart1.rows} title="streams-1-14" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold" data-testid="text-section-streams-15-27">Stream Data - Streams 15-27</h2>
+            <div className="bg-card rounded-md border border-border p-2">
+              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" />
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <PFDNavigation position="bottom-right" />
+    </div>
   );
 }
