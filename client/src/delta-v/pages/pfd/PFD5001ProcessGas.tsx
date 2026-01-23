@@ -60,12 +60,18 @@ const streamDataPart2 = {
 };
 
 const sulfurStreamData = {
-  headers: ["50"],
+  headers: ["50A", "50B", "50C"],
+  equipmentLabels: [
+    { name: "Sulfur Pump", type: "Outlet" },
+    { name: "Control Valve", type: "Inlet" },
+    { name: "Sulfur Spray Nozzle", type: "Inlet" },
+  ],
+  instrumentTags: ["1540-PI-2600", "1540-FIC-2602", "1540-PI-2604"],
   rows: [
-    { label: "FLUID", values: ["Sulfur"] },
-    { label: "FLOW", unit: "LB/MIN", values: ["--"] },
-    { label: "FLOW", unit: "GPM", values: ["--"] },
-    { label: "TEMPERATURE", unit: "°F", values: ["275"] },
+    { label: "FLUID", values: ["Sulfur", "Sulfur", "Sulfur"] },
+    { label: "FLOW", unit: "LB/MIN", values: ["--", "--", "--"] },
+    { label: "FLOW", unit: "GPM", values: ["--", "--", "--"] },
+    { label: "TEMPERATURE", unit: "°F", values: ["275", "275", "275"] },
   ],
 };
 
@@ -78,7 +84,22 @@ function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; tit
             <th className="text-left p-2 bg-muted font-semibold min-w-[120px]">STREAM NUMBER</th>
             <th className="text-left p-2 bg-muted font-semibold min-w-[60px]"></th>
             {data.headers.map((h) => (
-              <th key={h} className="text-center p-2 bg-muted font-semibold min-w-[70px]">{h}</th>
+              <th key={h} className="text-center p-2 bg-muted font-semibold min-w-[100px]">{h}</th>
+            ))}
+          </tr>
+          <tr className="border-b border-border">
+            <th className="text-left p-2 bg-muted/50 font-medium" rowSpan={2}></th>
+            <th className="text-left p-2 bg-muted/50 font-medium" rowSpan={2}></th>
+            {data.equipmentLabels.map((eq, i) => (
+              <th key={`equip-${i}`} className="text-center p-2 bg-muted/50">
+                <div className="font-semibold">{eq.name}</div>
+                <div className="text-muted-foreground font-normal">{eq.type}</div>
+              </th>
+            ))}
+          </tr>
+          <tr className="border-b border-border">
+            {data.instrumentTags.map((tag, i) => (
+              <th key={`tag-${i}`} className="text-center p-2 bg-muted/50 text-muted-foreground font-normal">{tag}</th>
             ))}
           </tr>
           <tr className="border-b border-border">
@@ -95,7 +116,7 @@ function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; tit
               <td className="p-2 font-medium">{row.label}</td>
               <td className="p-2 text-muted-foreground">{row.unit || ""}</td>
               {row.values.map((val, i) => (
-                <td key={i} className="p-2 text-center tabular-nums min-w-[70px]">{val}</td>
+                <td key={i} className="p-2 text-center tabular-nums min-w-[100px]">{val}</td>
               ))}
             </tr>
           ))}
