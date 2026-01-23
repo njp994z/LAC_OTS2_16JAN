@@ -1,0 +1,228 @@
+Got it. The clean pattern is: **treat “user current …” as a sentinel**, and **resolve it right before you run the simulations** (either in the backend route, or in the PV page before it saves/requests streams). That way your material balance always runs on “now”, not on whatever the PV table happened to store last.
+
+Below is a backend-first solution that plugs into what you already built: it **loads PVs**, **detects “user current …”**, **calls your psychrometric API**, **converts units**, then feeds the resolved inlet values into your two subscripts (without reproducing them).
+
+### What “realtime psychrometrics” should return
+
+Your uploaded `calculation.py` lays out a good structure: conditions include temperature/pressure and properties include humidity ratio etc. 
+It also includes the exact unit conversions you’ll need (C→F, hPa→inHg, kg/kg→grains/lb). 
+
+---
+
+## 1) Add a resolver that replaces “user current …” with live values
+
+Create `server/realtime/resolveProcessVariables.ts`:
+
+```ts
+type PvRow = {
+  tag: string;
+  case1: string;
+  case2: string;
+  case3: string;
+  case4: string;
+};
+
+type CaseKey = 1 | 2 | 3 | 4;
+
+type PsychrometricData = {
+  conditions: {
+    temperature: number; // could be C or F depending on your API
+    humidity: number;    // RH %
+    pressure: number;    // could be hPa, inHg, etc.
+  };
+  properties?: {
+    humidity_ratio?: number; // kg/kg if provided
+  };
+  units?: {
+    temperature?: "C" | "F";
+    pressure?: "hPa" | "inHg" | "kPa" | "atm";
+    humidity_ratio?: "kg/kg" | "grains/lb";
+  };
+  fetched_at?: string;
+};
+
+const BARO_HEAD_INWC_PER_ATM = 407.19;
+const INHG_PER_HPA = 0.02953;  // from your calc file :contentReference[oaicite:2]{index=2}
+const F_FROM_C = (c: number) => c * 9/5 + 32; // :contentReference[oaicite:3]{index=3}
+const GRAINS_PER_LB_FROM_KGKG = (w: number) => w * 7000; // :contentReference[oaicite:4]{index=4}
+
+function parseSentinel(v: string): { kind: "currentTemp" | "currentPressure" | "currentMoisture" } | null {
+  const s = v.trim().toLowerCase();
+  if (s.includes("user current") && s.includes("temperature")) return { kind: "currentTemp" };
+  if (s.includes("user current") && s.includes("pressure")) return { kind: "currentPressure" };
+  if (s.includes("user current") && (s.includes("moist") || s.includes("humidity"))) return { kind: "currentMoisture" };
+  return null;
+}
+
+function getPvCell(row: PvRow, which: CaseKey): string {
+  return row[`case${which}` as const];
+}
+function setPvCell(row: PvRow, which: CaseKey, value: string) {
+  row[`case${which}` as const] = value;
+}
+
+/**
+ * Replace any PV cell that contains "user current ..." with live psychrometric values.
+ * This keeps your PV table flexible: users can still type fixed numbers, but can also opt into realtime.
+ */
+export async function resolveRealtimePV({
+  processVariables,
+  whichCase,
+  siteId,
+  psychroApiBaseUrl,
+  ttlMs = 60_000,
+}: {
+  processVariables: PvRow[];
+  whichCase: CaseKey;
+  siteId: string;
+  psychroApiBaseUrl: string; // e.g. https://your-service/api/psychrometrics
+  ttlMs?: number;
+}): Promise<PvRow[]> {
+
+  // simple in-memory cache (per server instance)
+  const cacheKey = `${siteId}`;
+  const now = Date.now();
+  // @ts-ignore
+  global.__PSY_CACHE__ ??= new Map<string, { t: number; data: PsychrometricData }>();
+  // @ts-ignore
+  const cache: Map<string, { t: number; data: PsychrometricData }> = global.__PSY_CACHE__;
+
+  let psychro: PsychrometricData | null = null;
+
+  const needsPsychro = processVariables.some(r => parseSentinel(getPvCell(r, whichCase)) !== null);
+  if (!needsPsychro) return processVariables;
+
+  const cached = cache.get(cacheKey);
+  if (cached && now - cached.t < ttlMs) {
+    psychro = cached.data;
+  } else {
+    const url = `${psychroApiBaseUrl}?site=${encodeURIComponent(siteId)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Psychrometric API failed: ${resp.status}`);
+    psychro = await resp.json();
+    cache.set(cacheKey, { t: now, data: psychro });
+  }
+
+  // Normalize temperature to °F
+  const tUnits = psychro.units?.temperature ?? "F";
+  const tempF = tUnits === "C" ? F_FROM_C(psychro.conditions.temperature) : psychro.conditions.temperature;
+
+  // Normalize pressure to atm (since your PV row uses atm)
+  // If your API returns hPa, we can go hPa -> inHg -> atm (atm = inHg / 29.9213)
+  // If you return atm directly, great.
+  const pUnits = psychro.units?.pressure ?? "atm";
+  let pressureAtm: number;
+  if (pUnits === "atm") {
+    pressureAtm = psychro.conditions.pressure;
+  } else if (pUnits === "hPa") {
+    const inHg = psychro.conditions.pressure * INHG_PER_HPA; // :contentReference[oaicite:5]{index=5}
+    pressureAtm = inHg / 29.9213;
+  } else if (pUnits === "inHg") {
+    pressureAtm = psychro.conditions.pressure / 29.9213;
+  } else if (pUnits === "kPa") {
+    pressureAtm = psychro.conditions.pressure / 101.325;
+  } else {
+    throw new Error(`Unsupported pressure units: ${pUnits}`);
+  }
+
+  // Normalize moisture to grains/lb dry air if possible
+  // Preferred: use humidity_ratio if your API gives it (kg/kg) -> grains/lb.
+  // Otherwise you'd need RH + T + P to compute W; your calc file includes W calcs :contentReference[oaicite:6]{index=6}
+  let moistureGrLb: number | null = null;
+
+  const w = psychro.properties?.humidity_ratio;
+  const wUnits = psychro.units?.humidity_ratio ?? (w != null ? "kg/kg" : undefined);
+  if (w != null) {
+    moistureGrLb = (wUnits === "kg/kg") ? GRAINS_PER_LB_FROM_KGKG(w) : w;
+  }
+
+  const out = processVariables.map(r => ({ ...r }));
+  for (const row of out) {
+    const cell = getPvCell(row, whichCase);
+    const sentinel = parseSentinel(cell);
+    if (!sentinel) continue;
+
+    if (sentinel.kind === "currentTemp") {
+      setPvCell(row, whichCase, `${tempF.toFixed(2)} F`);
+    }
+    if (sentinel.kind === "currentPressure") {
+      setPvCell(row, whichCase, `${pressureAtm.toFixed(4)} atm`);
+    }
+    if (sentinel.kind === "currentMoisture") {
+      if (moistureGrLb == null) {
+        throw new Error(
+          `PV requests realtime moisture, but psychrometric API did not supply humidity_ratio. ` +
+          `Either return humidity_ratio, or we can compute it from RH/T/P.`
+        );
+      }
+      setPvCell(row, whichCase, `${moistureGrLb.toFixed(2)} gr/lb BDA`);
+    }
+  }
+
+  return out;
+}
+```
+
+**Why this works well:** your PV table can still store human-friendly strings (like it does now), but the backend turns “user current …” into real numbers right before simulation.
+
+---
+
+## 2) Use the resolver inside your streams route
+
+In your `materialBalanceStreams1to4` handler, do this before `calculateStreams1to4(...)`:
+
+```ts
+import { resolveRealtimePV } from "../realtime/resolveProcessVariables";
+
+export async function materialBalanceStreams1to4(req, res) {
+  try {
+    const whichCase = Number(req.query.case ?? 1) as 1 | 2 | 3 | 4;
+
+    // Load PVs from your existing store (same as PV page)
+    const processVariables = await storage.getProcessVariables();
+
+    // Resolve realtime placeholders
+    const resolvedPV = await resolveRealtimePV({
+      processVariables,
+      whichCase,
+      siteId: String(req.query.site ?? "default"),
+      psychroApiBaseUrl: process.env.PSYCHRO_API_URL!, // set in env
+    });
+
+    const streams = calculateStreams1to4({
+      processVariables: resolvedPV,
+      whichCase,
+    });
+
+    res.json({ streams });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message ?? String(e) });
+  }
+}
+```
+
+Now when the PV page says “user current temperature” for the selected case, the **streams endpoint pulls live conditions** and runs the subscripts with the updated inlet state.
+
+---
+
+## 3) UI: pass `case` (and optionally `site`) from the dropdown
+
+When your dropdown changes the case, make the streams request include it:
+
+```ts
+await fetch(`/api/material-balance/streams1-4?case=${selectedCase}&site=${siteId}`);
+```
+
+---
+
+## One important decision: where moisture comes from
+
+Your PV table uses **“Ambient Moister” in gr/lb BDA**. To resolve that from live psychrometrics you need either:
+
+* API returns **humidity_ratio (kg/kg)** (best), which we convert to grains/lb via `W * 7000` 
+  **or**
+* API returns **RH% + T + P**, and we compute W using your formula: `W = 0.622 * Pv/(Patm - Pv)` 
+
+In the code above I assumed your API can return `humidity_ratio`. If it can’t, tell me what it returns (RH? dew point?) and I’ll wire the computation path.
+
+If you share the URL shape of your psychrometric API response (just a redacted example JSON), I’ll tighten the unit normalization so it’s bulletproof.
