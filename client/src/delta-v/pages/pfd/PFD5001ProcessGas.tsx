@@ -25,9 +25,8 @@ const streamDataPart1 = {
     { component: "SO3", unit: "SCFM", values: [0, 0, 0, 0, 239, 227, 12, 227, 239, 8360, 8360, 11844, 11844, 12742] },
     { component: "O2", unit: "SCFM", values: [24153, 24153, 24153, 24153, 10774, 10235, 539, 10235, 10774, 6713, 6713, 4971, 4971, 4522] },
     { component: "N2", unit: "SCFM", values: [91148, 91148, 91148, 91148, 91148, 86591, 4557, 86591, 91148, 91148, 91148, 91148, 91148, 91148] },
-    { component: "DRY TOTAL", unit: "SCFM", values: [115301, 115301, 115301, 115301, 115182, 109422, 5759, 109422, 115182, 111121, 111121, 109379, 109379, 108930] },
     { component: "H2O", unit: "SCFM", values: [2098, 2098, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-    { component: "WET TOTAL", unit: "SCFM", values: [117400, 117400, 115301, 115301, 115182, 109422, 5759, 109422, 115182, 111121, 111121, 109379, 109379, 108930] },
+    { component: "Total", unit: "SCFM", values: [117400, 117400, 115301, 115301, 115182, 109422, 5759, 109422, 115182, 111121, 111121, 109379, 109379, 108930] },
     { component: "PRESSURE", unit: "IN W.C.", values: [0, -2, -13, 186, 176, 176, 176, 159, 158, 154, 144, 139, 125, 119] },
     { component: "TEMPERATURE", unit: "°F", values: [93, 93, 150, 254, 2073, 2073, 2073, 706, 779, 1145, 806, 964, 806, 847] },
   ],
@@ -40,15 +39,14 @@ const streamDataPart2 = {
     { component: "SO3", unit: "SCFM", values: [12742, 12742, 0, 0, 0, 498, 498, 498, 498, 0, 0, 0, 0] },
     { component: "O2", unit: "SCFM", values: [4522, 4522, 4522, 4522, 4522, 4273, 4273, 4273, 4273, 4273, 4378, 115, 115] },
     { component: "N2", unit: "SCFM", values: [91148, 91148, 91148, 91148, 91148, 91148, 91148, 91148, 91148, 91148, 91581, 432, 432] },
-    { component: "DRY TOTAL", unit: "SCFM", values: [108930, 108930, 96188, 96188, 96188, 95939, 95939, 95939, 95939, 95440, 95960, 547, 547] },
     { component: "H2O", unit: "SCFM", values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3594, 10, 41] },
-    { component: "WET TOTAL", unit: "SCFM", values: [108930, 108930, 96188, 96188, 96188, 95939, 95939, 95939, 95939, 95440, 99554, 557, 588] },
+    { component: "Total", unit: "SCFM", values: [108930, 108930, 96188, 96188, 96188, 95939, 95939, 95939, 95939, 95440, 99554, 557, 588] },
     { component: "PRESSURE", unit: "IN W.C.", values: [106, 96, 73, 64, 54, 49, 40, 37, 33, 17, 0, 0, 343] },
     { component: "TEMPERATURE", unit: "°F", values: [547, 330, 180, 573, 779, 809, 641, 460, 275, 172, 76, 93, 120] },
   ],
 };
 
-function StreamTable({ headers, rows, title }: { headers: string[]; rows: typeof streamDataPart1.rows; title: string }) {
+function StreamTable({ headers, rows, title, showValues }: { headers: string[]; rows: typeof streamDataPart1.rows; title: string; showValues: boolean }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs border-collapse" data-testid={`table-${title}`}>
@@ -75,7 +73,7 @@ function StreamTable({ headers, rows, title }: { headers: string[]; rows: typeof
               <td className="p-2 text-muted-foreground">{row.unit}</td>
               {row.values.map((val, i) => (
                 <td key={i} className="p-2 text-center tabular-nums">
-                  {typeof val === 'number' ? val.toLocaleString() : val}
+                  {showValues ? (typeof val === 'number' ? val.toLocaleString() : val) : "--"}
                 </td>
               ))}
             </tr>
@@ -91,9 +89,11 @@ export default function PFD5001ProcessGas() {
   const documentNumber = "1540-PR-PFD-0000-EXP-5001";
   const title = "PROCESS GAS";
   const [selectedCase, setSelectedCase] = useState(pvInputCases[0]);
+  const [hasSimulated, setHasSimulated] = useState(false);
 
   const handleSimulate = () => {
     console.log("Running simulation with:", selectedCase.id);
+    setHasSimulated(true);
   };
 
   return (
@@ -184,14 +184,14 @@ export default function PFD5001ProcessGas() {
               </div>
             </div>
             <div className="bg-card rounded-md border border-border p-2">
-              <StreamTable headers={streamDataPart1.headers} rows={streamDataPart1.rows} title="streams-1-14" />
+              <StreamTable headers={streamDataPart1.headers} rows={streamDataPart1.rows} title="streams-1-14" showValues={hasSimulated} />
             </div>
           </div>
 
           <div className="space-y-4">
             <h2 className="text-lg font-semibold" data-testid="text-section-streams-15-27">Stream Data - Streams 15-27</h2>
             <div className="bg-card rounded-md border border-border p-2">
-              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" />
+              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" showValues={hasSimulated} />
             </div>
           </div>
         </div>
