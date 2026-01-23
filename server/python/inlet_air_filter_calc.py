@@ -100,8 +100,8 @@ def calculate_inlet_air_filter(
 
     inlet.total_scfm  = Q_total_scfm
 
-    # Pressure — inlet is essentially atmospheric
-    inlet.pressure_inwc = cond.barometric_atm * 407.19   # 1 atm ≈ 407.19 in wc (39.2 °F water column)
+    # Pressure — inlet is atmospheric (gauge pressure = 0)
+    inlet.pressure_inwc = 0.0   # Gauge pressure reference point
 
     inlet.temperature_F = cond.inlet_temp_F
 
@@ -118,9 +118,8 @@ def calculate_inlet_air_filter(
 
     outlet.total_scfm = inlet.total_scfm
 
-    # Pressure drop applied
-    dp_inwc = cond.filter_dp_inwc
-    outlet.pressure_inwc = inlet.pressure_inwc - dp_inwc
+    # Pressure — outlet shows gauge pressure (negative dP from filter)
+    outlet.pressure_inwc = -cond.filter_dp_inwc  # Filter dP as negative gauge pressure
 
     # Temperature — assume no significant change across filter
     outlet.temperature_F = inlet.temperature_F
