@@ -1,4 +1,5 @@
 import { Activity, TrendingUp } from "lucide-react";
+import expLogo from "@/assets/exp-logo.png";
 
 const BellCurveIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -45,6 +46,18 @@ export default function HeroSection() {
             <span className="text-sm font-medium text-foreground">Process Digital Twin Models</span>
             <span className="text-xs text-muted-foreground">High-fidelity process modeling</span>
           </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 mt-16">
+          <img 
+            src={expLogo} 
+            alt="EXP Engineering Logo" 
+            className="h-20 object-contain"
+            data-testid="img-exp-logo"
+          />
+          <p className="text-sm text-muted-foreground max-w-2xl mx-auto text-center leading-relaxed" data-testid="text-exp-description">
+            This operator training simulation was developed by EXP, a leader in engineering and building sulfuric acid plants with decades of experience delivering world-class process solutions.
+          </p>
         </div>
       </div>
       
