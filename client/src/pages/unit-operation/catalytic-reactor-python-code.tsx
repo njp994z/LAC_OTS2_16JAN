@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Code, Copy, Check } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import expLogo from "@/assets/exp-logo.png";
 
 function highlightPython(code: string): JSX.Element[] {
   const lines = code.split('\n');

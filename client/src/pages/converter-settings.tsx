@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Settings, Droplets, ExternalLink } from "lucide-react";
 import type { PsychrometricData } from "@shared/schema";
+import expLogo from "@/assets/exp-logo.png";
 
 const toInHg = (hPa: number) => hPa * 0.02953;
 
@@ -76,6 +77,7 @@ export default function ConverterSettings() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

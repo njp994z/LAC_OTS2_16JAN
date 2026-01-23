@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, LogIn, BarChart3, Move, Lock, Unlock, Pencil, Check, X } from "lucide-react";
 import { operatorScreens, ScreenId, InputControlConfig } from "@/lib/screenConfig";
 import { PidFaceplate, FaceplateButton } from "@/components/PidFaceplate";
+import expLogo from "@/assets/exp-logo.png";
 
 interface DragPosition {
   x: number;
@@ -298,6 +299,7 @@ export default function StaticSimulation() {
               Back
             </Button>
             <div className="h-6 w-px bg-border" />
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

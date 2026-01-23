@@ -15,6 +15,7 @@ import {
 import { ArrowLeft, FileText, Play, Loader2, Download, ChevronDown, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import expLogo from "@/assets/exp-logo.png";
 
 interface InputParams {
   rpmPercent: string;
@@ -211,6 +212,7 @@ export default function MainCompressor() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <span className="font-semibold text-lg" data-testid="text-brand">Lithium Americas</span>
           </div>
         </div>

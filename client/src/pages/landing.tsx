@@ -4,6 +4,7 @@ import FeaturesGrid from "@/components/FeaturesGrid";
 import CompetitiveAdvantages from "@/components/CompetitiveAdvantages";
 import { Button } from "@/components/ui/button";
 import { Activity, LogIn } from "lucide-react";
+import expLogo from "@/assets/exp-logo.png";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <span className="font-semibold text-lg text-foreground">Lithium Americas</span>
           </div>
           <Button 

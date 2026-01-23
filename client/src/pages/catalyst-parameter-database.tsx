@@ -17,6 +17,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PythonCodeViewer } from "@/components/PythonCodeViewer";
 import type { CatalystParameter } from "@shared/schema";
+import expLogo from "@/assets/exp-logo.png";
 
 const catalystPythonCode = `# Catalyst Parameter Database - Python Variables
 # Physical properties and reverse-engineered activity parameters for SO2 oxidation catalysts
@@ -452,6 +453,7 @@ export default function CatalystParameterDatabase() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

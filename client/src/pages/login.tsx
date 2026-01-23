@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import expLogo from "@/assets/exp-logo.png";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -107,9 +108,12 @@ export default function Login() {
           Back
         </Button>
         <div className="flex flex-col items-center mb-8">
-          <h1 className="text-2xl font-semibold text-foreground mb-2">
-            Lithium Americas
-          </h1>
+          <div className="flex items-center gap-2 mb-2">
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
+            <h1 className="text-2xl font-semibold text-foreground">
+              Lithium Americas
+            </h1>
+          </div>
           <p className="text-sm text-muted-foreground text-center">
             {isRegisterMode ? "Create an account to get started" : "Sign in to access the operator training simulator"}
           </p>

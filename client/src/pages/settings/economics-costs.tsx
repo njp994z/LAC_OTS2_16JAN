@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, DollarSign, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import expLogo from "@/assets/exp-logo.png";
 
 type DistributionType = "Normal" | "Left-Skew" | "Right-Skew";
 
@@ -143,6 +144,7 @@ export default function EconomicsCosts() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

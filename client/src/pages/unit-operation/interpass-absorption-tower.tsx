@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Layers, Play, Pause, RotateCcw, Loader2, Code, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import expLogo from "@/assets/exp-logo.png";
 
 interface AcidInputs {
   x_H2SO4_AI0: string;
@@ -353,6 +354,7 @@ export default function InterpassAbsorptionTower() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

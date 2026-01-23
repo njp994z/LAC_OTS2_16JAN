@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import expLogo from "@/assets/exp-logo.png";
 
 const pythonCode = `# fat_calc.py
 # Core calculation logic for Final Absorption Tower (FAT) simulation
@@ -194,6 +195,7 @@ export default function FinalTowerAbsorptionPythonCode() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

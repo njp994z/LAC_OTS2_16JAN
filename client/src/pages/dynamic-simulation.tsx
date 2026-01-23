@@ -16,6 +16,7 @@ import {
   PIDState,
 } from "@/lib/pidController";
 import { calculateGlobalOutputs } from "@/lib/globalOutputs";
+import expLogo from "@/assets/exp-logo.png";
 
 interface ControllerParams {
   setpoint: number;
@@ -268,6 +269,7 @@ export default function DynamicSimulation() {
               Back
             </Button>
             <div className="h-6 w-px bg-border" />
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">
                 Lithium Americas

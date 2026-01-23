@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import expLogo from "@/assets/exp-logo.png";
 
 const pythonCode = `"""
 Main Compressor Performance Calculator
@@ -265,6 +266,7 @@ export default function MainCompressorPythonCode() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <span className="font-semibold text-lg text-foreground">Lithium Americas</span>
           </div>
         </div>

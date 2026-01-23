@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, FileText, Play, Loader2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import expLogo from "@/assets/exp-logo.png";
 
 type SimulationMode = "static" | "dynamic";
 
@@ -229,6 +230,7 @@ export default function SulfurFurnace() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
+          <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
           <h1 className="text-xl font-semibold" data-testid="text-page-title">Lithium Americas</h1>
         </div>
       </header>

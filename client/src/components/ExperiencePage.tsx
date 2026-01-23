@@ -2,6 +2,7 @@ import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Activity, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import expLogo from "@/assets/exp-logo.png";
 
 interface ExperiencePageProps {
   title?: string;
@@ -18,6 +19,7 @@ export default function ExperiencePage({ title = "Experience", description = "Co
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <Link href="/" data-testid="link-home">
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>

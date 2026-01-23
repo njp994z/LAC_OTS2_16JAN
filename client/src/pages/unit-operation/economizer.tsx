@@ -1,13 +1,17 @@
 import { Link } from "wouter";
+import expLogo from "@/assets/exp-logo.png";
 
 export default function Economizer() {
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" data-testid="link-home">
-            <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
+            <Link href="/" data-testid="link-home">
+              <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
+            </Link>
+          </div>
         </div>
       </header>
 
