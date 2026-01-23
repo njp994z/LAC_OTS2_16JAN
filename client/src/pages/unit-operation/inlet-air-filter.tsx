@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,6 +41,9 @@ export default function InletAirFilter() {
   const [realtimeBaro, setRealtimeBaro] = useState<string>("yes");
   const [realtimeTemp, setRealtimeTemp] = useState<string>("yes");
   const [realtimeHumidity, setRealtimeHumidity] = useState<string>("yes");
+  const [isLoadingBaro, setIsLoadingBaro] = useState(false);
+  const [isLoadingTemp, setIsLoadingTemp] = useState(false);
+  const [isLoadingHumidity, setIsLoadingHumidity] = useState(false);
 
   const [inputParams, setInputParams] = useState<InputParams>({
     dryAirFlow: "87000",
@@ -62,6 +65,119 @@ export default function InletAirFilter() {
   const handleInputChange = (field: keyof InputParams, value: string) => {
     setInputParams(prev => ({ ...prev, [field]: value }));
   };
+
+  const fetchRealtimeData = async () => {
+    try {
+      const response = await fetch('/api/psychrometrics/current?zipCode=89414&countryCode=US');
+      if (!response.ok) throw new Error('Failed to fetch weather data');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const fetchRealtimeBarometric = async () => {
+    setIsLoadingBaro(true);
+    try {
+      const data = await fetchRealtimeData();
+      const pressureHpa = data.conditions?.pressure;
+      if (pressureHpa !== undefined && pressureHpa !== null) {
+        const pressureInHg = pressureHpa * 0.02953;
+        const pressureAtm = pressureInHg / 29.9213;
+        setInputParams(prev => ({
+          ...prev,
+          barometric: pressureAtm.toFixed(4)
+        }));
+        toast({
+          title: "Barometric Pressure Updated",
+          description: `Live value: ${pressureAtm.toFixed(4)} ATM`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch live barometric pressure.",
+        variant: "destructive",
+      });
+      setRealtimeBaro("no");
+    } finally {
+      setIsLoadingBaro(false);
+    }
+  };
+
+  const fetchRealtimeTemperature = async () => {
+    setIsLoadingTemp(true);
+    try {
+      const data = await fetchRealtimeData();
+      const temperatureC = data.conditions?.temperature;
+      if (temperatureC !== undefined && temperatureC !== null) {
+        const temperatureF = (temperatureC * 9 / 5) + 32;
+        setInputParams(prev => ({
+          ...prev,
+          inletTemp: temperatureF.toFixed(1)
+        }));
+        toast({
+          title: "Temperature Updated",
+          description: `Live value: ${temperatureF.toFixed(1)} °F`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch live temperature.",
+        variant: "destructive",
+      });
+      setRealtimeTemp("no");
+    } finally {
+      setIsLoadingTemp(false);
+    }
+  };
+
+  const fetchRealtimeHumidityData = async () => {
+    setIsLoadingHumidity(true);
+    try {
+      const data = await fetchRealtimeData();
+      const humidityRatio = data.psychrometrics?.humidityRatio;
+      if (humidityRatio !== undefined && humidityRatio !== null) {
+        setInputParams(prev => ({
+          ...prev,
+          humidity: humidityRatio.toFixed(2)
+        }));
+        toast({
+          title: "Humidity Updated",
+          description: `Live value: ${humidityRatio.toFixed(2)} gr/lb dry air`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch live humidity.",
+        variant: "destructive",
+      });
+      setRealtimeHumidity("no");
+    } finally {
+      setIsLoadingHumidity(false);
+    }
+  };
+
+  useEffect(() => {
+    if (realtimeBaro === "yes") {
+      fetchRealtimeBarometric();
+    }
+  }, [realtimeBaro]);
+
+  useEffect(() => {
+    if (realtimeTemp === "yes") {
+      fetchRealtimeTemperature();
+    }
+  }, [realtimeTemp]);
+
+  useEffect(() => {
+    if (realtimeHumidity === "yes") {
+      fetchRealtimeHumidityData();
+    }
+  }, [realtimeHumidity]);
 
   const runSimulation = async () => {
     setIsRunningSimulation(true);
@@ -230,6 +346,7 @@ export default function InletAirFilter() {
                       value={inputParams.humidity}
                       onChange={(e) => handleInputChange("humidity", e.target.value)}
                       className="w-28 text-center font-mono"
+                      disabled={realtimeHumidity === "yes"}
                       data-testid="input-humidity"
                     />
                     <span className="text-sm text-muted-foreground">gr / lb dry air</span>
@@ -244,6 +361,7 @@ export default function InletAirFilter() {
                       value={inputParams.inletTemp}
                       onChange={(e) => handleInputChange("inletTemp", e.target.value)}
                       className="w-20 text-center font-mono"
+                      disabled={realtimeTemp === "yes"}
                       data-testid="input-inlet-temp"
                     />
                     <span className="text-sm text-muted-foreground">°F</span>
@@ -266,6 +384,7 @@ export default function InletAirFilter() {
                       value={inputParams.barometric}
                       onChange={(e) => handleInputChange("barometric", e.target.value)}
                       className="w-20 text-center font-mono"
+                      disabled={realtimeBaro === "yes"}
                       data-testid="input-barometric"
                     />
                     <span className="text-sm text-muted-foreground">atm</span>
@@ -275,9 +394,12 @@ export default function InletAirFilter() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="flex items-center gap-3">
                     <label className="text-sm text-muted-foreground w-28" data-testid="label-realtime-baro">Realtime Baro:</label>
-                    <Select value={realtimeBaro} onValueChange={setRealtimeBaro}>
+                    <Select value={realtimeBaro} onValueChange={setRealtimeBaro} disabled={isLoadingBaro}>
                       <SelectTrigger className="w-24" data-testid="select-realtime-baro">
-                        <SelectValue />
+                        <div className="flex items-center gap-2">
+                          {isLoadingBaro && <Loader2 className="w-3 h-3 animate-spin" />}
+                          <SelectValue />
+                        </div>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -287,9 +409,12 @@ export default function InletAirFilter() {
                   </div>
                   <div className="flex items-center gap-3">
                     <label className="text-sm text-muted-foreground w-28" data-testid="label-realtime-temp">Realtime Temp:</label>
-                    <Select value={realtimeTemp} onValueChange={setRealtimeTemp}>
+                    <Select value={realtimeTemp} onValueChange={setRealtimeTemp} disabled={isLoadingTemp}>
                       <SelectTrigger className="w-24" data-testid="select-realtime-temp">
-                        <SelectValue />
+                        <div className="flex items-center gap-2">
+                          {isLoadingTemp && <Loader2 className="w-3 h-3 animate-spin" />}
+                          <SelectValue />
+                        </div>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
@@ -299,9 +424,12 @@ export default function InletAirFilter() {
                   </div>
                   <div className="flex items-center gap-3">
                     <label className="text-sm text-muted-foreground w-28" data-testid="label-realtime-humidity">Realtime Humidity:</label>
-                    <Select value={realtimeHumidity} onValueChange={setRealtimeHumidity}>
+                    <Select value={realtimeHumidity} onValueChange={setRealtimeHumidity} disabled={isLoadingHumidity}>
                       <SelectTrigger className="w-24" data-testid="select-realtime-humidity">
-                        <SelectValue />
+                        <div className="flex items-center gap-2">
+                          {isLoadingHumidity && <Loader2 className="w-3 h-3 animate-spin" />}
+                          <SelectValue />
+                        </div>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
