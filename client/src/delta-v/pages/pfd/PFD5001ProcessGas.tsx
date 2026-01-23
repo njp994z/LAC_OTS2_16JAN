@@ -59,6 +59,52 @@ const streamDataPart2 = {
   ],
 };
 
+const sulfurStreamData = {
+  headers: ["50"],
+  rows: [
+    { label: "FLUID", values: ["Sulfur"] },
+    { label: "FLOW", unit: "LB/MIN", values: ["--"] },
+    { label: "FLOW", unit: "GPM", values: ["--"] },
+    { label: "TEMPERATURE", unit: "°F", values: ["275"] },
+  ],
+};
+
+function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; title: string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs border-collapse" data-testid={`table-${title}`}>
+        <thead>
+          <tr className="border-b border-border">
+            <th className="text-left p-2 bg-muted font-semibold min-w-[120px]">STREAM NUMBER</th>
+            <th className="text-left p-2 bg-muted font-semibold min-w-[60px]"></th>
+            {data.headers.map((h) => (
+              <th key={h} className="text-center p-2 bg-muted font-semibold min-w-[70px]">{h}</th>
+            ))}
+          </tr>
+          <tr className="border-b border-border">
+            <th className="text-left p-2 bg-muted/50 font-medium">COMPONENT</th>
+            <th className="text-left p-2 bg-muted/50 font-medium"></th>
+            {data.headers.map((h) => (
+              <th key={`blank-${h}`} className="p-2 bg-muted/50"></th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.rows.map((row, idx) => (
+            <tr key={`${row.label}-${row.unit || idx}`} className={idx % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+              <td className="p-2 font-medium">{row.label}</td>
+              <td className="p-2 text-muted-foreground">{row.unit || ""}</td>
+              {row.values.map((val, i) => (
+                <td key={i} className="p-2 text-center tabular-nums">{val}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function StreamTable({ headers, rows, title, showValues }: { headers: string[]; rows: typeof streamDataPart1.rows; title: string; showValues: boolean }) {
   return (
     <div className="overflow-x-auto">
@@ -258,6 +304,13 @@ export default function PFD5001ProcessGas() {
             </div>
             <div className="bg-card rounded-md border border-border p-2">
               <StreamTable headers={getStreamData().headers} rows={getStreamData().rows} title="streams-1-14" showValues={hasSimulated} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold" data-testid="text-section-sulfur-streams">Stream Data - Sulfur Streams</h2>
+            <div className="bg-card rounded-md border border-border p-2">
+              <SulfurStreamTable data={sulfurStreamData} title="sulfur-streams" />
             </div>
           </div>
 
