@@ -2697,6 +2697,53 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Inlet Air Filter Simulation endpoint
+  app.post('/api/inlet-air-filter-simulation', async (req: Request, res: Response) => {
+    try {
+      const { dryAirFlow, humidity, inletTemp, filterDp, barometric } = req.body;
+      
+      const pythonInput = {
+        dryAirFlow: parseFloat(dryAirFlow) || 87000,
+        humidity: parseFloat(humidity) || 11.1,
+        inletTemp: parseFloat(inletTemp) || 38,
+        filterDp: parseFloat(filterDp) || 3,
+        barometric: parseFloat(barometric) || 1.001
+      };
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'inlet_air_filter_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath, JSON.stringify(pythonInput)]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => { stdout += data.toString(); });
+      pythonProcess.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('Inlet air filter Python error:', stderr);
+          return res.status(500).json({ message: 'Calculation failed', error: stderr });
+        }
+
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          res.status(500).json({ message: 'Failed to parse simulation results' });
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('Python process error:', error);
+        res.status(500).json({ message: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('Inlet air filter simulation error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Python file download endpoint
   app.get('/api/download-python/:filename', (req: Request, res: Response) => {
     const { filename } = req.params;
@@ -2714,7 +2761,9 @@ Be professional, concise, and helpful. If asked about features not yet implement
       'catalyst_database.py',
       'pass_solver.py',
       'sulfur_static_solver.py',
-      'sulfur_dynamic_solver.py'
+      'sulfur_dynamic_solver.py',
+      'inlet_air_filter_calc.py',
+      'inlet_air_filter_gui.py'
     ];
     
     if (!allowedFiles.includes(filename)) {

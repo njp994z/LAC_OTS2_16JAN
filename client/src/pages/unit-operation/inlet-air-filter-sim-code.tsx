@@ -6,31 +6,21 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const pythonCode = `"""
-Inlet Air Filter Simulation Calculator
-======================================
-Calculates stream compositions and conditions for the inlet air filter
-based on operating conditions and atmospheric parameters.
+Inlet Air Filter Calculation Module
+====================================
+Performs mass & volumetric balance for inlet air filter in sulfuric acid plant context.
+Assumes essentially clean ambient air with only humidity as non-negligible component.
+Filter removes dust/particles but does not change gas composition significantly.
 
 Equipment Tag: 1540-FL-001
 Location: Thacker Pass Sulfuric Acid Plant
-
-Stream Definitions:
-  - Stream #1 (GAF0): Inlet Air Filter In - Atmospheric conditions
-  - Stream #2 (GAF1): Inlet Air Filter Out - After filter (1540-PI-5801)
 """
 
-import math
 from dataclasses import dataclass
+import math
 from typing import Tuple
-
-# Constants
-R_UNIVERSAL = 10.7316  # ft³·psia/(lbmol·°R)
-MW_AIR = 28.97         # Molecular weight of air, lb/lbmol
-MW_H2O = 18.015        # Molecular weight of water, lb/lbmol
-O2_FRACTION = 0.2095   # O2 mole fraction in dry air
-N2_FRACTION = 0.7808   # N2 mole fraction in dry air
-AR_FRACTION = 0.0093   # Ar mole fraction in dry air (treated as N2)
-CO2_FRACTION = 0.0004  # CO2 mole fraction in dry air (treated as N2)
+import json
+import sys
 
 
 @dataclass
@@ -57,164 +47,141 @@ class StreamData:
     temperature_F: float = 0.0    # Temperature, °F
 
 
-def grains_to_lb_water_per_lb_dry_air(grains_per_lb: float) -> float:
-    """
-    Convert humidity from grains per lb dry air to lb water per lb dry air.
-    1 lb = 7000 grains
-    """
-    return grains_per_lb / 7000.0
-
-
-def calculate_water_mole_fraction(humidity_gr_lb: float) -> float:
-    """
-    Calculate water vapor mole fraction from humidity.
-    
-    Args:
-        humidity_gr_lb: Humidity in grains per lb dry air
-        
-    Returns:
-        Mole fraction of water vapor in moist air
-    """
-    # Convert grains to lb water per lb dry air
-    lb_water_per_lb_dry = grains_to_lb_water_per_lb_dry_air(humidity_gr_lb)
-    
-    # Convert to molar basis
-    # n_water / n_dry_air = (lb_water / MW_H2O) / (lb_dry_air / MW_AIR)
-    mol_ratio = (lb_water_per_lb_dry / MW_H2O) * MW_AIR
-    
-    # Mole fraction of water = mol_ratio / (1 + mol_ratio)
-    y_h2o = mol_ratio / (1 + mol_ratio)
-    
-    return y_h2o
-
-
-def calculate_component_flows(
-    dry_air_flow_scfm: float,
-    humidity_gr_lb: float
-) -> Tuple[float, float, float]:
-    """
-    Calculate O2, N2, and H2O flows from dry air flow and humidity.
-    
-    Args:
-        dry_air_flow_scfm: Dry air flow rate, SCFM
-        humidity_gr_lb: Humidity in grains per lb dry air
-        
-    Returns:
-        Tuple of (O2_scfm, N2_scfm, H2O_scfm)
-    """
-    # O2 and N2 flows from dry air
-    O2_scfm = dry_air_flow_scfm * O2_FRACTION
-    N2_scfm = dry_air_flow_scfm * (N2_FRACTION + AR_FRACTION + CO2_FRACTION)
-    
-    # Water vapor flow
-    y_h2o = calculate_water_mole_fraction(humidity_gr_lb)
-    
-    # Total moist air flow = dry air flow / (1 - y_h2o)
-    total_moist_air_scfm = dry_air_flow_scfm / (1 - y_h2o)
-    
-    # H2O flow = total flow * y_h2o
-    H2O_scfm = total_moist_air_scfm * y_h2o
-    
-    return O2_scfm, N2_scfm, H2O_scfm
-
-
-def atm_to_inwc_gauge(atm: float) -> float:
-    """
-    Convert atmospheric pressure to inches water column (gauge).
-    At atmospheric conditions, gauge pressure is 0.
-    
-    Args:
-        atm: Barometric pressure in atmospheres
-        
-    Returns:
-        Pressure in inches water column (gauge) - always 0 at atmospheric
-    """
-    return 0.0
-
-
 def calculate_inlet_air_filter(
-    conditions: OperatingConditions
+    cond: OperatingConditions
 ) -> Tuple[StreamData, StreamData]:
     """
-    Calculate inlet and outlet stream conditions for the air filter.
+    Calculate inlet and outlet stream compositions and conditions for the inlet air filter.
     
-    The inlet air filter introduces a pressure drop but does not change
-    the composition or temperature of the air stream.
+    Assumptions:
+    •   Inlet air is clean ambient air (SO₂, SO₃, H₂SO₄ ≈ 0)
+    •   Filter removes particulate matter but does not chemically react with or adsorb gases
+    •   Pressure drop is applied across the filter
+    •   Temperature remains essentially constant (adiabatic filter, no heat exchange)
+    •   Humidity is given in grains per lb of dry air
     
-    Args:
-        conditions: Operating conditions for the filter
-        
     Returns:
-        Tuple of (inlet_stream, outlet_stream)
+        Tuple[StreamData, StreamData]: (inlet_stream, outlet_stream)
     """
-    # Calculate component flows
-    O2_scfm, N2_scfm, H2O_scfm = calculate_component_flows(
-        conditions.dry_air_flow_scfm,
-        conditions.humidity_gr_lb
-    )
-    
-    # Total flow
-    total_scfm = conditions.dry_air_flow_scfm + H2O_scfm
-    
-    # Inlet stream (Stream #1) - Atmospheric conditions
-    inlet_stream = StreamData(
-        SO2_scfm=0.0,            # No SO2 in atmospheric air
-        SO3_scfm=0.0,            # No SO3 in atmospheric air
-        O2_scfm=O2_scfm,
-        N2_scfm=N2_scfm,
-        H2O_scfm=H2O_scfm,
-        H2SO4_scfm=0.0,          # No H2SO4 in atmospheric air
-        total_scfm=total_scfm,
-        pressure_inwc=0.0,       # Atmospheric = 0 gauge
-        temperature_F=conditions.inlet_temp_F
-    )
-    
-    # Outlet stream (Stream #2) - After filter
-    # Composition unchanged, pressure drops by filter dP
-    outlet_stream = StreamData(
-        SO2_scfm=0.0,
-        SO3_scfm=0.0,
-        O2_scfm=O2_scfm,
-        N2_scfm=N2_scfm,
-        H2O_scfm=H2O_scfm,
-        H2SO4_scfm=0.0,
-        total_scfm=total_scfm,
-        pressure_inwc=-conditions.filter_dp_inwc,  # Negative gauge (suction)
-        temperature_F=conditions.inlet_temp_F      # No temperature change
-    )
-    
-    return inlet_stream, outlet_stream
+    inlet = StreamData()
+    outlet = StreamData()
+
+    # ───────────────────────────────────────────────
+    # 1. Input validation & basic derived quantities
+    # ───────────────────────────────────────────────
+    if cond.dry_air_flow_scfm <= 0:
+        raise ValueError("Dry air flow must be positive")
+
+    Q_dry_scfm = cond.dry_air_flow_scfm                # dry air @ standard conditions
+    humidity_gr_lb = cond.humidity_gr_lb               # grains H₂O / lb dry air
+
+    # Convert humidity to lb H₂O / lb dry air
+    lb_H2O_per_lb_dry = humidity_gr_lb / 7000.0        # 7000 gr = 1 lb
+
+    # Molar masses
+    MW_DRY_AIR = 28.96      # lb/mol (standard dry air)
+    MW_H2O     = 18.015     # lb/mol
+
+    # Moles H₂O per mole dry air
+    mol_H2O_per_mol_dry = lb_H2O_per_lb_dry * (MW_DRY_AIR / MW_H2O)
+
+    # Total moles per mole of dry air
+    total_mol_per_mol_dry = 1.0 + mol_H2O_per_mol_dry
+
+    # Mole fraction water vapor
+    y_H2O = mol_H2O_per_mol_dry / total_mol_per_mol_dry
+
+    # Dry air volumetric flow → total (wet) volumetric flow @ SC
+    Q_total_scfm = Q_dry_scfm * total_mol_per_mol_dry
+
+    # ───────────────────────────────────────────────
+    # 2. Inlet stream (before filter)
+    # ───────────────────────────────────────────────
+    inlet.SO2_scfm    = 0.0
+    inlet.SO3_scfm    = 0.0
+    inlet.H2SO4_scfm  = 0.0
+
+    inlet.O2_scfm     = Q_dry_scfm * 0.2095           # ≈21% vol O₂ (dry basis)
+    inlet.N2_scfm     = Q_dry_scfm * 0.7808           # ≈78% vol N₂ + Ar (dry basis)
+    inlet.H2O_scfm    = Q_total_scfm * y_H2O
+
+    inlet.total_scfm  = Q_total_scfm
+
+    # Pressure — inlet is essentially atmospheric
+    inlet.pressure_inwc = cond.barometric_atm * 407.19   # 1 atm ≈ 407.19 in wc (39.2 °F water column)
+
+    inlet.temperature_F = cond.inlet_temp_F
+
+    # ───────────────────────────────────────────────
+    # 3. Outlet stream (after filter)
+    # ───────────────────────────────────────────────
+    # Composition remains virtually identical (clean filter, no reaction)
+    outlet.SO2_scfm   = inlet.SO2_scfm
+    outlet.SO3_scfm   = inlet.SO3_scfm
+    outlet.O2_scfm    = inlet.O2_scfm
+    outlet.N2_scfm    = inlet.N2_scfm
+    outlet.H2O_scfm   = inlet.H2O_scfm
+    outlet.H2SO4_scfm = inlet.H2SO4_scfm
+
+    outlet.total_scfm = inlet.total_scfm
+
+    # Pressure drop applied
+    dp_inwc = cond.filter_dp_inwc
+    outlet.pressure_inwc = inlet.pressure_inwc - dp_inwc
+
+    # Temperature — assume no significant change across filter
+    outlet.temperature_F = inlet.temperature_F
+
+    return inlet, outlet
+
+
+def stream_to_dict(stream: StreamData) -> dict:
+    """Convert StreamData to dictionary for JSON serialization"""
+    return {
+        "SO2": round(stream.SO2_scfm, 2),
+        "SO3": round(stream.SO3_scfm, 2),
+        "O2": round(stream.O2_scfm, 2),
+        "N2": round(stream.N2_scfm, 2),
+        "H2O": round(stream.H2O_scfm, 2),
+        "H2SO4": round(stream.H2SO4_scfm, 2),
+        "total": round(stream.total_scfm, 2),
+        "pressure": round(stream.pressure_inwc, 2),
+        "temperature": round(stream.temperature_F, 1)
+    }
 
 
 def main():
-    """Example usage of the inlet air filter calculator"""
-    # Define operating conditions
-    conditions = OperatingConditions(
-        dry_air_flow_scfm=87000,
-        humidity_gr_lb=11.1,
-        inlet_temp_F=38,
-        filter_dp_inwc=3,
-        barometric_atm=1.0010
-    )
+    """Main entry point for command-line execution"""
+    if len(sys.argv) < 2:
+        # Example usage with default values
+        conditions = OperatingConditions(
+            dry_air_flow_scfm=87000,
+            humidity_gr_lb=11.1,
+            inlet_temp_F=38,
+            filter_dp_inwc=3,
+            barometric_atm=1.0010
+        )
+    else:
+        # Parse JSON input from command line
+        input_data = json.loads(sys.argv[1])
+        conditions = OperatingConditions(
+            dry_air_flow_scfm=float(input_data.get("dryAirFlow", 87000)),
+            humidity_gr_lb=float(input_data.get("humidity", 11.1)),
+            inlet_temp_F=float(input_data.get("inletTemp", 38)),
+            filter_dp_inwc=float(input_data.get("filterDp", 3)),
+            barometric_atm=float(input_data.get("barometric", 1.0010))
+        )
     
     # Calculate streams
     inlet, outlet = calculate_inlet_air_filter(conditions)
     
-    # Print results
-    print("=" * 60)
-    print("INLET AIR FILTER SIMULATION RESULTS")
-    print("=" * 60)
-    print(f"\\n{'Component':<12} {'Units':<10} {'Stream #1':<15} {'Stream #2':<15}")
-    print("-" * 52)
-    print(f"{'SO2':<12} {'scfm':<10} {inlet.SO2_scfm:<15.2f} {outlet.SO2_scfm:<15.2f}")
-    print(f"{'SO3':<12} {'scfm':<10} {inlet.SO3_scfm:<15.2f} {outlet.SO3_scfm:<15.2f}")
-    print(f"{'O2':<12} {'scfm':<10} {inlet.O2_scfm:<15.2f} {outlet.O2_scfm:<15.2f}")
-    print(f"{'N2':<12} {'scfm':<10} {inlet.N2_scfm:<15.2f} {outlet.N2_scfm:<15.2f}")
-    print(f"{'H2O':<12} {'scfm':<10} {inlet.H2O_scfm:<15.2f} {outlet.H2O_scfm:<15.2f}")
-    print(f"{'H2SO4':<12} {'scfm':<10} {inlet.H2SO4_scfm:<15.2f} {outlet.H2SO4_scfm:<15.2f}")
-    print(f"{'TOTAL':<12} {'scfm':<10} {inlet.total_scfm:<15.2f} {outlet.total_scfm:<15.2f}")
-    print(f"{'PRESSURE':<12} {'in wc':<10} {inlet.pressure_inwc:<15.2f} {outlet.pressure_inwc:<15.2f}")
-    print(f"{'TEMPERATURE':<12} {'°F':<10} {inlet.temperature_F:<15.1f} {outlet.temperature_F:<15.1f}")
+    # Output JSON result
+    result = {
+        "inlet": stream_to_dict(inlet),
+        "outlet": stream_to_dict(outlet)
+    }
+    
+    print(json.dumps(result))
 
 
 if __name__ == "__main__":
@@ -239,37 +206,49 @@ export default function InletAirFilterSimCode() {
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2"
-            asChild
-            data-testid="button-download-sim-code"
-          >
-            <a href="/api/download-python/inlet_air_filter_calc.py" download>
-              <Download className="w-4 h-4" />
-              Download inlet_air_filter_calc.py
-            </a>
-          </Button>
         </div>
       </header>
 
       <main className="pt-24 pb-12 px-6">
-        <div className="max-w-5xl mx-auto">
-          <Card data-testid="card-python-code">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-page-title">
+              Inlet Air Filter - Simulation Code
+            </h1>
+            <p className="text-muted-foreground" data-testid="text-page-subtitle">
+              inlet_air_filter_calc.py
+            </p>
+          </div>
+
+          <div className="flex justify-center gap-4 mb-8">
+            <Button
+              variant="outline"
+              className="gap-2"
+              asChild
+            >
+              <a href="/api/download-python/inlet_air_filter_calc.py" download data-testid="link-download-simulation-code">
+                <Download className="w-4 h-4" />
+                Download inlet_air_filter_calc.py
+              </a>
+            </Button>
+          </div>
+
+          <Card data-testid="card-code-viewer">
             <CardHeader>
-              <CardTitle data-testid="title-python-code">Inlet Air Filter Simulation Code</CardTitle>
+              <CardTitle data-testid="text-card-title">Python Simulation Code</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg overflow-hidden" data-testid="code-display">
+              <div className="overflow-auto max-h-[70vh] rounded-md">
                 <SyntaxHighlighter
                   language="python"
                   style={vscDarkPlus}
                   showLineNumbers
                   customStyle={{
                     margin: 0,
-                    borderRadius: "0.5rem",
-                    fontSize: "0.875rem",
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
                   }}
+                  data-testid="code-python-simulation"
                 >
                   {pythonCode}
                 </SyntaxHighlighter>

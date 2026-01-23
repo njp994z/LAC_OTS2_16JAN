@@ -66,7 +66,51 @@ export default function InletAirFilter() {
   const runSimulation = async () => {
     setIsRunningSimulation(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/inlet-air-filter-simulation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dryAirFlow: inputParams.dryAirFlow,
+          humidity: inputParams.humidity,
+          inletTemp: inputParams.inletTemp,
+          filterDp: inputParams.filterDp,
+          barometric: inputParams.barometric,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Simulation failed');
+      }
+      
+      const results = await response.json();
+      
+      // Update inlet stream
+      setInletStream({
+        SO2: results.inlet.SO2.toFixed(2),
+        SO3: results.inlet.SO3.toFixed(2),
+        O2: results.inlet.O2.toFixed(2),
+        N2: results.inlet.N2.toFixed(2),
+        H2O: results.inlet.H2O.toFixed(2),
+        H2SO4: results.inlet.H2SO4.toFixed(2),
+        total: results.inlet.total.toFixed(2),
+        pressure: results.inlet.pressure.toFixed(2),
+        temperature: results.inlet.temperature.toFixed(1),
+      });
+      
+      // Update outlet stream
+      setOutletStream({
+        SO2: results.outlet.SO2.toFixed(2),
+        SO3: results.outlet.SO3.toFixed(2),
+        O2: results.outlet.O2.toFixed(2),
+        N2: results.outlet.N2.toFixed(2),
+        H2O: results.outlet.H2O.toFixed(2),
+        H2SO4: results.outlet.H2SO4.toFixed(2),
+        total: results.outlet.total.toFixed(2),
+        pressure: results.outlet.pressure.toFixed(2),
+        temperature: results.outlet.temperature.toFixed(1),
+      });
       
       toast({
         title: "Simulation Complete",
