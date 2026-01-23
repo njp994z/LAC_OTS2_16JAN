@@ -9,7 +9,7 @@ export default function OutputVariables() {
   const outputSections = [
     {
       id: "set-point-variables",
-      title: "Set Point Variables (SP)",
+      title: "Initial Set Point Variables (SP)",
       description: "View and configure all controller setpoint variables used in the simulation. Setpoints define the target values that controllers aim to achieve, including temperatures, pressures, flows, and levels throughout the acid plant process.",
       icon: Target,
       path: "/settings/output-variables/set-point-variables",
