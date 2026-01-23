@@ -1971,6 +1971,32 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Download Inlet Air Filter Codes (Python + TSX)
+  app.get('/api/download/inlet-air-filter-codes', async (req: Request, res: Response) => {
+    try {
+      const pythonPath = path.join(import.meta.dirname, 'python', 'inlet_air_filter_calc.py');
+      const tsxPath = path.join(import.meta.dirname, '..', 'client', 'src', 'pages', 'unit-operation', 'inlet-air-filter.tsx');
+      
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename=inlet-air-filter-codes.zip');
+      
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.pipe(res);
+      
+      if (fs.existsSync(pythonPath)) {
+        archive.file(pythonPath, { name: 'inlet_air_filter_calc.py' });
+      }
+      if (fs.existsSync(tsxPath)) {
+        archive.file(tsxPath, { name: 'inlet-air-filter.tsx' });
+      }
+      
+      await archive.finalize();
+    } catch (error) {
+      console.error('Download error:', error);
+      res.status(500).json({ message: 'Failed to create download archive' });
+    }
+  });
+
   // Drying Tower Circuit Hydraulic Simulation
   app.post('/api/drying-tower-simulation', async (req: Request, res: Response) => {
     try {
