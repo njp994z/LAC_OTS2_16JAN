@@ -186,6 +186,7 @@ import AirCooledCondenser from "@/pages/unit-operation/air-cooled-condenser";
 import MainCompressor from "@/pages/unit-operation/main-compressor";
 import MainCompressorPythonCode from "@/pages/unit-operation/main-compressor-python-code";
 import MainCompressorTsxCode from "@/pages/unit-operation/main-compressor-tsx-code";
+import MainCompressorGuiCode from "@/pages/unit-operation/main-compressor-gui-code";
 import InletAirFilter from "@/pages/unit-operation/inlet-air-filter";
 import InletAirFilterGuiCode from "@/pages/unit-operation/inlet-air-filter-gui-code";
 import InletAirFilterSimCode from "@/pages/unit-operation/inlet-air-filter-sim-code";
@@ -299,6 +300,7 @@ function Router() {
       <Route path="/unit-operation/air-cooled-condenser" component={AirCooledCondenser} />
       <Route path="/unit-operation/main-compressor/python-code" component={MainCompressorPythonCode} />
       <Route path="/unit-operation/main-compressor/tsx-code" component={MainCompressorTsxCode} />
+      <Route path="/unit-operation/main-compressor/gui-code" component={MainCompressorGuiCode} />
       <Route path="/unit-operation/main-compressor" component={MainCompressor} />
       <Route path="/unit-operation/inlet-air-filter" component={InletAirFilter} />
       <Route path="/unit-operation/inlet-air-filter/gui-code" component={InletAirFilterGuiCode} />

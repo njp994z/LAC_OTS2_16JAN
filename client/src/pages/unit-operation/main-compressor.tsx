@@ -4,7 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Play, Loader2, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, FileText, Play, Loader2, Download, ChevronDown, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -229,16 +237,44 @@ export default function MainCompressor() {
                 Compressor Data Sheet
               </Button>
             </a>
-            <a 
-              href="/api/download/compressor-codes" 
-              download
-              data-testid="link-download-codes"
-            >
-              <Button variant="outline" className="gap-2" data-testid="button-download-codes">
-                <Download className="h-4 w-4" />
-                Download Codes
-              </Button>
-            </a>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2" data-testid="button-download-codes">
+                  <Download className="w-4 h-4" />
+                  Download Codes
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>GUI</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/unit-operation/main-compressor/gui-code" data-testid="link-compressor-gui-view">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Code
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/api/download-python/compressor_gui.py" download data-testid="link-download-compressor-gui">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download compressor_gui.py
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Simulation Code</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/unit-operation/main-compressor/python-code" data-testid="link-compressor-sim-view">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Code
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/api/download-python/compressor_calculator.py" download data-testid="link-download-compressor-sim">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download compressor_calculator.py
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <Card className="max-w-lg mx-auto mb-8" data-testid="card-operating-conditions">

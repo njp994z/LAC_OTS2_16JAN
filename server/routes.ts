@@ -2753,6 +2753,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       'drying_tower_calc.py',
       'drying_tower_solver.py',
       'compressor_calculator.py',
+      'compressor_gui.py',
       'sulfur_furnace_calc.py',
       'rk_solver.py',
       'ipat_calc.py',
