@@ -95,7 +95,7 @@ function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; tit
               <td className="p-2 font-medium">{row.label}</td>
               <td className="p-2 text-muted-foreground">{row.unit || ""}</td>
               {row.values.map((val, i) => (
-                <td key={i} className="p-2 text-center tabular-nums">{val}</td>
+                <td key={i} className="p-2 text-center tabular-nums min-w-[120px]">{val}</td>
               ))}
             </tr>
           ))}
@@ -308,16 +308,16 @@ export default function PFD5001ProcessGas() {
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold" data-testid="text-section-sulfur-streams">Stream Data - Sulfur Streams</h2>
+            <h2 className="text-lg font-semibold" data-testid="text-section-streams-15-27">Stream Data - Streams 15-27</h2>
             <div className="bg-card rounded-md border border-border p-2">
-              <SulfurStreamTable data={sulfurStreamData} title="sulfur-streams" />
+              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" showValues={hasSimulated} />
             </div>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold" data-testid="text-section-streams-15-27">Stream Data - Streams 15-27</h2>
+            <h2 className="text-lg font-semibold" data-testid="text-section-sulfur-streams">Stream Data - Sulfur Streams</h2>
             <div className="bg-card rounded-md border border-border p-2">
-              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" showValues={hasSimulated} />
+              <SulfurStreamTable data={sulfurStreamData} title="sulfur-streams" />
             </div>
           </div>
         </div>
