@@ -72,7 +72,7 @@ const sulfurStreamData = {
 function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; title: string }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-xs border-collapse" data-testid={`table-${title}`}>
+      <table className="text-xs border-collapse" data-testid={`table-${title}`}>
         <thead>
           <tr className="border-b border-border">
             <th className="text-left p-2 bg-muted font-semibold min-w-[120px]">STREAM NUMBER</th>
