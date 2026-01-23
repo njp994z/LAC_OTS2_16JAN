@@ -72,6 +72,7 @@ const sulfurStreamData = {
     { label: "FLOW", unit: "LB/MIN", values: ["--", "--", "--"] },
     { label: "FLOW", unit: "GPM", values: ["--", "--", "--"] },
     { label: "TEMPERATURE", unit: "°F", values: ["275", "275", "275"] },
+    { label: "PRESSURE", unit: "PSIG", values: ["--", "--", "--"] },
   ],
 };
 
