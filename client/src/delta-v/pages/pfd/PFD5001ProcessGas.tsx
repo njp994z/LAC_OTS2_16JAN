@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, ChevronDown, Play, Settings } from "lucide-react";
+import { ArrowLeft, FileText, ChevronDown, Play, Settings, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,14 +9,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PFDNavigation } from "../../components/PFDNavigation";
+import { useToast } from "@/hooks/use-toast";
 import processGasDiagram from "@assets/image_1769045383009.png";
 
 const pvInputCases = [
-  { id: "case1", label: "Case 1", description: "PV_2480 STPD - Clean" },
-  { id: "case2", label: "Case 2", description: "PV_2480 STPD - Dirty" },
-  { id: "case3", label: "Case 3", description: "PV_1100 STPD - Clean" },
-  { id: "case4", label: "Case 4", description: "PV_1100 STPD - Dirty" },
+  { id: "case1", label: "Case 1", description: "PV_2480 STPD - Clean", caseNum: 1 },
+  { id: "case2", label: "Case 2", description: "PV_2480 STPD - Dirty", caseNum: 2 },
+  { id: "case3", label: "Case 3", description: "PV_1100 STPD - Clean", caseNum: 3 },
+  { id: "case4", label: "Case 4", description: "PV_1100 STPD - Dirty", caseNum: 4 },
 ];
+
+interface StreamResult {
+  SO2: number;
+  SO3: number;
+  O2: number;
+  N2: number;
+  H2O: number;
+  H2SO4: number;
+  total: number;
+  pressure: number;
+  temperature: number;
+}
 
 const streamDataPart1 = {
   headers: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"],
@@ -90,10 +103,65 @@ export default function PFD5001ProcessGas() {
   const title = "PROCESS GAS";
   const [selectedCase, setSelectedCase] = useState(pvInputCases[0]);
   const [hasSimulated, setHasSimulated] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [calculatedStreams, setCalculatedStreams] = useState<{
+    stream1: StreamResult;
+    stream2: StreamResult;
+    stream3: StreamResult;
+    stream4: StreamResult;
+  } | null>(null);
+  const { toast } = useToast();
 
-  const handleSimulate = () => {
-    console.log("Running simulation with:", selectedCase.id);
-    setHasSimulated(true);
+  const handleCaseChange = (pvCase: typeof pvInputCases[0]) => {
+    setSelectedCase(pvCase);
+    setHasSimulated(false);
+    setCalculatedStreams(null);
+  };
+
+  const handleSimulate = async () => {
+    setIsSimulating(true);
+    try {
+      const response = await fetch(`/api/material-balance/streams-1-4?case=${selectedCase.caseNum}&zipCode=89414&countryCode=US`);
+      if (!response.ok) {
+        throw new Error('Failed to calculate streams');
+      }
+      const data = await response.json();
+      setCalculatedStreams(data.streams);
+      setHasSimulated(true);
+      toast({
+        title: "Simulation Complete",
+        description: `Streams 1-4 calculated for ${selectedCase.label}`,
+      });
+    } catch (error) {
+      console.error('Simulation error:', error);
+      toast({
+        title: "Simulation Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const getStreamData = () => {
+    if (!calculatedStreams) return streamDataPart1;
+    
+    const { stream1, stream2, stream3, stream4 } = calculatedStreams;
+    
+    return {
+      headers: streamDataPart1.headers,
+      rows: [
+        { component: "SO2", unit: "SCFM", values: [stream1.SO2, stream2.SO2, stream3.SO2, stream4.SO2, 13020, 12369, 651, 12369, 13020, 4900, 4900, 1416, 1416, 518] },
+        { component: "SO3", unit: "SCFM", values: [stream1.SO3, stream2.SO3, stream3.SO3, stream4.SO3, 239, 227, 12, 227, 239, 8360, 8360, 11844, 11844, 12742] },
+        { component: "O2", unit: "SCFM", values: [stream1.O2, stream2.O2, stream3.O2, stream4.O2, 10774, 10235, 539, 10235, 10774, 6713, 6713, 4971, 4971, 4522] },
+        { component: "N2", unit: "SCFM", values: [stream1.N2, stream2.N2, stream3.N2, stream4.N2, 91148, 86591, 4557, 86591, 91148, 91148, 91148, 91148, 91148, 91148] },
+        { component: "H2O", unit: "SCFM", values: [stream1.H2O, stream2.H2O, stream3.H2O, stream4.H2O, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+        { component: "Total", unit: "SCFM", values: [stream1.total, stream2.total, stream3.total, stream4.total, 115182, 109422, 5759, 109422, 115182, 111121, 111121, 109379, 109379, 108930] },
+        { component: "PRESSURE", unit: "IN W.C.", values: [stream1.pressure, stream2.pressure, stream3.pressure, stream4.pressure, 176, 176, 176, 159, 158, 154, 144, 139, 125, 119] },
+        { component: "TEMPERATURE", unit: "°F", values: [stream1.temperature, stream2.temperature, stream3.temperature, stream4.temperature, 2073, 2073, 2073, 706, 779, 1145, 806, 964, 806, 847] },
+      ],
+    };
   };
 
   return (
@@ -152,7 +220,7 @@ export default function PFD5001ProcessGas() {
                     {pvInputCases.map((pvCase) => (
                       <DropdownMenuItem
                         key={pvCase.id}
-                        onClick={() => setSelectedCase(pvCase)}
+                        onClick={() => handleCaseChange(pvCase)}
                         className={selectedCase.id === pvCase.id ? "bg-accent" : ""}
                         data-testid={`dropdown-item-${pvCase.id}`}
                       >
@@ -167,10 +235,15 @@ export default function PFD5001ProcessGas() {
                 <Button
                   className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
                   onClick={handleSimulate}
+                  disabled={isSimulating}
                   data-testid="button-simulate"
                 >
-                  <Play className="w-4 h-4" />
-                  Simulate
+                  {isSimulating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Play className="w-4 h-4" />
+                  )}
+                  {isSimulating ? "Simulating..." : "Simulate"}
                 </Button>
                 <Button
                   asChild
@@ -184,7 +257,7 @@ export default function PFD5001ProcessGas() {
               </div>
             </div>
             <div className="bg-card rounded-md border border-border p-2">
-              <StreamTable headers={streamDataPart1.headers} rows={streamDataPart1.rows} title="streams-1-14" showValues={hasSimulated} />
+              <StreamTable headers={getStreamData().headers} rows={getStreamData().rows} title="streams-1-14" showValues={hasSimulated} />
             </div>
           </div>
 

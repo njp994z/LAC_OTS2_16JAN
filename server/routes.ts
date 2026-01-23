@@ -1767,6 +1767,103 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Material Balance: Streams 1-4 calculation
+  app.get('/api/material-balance/streams-1-4', async (req: Request, res: Response) => {
+    try {
+      const { case: caseNum = '1', zipCode = '89414', countryCode = 'US' } = req.query;
+      const parsedCase = parseInt(caseNum as string);
+      if (isNaN(parsedCase) || parsedCase < 1 || parsedCase > 4) {
+        return res.status(400).json({ message: 'Invalid case number. Must be 1, 2, 3, or 4.' });
+      }
+      const whichCase = parsedCase as 1 | 2 | 3 | 4;
+      
+      // Load process variables from database
+      const processVariables = await storage.getAllProcessVariables();
+      
+      // Check if we need realtime data by looking for "Realtime" in the selected case
+      let psychroData = null;
+      const caseKey = `case${whichCase}` as 'case1' | 'case2' | 'case3' | 'case4';
+      const needsRealtime = processVariables.some((pv: any) => {
+        const cellValue = pv[caseKey]?.toLowerCase() || '';
+        return cellValue.includes('realtime');
+      });
+      
+      if (needsRealtime) {
+        try {
+          psychroData = await getCurrentPsychrometrics(zipCode as string, countryCode as string);
+        } catch (err) {
+          console.warn('Failed to fetch realtime psychrometrics, using defaults:', err);
+        }
+      }
+      
+      // Resolve realtime values in process variables
+      const { resolveRealtimePV, extractPvValues } = await import('./realtime/resolveProcessVariables');
+      const resolvedPVs = await resolveRealtimePV({
+        processVariables,
+        whichCase,
+        psychroData,
+      });
+      
+      // Extract the values we need for stream calculations
+      const pvValues = extractPvValues(resolvedPVs, whichCase);
+      
+      // Determine plant condition from case description
+      const plantCondition = whichCase === 2 || whichCase === 4 ? 'dirty' : 'clean';
+      
+      // Call Python calculator
+      const pythonInput = {
+        ambient_pressure_atm: pvValues.ambientPressure_atm,
+        ambient_temperature_F: pvValues.ambientTemperature_F,
+        ambient_moisture_gr_lb: pvValues.ambientMoisture_grLb,
+        main_comp_rpm_pct: pvValues.mainCompRpm_pct,
+        filter_dp_inwc: pvValues.filterDp_inwc,
+        plant_condition: plantCondition,
+      };
+      
+      const pythonScriptPath = path.join(process.cwd(), 'server', 'python', 'streams_1_to_4.py');
+      
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath, JSON.stringify(pythonInput)]);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        pythonProcess.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString();
+        });
+        
+        pythonProcess.on('close', (code: number) => {
+          if (code !== 0) {
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+          } else {
+            try {
+              resolve(JSON.parse(stdout));
+            } catch (e) {
+              reject(new Error(`Failed to parse Python output: ${stdout}`));
+            }
+          }
+        });
+      });
+      
+      res.json({
+        streams: result,
+        inputs: pythonInput,
+        resolvedPVs: resolvedPVs.slice(0, 4), // Return first 4 PVs for debugging
+      });
+      
+    } catch (error) {
+      console.error('Material balance streams 1-4 error:', error);
+      res.status(500).json({
+        message: 'Failed to calculate streams 1-4',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
   // Main Compressor Simulation endpoint
   app.post('/api/compressor-simulation', async (req: Request, res: Response) => {
     try {
