@@ -78,7 +78,7 @@ function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; tit
             <th className="text-left p-2 bg-muted font-semibold min-w-[120px]">STREAM NUMBER</th>
             <th className="text-left p-2 bg-muted font-semibold min-w-[60px]"></th>
             {data.headers.map((h) => (
-              <th key={h} className="text-center p-2 bg-muted font-semibold min-w-[70px]">{h}</th>
+              <th key={h} className="text-center p-2 bg-muted font-semibold min-w-[120px]">{h}</th>
             ))}
           </tr>
           <tr className="border-b border-border">
