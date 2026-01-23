@@ -140,13 +140,14 @@ export default function InletAirFilter() {
       const data = await fetchRealtimeData();
       const humidityRatio = data.psychrometrics?.humidityRatio;
       if (humidityRatio !== undefined && humidityRatio !== null) {
+        const humidityGrLb = humidityRatio * 7000;
         setInputParams(prev => ({
           ...prev,
-          humidity: humidityRatio.toFixed(2)
+          humidity: humidityGrLb.toFixed(2)
         }));
         toast({
           title: "Humidity Updated",
-          description: `Live value: ${humidityRatio.toFixed(2)} gr/lb dry air`,
+          description: `Live value: ${humidityGrLb.toFixed(2)} gr/lb dry air`,
         });
       }
     } catch (error) {
