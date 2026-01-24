@@ -108,17 +108,17 @@ export default function ScenarioSelector({ onSelectScenario, selectedScenario }:
                 variant={scenario.buttonVariant === "warning" ? "default" : scenario.buttonVariant}
                 onClick={() => {
                   if (scenario.id === 1) {
-                    // Static Plant Operations - navigate to home-screen with mode=static
-                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=static");
+                    // Static Plant Operations - navigate to delta-v home-screen with mode=static
+                    setLocation("/delta-v?mode=static");
                   } else if (scenario.id === 2) {
-                    // Dynamic Operations - navigate to home-screen with mode=dynamic
-                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=dynamic");
+                    // Dynamic Operations - navigate to delta-v home-screen with mode=dynamic
+                    setLocation("/delta-v?mode=dynamic");
                   } else if (scenario.id === 3) {
-                    // Start-Up Operations - navigate to home-screen with mode=startup
-                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=startup");
+                    // Start-Up Operations - navigate to delta-v home-screen with mode=startup
+                    setLocation("/delta-v?mode=startup");
                   } else if (scenario.id === 4) {
-                    // Emergency Scenarios - navigate to home-screen with mode=emergency
-                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=emergency");
+                    // Emergency Scenarios - navigate to delta-v home-screen with mode=emergency
+                    setLocation("/delta-v?mode=emergency");
                   } else if ('externalLink' in scenario && scenario.externalLink) {
                     window.open(scenario.externalLink, "_blank", "noopener,noreferrer");
                   } else {

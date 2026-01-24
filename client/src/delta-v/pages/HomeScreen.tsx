@@ -273,8 +273,11 @@ const HomeScreen = () => {
     { id: "emergency", label: "Emergency Scenarios" },
   ];
   
-  // Read mode from query parameter on mount
-  useEffect(() => {
+  // Track current search params to detect changes
+  const [currentSearch, setCurrentSearch] = useState(window.location.search);
+  
+  // Helper function to read mode from URL
+  const readModeFromUrl = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const modeParam = searchParams.get('mode');
     if (modeParam) {
@@ -283,7 +286,28 @@ const HomeScreen = () => {
         setSelectedMode(modeMatch.label);
       }
     }
-  }, [location]);
+  }, []);
+  
+  // Read mode on mount and when location/search changes
+  useEffect(() => {
+    readModeFromUrl();
+    
+    // Listen for popstate events (browser back/forward)
+    const handlePopState = () => {
+      setCurrentSearch(window.location.search);
+      readModeFromUrl();
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [readModeFromUrl]);
+  
+  // Check for search param changes on every location change
+  useEffect(() => {
+    if (window.location.search !== currentSearch) {
+      setCurrentSearch(window.location.search);
+      readModeFromUrl();
+    }
+  }, [location, currentSearch, readModeFromUrl]);
   const [isVFDModalOpen, setIsVFDModalOpen] = useState(false);
   const [isSulfurFlowModalOpen, setIsSulfurFlowModalOpen] = useState(false);
   const [sulfurFlowModelockOverride, setSulfurFlowModelockOverride] = useState(false);
