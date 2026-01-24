@@ -84,6 +84,9 @@ import {
   Shapes,
   Trash2,
   FileText,
+  Play,
+  Pause,
+  RotateCcw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -93,6 +96,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
   TooltipContent,
@@ -233,6 +237,33 @@ const HomeScreen = () => {
   const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
   const [selectedMode, setSelectedMode] = useState("Static");
   const [location] = useLocation();
+  
+  // Dynamic simulation state
+  const [dynamicRunning, setDynamicRunning] = useState(false);
+  const [dynamicSpeed, setDynamicSpeed] = useState(1.0);
+  const [dynamicDt, setDynamicDt] = useState(0.12);
+  const [dynamicElapsed, setDynamicElapsed] = useState(0);
+  
+  // Dynamic simulation elapsed time tracker
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (dynamicRunning) {
+      interval = setInterval(() => {
+        setDynamicElapsed(prev => prev + (dynamicDt * dynamicSpeed));
+      }, dynamicDt * 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [dynamicRunning, dynamicDt, dynamicSpeed]);
+  
+  // Reset dynamic simulation
+  const handleDynamicReset = () => {
+    setDynamicRunning(false);
+    setDynamicElapsed(0);
+    setDynamicSpeed(1.0);
+    setDynamicDt(0.12);
+  };
   
   // Mode options for the Mode dropdown
   const modeOptions = [
@@ -2153,18 +2184,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          {/* Start Simulation Button - only visible when NOT in Static mode */}
-          {selectedMode !== "Static" && (
-            <Button
-              variant="default"
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 text-sm h-8 gap-2"
-              data-testid="button-start-simulation"
-            >
-              <Activity className="h-4 w-4" />
-              Start
-            </Button>
-          )}
 
           {/* PFDs Dropdown Menu */}
           <DropdownMenu>
@@ -2259,6 +2278,90 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           </div>
         </div>
       </div>
+
+      {/* Dynamic Simulation Toolbar - only visible in Dynamic mode */}
+      {selectedMode === "Dynamic" && (
+        <div className="flex-shrink-0 bg-gray-800 border-b border-gray-600 px-3 py-2 flex flex-wrap items-center gap-6">
+          {/* Start/Stop Button */}
+          <Button
+            onClick={() => setDynamicRunning(!dynamicRunning)}
+            variant={dynamicRunning ? "destructive" : "default"}
+            size="sm"
+            className={`gap-2 ${!dynamicRunning ? 'bg-green-600' : ''}`}
+            data-testid="button-dynamic-start-stop"
+          >
+            {dynamicRunning ? (
+              <>
+                <Pause className="h-4 w-4" />
+                Stop
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                Start
+              </>
+            )}
+          </Button>
+
+          {/* Reset Button */}
+          <Button
+            onClick={handleDynamicReset}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-gray-500 text-gray-200"
+            data-testid="button-dynamic-reset"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </Button>
+
+          {/* Update Interval */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-300 whitespace-nowrap">Update Interval:</span>
+            <span className="text-xs text-white font-medium w-10">{dynamicDt.toFixed(2)} s</span>
+            <Slider
+              min={0.01}
+              max={0.5}
+              step={0.01}
+              value={[dynamicDt]}
+              onValueChange={([value]) => setDynamicDt(value)}
+              className="w-24"
+              data-testid="slider-dynamic-dt"
+            />
+          </div>
+
+          {/* Simulation Speed */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-300 whitespace-nowrap">Simulation Speed:</span>
+            <span className="text-xs text-white font-medium w-10">{dynamicSpeed.toFixed(1)}x</span>
+            <Slider
+              min={0.1}
+              max={20}
+              step={0.1}
+              value={[dynamicSpeed]}
+              onValueChange={([value]) => setDynamicSpeed(value)}
+              className="w-24"
+              data-testid="slider-dynamic-speed"
+            />
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-300">Status</span>
+            <span className={`text-sm font-semibold ${dynamicRunning ? 'text-green-400' : 'text-gray-400'}`} data-testid="text-dynamic-status">
+              {dynamicRunning ? "Running" : "Stopped"}
+            </span>
+          </div>
+
+          {/* Elapsed Time */}
+          <div className="flex flex-col">
+            <span className="text-[10px] text-gray-400">Elapsed:</span>
+            <span className="text-xs text-white font-mono" data-testid="text-dynamic-elapsed">
+              {(dynamicElapsed / 60).toFixed(3)} min
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main content area - scrollable container */}
       <div className="flex-1 overflow-auto">
