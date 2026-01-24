@@ -2279,8 +2279,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         </div>
       </div>
 
-      {/* Dynamic Simulation Toolbar - only visible in Dynamic mode */}
-      {selectedMode === "Dynamic" && (
+      {/* Simulation Toolbar - visible in Dynamic, Start-Up, and Emergency modes */}
+      {(selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios") && (
         <div className="flex-shrink-0 bg-gray-800 border-b border-gray-600 px-3 py-2 flex flex-wrap items-center gap-6">
           {/* Start/Stop Button */}
           <Button
