@@ -113,6 +113,12 @@ export default function ScenarioSelector({ onSelectScenario, selectedScenario }:
                   } else if (scenario.id === 2) {
                     // Dynamic Operations - navigate to home-screen with mode=dynamic
                     setLocation("/settings/controller-outputs/faceplates/home-screen?mode=dynamic");
+                  } else if (scenario.id === 3) {
+                    // Start-Up Operations - navigate to home-screen with mode=startup
+                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=startup");
+                  } else if (scenario.id === 4) {
+                    // Emergency Scenarios - navigate to home-screen with mode=emergency
+                    setLocation("/settings/controller-outputs/faceplates/home-screen?mode=emergency");
                   } else if ('externalLink' in scenario && scenario.externalLink) {
                     window.open(scenario.externalLink, "_blank", "noopener,noreferrer");
                   } else {
