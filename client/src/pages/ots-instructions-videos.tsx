@@ -90,7 +90,7 @@ export default function OTSInstructionsVideos() {
           <div className="flex items-center gap-3">
             <Button
               variant="default"
-              onClick={() => setLocation("/simulator")}
+              onClick={() => setLocation("/demo")}
               data-testid="button-1st-gen-simulation"
               className="gap-2"
             >
