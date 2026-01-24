@@ -1,11 +1,27 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Settings2 } from "lucide-react";
 import expLogo from "@/assets/exp-logo.png";
 
 export default function EquipmentSystemParameters() {
   const [, setLocation] = useLocation();
+
+  const [pitLevel, setPitLevel] = useState("7.0");
+  const [pipeDiameter, setPipeDiameter] = useState("4.0");
+  const [lineLength, setLineLength] = useState("80.0");
+  const [nozzleDeltaP, setNozzleDeltaP] = useState("150.0");
+  const [furnacePressure, setFurnacePressure] = useState("7.0");
+  const [frictionFactor, setFrictionFactor] = useState("0.018");
+  const [kMinorLosses, setKMinorLosses] = useState("7.5");
+  const [sulfurSG, setSulfurSG] = useState("1.79");
+  const [cvMax, setCvMax] = useState("548.0");
+  const [valveProfile, setValveProfile] = useState("equal-percentage");
+  const [rangeability, setRangeability] = useState("85");
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,19 +56,160 @@ export default function EquipmentSystemParameters() {
             </p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Equipment Parameters</CardTitle>
+          <Card className="mb-6">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <Settings2 className="w-5 h-5 text-muted-foreground" />
+                <CardTitle className="text-lg">Sulfur Hydraulic System Parameters</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <Settings2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  This section will display equipment-specific parameters including design specifications, 
-                  operating limits, performance curves, and physical dimensions for compressors, heat exchangers, 
-                  reactors, towers, and other major process equipment in the sulfuric acid plant.
-                </p>
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="pit-level" className="text-xs text-muted-foreground">Pit Level (ft)</Label>
+                  <Input
+                    id="pit-level"
+                    type="text"
+                    value={pitLevel}
+                    onChange={(e) => setPitLevel(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-pit-level"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pipe-diameter" className="text-xs text-muted-foreground">Pipe Diameter (in)</Label>
+                  <Input
+                    id="pipe-diameter"
+                    type="text"
+                    value={pipeDiameter}
+                    onChange={(e) => setPipeDiameter(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-pipe-diameter"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="line-length" className="text-xs text-muted-foreground">Line Length (ft)</Label>
+                  <Input
+                    id="line-length"
+                    type="text"
+                    value={lineLength}
+                    onChange={(e) => setLineLength(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-line-length"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nozzle-delta-p" className="text-xs text-muted-foreground">Nozzle ΔP (psi)</Label>
+                  <Input
+                    id="nozzle-delta-p"
+                    type="text"
+                    value={nozzleDeltaP}
+                    onChange={(e) => setNozzleDeltaP(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-nozzle-delta-p"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="furnace-pressure" className="text-xs text-muted-foreground">Furnace Pressure (psig)</Label>
+                  <Input
+                    id="furnace-pressure"
+                    type="text"
+                    value={furnacePressure}
+                    onChange={(e) => setFurnacePressure(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-furnace-pressure"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="friction-factor" className="text-xs text-muted-foreground">Friction Factor</Label>
+                  <Input
+                    id="friction-factor"
+                    type="text"
+                    value={frictionFactor}
+                    onChange={(e) => setFrictionFactor(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-friction-factor"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="k-minor-losses" className="text-xs text-muted-foreground">K Minor Losses</Label>
+                  <Input
+                    id="k-minor-losses"
+                    type="text"
+                    value={kMinorLosses}
+                    onChange={(e) => setKMinorLosses(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-k-minor-losses"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sulfur-sg" className="text-xs text-muted-foreground">Sulfur SG</Label>
+                  <Input
+                    id="sulfur-sg"
+                    type="text"
+                    value={sulfurSG}
+                    onChange={(e) => setSulfurSG(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-sulfur-sg"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cv-max" className="text-xs text-muted-foreground">Cv Max</Label>
+                  <Input
+                    id="cv-max"
+                    type="text"
+                    value={cvMax}
+                    onChange={(e) => setCvMax(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-cv-max"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Sulfur Control Valve Profile</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-md space-y-4">
+                <div className="space-y-2">
+                  <Select value={valveProfile} onValueChange={setValveProfile}>
+                    <SelectTrigger data-testid="select-valve-profile">
+                      <SelectValue placeholder="Select valve profile" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equal-percentage" data-testid="option-equal-percentage">Equal Percentage</SelectItem>
+                      <SelectItem value="linear" data-testid="option-linear">Linear</SelectItem>
+                      <SelectItem value="quick-opening" data-testid="option-quick-opening">Quick Opening</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    Cv(p) = (Cv_max / R) * R^(p/100)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rangeability" className="text-xs text-muted-foreground">Rangeability (R)</Label>
+                  <Input
+                    id="rangeability"
+                    type="text"
+                    value={rangeability}
+                    onChange={(e) => setRangeability(e.target.value)}
+                    className="bg-muted/50"
+                    data-testid="input-rangeability"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Typical: 50-200 (default 124 based on Cv=25.039 at p=30.6%)
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
