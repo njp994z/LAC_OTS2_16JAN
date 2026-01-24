@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Target, Sliders, Activity, GitCompare } from "lucide-react";
+import { ArrowLeft, Target, Sliders, Activity, GitCompare, Settings2 } from "lucide-react";
 
 export default function OutputVariables() {
   const [, setLocation] = useLocation();
@@ -38,6 +38,14 @@ export default function OutputVariables() {
       icon: GitCompare,
       path: "/settings/static-heat-material-balances",
       testId: "button-static-heat-material-balances"
+    },
+    {
+      id: "equipment-system-parameters",
+      title: "Equipment System Parameters",
+      description: "Configure equipment-specific parameters including design specifications, operating limits, performance curves, and physical dimensions for all major process equipment in the sulfuric acid plant.",
+      icon: Settings2,
+      path: "/settings/output-variables/equipment-system-parameters",
+      testId: "button-equipment-system-parameters"
     }
   ];
 
