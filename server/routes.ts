@@ -1676,6 +1676,42 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Get all setpoint variables
+  app.get('/api/setpoint-variables', async (req: Request, res: Response) => {
+    try {
+      const vars = await storage.getAllSetpointVariables();
+      res.json(vars);
+    } catch (error) {
+      console.error("Setpoint variables fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch setpoint variables" });
+    }
+  });
+
+  // Save all setpoint variables (replace all)
+  app.post('/api/setpoint-variables', async (req: Request, res: Response) => {
+    try {
+      const { variables } = req.body;
+      if (!Array.isArray(variables)) {
+        return res.status(400).json({ message: "Variables must be an array" });
+      }
+      // Strip out any timestamp/id fields that shouldn't be set by client
+      const sanitizedVars = variables.map((v: any) => ({
+        count: String(v.count || ''),
+        tag: String(v.tag || ''),
+        description: String(v.description || ''),
+        case1: String(v.case1 || ''),
+        case2: String(v.case2 || ''),
+        case3: String(v.case3 || ''),
+        case4: String(v.case4 || ''),
+      }));
+      const saved = await storage.upsertSetpointVariables(sanitizedVars);
+      res.json({ success: true, count: saved.length });
+    } catch (error) {
+      console.error("Setpoint variables save error:", error);
+      res.status(500).json({ message: "Failed to save setpoint variables" });
+    }
+  });
+
   // ===== PSYCHROMETRIC / WEATHER ENDPOINTS =====
 
   // Check if weather service is configured

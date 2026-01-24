@@ -3,7 +3,7 @@
 // Reviewed and resolved manually - do not blindly overwrite in future merges
 
 
-import { users, processTags, catalystParameters, converterCases, processVariables, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
+import { users, processTags, catalystParameters, converterCases, processVariables, setpointVariables, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SetpointVariable, type InsertSetpointVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -43,6 +43,10 @@ export interface IStorage {
   // Process Variables
   getAllProcessVariables(): Promise<ProcessVariable[]>;
   upsertProcessVariables(vars: InsertProcessVariable[]): Promise<ProcessVariable[]>;
+  
+  // Setpoint Variables
+  getAllSetpointVariables(): Promise<SetpointVariable[]>;
+  upsertSetpointVariables(vars: InsertSetpointVariable[]): Promise<SetpointVariable[]>;
   
   // Sulfur Process Nodes
   getSulfurProcessNodes(simulationType: string): Promise<SulfurProcessNode[]>;
@@ -238,6 +242,19 @@ export class DatabaseStorage implements IStorage {
     await db.delete(processVariables);
     if (vars.length === 0) return [];
     const results = await db.insert(processVariables).values(vars).returning();
+    return results;
+  }
+
+  // Setpoint Variables methods
+  async getAllSetpointVariables(): Promise<SetpointVariable[]> {
+    return await db.select().from(setpointVariables);
+  }
+
+  async upsertSetpointVariables(vars: InsertSetpointVariable[]): Promise<SetpointVariable[]> {
+    // Delete all existing and insert new (simple replace strategy)
+    await db.delete(setpointVariables);
+    if (vars.length === 0) return [];
+    const results = await db.insert(setpointVariables).values(vars).returning();
     return results;
   }
 

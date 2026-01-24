@@ -257,6 +257,29 @@ export const insertProcessVariableSchema = createInsertSchema(processVariables).
 export type InsertProcessVariable = z.infer<typeof insertProcessVariableSchema>;
 export type ProcessVariable = typeof processVariables.$inferSelect;
 
+// Setpoint Variables table for initial simulation setpoints
+export const setpointVariables = pgTable("setpoint_variables", {
+  id: serial("id").primaryKey(),
+  count: varchar("count", { length: 10 }).notNull(),
+  tag: varchar("tag", { length: 100 }).notNull(),
+  description: varchar("description", { length: 200 }).notNull(),
+  case1: varchar("case1", { length: 100 }).notNull(),
+  case2: varchar("case2", { length: 100 }).notNull(),
+  case3: varchar("case3", { length: 100 }).notNull(),
+  case4: varchar("case4", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSetpointVariableSchema = createInsertSchema(setpointVariables).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSetpointVariable = z.infer<typeof insertSetpointVariableSchema>;
+export type SetpointVariable = typeof setpointVariables.$inferSelect;
+
 // Sulfur Process Nodes table - stores simulation output data at key process locations
 export const sulfurProcessNodes = pgTable("sulfur_process_nodes", {
   id: serial("id").primaryKey(),
