@@ -170,40 +170,34 @@ export default function EquipmentSystemParameters() {
                     data-testid="input-cv-max"
                   />
                 </div>
-              </div>
-
-              <div className="border-t border-border pt-4 mt-4">
-                <h3 className="text-sm font-medium text-foreground mb-3">Sulfur Control Valve Profile</h3>
-                <div className="grid grid-cols-4 gap-3">
-                  <div className="space-y-1">
-                    <Select value={valveProfile} onValueChange={setValveProfile}>
-                      <SelectTrigger className="h-8 text-sm" data-testid="select-valve-profile">
-                        <SelectValue placeholder="Select valve profile" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="equal-percentage" data-testid="option-equal-percentage">Equal Percentage</SelectItem>
-                        <SelectItem value="linear" data-testid="option-linear">Linear</SelectItem>
-                        <SelectItem value="quick-opening" data-testid="option-quick-opening">Quick Opening</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[10px] text-muted-foreground font-mono">
-                      Cv(p) = (Cv_max / R) * R^(p/100)
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="rangeability" className="text-xs text-muted-foreground">Rangeability (R)</Label>
-                    <Input
-                      id="rangeability"
-                      type="text"
-                      value={rangeability}
-                      onChange={(e) => setRangeability(e.target.value)}
-                      className="bg-muted/50 h-8 text-sm"
-                      data-testid="input-rangeability"
-                    />
-                    <p className="text-[10px] text-muted-foreground">
-                      Typical: 50-200 (default 124 based on Cv=25.039 at p=30.6%)
-                    </p>
-                  </div>
+                <div className="space-y-1">
+                  <Select value={valveProfile} onValueChange={setValveProfile}>
+                    <SelectTrigger className="h-8 text-sm" data-testid="select-valve-profile">
+                      <SelectValue placeholder="Select valve profile" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equal-percentage" data-testid="option-equal-percentage">Equal Percentage</SelectItem>
+                      <SelectItem value="linear" data-testid="option-linear">Linear</SelectItem>
+                      <SelectItem value="quick-opening" data-testid="option-quick-opening">Quick Opening</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground font-mono">
+                    Cv(p) = (Cv_max / R) * R^(p/100)
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="rangeability" className="text-xs text-muted-foreground">Rangeability (R)</Label>
+                  <Input
+                    id="rangeability"
+                    type="text"
+                    value={rangeability}
+                    onChange={(e) => setRangeability(e.target.value)}
+                    className="bg-muted/50 h-8 text-sm"
+                    data-testid="input-rangeability"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Typical: 50-200 (default 124 based on Cv=25.039 at p=30.6%)
+                  </p>
                 </div>
               </div>
             </CardContent>
