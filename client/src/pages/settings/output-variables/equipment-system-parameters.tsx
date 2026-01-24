@@ -56,159 +56,154 @@ export default function EquipmentSystemParameters() {
             </p>
           </div>
 
-          <Card className="mb-6">
-            <CardHeader className="pb-4">
+          <Card>
+            <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Settings2 className="w-5 h-5 text-muted-foreground" />
                 <CardTitle className="text-lg">Sulfur Hydraulic System Parameters</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="space-y-2">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
                   <Label htmlFor="pit-level" className="text-xs text-muted-foreground">Pit Level (ft)</Label>
                   <Input
                     id="pit-level"
                     type="text"
                     value={pitLevel}
                     onChange={(e) => setPitLevel(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-pit-level"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="pipe-diameter" className="text-xs text-muted-foreground">Pipe Diameter (in)</Label>
                   <Input
                     id="pipe-diameter"
                     type="text"
                     value={pipeDiameter}
                     onChange={(e) => setPipeDiameter(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-pipe-diameter"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="line-length" className="text-xs text-muted-foreground">Line Length (ft)</Label>
                   <Input
                     id="line-length"
                     type="text"
                     value={lineLength}
                     onChange={(e) => setLineLength(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-line-length"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="nozzle-delta-p" className="text-xs text-muted-foreground">Nozzle ΔP (psi)</Label>
                   <Input
                     id="nozzle-delta-p"
                     type="text"
                     value={nozzleDeltaP}
                     onChange={(e) => setNozzleDeltaP(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-nozzle-delta-p"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
                   <Label htmlFor="furnace-pressure" className="text-xs text-muted-foreground">Furnace Pressure (psig)</Label>
                   <Input
                     id="furnace-pressure"
                     type="text"
                     value={furnacePressure}
                     onChange={(e) => setFurnacePressure(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-furnace-pressure"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="friction-factor" className="text-xs text-muted-foreground">Friction Factor</Label>
                   <Input
                     id="friction-factor"
                     type="text"
                     value={frictionFactor}
                     onChange={(e) => setFrictionFactor(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-friction-factor"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="k-minor-losses" className="text-xs text-muted-foreground">K Minor Losses</Label>
                   <Input
                     id="k-minor-losses"
                     type="text"
                     value={kMinorLosses}
                     onChange={(e) => setKMinorLosses(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-k-minor-losses"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="sulfur-sg" className="text-xs text-muted-foreground">Sulfur SG</Label>
                   <Input
                     id="sulfur-sg"
                     type="text"
                     value={sulfurSG}
                     onChange={(e) => setSulfurSG(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-sulfur-sg"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
                   <Label htmlFor="cv-max" className="text-xs text-muted-foreground">Cv Max</Label>
                   <Input
                     id="cv-max"
                     type="text"
                     value={cvMax}
                     onChange={(e) => setCvMax(e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/50 h-8 text-sm"
                     data-testid="input-cv-max"
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Sulfur Control Valve Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-w-md space-y-4">
-                <div className="space-y-2">
-                  <Select value={valveProfile} onValueChange={setValveProfile}>
-                    <SelectTrigger data-testid="select-valve-profile">
-                      <SelectValue placeholder="Select valve profile" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="equal-percentage" data-testid="option-equal-percentage">Equal Percentage</SelectItem>
-                      <SelectItem value="linear" data-testid="option-linear">Linear</SelectItem>
-                      <SelectItem value="quick-opening" data-testid="option-quick-opening">Quick Opening</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    Cv(p) = (Cv_max / R) * R^(p/100)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="rangeability" className="text-xs text-muted-foreground">Rangeability (R)</Label>
-                  <Input
-                    id="rangeability"
-                    type="text"
-                    value={rangeability}
-                    onChange={(e) => setRangeability(e.target.value)}
-                    className="bg-muted/50"
-                    data-testid="input-rangeability"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Typical: 50-200 (default 124 based on Cv=25.039 at p=30.6%)
-                  </p>
+              <div className="border-t border-border pt-4 mt-4">
+                <h3 className="text-sm font-medium text-foreground mb-3">Sulfur Control Valve Profile</h3>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <Select value={valveProfile} onValueChange={setValveProfile}>
+                      <SelectTrigger className="h-8 text-sm" data-testid="select-valve-profile">
+                        <SelectValue placeholder="Select valve profile" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="equal-percentage" data-testid="option-equal-percentage">Equal Percentage</SelectItem>
+                        <SelectItem value="linear" data-testid="option-linear">Linear</SelectItem>
+                        <SelectItem value="quick-opening" data-testid="option-quick-opening">Quick Opening</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      Cv(p) = (Cv_max / R) * R^(p/100)
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="rangeability" className="text-xs text-muted-foreground">Rangeability (R)</Label>
+                    <Input
+                      id="rangeability"
+                      type="text"
+                      value={rangeability}
+                      onChange={(e) => setRangeability(e.target.value)}
+                      className="bg-muted/50 h-8 text-sm"
+                      data-testid="input-rangeability"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Typical: 50-200 (default 124 based on Cv=25.039 at p=30.6%)
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
