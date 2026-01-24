@@ -565,11 +565,7 @@ function Router() {
       <Route path="/settings/model-pallet" component={ModelPallet} />
       <Route path="/settings/databases" component={Databases} />
       <Route path="/settings/plant-document-library" component={PlantDocumentLibrary} />
-      <Route path="/simulator">
-        <ProtectedRoute>
-          <Simulator />
-        </ProtectedRoute>
-      </Route>
+      <Route path="/simulator" component={Simulator} />
       <Route path="/admin/users">
         <ProtectedRoute>
           <AdminUsers />
