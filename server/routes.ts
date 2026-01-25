@@ -1903,20 +1903,19 @@ Be professional, concise, and helpful. If asked about features not yet implement
   // Main Compressor Simulation endpoint
   app.post('/api/compressor-simulation', async (req: Request, res: Response) => {
     try {
-      const { rpm_percent, temp, pressure, barometricPressure, plant_condition } = req.body;
+      const { rpm_percent, temp, barometricPressure, plant_condition } = req.body;
 
-      // Validate required fields
-      if (rpm_percent === undefined || temp === undefined || pressure === undefined || barometricPressure === undefined) {
+      // Validate required fields (pressure is now calculated by Python backend from system curve)
+      if (rpm_percent === undefined || temp === undefined || barometricPressure === undefined) {
         return res.status(400).json({ message: "Missing required compressor input parameters" });
       }
 
       const rpmPercentVal = parseFloat(rpm_percent);
       const tempVal = parseFloat(temp);
-      const pressureVal = parseFloat(pressure);
       const baroVal = parseFloat(barometricPressure);
 
       // Validate numeric inputs
-      if (isNaN(rpmPercentVal) || isNaN(tempVal) || isNaN(pressureVal) || isNaN(baroVal)) {
+      if (isNaN(rpmPercentVal) || isNaN(tempVal) || isNaN(baroVal)) {
         return res.status(400).json({ message: "All inputs must be valid numbers" });
       }
 
@@ -1924,11 +1923,10 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const validConditions = ["clean", "dirty"];
       const condition = validConditions.includes(plant_condition) ? plant_condition : "clean";
 
-      // Prepare input for Python script
+      // Prepare input for Python script (inlet pressure calculated from system curve)
       const pythonInput = {
         rpm_percent: rpmPercentVal,
         temp: tempVal,
-        pressure: pressureVal,
         barometricPressure: baroVal,
         plant_condition: condition
       };
