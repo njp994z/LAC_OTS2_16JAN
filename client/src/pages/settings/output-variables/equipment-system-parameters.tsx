@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Settings2 } from "lucide-react";
+import { ArrowLeft, Settings2, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import expLogo from "@/assets/exp-logo.png";
 
 export default function EquipmentSystemParameters() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
   const [pitLevel, setPitLevel] = useState("7.0");
   const [pipeDiameter, setPipeDiameter] = useState("4.0");
@@ -23,10 +26,67 @@ export default function EquipmentSystemParameters() {
   const [valveProfile, setValveProfile] = useState("equal-percentage");
   const [rangeability, setRangeability] = useState("85");
 
+  // Load saved parameters from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('equipmentSystemParameters');
+    if (saved) {
+      try {
+        const params = JSON.parse(saved);
+        if (params.pitLevel) setPitLevel(params.pitLevel);
+        if (params.pipeDiameter) setPipeDiameter(params.pipeDiameter);
+        if (params.lineLength) setLineLength(params.lineLength);
+        if (params.nozzleDeltaP) setNozzleDeltaP(params.nozzleDeltaP);
+        if (params.furnacePressure) setFurnacePressure(params.furnacePressure);
+        if (params.frictionFactor) setFrictionFactor(params.frictionFactor);
+        if (params.kMinorLosses) setKMinorLosses(params.kMinorLosses);
+        if (params.sulfurSG) setSulfurSG(params.sulfurSG);
+        if (params.cvMax) setCvMax(params.cvMax);
+        if (params.valveProfile) setValveProfile(params.valveProfile);
+        if (params.rangeability) setRangeability(params.rangeability);
+      } catch (e) {
+        console.error('Failed to load saved equipment parameters:', e);
+      }
+    }
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Save to localStorage for now (can be extended to API later)
+      const parameters = {
+        pitLevel,
+        pipeDiameter,
+        lineLength,
+        nozzleDeltaP,
+        furnacePressure,
+        frictionFactor,
+        kMinorLosses,
+        sulfurSG,
+        cvMax,
+        valveProfile,
+        rangeability,
+      };
+      localStorage.setItem('equipmentSystemParameters', JSON.stringify(parameters));
+      toast({
+        title: "Changes saved",
+        description: "Equipment system parameters have been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving",
+        description: "Failed to save equipment system parameters.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -41,6 +101,15 @@ export default function EquipmentSystemParameters() {
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>
           </div>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2"
+            data-testid="button-save-changes"
+          >
+            <Save className="w-4 h-4" />
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </header>
 
