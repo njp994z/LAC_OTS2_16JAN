@@ -12,11 +12,11 @@ import { PFDNavigation } from "../../components/PFDNavigation";
 import { useToast } from "@/hooks/use-toast";
 import processGasDiagram from "@assets/image_1769045383009.png";
 
-const pvInputCases = [
-  { id: "case1", label: "Case 1", description: "PV_2480 STPD - Clean", caseNum: 1 },
-  { id: "case2", label: "Case 2", description: "PV_2480 STPD - Dirty", caseNum: 2 },
-  { id: "case3", label: "Case 3", description: "PV_1100 STPD - Clean", caseNum: 3 },
-  { id: "case4", label: "Case 4", description: "PV_1100 STPD - Dirty", caseNum: 4 },
+const spInputCases = [
+  { id: "case1", label: "Case 1", description: "SP_2480 STPD - Clean", caseNum: 1 },
+  { id: "case2", label: "Case 2", description: "SP_2480 STPD - Dirty", caseNum: 2 },
+  { id: "case3", label: "Case 3", description: "SP_1100 STPD - Clean", caseNum: 3 },
+  { id: "case4", label: "Case 4", description: "SP_1100 STPD - Dirty", caseNum: 4 },
 ];
 
 interface StreamResult {
@@ -169,7 +169,7 @@ export default function PFD5001ProcessGas() {
   const id = "5001";
   const documentNumber = "1540-PR-PFD-0000-EXP-5001";
   const title = "PROCESS GAS";
-  const [selectedCase, setSelectedCase] = useState(pvInputCases[0]);
+  const [selectedCase, setSelectedCase] = useState(spInputCases[0]);
   const [hasSimulated, setHasSimulated] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [calculatedStreams, setCalculatedStreams] = useState<{
@@ -180,8 +180,8 @@ export default function PFD5001ProcessGas() {
   } | null>(null);
   const { toast } = useToast();
 
-  const handleCaseChange = (pvCase: typeof pvInputCases[0]) => {
-    setSelectedCase(pvCase);
+  const handleCaseChange = (spCase: typeof spInputCases[0]) => {
+    setSelectedCase(spCase);
     setHasSimulated(false);
     setCalculatedStreams(null);
   };
@@ -278,23 +278,23 @@ export default function PFD5001ProcessGas() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
-                      data-testid="dropdown-initial-pv-inputs"
+                      data-testid="dropdown-initial-sp-inputs"
                     >
                       {selectedCase.label}: {selectedCase.description}
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" data-testid="dropdown-content-pv-inputs">
-                    {pvInputCases.map((pvCase) => (
+                  <DropdownMenuContent align="start" data-testid="dropdown-content-sp-inputs">
+                    {spInputCases.map((spCase) => (
                       <DropdownMenuItem
-                        key={pvCase.id}
-                        onClick={() => handleCaseChange(pvCase)}
-                        className={selectedCase.id === pvCase.id ? "bg-accent" : ""}
-                        data-testid={`dropdown-item-${pvCase.id}`}
+                        key={spCase.id}
+                        onClick={() => handleCaseChange(spCase)}
+                        className={selectedCase.id === spCase.id ? "bg-accent" : ""}
+                        data-testid={`dropdown-item-${spCase.id}`}
                       >
                         <div className="flex flex-col">
-                          <span className="font-medium">{pvCase.label}</span>
-                          <span className="text-xs text-muted-foreground">{pvCase.description}</span>
+                          <span className="font-medium">{spCase.label}</span>
+                          <span className="text-xs text-muted-foreground">{spCase.description}</span>
                         </div>
                       </DropdownMenuItem>
                     ))}
