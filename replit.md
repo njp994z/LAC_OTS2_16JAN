@@ -31,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage Solutions
 - **Database**: PostgreSQL database utilizing Neon serverless driver with Drizzle ORM for type-safe queries.
 - **Schema**: Includes `sessions` table for persistence and `users` table for user data (username, hashedPassword, email, names, profile image URL, timestamps).
+- **Setpoint and Process Variables**: Both tables use JSONB `cases` column for dynamic case data (instead of fixed case1-4 columns). Separate metadata tables (`setpoint_case_columns` and `process_variable_case_columns`) store case column definitions with id, name, and description.
 - **Data Access Layer**: `DatabaseStorage` class provides an interface for user operations, ensuring password hashes are never exposed.
 
 ## External Dependencies
