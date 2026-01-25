@@ -317,9 +317,9 @@ export default function PFD5001ProcessGas() {
                   asChild
                   className="bg-[#1a5f5f] border border-[#1a5f5f] text-white gap-2"
                 >
-                  <Link href="/settings/output-variables/process-variables" data-testid="link-initial-pv-settings">
+                  <Link href="/settings/output-variables/set-point-variables" data-testid="link-initial-sp-settings">
                     <Settings className="w-4 h-4" />
-                    Initial PV Settings
+                    Initial SP Settings
                   </Link>
                 </Button>
               </div>
