@@ -7,6 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { PFDNavigation } from "../../components/PFDNavigation";
 import { useToast } from "@/hooks/use-toast";
@@ -265,32 +267,54 @@ export default function PFD5001ProcessGas() {
               variant="outline"
               size="sm"
               className="gap-2"
-              data-testid="dropdown-python-code"
+              data-testid="dropdown-source-code"
             >
               <Code className="w-4 h-4" />
-              Python Code
+              Source Code
               <ChevronDown className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" data-testid="dropdown-content-python-code">
+          <DropdownMenuContent align="end" data-testid="dropdown-content-source-code">
+            <DropdownMenuLabel>GUI Code (TypeScript)</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => window.open('/api/python-code/process-gas?action=view', '_blank')}
-              data-testid="dropdown-item-view-code"
+              onClick={() => window.open('/api/gui-code/process-gas?action=view', '_blank')}
+              data-testid="dropdown-item-view-gui-code"
             >
               <Eye className="w-4 h-4 mr-2" />
-              View Code
+              View GUI Code
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = '/api/gui-code/process-gas?action=download';
+                link.download = 'PFD5001ProcessGas.tsx';
+                link.click();
+              }}
+              data-testid="dropdown-item-download-gui-code"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download GUI Code
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Simulation Code (Python)</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => window.open('/api/python-code/process-gas?action=view', '_blank')}
+              data-testid="dropdown-item-view-simulation-code"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Simulation Code
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
                 const link = document.createElement('a');
                 link.href = '/api/python-code/process-gas?action=download';
-                link.download = 'process_gas_simulation.py';
+                link.download = 'static_simulator.py';
                 link.click();
               }}
-              data-testid="dropdown-item-download-code"
+              data-testid="dropdown-item-download-simulation-code"
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Code
+              Download Simulation Code
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

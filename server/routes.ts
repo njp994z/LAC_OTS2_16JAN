@@ -2953,6 +2953,43 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // GUI code view/download endpoint for specific modules (TSX files)
+  app.get('/api/gui-code/:module', (req: Request, res: Response) => {
+    const { module } = req.params;
+    const { action = 'view' } = req.query;
+    
+    // Map module names to TSX GUI files
+    const moduleFileMap: Record<string, string> = {
+      'process-gas': 'client/src/delta-v/pages/pfd/PFD5001ProcessGas.tsx',
+      'compressor': 'client/src/delta-v/pages/unit-operations/compressor.tsx',
+      'drying-tower': 'client/src/delta-v/pages/unit-operations/drying-tower.tsx',
+      'inlet-air-filter': 'client/src/delta-v/pages/unit-operations/inlet-air-filter.tsx',
+      'catalyst': 'client/src/delta-v/pages/unit-operations/catalytic-converter.tsx',
+    };
+    
+    const relativePath = moduleFileMap[module];
+    if (!relativePath) {
+      return res.status(404).json({ message: 'Module not found' });
+    }
+    
+    const filePath = path.join(process.cwd(), relativePath);
+    const filename = path.basename(relativePath);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    if (action === 'download') {
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'text/plain');
+      res.sendFile(filePath);
+    } else {
+      // View action - return as plain text
+      res.setHeader('Content-Type', 'text/plain');
+      res.sendFile(filePath);
+    }
+  });
+
   // Python code view/download endpoint for specific modules
   app.get('/api/python-code/:module', (req: Request, res: Response) => {
     const { module } = req.params;
