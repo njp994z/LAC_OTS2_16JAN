@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,15 +14,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, FileText, Play, Loader2, Download, ChevronDown, Eye } from "lucide-react";
+import { ArrowLeft, FileText, Play, Loader2, Download, ChevronDown, Eye, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import expLogo from "@/assets/exp-logo.png";
 
+type SimulationMode = "static" | "dynamic";
+
 interface InputParams {
   rpmPercent: string;
   temp: string;
-  pressure: string;
   barometricPressure: string;
 }
 
@@ -33,6 +36,7 @@ interface OutputParams {
   massFlowKlbhr: string;
   brakePowerHp: string;
   driverSpeed: string;
+  inletPressureInwc: string;
 }
 
 interface StreamData {
@@ -49,6 +53,7 @@ interface StreamData {
 
 export default function MainCompressor() {
   const { toast } = useToast();
+  const [simulationMode, setSimulationMode] = useState<SimulationMode>("static");
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [plantCondition, setPlantCondition] = useState<"clean" | "dirty">("clean");
   const [realtimeBarometric, setRealtimeBarometric] = useState<string>("no");
@@ -57,7 +62,6 @@ export default function MainCompressor() {
   const [inputParams, setInputParams] = useState<InputParams>({
     rpmPercent: "88",
     temp: "150",
-    pressure: "-12",
     barometricPressure: "0.85"
   });
 
@@ -69,7 +73,8 @@ export default function MainCompressor() {
     standardFlowScfm: "---",
     massFlowKlbhr: "---",
     brakePowerHp: "---",
-    driverSpeed: "---"
+    driverSpeed: "---",
+    inletPressureInwc: "---"
   });
 
   const defaultStream: StreamData = {
@@ -98,7 +103,6 @@ export default function MainCompressor() {
       const response = await apiRequest('POST', '/api/compressor-simulation', {
         rpm_percent: inputParams.rpmPercent,
         temp: inputParams.temp,
-        pressure: inputParams.pressure,
         barometricPressure: inputParams.barometricPressure,
         plant_condition: plantCondition
       });
@@ -115,7 +119,8 @@ export default function MainCompressor() {
           standardFlowScfm: formatValue(r.standard_flow_scfm, 0),
           massFlowKlbhr: formatValue(r.mass_flow_klbhr, 1),
           brakePowerHp: formatValue(r.brake_power_hp, 0),
-          driverSpeed: formatValue(r.driver_speed_rpm, 0)
+          driverSpeed: formatValue(r.driver_speed_rpm, 0),
+          inletPressureInwc: formatValue(r.inlet_pressure_inwc, 1)
         });
 
         if (r.inlet_stream) {
@@ -227,6 +232,35 @@ export default function MainCompressor() {
             Compressor Block
           </h1>
 
+          <div className="flex justify-center mb-6">
+            <RadioGroup
+              value={simulationMode}
+              onValueChange={(v) => setSimulationMode(v as SimulationMode)}
+              className="flex gap-6"
+              data-testid="radio-simulation-mode"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="static" id="mode-static" data-testid="radio-static" />
+                <Label htmlFor="mode-static" className="cursor-pointer" data-testid="label-static">Static</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="dynamic" id="mode-dynamic" data-testid="radio-dynamic" />
+                <Label htmlFor="mode-dynamic" className="cursor-pointer" data-testid="label-dynamic">Dynamic</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {simulationMode === "dynamic" && (
+            <Card className="max-w-lg mx-auto mb-6" data-testid="card-dynamic-coming-soon">
+              <CardContent className="flex items-center justify-center gap-3 py-6">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                <span className="text-muted-foreground" data-testid="text-dynamic-coming-soon">
+                  Dynamic simulation mode coming soon
+                </span>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex flex-wrap justify-center gap-4 mb-10">
             <a 
               href="/assets/howden-compressor-curves.pdf" 
@@ -262,17 +296,31 @@ export default function MainCompressor() {
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel>Simulation Code</DropdownMenuLabel>
+                <DropdownMenuLabel>Static Simulation Code</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <Link href="/unit-operation/main-compressor/python-code" data-testid="link-compressor-sim-view">
+                  <Link href="/unit-operation/main-compressor/python-code" data-testid="link-compressor-static-view">
                     <Eye className="h-4 w-4 mr-2" />
                     View Code
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href="/api/download-python/compressor_calculator.py" download data-testid="link-download-compressor-sim">
+                  <a href="/api/download-python/compressor_calculator.py" download data-testid="link-download-compressor-static">
                     <Download className="h-4 w-4 mr-2" />
                     Download compressor_calculator.py
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Dynamic Simulation Code</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/unit-operation/main-compressor/dynamic-python-code" data-testid="link-compressor-dynamic-view">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Code
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/api/download-python/compressor_calculator_dynamic.py" download data-testid="link-download-compressor-dynamic">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download compressor_calculator_dynamic.py
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -319,7 +367,7 @@ export default function MainCompressor() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div data-testid="field-inlet-temp">
                   <label className="text-sm text-muted-foreground block mb-1" data-testid="label-inlet-temp">
                     Inlet Temp
@@ -333,22 +381,6 @@ export default function MainCompressor() {
                       data-testid="input-temp"
                     />
                     <span className="text-sm" data-testid="unit-temp">°F</span>
-                  </div>
-                </div>
-
-                <div data-testid="field-inlet-pressure">
-                  <label className="text-sm text-muted-foreground block mb-1" data-testid="label-inlet-pressure">
-                    Inlet Pressure
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={inputParams.pressure}
-                      onChange={(e) => handleInputChange("pressure", e.target.value)}
-                      className="w-20"
-                      data-testid="input-pressure"
-                    />
-                    <span className="text-sm" data-testid="unit-pressure">in wc</span>
                   </div>
                 </div>
 
@@ -396,7 +428,7 @@ export default function MainCompressor() {
             <Button
               size="lg"
               onClick={runSimulation}
-              disabled={isRunningSimulation}
+              disabled={isRunningSimulation || simulationMode === "dynamic"}
               className="gap-2 px-10"
               data-testid="button-run-simulation"
             >
@@ -434,6 +466,13 @@ export default function MainCompressor() {
                       <td className="py-3 px-4 text-muted-foreground" data-testid="unit-inlet-flow">acfm</td>
                       <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-flow">
                         {outputParams.inletFlowAcfm}
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-inlet-pressure-calc">
+                      <td className="py-3 px-4 font-medium" data-testid="label-inlet-pressure-calc">Inlet Pressure (calculated)</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-inlet-pressure-calc">in wc</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-pressure-calc">
+                        {outputParams.inletPressureInwc}
                       </td>
                     </tr>
                     <tr className="border-b" data-testid="row-outlet-temp">

@@ -185,6 +185,7 @@ import FinFanCooler from "@/pages/unit-operation/fin-fan-cooler";
 import AirCooledCondenser from "@/pages/unit-operation/air-cooled-condenser";
 import MainCompressor from "@/pages/unit-operation/main-compressor";
 import MainCompressorPythonCode from "@/pages/unit-operation/main-compressor-python-code";
+import MainCompressorDynamicPythonCode from "@/pages/unit-operation/main-compressor-dynamic-python-code";
 import MainCompressorTsxCode from "@/pages/unit-operation/main-compressor-tsx-code";
 import MainCompressorGuiCode from "@/pages/unit-operation/main-compressor-gui-code";
 import InletAirFilter from "@/pages/unit-operation/inlet-air-filter";
@@ -300,6 +301,7 @@ function Router() {
       <Route path="/unit-operation/fin-fan-cooler" component={FinFanCooler} />
       <Route path="/unit-operation/air-cooled-condenser" component={AirCooledCondenser} />
       <Route path="/unit-operation/main-compressor/python-code" component={MainCompressorPythonCode} />
+      <Route path="/unit-operation/main-compressor/dynamic-python-code" component={MainCompressorDynamicPythonCode} />
       <Route path="/unit-operation/main-compressor/tsx-code" component={MainCompressorTsxCode} />
       <Route path="/unit-operation/main-compressor/gui-code" component={MainCompressorGuiCode} />
       <Route path="/unit-operation/main-compressor" component={MainCompressor} />

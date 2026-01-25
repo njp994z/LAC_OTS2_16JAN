@@ -1,6 +1,7 @@
 """
 Main Compressor Performance Calculator - System + Blower Curve Intersection
 Thacker Pass Project - Howden SF14 Compressor
+Modified to calculate inlet pressure from system curve
 """
 
 import math
@@ -18,8 +19,9 @@ Q_REF_ACFM    = 185802.0
 N_REF_RPM     = 4505.0
 DP_REF_INWC   = 247.0
 
-Q_SYSTEM_REF  = 115301.0
-DP_SYSTEM_REF_CLEAN = 199.0
+Q_O_REF       = 115301.0  # Reference standard flow, scfm
+DP_O_REF      = 199.0     # Reference pressure drop, in wc
+P_O_REF       = -13.0     # Reference inlet pressure, in wc
 
 SYSTEM_EXPONENT    = 1.70
 BLOWER_DP_COEFF    = 0.85
@@ -49,7 +51,6 @@ class StreamComposition:
 class CompressorInput:
     rpm_percent: float
     inlet_temp_F: float
-    inlet_pressure_inwc: float
     barometric_atm: float
     plant_condition: str = "clean"
 
@@ -78,6 +79,7 @@ class CompressorOutput:
     motor_power_hp: float
     motor_power_MW: float
     driver_speed_rpm: float
+    inlet_pressure_inwc: float  # Now calculated from system curve
     inlet_stream: Dict = field(default_factory=dict)
     outlet_stream: Dict = field(default_factory=dict)
 
@@ -100,63 +102,75 @@ def scfm_to_nm3hr(scfm: float) -> float:
 def inwc_to_mmwg(inwc: float) -> float:
     return inwc * 25.4
 
+def calculate_system_curve_values(standard_flow_scfm: float, plant_condition: str) -> tuple:
+    """
+    Calculate inlet pressure and pressure drop from system curve
+    P_in = P_o * (Q_i / Q_o)^1.7
+    dP = dP_o * (Q_i / Q_o)^1.7
+    """
+    dirty_mult = DIRTY_MULTIPLIER.get(plant_condition.lower(), 1.0)
+    
+    if standard_flow_scfm <= 0:
+        return P_O_REF, DP_O_REF * dirty_mult
+    
+    flow_ratio = standard_flow_scfm / Q_O_REF
+    
+    # Calculate inlet pressure from system curve
+    inlet_pressure_inwc = P_O_REF * (flow_ratio ** SYSTEM_EXPONENT)
+    
+    # Calculate pressure drop from system curve
+    pressure_rise_inwc = DP_O_REF * dirty_mult * (flow_ratio ** SYSTEM_EXPONENT)
+    
+    return inlet_pressure_inwc, pressure_rise_inwc
+
 def find_operating_point(rpm_percent: float, plant_condition: str) -> tuple:
-    """Find Q where blower curve intersects system curve using bisection with proper bracketing"""
+    """Find Q where blower curve intersects system curve using iterative method"""
     n_ratio = max(rpm_percent / 100.0, 0.1)
     dirty_mult = DIRTY_MULTIPLIER.get(plant_condition.lower(), 1.0)
     
-    def blower_dp(q: float) -> float:
-        if q <= 0:
+    def blower_dp(q_acfm: float, standard_flow_scfm: float) -> float:
+        """Blower curve: dP vs actual flow"""
+        if q_acfm <= 0:
             return DP_REF_INWC * (n_ratio ** 2) * 2.0
-        q_ratio = q / (Q_REF_ACFM * n_ratio)
+        q_ratio = q_acfm / (Q_REF_ACFM * n_ratio)
         dp = DP_REF_INWC * (n_ratio ** 2) * (1.0 - BLOWER_DP_COEFF * (q_ratio - 1.0) ** 2)
         return max(dp, 0.0)
     
-    def system_dp(q: float) -> float:
-        if q <= 0:
+    def system_dp(standard_flow_scfm: float) -> float:
+        """System curve: dP vs standard flow"""
+        if standard_flow_scfm <= 0:
             return 0.0
-        return DP_SYSTEM_REF_CLEAN * dirty_mult * (q / Q_SYSTEM_REF) ** SYSTEM_EXPONENT
+        flow_ratio = standard_flow_scfm / Q_O_REF
+        return DP_O_REF * dirty_mult * (flow_ratio ** SYSTEM_EXPONENT)
     
-    def residual(q: float) -> float:
-        return blower_dp(q) - system_dp(q)
+    # Initial guess based on speed ratio
+    q_acfm_guess = Q_REF_ACFM * n_ratio * 0.95
     
-    q_low = 1000.0
-    q_high = Q_REF_ACFM * n_ratio * 2.0
-    
-    r_low = residual(q_low)
-    r_high = residual(q_high)
-    
-    for _ in range(10):
-        if r_low > 0 and r_high < 0:
-            break
-        if r_low <= 0:
-            q_low = q_low / 2.0
-            r_low = residual(q_low)
-        if r_high >= 0:
-            q_high = q_high * 1.5
-            r_high = residual(q_high)
-    
-    if not (r_low > 0 and r_high < 0):
-        q_fallback = Q_REF_ACFM * n_ratio * 0.6
-        dp_fallback = system_dp(q_fallback)
-        return q_fallback, dp_fallback
-    
-    for _ in range(50):
-        q_mid = (q_low + q_high) / 2.0
-        r_mid = residual(q_mid)
+    # Iterative solution
+    for iteration in range(50):
+        # Assume standard conditions to estimate standard flow from actual flow
+        # This is approximate - will be refined in main calculation
+        std_flow_guess = q_acfm_guess * 0.62  # Rough conversion factor
         
-        if abs(r_mid) < 0.1:
+        dp_blower = blower_dp(q_acfm_guess, std_flow_guess)
+        dp_system = system_dp(std_flow_guess)
+        
+        error = dp_blower - dp_system
+        
+        if abs(error) < 1.0:  # Converged within 1 in wc
             break
         
-        if r_mid > 0:
-            q_low = q_mid
-        else:
-            q_high = q_mid
+        # Adjust flow based on error
+        if error > 0:  # Blower can provide more - increase flow
+            q_acfm_guess *= 1.02
+        else:  # System requires more - decrease flow
+            q_acfm_guess *= 0.98
     
-    q_operating = (q_low + q_high) / 2.0
-    dp_operating = system_dp(q_operating)
+    # Return operating point
+    std_flow_final = q_acfm_guess * 0.62
+    dp_final = system_dp(std_flow_final)
     
-    return q_operating, dp_operating
+    return q_acfm_guess, dp_final, std_flow_final
 
 def calculate_stream_compositions(standard_flow_scfm: float, inlet_pressure: float, 
                                    outlet_pressure: float, inlet_temp: float, outlet_temp: float) -> tuple:
@@ -187,32 +201,57 @@ def calculate_stream_compositions(standard_flow_scfm: float, inlet_pressure: flo
     return inlet_stream, outlet_stream
 
 def calculate_compressor_performance(inp: CompressorInput) -> CompressorOutput:
+    # Initial operating point estimate
+    q_acfm_initial, _, std_flow_initial = find_operating_point(inp.rpm_percent, inp.plant_condition)
+    
+    # Calculate inlet pressure and pressure rise from system curve
+    inlet_pressure_inwc, pressure_rise_inwc = calculate_system_curve_values(
+        std_flow_initial, inp.plant_condition
+    )
+    
+    # Now refine calculation with actual inlet pressure
     inlet_temp_R = inp.inlet_temp_F + 459.67
-    inlet_psia = inwc_to_psia(inp.inlet_pressure_inwc, inp.barometric_atm)
+    inlet_psia = inwc_to_psia(inlet_pressure_inwc, inp.barometric_atm)
     baro_inwc_abs = inp.barometric_atm * PSI_PER_ATM / INWC_TO_PSI
-    inlet_abs_inwc = inp.inlet_pressure_inwc + baro_inwc_abs
+    inlet_abs_inwc = inlet_pressure_inwc + baro_inwc_abs
 
-    q_acfm, pressure_rise_inwc = find_operating_point(inp.rpm_percent, inp.plant_condition)
+    # Calculate actual inlet density
+    inlet_density_lbft3 = (inlet_psia * 144) / (R_AIR * inlet_temp_R)
+    
+    # Calculate standard flow from actual flow
+    std_temp_r = 60 + 459.67
+    std_density = (14.7 * 144) / (R_AIR * std_temp_r)
+    
+    # Refine actual flow based on inlet density
+    mass_flow_lbhr_guess = q_acfm_initial * inlet_density_lbft3 * 60.0
+    standard_flow_scfm = mass_flow_lbhr_guess / (std_density * 60.0)
+    
+    # Recalculate system curve values with refined standard flow
+    inlet_pressure_inwc, pressure_rise_inwc = calculate_system_curve_values(
+        standard_flow_scfm, inp.plant_condition
+    )
+    
+    # Final inlet conditions
+    inlet_psia = inwc_to_psia(inlet_pressure_inwc, inp.barometric_atm)
+    inlet_density_lbft3 = (inlet_psia * 144) / (R_AIR * inlet_temp_R)
+    
+    # Calculate actual volume flow
+    mass_flow_lbhr = standard_flow_scfm * std_density * 60.0
+    q_acfm = mass_flow_lbhr / (inlet_density_lbft3 * 60.0)
 
+    # Temperature rise
     q_ratio = q_acfm / Q_REF_ACFM
     temp_rise_approx_f = 95.0 + 28.0 * q_ratio
     outlet_temp_f = inp.inlet_temp_F + temp_rise_approx_f
     outlet_temp_r = outlet_temp_f + 459.67
 
+    # Outlet conditions
     outlet_psia = inlet_psia + pressure_rise_inwc * INWC_TO_PSI
     outlet_abs_inwc = inlet_abs_inwc + pressure_rise_inwc
-
-    inlet_density_lbft3 = (inlet_psia * 144) / (R_AIR * inlet_temp_R)
     outlet_density_lbft3 = (outlet_psia * 144) / (R_AIR * outlet_temp_r) if outlet_temp_r > 0 else 0.0
-
-    mass_flow_lbhr = q_acfm * inlet_density_lbft3 * 60.0
-
-    std_temp_r = 60 + 459.67
-    std_density = (14.7 * 144) / (R_AIR * std_temp_r)
-    standard_flow_scfm = mass_flow_lbhr / (std_density * 60.0)
-
     outlet_flow_acfm = mass_flow_lbhr / (outlet_density_lbft3 * 60.0) if outlet_density_lbft3 > 0 else 0.0
 
+    # Performance calculations
     pr = outlet_psia / inlet_psia if inlet_psia > 0 else 1.0
     isentropic_head = (GAMMA / (GAMMA - 1)) * R_AIR * inlet_temp_R * (pr ** ((GAMMA - 1)/GAMMA) - 1)
 
@@ -227,7 +266,7 @@ def calculate_compressor_performance(inp: CompressorInput) -> CompressorOutput:
     
     inlet_stream, outlet_stream = calculate_stream_compositions(
         standard_flow_scfm, 
-        inp.inlet_pressure_inwc, 
+        inlet_pressure_inwc, 
         outlet_pressure_inwc,
         inp.inlet_temp_F,
         outlet_temp_f
@@ -257,6 +296,7 @@ def calculate_compressor_performance(inp: CompressorInput) -> CompressorOutput:
         motor_power_hp=motor_hp,
         motor_power_MW=motor_hp * 0.0007457,
         driver_speed_rpm=driver_rpm,
+        inlet_pressure_inwc=inlet_pressure_inwc,  # Now calculated
         inlet_stream=asdict(inlet_stream),
         outlet_stream=asdict(outlet_stream)
     )
@@ -267,7 +307,6 @@ if __name__ == "__main__":
         params = CompressorInput(
             rpm_percent=float(input_data.get("rpm_percent", 88.0)),
             inlet_temp_F=float(input_data.get("temp", 150.0)),
-            inlet_pressure_inwc=float(input_data.get("pressure", -12.0)),
             barometric_atm=float(input_data.get("barometricPressure", 0.85)),
             plant_condition=input_data.get("plant_condition", "clean")
         )
