@@ -3,7 +3,7 @@
 // Reviewed and resolved manually - do not blindly overwrite in future merges
 
 
-import { users, processTags, catalystParameters, converterCases, processVariables, setpointVariables, setpointCaseColumns, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SetpointVariable, type InsertSetpointVariable, type SetpointCaseColumn, type InsertSetpointCaseColumn, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
+import { users, processTags, catalystParameters, converterCases, processVariables, processVariableCaseColumns, setpointVariables, setpointCaseColumns, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type ProcessVariableCaseColumn, type InsertProcessVariableCaseColumn, type SetpointVariable, type InsertSetpointVariable, type SetpointCaseColumn, type InsertSetpointCaseColumn, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -43,6 +43,10 @@ export interface IStorage {
   // Process Variables
   getAllProcessVariables(): Promise<ProcessVariable[]>;
   upsertProcessVariables(vars: InsertProcessVariable[]): Promise<ProcessVariable[]>;
+  
+  // Process Variable Case Columns
+  getAllProcessVariableCaseColumns(): Promise<ProcessVariableCaseColumn[]>;
+  upsertProcessVariableCaseColumns(cols: InsertProcessVariableCaseColumn[]): Promise<ProcessVariableCaseColumn[]>;
   
   // Setpoint Variables
   getAllSetpointVariables(): Promise<SetpointVariable[]>;
@@ -246,6 +250,19 @@ export class DatabaseStorage implements IStorage {
     await db.delete(processVariables);
     if (vars.length === 0) return [];
     const results = await db.insert(processVariables).values(vars).returning();
+    return results;
+  }
+
+  // Process Variable Case Columns methods
+  async getAllProcessVariableCaseColumns(): Promise<ProcessVariableCaseColumn[]> {
+    return await db.select().from(processVariableCaseColumns);
+  }
+
+  async upsertProcessVariableCaseColumns(cols: InsertProcessVariableCaseColumn[]): Promise<ProcessVariableCaseColumn[]> {
+    // Delete all existing and insert new (simple replace strategy)
+    await db.delete(processVariableCaseColumns);
+    if (cols.length === 0) return [];
+    const results = await db.insert(processVariableCaseColumns).values(cols).returning();
     return results;
   }
 

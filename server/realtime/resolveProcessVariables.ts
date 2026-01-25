@@ -26,10 +26,7 @@ export interface PvRow {
   count: string;
   tag: string;
   description: string;
-  case1: string;
-  case2: string;
-  case3: string;
-  case4: string;
+  cases: Record<string, string>;
 }
 
 export type CaseKey = 1 | 2 | 3 | 4;
@@ -55,11 +52,13 @@ function parseSentinel(v: string): { kind: SentinelKind } | null {
 }
 
 function getPvCell(row: PvRow, which: CaseKey): string {
-  return row[`case${which}` as const];
+  const caseId = `case${which}`;
+  return row.cases[caseId] || "";
 }
 
 function setPvCell(row: PvRow, which: CaseKey, value: string): void {
-  row[`case${which}` as const] = value;
+  const caseId = `case${which}`;
+  row.cases[caseId] = value;
 }
 
 export interface ResolvedPvValues {
@@ -79,7 +78,10 @@ export async function resolveRealtimePV({
   whichCase: CaseKey;
   psychroData: PsychrometricData | null;
 }): Promise<PvRow[]> {
-  const out = processVariables.map(r => ({ ...r }));
+  const out = processVariables.map(r => ({ 
+    ...r, 
+    cases: { ...r.cases }
+  }));
 
   for (const row of out) {
     const cell = getPvCell(row, whichCase);

@@ -234,16 +234,13 @@ export const insertConverterCaseSchema = z.object({
 export type InsertConverterCase = z.infer<typeof insertConverterCaseSchema>;
 export type ConverterCase = typeof converterCases.$inferSelect;
 
-// Process Variables table for initial simulation conditions
+// Process Variables table for initial simulation conditions (with dynamic cases as JSONB)
 export const processVariables = pgTable("process_variables", {
   id: serial("id").primaryKey(),
   count: varchar("count", { length: 10 }).notNull(),
   tag: varchar("tag", { length: 100 }).notNull(),
   description: varchar("description", { length: 200 }).notNull(),
-  case1: varchar("case1", { length: 100 }).notNull(),
-  case2: varchar("case2", { length: 100 }).notNull(),
-  case3: varchar("case3", { length: 100 }).notNull(),
-  case4: varchar("case4", { length: 100 }).notNull(),
+  cases: jsonb("cases").notNull().default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -256,6 +253,26 @@ export const insertProcessVariableSchema = createInsertSchema(processVariables).
 
 export type InsertProcessVariable = z.infer<typeof insertProcessVariableSchema>;
 export type ProcessVariable = typeof processVariables.$inferSelect;
+
+// Case Columns table for process variable case metadata
+export const processVariableCaseColumns = pgTable("process_variable_case_columns", {
+  id: serial("id").primaryKey(),
+  caseId: varchar("case_id", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: varchar("description", { length: 200 }).notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProcessVariableCaseColumnSchema = createInsertSchema(processVariableCaseColumns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertProcessVariableCaseColumn = z.infer<typeof insertProcessVariableCaseColumnSchema>;
+export type ProcessVariableCaseColumn = typeof processVariableCaseColumns.$inferSelect;
 
 // Setpoint Variables table for initial simulation setpoints (with dynamic cases as JSONB)
 export const setpointVariables = pgTable("setpoint_variables", {
