@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, ChevronDown, Play, Settings, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, ChevronDown, Play, Settings, Loader2, Code, Download, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -237,26 +237,63 @@ export default function PFD5001ProcessGas() {
       className="min-h-screen bg-background flex flex-col"
       data-testid={`pfd-page-${id}`}
     >
-      <header className="bg-card border-b border-border px-4 py-3 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2"
-          onClick={() => window.history.back()}
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-        <div className="flex items-center gap-3">
-          <FileText className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <div className="text-xs text-muted-foreground font-mono" data-testid="text-document-number">
-              {documentNumber}
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => window.history.back()}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <div className="flex items-center gap-3">
+            <FileText className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <div className="text-xs text-muted-foreground font-mono" data-testid="text-document-number">
+                {documentNumber}
+              </div>
+              <h1 className="text-lg font-semibold" data-testid="text-page-title">{title}</h1>
             </div>
-            <h1 className="text-lg font-semibold" data-testid="text-page-title">{title}</h1>
           </div>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              data-testid="dropdown-python-code"
+            >
+              <Code className="w-4 h-4" />
+              Python Code
+              <ChevronDown className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" data-testid="dropdown-content-python-code">
+            <DropdownMenuItem
+              onClick={() => window.open('/api/python-code/process-gas?action=view', '_blank')}
+              data-testid="dropdown-item-view-code"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Code
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = '/api/python-code/process-gas?action=download';
+                link.download = 'process_gas_simulation.py';
+                link.click();
+              }}
+              data-testid="dropdown-item-download-code"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Code
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <main className="flex-1 overflow-auto p-4">

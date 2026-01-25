@@ -2953,6 +2953,43 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Python code view/download endpoint for specific modules
+  app.get('/api/python-code/:module', (req: Request, res: Response) => {
+    const { module } = req.params;
+    const { action = 'view' } = req.query;
+    
+    // Map module names to Python files
+    const moduleFileMap: Record<string, string> = {
+      'process-gas': 'static_simulator.py',
+      'compressor': 'compressor_calculator.py',
+      'sulfur-furnace': 'sulfur_furnace_calc.py',
+      'drying-tower': 'drying_tower_calc.py',
+      'inlet-air-filter': 'inlet_air_filter_calc.py',
+      'catalyst': 'pass_solver.py',
+    };
+    
+    const filename = moduleFileMap[module];
+    if (!filename) {
+      return res.status(404).json({ message: 'Module not found' });
+    }
+    
+    const filePath = path.join(process.cwd(), 'server', 'python', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    if (action === 'download') {
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'text/x-python');
+      res.sendFile(filePath);
+    } else {
+      // View action - return as plain text
+      res.setHeader('Content-Type', 'text/plain');
+      res.sendFile(filePath);
+    }
+  });
+
   // Python file download endpoint
   app.get('/api/download-python/:filename', (req: Request, res: Response) => {
     const { filename } = req.params;
@@ -2973,7 +3010,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       'sulfur_static_solver.py',
       'sulfur_dynamic_solver.py',
       'inlet_air_filter_calc.py',
-      'inlet_air_filter_gui.py'
+      'inlet_air_filter_gui.py',
+      'static_simulator.py'
     ];
     
     if (!allowedFiles.includes(filename)) {
