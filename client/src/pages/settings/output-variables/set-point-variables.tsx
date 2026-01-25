@@ -9,53 +9,69 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import expLogo from "@/assets/exp-logo.png";
 
+interface CaseColumn {
+  id: string;
+  name: string;
+  description: string;
+}
+
 interface SetPointVariable {
   id?: number;
   count: string;
   tag: string;
   description: string;
-  case1: string;
-  case2: string;
-  case3: string;
-  case4: string;
+  cases: Record<string, string>;
 }
 
+const defaultCases: CaseColumn[] = [
+  { id: "case1", name: "Case 1", description: "SP_2480 STPD - Clean" },
+  { id: "case2", name: "Case 2", description: "SP_2480 STPD - Dirty" },
+  { id: "case3", name: "Case 3", description: "1240 STPD – Summer – Clean – 50% Turndown" },
+  { id: "case4", name: "Case 4", description: "Start-Up: Summer – Clean" },
+];
+
 const defaultData: SetPointVariable[] = [
-  { count: "01", tag: "1540-TIC-4820", description: "Pass 1 Inlet Temp SP", case1: "779 F", case2: "779 F", case3: "779 F", case4: "93 F" },
-  { count: "02", tag: "1540-TIC-4828", description: "Pass 2 Inlet Temp SP", case1: "806 F", case2: "806 F", case3: "806 F", case4: "93 F" },
-  { count: "03", tag: "1540-TIC-5220", description: "Pass 3 Inlet Temp SP", case1: "806 F", case2: "806 F", case3: "806 F", case4: "93 F" },
-  { count: "04", tag: "1540-TIC-5224", description: "Pass 4 Inlet Temp SP", case1: "779 F", case2: "779 F", case3: "779 F", case4: "93 F" },
-  { count: "05", tag: "1540-FIC-2602", description: "Sulfur Flow SP", case1: "79 gpm", case2: "79 gpm", case3: "35 gpm", case4: "0 gpm" },
-  { count: "06", tag: "1540-SIC-4030", description: "Main Comp Speed SP", case1: "87%", case2: "92.5%", case3: "20.7%", case4: "0.0 %" },
-  { count: "07", tag: "1520-FIC-5870", description: "DT Acid Flow SP", case1: "3500 gpm", case2: "3500 gpm", case3: "3500 gpm", case4: "0 gpm" },
-  { count: "08", tag: "1520-TIC-5823", description: "DT Inlet Temp SP", case1: "150 F", case2: "150 F", case3: "150 F", case4: "93 F" },
-  { count: "09", tag: "1520-FIC-6770", description: "IPAT Acid Flow SP", case1: "4800 gpm", case2: "4800 gpm", case3: "4800 gpm", case4: "0 gpm" },
-  { count: "10", tag: "1520-FIC-6670", description: "FAT Acid Flow SP", case1: "3000 gpm", case2: "3000 gpm", case3: "3000 gpm", case4: "0 gpm" },
-  { count: "11", tag: "1520-TIC-6722", description: "IPAT Acid Temp SP", case1: "180 F", case2: "180 F", case3: "180 F", case4: "93 F" },
-  { count: "12", tag: "1520-TIC-6622", description: "FAT Acid Temp SP", case1: "180 F", case2: "180 F", case3: "180 F", case4: "93 F" },
-  { count: "13", tag: "1540-TIC-7221", description: "Econ 4A Temp SP", case1: "275 F", case2: "275 F", case3: "275 F", case4: "93 F" },
-  { count: "14", tag: "1540-TIC-7224", description: "Econ 3B Temp SP", case1: "330 F", case2: "330 F", case3: "330 F", case4: "93 F" },
+  { count: "01", tag: "1540-TIC-4820", description: "Pass 1 Inlet Temp SP", cases: { case1: "779 F", case2: "779 F", case3: "779 F", case4: "93 F" } },
+  { count: "02", tag: "1540-TIC-4828", description: "Pass 2 Inlet Temp SP", cases: { case1: "806 F", case2: "806 F", case3: "806 F", case4: "93 F" } },
+  { count: "03", tag: "1540-TIC-5220", description: "Pass 3 Inlet Temp SP", cases: { case1: "806 F", case2: "806 F", case3: "806 F", case4: "93 F" } },
+  { count: "04", tag: "1540-TIC-5224", description: "Pass 4 Inlet Temp SP", cases: { case1: "779 F", case2: "779 F", case3: "779 F", case4: "93 F" } },
+  { count: "05", tag: "1540-FIC-2602", description: "Sulfur Flow SP", cases: { case1: "79 gpm", case2: "79 gpm", case3: "35 gpm", case4: "0 gpm" } },
+  { count: "06", tag: "1540-SIC-4030", description: "Main Comp Speed SP", cases: { case1: "87%", case2: "92.5%", case3: "20.7%", case4: "0.0 %" } },
+  { count: "07", tag: "1520-FIC-5870", description: "DT Acid Flow SP", cases: { case1: "3500 gpm", case2: "3500 gpm", case3: "3500 gpm", case4: "0 gpm" } },
+  { count: "08", tag: "1520-TIC-5823", description: "DT Inlet Temp SP", cases: { case1: "150 F", case2: "150 F", case3: "150 F", case4: "93 F" } },
+  { count: "09", tag: "1520-FIC-6770", description: "IPAT Acid Flow SP", cases: { case1: "4800 gpm", case2: "4800 gpm", case3: "4800 gpm", case4: "0 gpm" } },
+  { count: "10", tag: "1520-FIC-6670", description: "FAT Acid Flow SP", cases: { case1: "3000 gpm", case2: "3000 gpm", case3: "3000 gpm", case4: "0 gpm" } },
+  { count: "11", tag: "1520-TIC-6722", description: "IPAT Acid Temp SP", cases: { case1: "180 F", case2: "180 F", case3: "180 F", case4: "93 F" } },
+  { count: "12", tag: "1520-TIC-6622", description: "FAT Acid Temp SP", cases: { case1: "180 F", case2: "180 F", case3: "180 F", case4: "93 F" } },
+  { count: "13", tag: "1540-TIC-7221", description: "Econ 4A Temp SP", cases: { case1: "275 F", case2: "275 F", case3: "275 F", case4: "93 F" } },
+  { count: "14", tag: "1540-TIC-7224", description: "Econ 3B Temp SP", cases: { case1: "330 F", case2: "330 F", case3: "330 F", case4: "93 F" } },
 ];
 
 export default function SetPointVariables() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [data, setData] = useState<SetPointVariable[]>(defaultData);
+  const [caseColumns, setCaseColumns] = useState<CaseColumn[]>(defaultCases);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const { data: savedData, isLoading } = useQuery<SetPointVariable[]>({
+  const { data: savedData, isLoading } = useQuery<{ variables: SetPointVariable[]; cases: CaseColumn[] }>({
     queryKey: ['/api/setpoint-variables'],
   });
 
   useEffect(() => {
-    if (savedData && savedData.length > 0) {
-      setData(savedData);
+    if (savedData) {
+      if (savedData.variables && savedData.variables.length > 0) {
+        setData(savedData.variables);
+      }
+      if (savedData.cases && savedData.cases.length > 0) {
+        setCaseColumns(savedData.cases);
+      }
     }
   }, [savedData]);
 
   const saveMutation = useMutation({
-    mutationFn: async (variables: SetPointVariable[]) => {
-      const response = await apiRequest("POST", "/api/setpoint-variables", { variables });
+    mutationFn: async (payload: { variables: SetPointVariable[]; cases: CaseColumn[] }) => {
+      const response = await apiRequest("POST", "/api/setpoint-variables", payload);
       return response.json();
     },
     onSuccess: () => {
@@ -75,20 +91,72 @@ export default function SetPointVariables() {
     },
   });
 
-  const updateCell = (rowIndex: number, field: keyof SetPointVariable, value: string) => {
+  const updateCell = (rowIndex: number, field: string, value: string) => {
     setData(prev => {
       const newData = [...prev];
-      newData[rowIndex] = { ...newData[rowIndex], [field]: value };
+      if (field === "count" || field === "tag" || field === "description") {
+        newData[rowIndex] = { ...newData[rowIndex], [field]: value };
+      } else {
+        newData[rowIndex] = {
+          ...newData[rowIndex],
+          cases: { ...newData[rowIndex].cases, [field]: value }
+        };
+      }
       return newData;
     });
     setHasChanges(true);
   };
 
+  const updateCaseHeader = (caseId: string, field: "name" | "description", value: string) => {
+    setCaseColumns(prev => prev.map(c => 
+      c.id === caseId ? { ...c, [field]: value } : c
+    ));
+    setHasChanges(true);
+  };
+
+  const handleAddCase = () => {
+    const newCaseNum = caseColumns.length + 1;
+    const newCaseId = `case${newCaseNum}`;
+    const newCase: CaseColumn = {
+      id: newCaseId,
+      name: `Case ${newCaseNum}`,
+      description: "New Case Description",
+    };
+    setCaseColumns([...caseColumns, newCase]);
+    setData(prev => prev.map(row => ({
+      ...row,
+      cases: { ...row.cases, [newCaseId]: "" }
+    })));
+    setHasChanges(true);
+    toast({
+      title: "New Case Added",
+      description: `Case ${newCaseNum} has been added to the table`,
+    });
+  };
+
+  const handleAddVariable = () => {
+    const newCount = String(data.length + 1).padStart(2, "0");
+    const emptyCases: Record<string, string> = {};
+    caseColumns.forEach(c => { emptyCases[c.id] = ""; });
+    const newVariable: SetPointVariable = {
+      count: newCount,
+      tag: "",
+      description: "",
+      cases: emptyCases,
+    };
+    setData([...data, newVariable]);
+    setHasChanges(true);
+    toast({
+      title: "New Variable Added",
+      description: `Variable #${newCount} added to the table`,
+    });
+  };
+
   const handleSave = () => {
-    const toSave = data.map(({ id, count, tag, description, case1, case2, case3, case4 }) => ({
-      count, tag, description, case1, case2, case3, case4
+    const toSave = data.map(({ count, tag, description, cases }) => ({
+      count, tag, description, cases
     }));
-    saveMutation.mutate(toSave as SetPointVariable[]);
+    saveMutation.mutate({ variables: toSave as SetPointVariable[], cases: caseColumns });
   };
 
   if (isLoading) {
@@ -132,12 +200,7 @@ export default function SetPointVariables() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                toast({
-                  title: "New Case",
-                  description: "Case creation functionality coming soon",
-                });
-              }}
+              onClick={handleAddCase}
               data-testid="button-new-case"
             >
               <FolderPlus className="w-4 h-4 mr-2" />
@@ -145,24 +208,7 @@ export default function SetPointVariables() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                const newCount = String(data.length + 1).padStart(2, "0");
-                const newVariable: SetPointVariable = {
-                  count: newCount,
-                  tag: "",
-                  description: "",
-                  case1: "",
-                  case2: "",
-                  case3: "",
-                  case4: "",
-                };
-                setData([...data, newVariable]);
-                setHasChanges(true);
-                toast({
-                  title: "New Variable Added",
-                  description: `Variable #${newCount} added to the table`,
-                });
-              }}
+              onClick={handleAddVariable}
               data-testid="button-new-variable"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -201,22 +247,22 @@ export default function SetPointVariables() {
                       <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold w-20">Count</th>
                       <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold w-36">Tag</th>
                       <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold w-44">Description</th>
-                      <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold">
-                        <div>Case 1</div>
-                        <div className="font-normal text-xs opacity-80">SP_2480 STPD - Clean</div>
-                      </th>
-                      <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold">
-                        <div>Case 2</div>
-                        <div className="font-normal text-xs opacity-80">SP_2480 STPD - Dirty</div>
-                      </th>
-                      <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold">
-                        <div>Case 3</div>
-                        <div className="font-normal text-xs opacity-80">1240 STPD – Summer – Clean – 50% Turndown</div>
-                      </th>
-                      <th className="border border-border/30 px-3 py-3 text-left text-sm font-semibold">
-                        <div>Case 4</div>
-                        <div className="font-normal text-xs opacity-80">Start-Up: Summer – Clean</div>
-                      </th>
+                      {caseColumns.map((caseCol) => (
+                        <th key={caseCol.id} className="border border-border/30 px-3 py-2 text-left text-sm font-semibold min-w-[140px]">
+                          <Input
+                            value={caseCol.name}
+                            onChange={(e) => updateCaseHeader(caseCol.id, "name", e.target.value)}
+                            className="h-6 text-sm font-semibold border-0 bg-transparent p-0 text-white placeholder:text-white/60 focus-visible:ring-1 focus-visible:ring-white/50"
+                            data-testid={`input-case-name-${caseCol.id}`}
+                          />
+                          <Input
+                            value={caseCol.description}
+                            onChange={(e) => updateCaseHeader(caseCol.id, "description", e.target.value)}
+                            className="h-5 text-xs font-normal border-0 bg-transparent p-0 text-white/80 placeholder:text-white/50 focus-visible:ring-1 focus-visible:ring-white/50 mt-1"
+                            data-testid={`input-case-desc-${caseCol.id}`}
+                          />
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -250,38 +296,16 @@ export default function SetPointVariables() {
                             data-testid={`input-desc-${row.count}`}
                           />
                         </td>
-                        <td className="border border-border px-3 py-1">
-                          <Input
-                            value={row.case1}
-                            onChange={(e) => updateCell(index, "case1", e.target.value)}
-                            className="h-8 text-sm border-0 bg-transparent p-0 focus-visible:ring-1"
-                            data-testid={`input-case1-${row.count}`}
-                          />
-                        </td>
-                        <td className="border border-border px-3 py-1">
-                          <Input
-                            value={row.case2}
-                            onChange={(e) => updateCell(index, "case2", e.target.value)}
-                            className="h-8 text-sm border-0 bg-transparent p-0 focus-visible:ring-1"
-                            data-testid={`input-case2-${row.count}`}
-                          />
-                        </td>
-                        <td className="border border-border px-3 py-1">
-                          <Input
-                            value={row.case3}
-                            onChange={(e) => updateCell(index, "case3", e.target.value)}
-                            className="h-8 text-sm border-0 bg-transparent p-0 focus-visible:ring-1"
-                            data-testid={`input-case3-${row.count}`}
-                          />
-                        </td>
-                        <td className="border border-border px-3 py-1">
-                          <Input
-                            value={row.case4}
-                            onChange={(e) => updateCell(index, "case4", e.target.value)}
-                            className="h-8 text-sm border-0 bg-transparent p-0 focus-visible:ring-1"
-                            data-testid={`input-case4-${row.count}`}
-                          />
-                        </td>
+                        {caseColumns.map((caseCol) => (
+                          <td key={caseCol.id} className="border border-border px-3 py-1">
+                            <Input
+                              value={row.cases[caseCol.id] || ""}
+                              onChange={(e) => updateCell(index, caseCol.id, e.target.value)}
+                              className="h-8 text-sm border-0 bg-transparent p-0 focus-visible:ring-1"
+                              data-testid={`input-${caseCol.id}-${row.count}`}
+                            />
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>

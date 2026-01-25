@@ -257,16 +257,13 @@ export const insertProcessVariableSchema = createInsertSchema(processVariables).
 export type InsertProcessVariable = z.infer<typeof insertProcessVariableSchema>;
 export type ProcessVariable = typeof processVariables.$inferSelect;
 
-// Setpoint Variables table for initial simulation setpoints
+// Setpoint Variables table for initial simulation setpoints (with dynamic cases as JSONB)
 export const setpointVariables = pgTable("setpoint_variables", {
   id: serial("id").primaryKey(),
   count: varchar("count", { length: 10 }).notNull(),
   tag: varchar("tag", { length: 100 }).notNull(),
   description: varchar("description", { length: 200 }).notNull(),
-  case1: varchar("case1", { length: 100 }).notNull(),
-  case2: varchar("case2", { length: 100 }).notNull(),
-  case3: varchar("case3", { length: 100 }).notNull(),
-  case4: varchar("case4", { length: 100 }).notNull(),
+  cases: jsonb("cases").notNull().default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -279,6 +276,26 @@ export const insertSetpointVariableSchema = createInsertSchema(setpointVariables
 
 export type InsertSetpointVariable = z.infer<typeof insertSetpointVariableSchema>;
 export type SetpointVariable = typeof setpointVariables.$inferSelect;
+
+// Case Columns table for setpoint variable case metadata
+export const setpointCaseColumns = pgTable("setpoint_case_columns", {
+  id: serial("id").primaryKey(),
+  caseId: varchar("case_id", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: varchar("description", { length: 200 }).notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSetpointCaseColumnSchema = createInsertSchema(setpointCaseColumns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSetpointCaseColumn = z.infer<typeof insertSetpointCaseColumnSchema>;
+export type SetpointCaseColumn = typeof setpointCaseColumns.$inferSelect;
 
 // Sulfur Process Nodes table - stores simulation output data at key process locations
 export const sulfurProcessNodes = pgTable("sulfur_process_nodes", {

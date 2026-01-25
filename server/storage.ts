@@ -3,7 +3,7 @@
 // Reviewed and resolved manually - do not blindly overwrite in future merges
 
 
-import { users, processTags, catalystParameters, converterCases, processVariables, setpointVariables, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SetpointVariable, type InsertSetpointVariable, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
+import { users, processTags, catalystParameters, converterCases, processVariables, setpointVariables, setpointCaseColumns, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type SetpointVariable, type InsertSetpointVariable, type SetpointCaseColumn, type InsertSetpointCaseColumn, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -47,6 +47,10 @@ export interface IStorage {
   // Setpoint Variables
   getAllSetpointVariables(): Promise<SetpointVariable[]>;
   upsertSetpointVariables(vars: InsertSetpointVariable[]): Promise<SetpointVariable[]>;
+  
+  // Setpoint Case Columns
+  getAllSetpointCaseColumns(): Promise<SetpointCaseColumn[]>;
+  upsertSetpointCaseColumns(cols: InsertSetpointCaseColumn[]): Promise<SetpointCaseColumn[]>;
   
   // Sulfur Process Nodes
   getSulfurProcessNodes(simulationType: string): Promise<SulfurProcessNode[]>;
@@ -255,6 +259,19 @@ export class DatabaseStorage implements IStorage {
     await db.delete(setpointVariables);
     if (vars.length === 0) return [];
     const results = await db.insert(setpointVariables).values(vars).returning();
+    return results;
+  }
+
+  // Setpoint Case Columns methods
+  async getAllSetpointCaseColumns(): Promise<SetpointCaseColumn[]> {
+    return await db.select().from(setpointCaseColumns);
+  }
+
+  async upsertSetpointCaseColumns(cols: InsertSetpointCaseColumn[]): Promise<SetpointCaseColumn[]> {
+    // Delete all existing and insert new (simple replace strategy)
+    await db.delete(setpointCaseColumns);
+    if (cols.length === 0) return [];
+    const results = await db.insert(setpointCaseColumns).values(cols).returning();
     return results;
   }
 

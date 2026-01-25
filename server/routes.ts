@@ -1676,36 +1676,72 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
-  // Get all setpoint variables
+  // Get all setpoint variables and case columns
   app.get('/api/setpoint-variables', async (req: Request, res: Response) => {
     try {
       const vars = await storage.getAllSetpointVariables();
-      res.json(vars);
+      const cases = await storage.getAllSetpointCaseColumns();
+      
+      // Default case columns if none exist
+      const defaultCases = [
+        { caseId: "case1", name: "Case 1", description: "SP_2480 STPD - Clean", sortOrder: 0 },
+        { caseId: "case2", name: "Case 2", description: "SP_2480 STPD - Dirty", sortOrder: 1 },
+        { caseId: "case3", name: "Case 3", description: "1240 STPD – Summer – Clean – 50% Turndown", sortOrder: 2 },
+        { caseId: "case4", name: "Case 4", description: "Start-Up: Summer – Clean", sortOrder: 3 },
+      ];
+      
+      // Transform cases for frontend format
+      const casesForFrontend = (cases.length > 0 ? cases : defaultCases).map(c => ({
+        id: c.caseId,
+        name: c.name,
+        description: c.description,
+      }));
+      
+      // Transform variables - ensure cases is a proper object
+      const varsForFrontend = vars.map(v => ({
+        count: v.count,
+        tag: v.tag,
+        description: v.description,
+        cases: typeof v.cases === 'object' && v.cases !== null ? v.cases : {},
+      }));
+      
+      res.json({ variables: varsForFrontend, cases: casesForFrontend });
     } catch (error) {
       console.error("Setpoint variables fetch error:", error);
       res.status(500).json({ message: "Failed to fetch setpoint variables" });
     }
   });
 
-  // Save all setpoint variables (replace all)
+  // Save all setpoint variables and case columns (replace all)
   app.post('/api/setpoint-variables', async (req: Request, res: Response) => {
     try {
-      const { variables } = req.body;
+      const { variables, cases } = req.body;
+      
       if (!Array.isArray(variables)) {
         return res.status(400).json({ message: "Variables must be an array" });
       }
-      // Strip out any timestamp/id fields that shouldn't be set by client
+      
+      // Sanitize and save variables with dynamic cases
       const sanitizedVars = variables.map((v: any) => ({
         count: String(v.count || ''),
         tag: String(v.tag || ''),
         description: String(v.description || ''),
-        case1: String(v.case1 || ''),
-        case2: String(v.case2 || ''),
-        case3: String(v.case3 || ''),
-        case4: String(v.case4 || ''),
+        cases: typeof v.cases === 'object' && v.cases !== null ? v.cases : {},
       }));
-      const saved = await storage.upsertSetpointVariables(sanitizedVars);
-      res.json({ success: true, count: saved.length });
+      const savedVars = await storage.upsertSetpointVariables(sanitizedVars);
+      
+      // Save case columns if provided
+      if (Array.isArray(cases) && cases.length > 0) {
+        const sanitizedCases = cases.map((c: any, index: number) => ({
+          caseId: String(c.id || c.caseId || ''),
+          name: String(c.name || ''),
+          description: String(c.description || ''),
+          sortOrder: index,
+        }));
+        await storage.upsertSetpointCaseColumns(sanitizedCases);
+      }
+      
+      res.json({ success: true, count: savedVars.length });
     } catch (error) {
       console.error("Setpoint variables save error:", error);
       res.status(500).json({ message: "Failed to save setpoint variables" });
