@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Target, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Target, Save, Loader2, Plus, FolderPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -117,18 +117,58 @@ export default function SetPointVariables() {
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || saveMutation.isPending}
-            data-testid="button-save-changes"
-          >
-            {saveMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || saveMutation.isPending}
+              data-testid="button-save-changes"
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: "New Case",
+                  description: "Case creation functionality coming soon",
+                });
+              }}
+              data-testid="button-new-case"
+            >
+              <FolderPlus className="w-4 h-4 mr-2" />
+              New Case
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const newCount = String(data.length + 1).padStart(2, "0");
+                const newVariable: SetPointVariable = {
+                  count: newCount,
+                  tag: "",
+                  description: "",
+                  case1: "",
+                  case2: "",
+                  case3: "",
+                  case4: "",
+                };
+                setData([...data, newVariable]);
+                setHasChanges(true);
+                toast({
+                  title: "New Variable Added",
+                  description: `Variable #${newCount} added to the table`,
+                });
+              }}
+              data-testid="button-new-variable"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Variable
+            </Button>
+          </div>
         </div>
       </header>
 
