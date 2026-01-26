@@ -33,6 +33,9 @@ import cyanUpArrowImg from "@assets/image_1769463870663.png";
 import cyanLeftArrowImg from "@assets/image_1769463876416.png";
 import cyanLongLeftArrowImg from "@assets/image_1769463882873.png";
 import cyanUpArrow2Img from "@assets/image_1769463889633.png";
+import cyanUpArrow3Img from "@assets/image_1769466572930.png";
+import cyanDownArrowImg from "@assets/image_1769466582748.png";
+import metalTankImg from "@assets/image_1769466606997.png";
 import {
   Menubar,
   MenubarContent,
@@ -544,6 +547,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Cyan Up Arrow 2 position and size
   const [cyanUpArrow2L2Position, setCyanUpArrow2L2Position] = useState({ x: 900, y: 900 });
   const [cyanUpArrow2L2Size, setCyanUpArrow2L2Size] = useState({ width: 40, height: 120 });
+  // L2 Cyan Up Arrow 3 position and size
+  const [cyanUpArrow3L2Position, setCyanUpArrow3L2Position] = useState({ x: 950, y: 900 });
+  const [cyanUpArrow3L2Size, setCyanUpArrow3L2Size] = useState({ width: 40, height: 120 });
+  // L2 Cyan Down Arrow position and size
+  const [cyanDownArrowL2Position, setCyanDownArrowL2Position] = useState({ x: 1000, y: 900 });
+  const [cyanDownArrowL2Size, setCyanDownArrowL2Size] = useState({ width: 40, height: 200 });
+  // L2 Metal Tank position and size
+  const [metalTankL2Position, setMetalTankL2Position] = useState({ x: 1050, y: 800 });
+  const [metalTankL2Size, setMetalTankL2Size] = useState({ width: 300, height: 180 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1620,6 +1632,24 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setCyanUpArrow2L2Size({ width: cyanUpArrow2.width, height: cyanUpArrow2.height });
     }
 
+    const cyanUpArrow3 = positionMap.get('cyan_up_arrow_3_l2');
+    if (cyanUpArrow3) {
+      setCyanUpArrow3L2Position({ x: cyanUpArrow3.x, y: cyanUpArrow3.y });
+      setCyanUpArrow3L2Size({ width: cyanUpArrow3.width, height: cyanUpArrow3.height });
+    }
+
+    const cyanDownArrow = positionMap.get('cyan_down_arrow_l2');
+    if (cyanDownArrow) {
+      setCyanDownArrowL2Position({ x: cyanDownArrow.x, y: cyanDownArrow.y });
+      setCyanDownArrowL2Size({ width: cyanDownArrow.width, height: cyanDownArrow.height });
+    }
+
+    const metalTank = positionMap.get('metal_tank_l2');
+    if (metalTank) {
+      setMetalTankL2Position({ x: metalTank.x, y: metalTank.y });
+      setMetalTankL2Size({ width: metalTank.width, height: metalTank.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2043,6 +2073,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_left_arrow_l2', positionX: Math.round(cyanLeftArrowL2Position.x), positionY: Math.round(cyanLeftArrowL2Position.y), width: cyanLeftArrowL2Size.width, height: cyanLeftArrowL2Size.height, rotation: 0 },
         { elementId: 'cyan_long_left_arrow_l2', positionX: Math.round(cyanLongLeftArrowL2Position.x), positionY: Math.round(cyanLongLeftArrowL2Position.y), width: cyanLongLeftArrowL2Size.width, height: cyanLongLeftArrowL2Size.height, rotation: 0 },
         { elementId: 'cyan_up_arrow_2_l2', positionX: Math.round(cyanUpArrow2L2Position.x), positionY: Math.round(cyanUpArrow2L2Position.y), width: cyanUpArrow2L2Size.width, height: cyanUpArrow2L2Size.height, rotation: 0 },
+        { elementId: 'cyan_up_arrow_3_l2', positionX: Math.round(cyanUpArrow3L2Position.x), positionY: Math.round(cyanUpArrow3L2Position.y), width: cyanUpArrow3L2Size.width, height: cyanUpArrow3L2Size.height, rotation: 0 },
+        { elementId: 'cyan_down_arrow_l2', positionX: Math.round(cyanDownArrowL2Position.x), positionY: Math.round(cyanDownArrowL2Position.y), width: cyanDownArrowL2Size.width, height: cyanDownArrowL2Size.height, rotation: 0 },
+        { elementId: 'metal_tank_l2', positionX: Math.round(metalTankL2Position.x), positionY: Math.round(metalTankL2Position.y), width: metalTankL2Size.width, height: metalTankL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -3545,6 +3578,114 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-up-arrow-2-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Up Arrow 3 Image for L2 */}
+            <Rnd
+              key="cyan-up-arrow-3-l2"
+              data-testid="rnd-cyan-up-arrow-3-l2"
+              position={cyanUpArrow3L2Position}
+              size={cyanUpArrow3L2Size}
+              onDragStop={(e, d) => {
+                setCyanUpArrow3L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanUpArrow3L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanUpArrow3L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={10}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanUpArrow3Img} 
+                alt="Cyan Up Arrow 3" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-up-arrow-3-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Down Arrow Image for L2 */}
+            <Rnd
+              key="cyan-down-arrow-l2"
+              data-testid="rnd-cyan-down-arrow-l2"
+              position={cyanDownArrowL2Position}
+              size={cyanDownArrowL2Size}
+              onDragStop={(e, d) => {
+                setCyanDownArrowL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanDownArrowL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanDownArrowL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={10}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanDownArrowImg} 
+                alt="Cyan Down Arrow" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-down-arrow-l2"
+              />
+            </Rnd>
+
+            {/* Metal Tank Image for L2 */}
+            <Rnd
+              key="metal-tank-l2"
+              data-testid="rnd-metal-tank-l2"
+              position={metalTankL2Position}
+              size={metalTankL2Size}
+              onDragStop={(e, d) => {
+                setMetalTankL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setMetalTankL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setMetalTankL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={60}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 30 }}
+            >
+              <img 
+                src={metalTankImg} 
+                alt="Metal Tank" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-metal-tank-l2"
               />
             </Rnd>
 
