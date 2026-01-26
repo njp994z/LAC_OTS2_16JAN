@@ -2834,7 +2834,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 10 }}
+              style={{ zIndex: 40 }}
             >
               <img 
                 src={furnacePumpAssemblyImg} 
