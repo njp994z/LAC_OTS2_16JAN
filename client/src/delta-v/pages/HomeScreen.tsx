@@ -26,7 +26,6 @@ import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-fil
 import converter4L4Img from "@assets/image_1769028207381.png";
 import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
-import furnacePumpAssemblyImg from "@assets/image_1769401672158.png";
 import furnaceEquip2Img from "@assets/image_1769401684700.png";
 import furnaceEquip3Img from "@assets/image_1769401692005.png";
 import {
@@ -493,8 +492,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isL4Dirty, setIsL4Dirty] = useState(false);
   
   // L2-Furnace Area: Equipment images position/size
-  const [furnacePumpPosition, setFurnacePumpPosition] = useState({ x: 800, y: 300 });
-  const [furnacePumpSize, setFurnacePumpSize] = useState({ width: 600, height: 280 });
   const [furnaceEquip2Position, setFurnaceEquip2Position] = useState({ x: 100, y: 100 });
   const [furnaceEquip2Size, setFurnaceEquip2Size] = useState({ width: 300, height: 150 });
   const [furnaceEquip3Position, setFurnaceEquip3Position] = useState({ x: 100, y: 400 });
@@ -1533,12 +1530,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       });
     });
 
-    const furnacePump = positionMap.get('furnace_pump_l2');
-    if (furnacePump) {
-      setFurnacePumpPosition({ x: furnacePump.x, y: furnacePump.y });
-      setFurnacePumpSize({ width: furnacePump.width, height: furnacePump.height });
-    }
-
     const equip2 = positionMap.get('furnace_equip2_l2');
     if (equip2) {
       setFurnaceEquip2Position({ x: equip2.x, y: equip2.y });
@@ -1958,7 +1949,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     setIsSavingL2(true);
     try {
       const layouts = [
-        { elementId: 'furnace_pump_l2', positionX: Math.round(furnacePumpPosition.x), positionY: Math.round(furnacePumpPosition.y), width: furnacePumpSize.width, height: furnacePumpSize.height, rotation: 0 },
         { elementId: 'furnace_equip2_l2', positionX: Math.round(furnaceEquip2Position.x), positionY: Math.round(furnaceEquip2Position.y), width: furnaceEquip2Size.width, height: furnaceEquip2Size.height, rotation: 0 },
         { elementId: 'furnace_equip3_l2', positionX: Math.round(furnaceEquip3Position.x), positionY: Math.round(furnaceEquip3Position.y), width: furnaceEquip3Size.width, height: furnaceEquip3Size.height, rotation: 0 },
         { elementId: 'hand_controller_l2', positionX: Math.round(handControllerL2Position.x), positionY: Math.round(handControllerL2Position.y), width: handControllerL2Size.width, height: handControllerL2Size.height, rotation: 0 },
@@ -2833,41 +2823,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         {/* L2 - Furnace Area View - Canvas with equipment */}
         {selectedScreen === "L2 – Furnace Area" && (
           <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-            
-            {/* Furnace Pump Assembly Image */}
-            <Rnd
-              key="furnace-pump-l2"
-              position={furnacePumpPosition}
-              size={furnacePumpSize}
-              onDragStop={(e, d) => {
-                setFurnacePumpPosition({ x: d.x, y: d.y });
-                setIsL2Dirty(true);
-              }}
-              onResizeStop={(e, dir, ref, delta, position) => {
-                setFurnacePumpSize({
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
-                });
-                setFurnacePumpPosition(position);
-                setIsL2Dirty(true);
-              }}
-              minWidth={200}
-              minHeight={100}
-              bounds="parent"
-              disableDragging={isLockedL2}
-              enableResizing={!isLockedL2}
-              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
-              className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 40 }}
-            >
-              <img 
-                src={furnacePumpAssemblyImg} 
-                alt="Furnace Pump Assembly" 
-                className="w-full h-full object-contain"
-                draggable={false}
-                data-testid="img-furnace-pump-l2"
-              />
-            </Rnd>
 
             {/* Furnace Equipment 2 Image */}
             <Rnd
