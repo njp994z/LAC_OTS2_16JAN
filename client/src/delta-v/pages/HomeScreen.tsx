@@ -36,6 +36,8 @@ import cyanUpArrow2Img from "@assets/image_1769463889633.png";
 import cyanUpArrow3Img from "@assets/image_1769466572930.png";
 import cyanDownArrowImg from "@assets/image_1769466582748.png";
 import metalTankImg from "@assets/image_1769466606997.png";
+import grayYellowArrowImg from "@assets/image_1769466978719.png";
+import cyanHorizArrow2Img from "@assets/image_1769466999516.png";
 import {
   Menubar,
   MenubarContent,
@@ -556,6 +558,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Metal Tank position and size
   const [metalTankL2Position, setMetalTankL2Position] = useState({ x: 1050, y: 800 });
   const [metalTankL2Size, setMetalTankL2Size] = useState({ width: 300, height: 180 });
+  // L2 Gray Yellow Arrow position and size
+  const [grayYellowArrowL2Position, setGrayYellowArrowL2Position] = useState({ x: 1100, y: 700 });
+  const [grayYellowArrowL2Size, setGrayYellowArrowL2Size] = useState({ width: 300, height: 50 });
+  // L2 Cyan Horizontal Arrow 2 position and size
+  const [cyanHorizArrow2L2Position, setCyanHorizArrow2L2Position] = useState({ x: 1150, y: 750 });
+  const [cyanHorizArrow2L2Size, setCyanHorizArrow2L2Size] = useState({ width: 200, height: 30 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1650,6 +1658,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setMetalTankL2Size({ width: metalTank.width, height: metalTank.height });
     }
 
+    const grayYellowArrow = positionMap.get('gray_yellow_arrow_l2');
+    if (grayYellowArrow) {
+      setGrayYellowArrowL2Position({ x: grayYellowArrow.x, y: grayYellowArrow.y });
+      setGrayYellowArrowL2Size({ width: grayYellowArrow.width, height: grayYellowArrow.height });
+    }
+
+    const cyanHorizArrow2 = positionMap.get('cyan_horiz_arrow_2_l2');
+    if (cyanHorizArrow2) {
+      setCyanHorizArrow2L2Position({ x: cyanHorizArrow2.x, y: cyanHorizArrow2.y });
+      setCyanHorizArrow2L2Size({ width: cyanHorizArrow2.width, height: cyanHorizArrow2.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2076,6 +2096,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_up_arrow_3_l2', positionX: Math.round(cyanUpArrow3L2Position.x), positionY: Math.round(cyanUpArrow3L2Position.y), width: cyanUpArrow3L2Size.width, height: cyanUpArrow3L2Size.height, rotation: 0 },
         { elementId: 'cyan_down_arrow_l2', positionX: Math.round(cyanDownArrowL2Position.x), positionY: Math.round(cyanDownArrowL2Position.y), width: cyanDownArrowL2Size.width, height: cyanDownArrowL2Size.height, rotation: 0 },
         { elementId: 'metal_tank_l2', positionX: Math.round(metalTankL2Position.x), positionY: Math.round(metalTankL2Position.y), width: metalTankL2Size.width, height: metalTankL2Size.height, rotation: 0 },
+        { elementId: 'gray_yellow_arrow_l2', positionX: Math.round(grayYellowArrowL2Position.x), positionY: Math.round(grayYellowArrowL2Position.y), width: grayYellowArrowL2Size.width, height: grayYellowArrowL2Size.height, rotation: 0 },
+        { elementId: 'cyan_horiz_arrow_2_l2', positionX: Math.round(cyanHorizArrow2L2Position.x), positionY: Math.round(cyanHorizArrow2L2Position.y), width: cyanHorizArrow2L2Size.width, height: cyanHorizArrow2L2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -2237,6 +2259,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               <MenubarItem className="text-gray-800" data-testid="menu-file-new">New</MenubarItem>
               <MenubarItem className="text-gray-800" data-testid="menu-file-open">Open</MenubarItem>
               <MenubarItem className="text-gray-800" data-testid="menu-file-save">Save</MenubarItem>
+              <MenubarItem className="text-gray-800" data-testid="menu-file-save-as">Save As</MenubarItem>
               <MenubarSeparator />
               <MenubarItem className="text-gray-800" data-testid="menu-file-print">Print</MenubarItem>
               <MenubarSeparator />
@@ -3686,6 +3709,78 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-metal-tank-l2"
+              />
+            </Rnd>
+
+            {/* Gray Yellow Arrow Image for L2 */}
+            <Rnd
+              key="gray-yellow-arrow-l2"
+              data-testid="rnd-gray-yellow-arrow-l2"
+              position={grayYellowArrowL2Position}
+              size={grayYellowArrowL2Size}
+              onDragStop={(e, d) => {
+                setGrayYellowArrowL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setGrayYellowArrowL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setGrayYellowArrowL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={20}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={grayYellowArrowImg} 
+                alt="Gray Yellow Arrow" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-gray-yellow-arrow-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Horizontal Arrow 2 Image for L2 */}
+            <Rnd
+              key="cyan-horiz-arrow-2-l2"
+              data-testid="rnd-cyan-horiz-arrow-2-l2"
+              position={cyanHorizArrow2L2Position}
+              size={cyanHorizArrow2L2Size}
+              onDragStop={(e, d) => {
+                setCyanHorizArrow2L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanHorizArrow2L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanHorizArrow2L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={50}
+              minHeight={10}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanHorizArrow2Img} 
+                alt="Cyan Horizontal Arrow 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-horiz-arrow-2-l2"
               />
             </Rnd>
 
