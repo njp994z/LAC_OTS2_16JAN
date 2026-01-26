@@ -33,7 +33,6 @@ import cyanArrowImg from "@assets/image_1769462251501.png";
 import sulfurFurnaceImg from "@assets/image_1769462273281.png";
 import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
 import yellowHorizArrowImg from "@assets/image_1769462953963.png";
-import dualArrowsImg from "@assets/image_1769462963861.png";
 import cyanLGrayArrowImg from "@assets/image_1769462976979.png";
 import {
   Menubar,
@@ -536,9 +535,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Yellow Horizontal Arrow position and size
   const [yellowHorizArrowL2Position, setYellowHorizArrowL2Position] = useState({ x: 350, y: 950 });
   const [yellowHorizArrowL2Size, setYellowHorizArrowL2Size] = useState({ width: 200, height: 30 });
-  // L2 Dual Arrows (yellow and cyan) position and size
-  const [dualArrowsL2Position, setDualArrowsL2Position] = useState({ x: 600, y: 900 });
-  const [dualArrowsL2Size, setDualArrowsL2Size] = useState({ width: 700, height: 120 });
   // L2 Cyan L-shaped with Gray Arrow position and size
   const [cyanLGrayArrowL2Position, setCyanLGrayArrowL2Position] = useState({ x: 900, y: 700 });
   const [cyanLGrayArrowL2Size, setCyanLGrayArrowL2Size] = useState({ width: 600, height: 150 });
@@ -1600,12 +1596,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setYellowHorizArrowL2Size({ width: yellowHorizArrow.width, height: yellowHorizArrow.height });
     }
 
-    const dualArrows = positionMap.get('dual_arrows_l2');
-    if (dualArrows) {
-      setDualArrowsL2Position({ x: dualArrows.x, y: dualArrows.y });
-      setDualArrowsL2Size({ width: dualArrows.width, height: dualArrows.height });
-    }
-
     const cyanLGrayArrow = positionMap.get('cyan_l_gray_arrow_l2');
     if (cyanLGrayArrow) {
       setCyanLGrayArrowL2Position({ x: cyanLGrayArrow.x, y: cyanLGrayArrow.y });
@@ -2032,7 +2022,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'sulfur_furnace_l2', positionX: Math.round(sulfurFurnaceL2Position.x), positionY: Math.round(sulfurFurnaceL2Position.y), width: sulfurFurnaceL2Size.width, height: sulfurFurnaceL2Size.height, rotation: 0 },
         { elementId: 'waste_heat_boiler_l2', positionX: Math.round(wasteHeatBoilerL2Position.x), positionY: Math.round(wasteHeatBoilerL2Position.y), width: wasteHeatBoilerL2Size.width, height: wasteHeatBoilerL2Size.height, rotation: 0 },
         { elementId: 'yellow_horiz_arrow_l2', positionX: Math.round(yellowHorizArrowL2Position.x), positionY: Math.round(yellowHorizArrowL2Position.y), width: yellowHorizArrowL2Size.width, height: yellowHorizArrowL2Size.height, rotation: 0 },
-        { elementId: 'dual_arrows_l2', positionX: Math.round(dualArrowsL2Position.x), positionY: Math.round(dualArrowsL2Position.y), width: dualArrowsL2Size.width, height: dualArrowsL2Size.height, rotation: 0 },
         { elementId: 'cyan_l_gray_arrow_l2', positionX: Math.round(cyanLGrayArrowL2Position.x), positionY: Math.round(cyanLGrayArrowL2Position.y), width: cyanLGrayArrowL2Size.width, height: cyanLGrayArrowL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
@@ -3534,42 +3523,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-yellow-horiz-arrow-l2"
-              />
-            </Rnd>
-
-            {/* Dual Arrows (Yellow and Cyan) Image for L2 */}
-            <Rnd
-              key="dual-arrows-l2"
-              data-testid="rnd-dual-arrows-l2"
-              position={dualArrowsL2Position}
-              size={dualArrowsL2Size}
-              onDragStop={(e, d) => {
-                setDualArrowsL2Position({ x: d.x, y: d.y });
-                setIsL2Dirty(true);
-              }}
-              onResizeStop={(e, dir, ref, delta, position) => {
-                setDualArrowsL2Size({
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
-                });
-                setDualArrowsL2Position(position);
-                setIsL2Dirty(true);
-              }}
-              minWidth={300}
-              minHeight={60}
-              bounds="parent"
-              disableDragging={isLockedL2}
-              enableResizing={!isLockedL2}
-              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
-              className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 35 }}
-            >
-              <img 
-                src={dualArrowsImg} 
-                alt="Dual Arrows" 
-                className="w-full h-full object-contain"
-                draggable={false}
-                data-testid="img-dual-arrows-l2"
               />
             </Rnd>
 
