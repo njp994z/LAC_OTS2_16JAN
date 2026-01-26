@@ -166,6 +166,21 @@ const homescreenOptions = [
   { id: "8.3", label: "8.3 L3_1570 Startup Acid" },
 ];
 
+const resizeHandleStyle = {
+  width: '10px',
+  height: '10px',
+  background: '#3b82f6',
+  borderRadius: '2px',
+  border: '1px solid #1d4ed8',
+};
+
+const resizeHandleStyles = {
+  bottomRight: { ...resizeHandleStyle, right: '-5px', bottom: '-5px' },
+  bottomLeft: { ...resizeHandleStyle, left: '-5px', bottom: '-5px' },
+  topRight: { ...resizeHandleStyle, right: '-5px', top: '-5px' },
+  topLeft: { ...resizeHandleStyle, left: '-5px', top: '-5px' },
+};
+
 const HomeScreen = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [furnacePosition, setFurnacePosition] = useState({ x: 100, y: 100 });
@@ -2841,6 +2856,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 40 }}
             >
@@ -2875,6 +2891,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 10 }}
             >
@@ -2909,6 +2926,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 10 }}
             >
@@ -3117,6 +3135,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
@@ -3160,6 +3179,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
@@ -3202,6 +3222,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
@@ -3242,6 +3263,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
@@ -3283,6 +3305,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
@@ -3604,6 +3627,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3638,6 +3662,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             bounds="parent"
             disableDragging={isLocked}
             enableResizing={!isLocked}
+            resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
             className={isLocked ? "cursor-default" : "cursor-move"}
           >
             <div 
@@ -3669,6 +3694,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3705,6 +3731,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3739,6 +3766,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
           style={{ zIndex: 10 }}
         >
@@ -3775,6 +3803,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3810,6 +3839,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3845,6 +3875,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3880,6 +3911,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3914,6 +3946,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3948,6 +3981,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -3982,6 +4016,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
         >
           <div 
@@ -4016,6 +4051,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           bounds="parent"
           disableDragging={isLocked}
           enableResizing={!isLocked}
+          resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
           className={isLocked ? "cursor-default" : "cursor-move"}
           style={{ zIndex: 20 }}
         >
