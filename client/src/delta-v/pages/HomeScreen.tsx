@@ -32,7 +32,6 @@ import yellowArrowImg from "@assets/image_1769462243755.png";
 import cyanArrowImg from "@assets/image_1769462251501.png";
 import sulfurFurnaceImg from "@assets/image_1769462273281.png";
 import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
-import cyanLArrowImg from "@assets/image_1769462946285.png";
 import yellowHorizArrowImg from "@assets/image_1769462953963.png";
 import dualArrowsImg from "@assets/image_1769462963861.png";
 import cyanLGrayArrowImg from "@assets/image_1769462976979.png";
@@ -534,9 +533,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Waste Heat Boiler 1540-HX-001 position and size
   const [wasteHeatBoilerL2Position, setWasteHeatBoilerL2Position] = useState({ x: 850, y: 600 });
   const [wasteHeatBoilerL2Size, setWasteHeatBoilerL2Size] = useState({ width: 350, height: 200 });
-  // L2 Cyan L-shaped Arrow position and size
-  const [cyanLArrowL2Position, setCyanLArrowL2Position] = useState({ x: 100, y: 900 });
-  const [cyanLArrowL2Size, setCyanLArrowL2Size] = useState({ width: 200, height: 400 });
   // L2 Yellow Horizontal Arrow position and size
   const [yellowHorizArrowL2Position, setYellowHorizArrowL2Position] = useState({ x: 350, y: 950 });
   const [yellowHorizArrowL2Size, setYellowHorizArrowL2Size] = useState({ width: 200, height: 30 });
@@ -1598,12 +1594,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setWasteHeatBoilerL2Size({ width: wasteHeatBoiler.width, height: wasteHeatBoiler.height });
     }
 
-    const cyanLArrow = positionMap.get('cyan_l_arrow_l2');
-    if (cyanLArrow) {
-      setCyanLArrowL2Position({ x: cyanLArrow.x, y: cyanLArrow.y });
-      setCyanLArrowL2Size({ width: cyanLArrow.width, height: cyanLArrow.height });
-    }
-
     const yellowHorizArrow = positionMap.get('yellow_horiz_arrow_l2');
     if (yellowHorizArrow) {
       setYellowHorizArrowL2Position({ x: yellowHorizArrow.x, y: yellowHorizArrow.y });
@@ -2041,7 +2031,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_arrow_l2', positionX: Math.round(cyanArrowL2Position.x), positionY: Math.round(cyanArrowL2Position.y), width: cyanArrowL2Size.width, height: cyanArrowL2Size.height, rotation: 0 },
         { elementId: 'sulfur_furnace_l2', positionX: Math.round(sulfurFurnaceL2Position.x), positionY: Math.round(sulfurFurnaceL2Position.y), width: sulfurFurnaceL2Size.width, height: sulfurFurnaceL2Size.height, rotation: 0 },
         { elementId: 'waste_heat_boiler_l2', positionX: Math.round(wasteHeatBoilerL2Position.x), positionY: Math.round(wasteHeatBoilerL2Position.y), width: wasteHeatBoilerL2Size.width, height: wasteHeatBoilerL2Size.height, rotation: 0 },
-        { elementId: 'cyan_l_arrow_l2', positionX: Math.round(cyanLArrowL2Position.x), positionY: Math.round(cyanLArrowL2Position.y), width: cyanLArrowL2Size.width, height: cyanLArrowL2Size.height, rotation: 0 },
         { elementId: 'yellow_horiz_arrow_l2', positionX: Math.round(yellowHorizArrowL2Position.x), positionY: Math.round(yellowHorizArrowL2Position.y), width: yellowHorizArrowL2Size.width, height: yellowHorizArrowL2Size.height, rotation: 0 },
         { elementId: 'dual_arrows_l2', positionX: Math.round(dualArrowsL2Position.x), positionY: Math.round(dualArrowsL2Position.y), width: dualArrowsL2Size.width, height: dualArrowsL2Size.height, rotation: 0 },
         { elementId: 'cyan_l_gray_arrow_l2', positionX: Math.round(cyanLGrayArrowL2Position.x), positionY: Math.round(cyanLGrayArrowL2Position.y), width: cyanLGrayArrowL2Size.width, height: cyanLGrayArrowL2Size.height, rotation: 0 },
@@ -3509,42 +3498,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-waste-heat-boiler-l2"
-              />
-            </Rnd>
-
-            {/* Cyan L-shaped Arrow Image for L2 */}
-            <Rnd
-              key="cyan-l-arrow-l2"
-              data-testid="rnd-cyan-l-arrow-l2"
-              position={cyanLArrowL2Position}
-              size={cyanLArrowL2Size}
-              onDragStop={(e, d) => {
-                setCyanLArrowL2Position({ x: d.x, y: d.y });
-                setIsL2Dirty(true);
-              }}
-              onResizeStop={(e, dir, ref, delta, position) => {
-                setCyanLArrowL2Size({
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
-                });
-                setCyanLArrowL2Position(position);
-                setIsL2Dirty(true);
-              }}
-              minWidth={100}
-              minHeight={200}
-              bounds="parent"
-              disableDragging={isLockedL2}
-              enableResizing={!isLockedL2}
-              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
-              className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 35 }}
-            >
-              <img 
-                src={cyanLArrowImg} 
-                alt="Cyan L-shaped Arrow" 
-                className="w-full h-full object-contain"
-                draggable={false}
-                data-testid="img-cyan-l-arrow-l2"
               />
             </Rnd>
 
