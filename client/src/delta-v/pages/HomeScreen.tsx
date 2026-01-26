@@ -479,6 +479,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Hand Controller 1540-H-4030 position and size
   const [handControllerL2Position, setHandControllerL2Position] = useState({ x: 800, y: 200 });
   const [handControllerL2Size, setHandControllerL2Size] = useState({ width: 220, height: 200 });
+  // L2 VFD-001 (Variable Frequency Drive) position and size
+  const [vfdL2Position, setVfdL2Position] = useState({ x: 50, y: 500 });
+  const [vfdL2Size, setVfdL2Size] = useState({ width: 150, height: 160 });
+  // L2 Sulfur Flow Controller 1530-F-2602 position and size
+  const [sulfurFlowL2Position, setSulfurFlowL2Position] = useState({ x: 250, y: 500 });
+  const [sulfurFlowL2Size, setSulfurFlowL2Size] = useState({ width: 180, height: 180 });
+  // L2 Sulfur Flow Control Valve 1540-FCV-2602 position and size
+  const [sulfurValveL2Position, setSulfurValveL2Position] = useState({ x: 450, y: 500 });
+  const [sulfurValveL2Size, setSulfurValveL2Size] = useState({ width: 100, height: 140 });
+  // L2 Jug Valve Hand Controller 1540-H-4282 position and size
+  const [jugValveHandControllerL2Position, setJugValveHandControllerL2Position] = useState({ x: 600, y: 500 });
+  const [jugValveHandControllerL2Size, setJugValveHandControllerL2Size] = useState({ width: 180, height: 180 });
+  // L2 Jug Valve HCV 1540-HCV-4282 position and size
+  const [jugValveHcvL2Position, setJugValveHcvL2Position] = useState({ x: 800, y: 500 });
+  const [jugValveHcvL2Size, setJugValveHcvL2Size] = useState({ width: 100, height: 140 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(false);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1512,6 +1527,42 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setFurnaceEquip3Position({ x: equip3.x, y: equip3.y });
       setFurnaceEquip3Size({ width: equip3.width, height: equip3.height });
     }
+
+    const handController = positionMap.get('hand_controller_l2');
+    if (handController) {
+      setHandControllerL2Position({ x: handController.x, y: handController.y });
+      setHandControllerL2Size({ width: handController.width, height: handController.height });
+    }
+
+    const vfd = positionMap.get('vfd_l2');
+    if (vfd) {
+      setVfdL2Position({ x: vfd.x, y: vfd.y });
+      setVfdL2Size({ width: vfd.width, height: vfd.height });
+    }
+
+    const sulfurFlow = positionMap.get('sulfur_flow_l2');
+    if (sulfurFlow) {
+      setSulfurFlowL2Position({ x: sulfurFlow.x, y: sulfurFlow.y });
+      setSulfurFlowL2Size({ width: sulfurFlow.width, height: sulfurFlow.height });
+    }
+
+    const sulfurValve = positionMap.get('sulfur_valve_l2');
+    if (sulfurValve) {
+      setSulfurValveL2Position({ x: sulfurValve.x, y: sulfurValve.y });
+      setSulfurValveL2Size({ width: sulfurValve.width, height: sulfurValve.height });
+    }
+
+    const jugValveHc = positionMap.get('jug_valve_hc_l2');
+    if (jugValveHc) {
+      setJugValveHandControllerL2Position({ x: jugValveHc.x, y: jugValveHc.y });
+      setJugValveHandControllerL2Size({ width: jugValveHc.width, height: jugValveHc.height });
+    }
+
+    const jugValveHcv = positionMap.get('jug_valve_hcv_l2');
+    if (jugValveHcv) {
+      setJugValveHcvL2Position({ x: jugValveHcv.x, y: jugValveHcv.y });
+      setJugValveHcvL2Size({ width: jugValveHcv.width, height: jugValveHcv.height });
+    }
   }, [layoutDataL2, isL2Dirty]);
 
   // Apply loaded positions to state when data arrives
@@ -1887,6 +1938,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'furnace_pump_l2', positionX: Math.round(furnacePumpPosition.x), positionY: Math.round(furnacePumpPosition.y), width: furnacePumpSize.width, height: furnacePumpSize.height, rotation: 0 },
         { elementId: 'furnace_equip2_l2', positionX: Math.round(furnaceEquip2Position.x), positionY: Math.round(furnaceEquip2Position.y), width: furnaceEquip2Size.width, height: furnaceEquip2Size.height, rotation: 0 },
         { elementId: 'furnace_equip3_l2', positionX: Math.round(furnaceEquip3Position.x), positionY: Math.round(furnaceEquip3Position.y), width: furnaceEquip3Size.width, height: furnaceEquip3Size.height, rotation: 0 },
+        { elementId: 'hand_controller_l2', positionX: Math.round(handControllerL2Position.x), positionY: Math.round(handControllerL2Position.y), width: handControllerL2Size.width, height: handControllerL2Size.height, rotation: 0 },
+        { elementId: 'vfd_l2', positionX: Math.round(vfdL2Position.x), positionY: Math.round(vfdL2Position.y), width: vfdL2Size.width, height: vfdL2Size.height, rotation: 0 },
+        { elementId: 'sulfur_flow_l2', positionX: Math.round(sulfurFlowL2Position.x), positionY: Math.round(sulfurFlowL2Position.y), width: sulfurFlowL2Size.width, height: sulfurFlowL2Size.height, rotation: 0 },
+        { elementId: 'sulfur_valve_l2', positionX: Math.round(sulfurValveL2Position.x), positionY: Math.round(sulfurValveL2Position.y), width: sulfurValveL2Size.width, height: sulfurValveL2Size.height, rotation: 0 },
+        { elementId: 'jug_valve_hc_l2', positionX: Math.round(jugValveHandControllerL2Position.x), positionY: Math.round(jugValveHandControllerL2Position.y), width: jugValveHandControllerL2Size.width, height: jugValveHandControllerL2Size.height, rotation: 0 },
+        { elementId: 'jug_valve_hcv_l2', positionX: Math.round(jugValveHcvL2Position.x), positionY: Math.round(jugValveHcvL2Position.y), width: jugValveHcvL2Size.width, height: jugValveHcvL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -3026,6 +3083,209 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   data={handControllerData}
                   isTransparent={true}
                   controllerId="1540-H-4030"
+                />
+              </div>
+            </Rnd>
+
+            {/* VFD-001 Variable Frequency Drive for L2 */}
+            <Rnd
+              key="vfd-l2"
+              position={vfdL2Position}
+              size={vfdL2Size}
+              onDragStop={(e, d) => {
+                setVfdL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setVfdL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setVfdL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={120}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleCompressorClick}
+              >
+                <PrimaryCompressorFaceplate 
+                  data={compressorData} 
+                  transparentBackground={true}
+                  configTagName={vfdConfig?.tagName}
+                  configDescription={vfdConfig?.description}
+                  configUnit={vfdConfig?.unit}
+                />
+              </div>
+            </Rnd>
+
+            {/* Sulfur Flow Controller 1530-F-2602 for L2 */}
+            <Rnd
+              key="sulfur-flow-l2"
+              position={sulfurFlowL2Position}
+              size={sulfurFlowL2Size}
+              onDragStop={(e, d) => {
+                setSulfurFlowL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setSulfurFlowL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setSulfurFlowL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleSulfurFlowClick}
+                style={{
+                  transform: `scale(${Math.min(sulfurFlowL2Size.width / 220, sulfurFlowL2Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={sulfurFlowData}
+                  isTransparent={true}
+                  controllerId="1530-F-2602"
+                  showAlarmLimits={false}
+                />
+              </div>
+            </Rnd>
+
+            {/* Sulfur Flow Control Valve 1540-FCV-2602 for L2 */}
+            <Rnd
+              key="sulfur-valve-l2"
+              position={sulfurValveL2Position}
+              size={sulfurValveL2Size}
+              onDragStop={(e, d) => {
+                setSulfurValveL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setSulfurValveL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setSulfurValveL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={80}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleSulfurValveClick}
+                style={{
+                  transform: `scale(${Math.min(sulfurValveL2Size.width / 100, sulfurValveL2Size.height / 140)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ValveFaceplate 
+                  data={sulfurValveData}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            {/* Jug Valve Hand Controller 1540-H-4282 for L2 */}
+            <Rnd
+              key="jug-valve-hc-l2"
+              position={jugValveHandControllerL2Position}
+              size={jugValveHandControllerL2Size}
+              onDragStop={(e, d) => {
+                setJugValveHandControllerL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setJugValveHandControllerL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setJugValveHandControllerL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleJugValveHandControllerClick}
+                style={{
+                  transform: `scale(${Math.min(jugValveHandControllerL2Size.width / 220, jugValveHandControllerL2Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={jugValveHandControllerData}
+                  isTransparent={true}
+                  controllerId="1540-H-4282"
+                />
+              </div>
+            </Rnd>
+
+            {/* Jug Valve HCV 1540-HCV-4282 for L2 */}
+            <Rnd
+              key="jug-valve-hcv-l2"
+              position={jugValveHcvL2Position}
+              size={jugValveHcvL2Size}
+              onDragStop={(e, d) => {
+                setJugValveHcvL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setJugValveHcvL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setJugValveHcvL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={80}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleJugValveClick}
+                style={{
+                  transform: `scale(${Math.min(jugValveHcvL2Size.width / 100, jugValveHcvL2Size.height / 140)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ValveFaceplate 
+                  data={jugValveData}
+                  isTransparent={true}
+                  valveImageSrc={jugValveImage}
                 />
               </div>
             </Rnd>
