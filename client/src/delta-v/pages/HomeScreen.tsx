@@ -596,6 +596,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
   const [selectedPVCase, setSelectedPVCase] = useState<string | null>(null);
+  // Loaded PV case value for 1540-H-4030 controller (used in Static mode)
+  const [loadedCaseValue1540H4030, setLoadedCaseValue1540H4030] = useState<number | null>(null);
+  const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -941,13 +944,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build Hand Controller 1540-H-4030 data from synced state
+  // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
+  const useStaticCaseValue = selectedMode === "Static" && loadedCaseValue1540H4030 !== null;
   const handControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: handControllerConfig.TAGNAME || '1540-H-4030',
     description: handControllerConfig.DESC || 'Main Compressor Hand Controller',
-    pv: handControllerSyncState.syncedPV,
-    sp: handControllerSyncState.syncedSP,
-    out: handControllerSyncState.syncedOUT,
+    pv: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedPV,
+    sp: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
+    out: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedOUT,
     mode: handControllerSyncState.syncedMode,
     pvUnits: handControllerConfig.EU || '%',
     pvRangeMin: handControllerConfig.PV_SCALE_LO ?? 0,
@@ -5719,7 +5724,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </Button>
             <Button 
               onClick={() => {
-                if (selectedPVCase) {
+                if (selectedPVCase && pvCaseData) {
+                  // Find the 1540-H-4030 variable and extract the value for the selected case
+                  const handControllerVar = pvCaseData.variables?.find(
+                    (v: any) => v.tag === '1540-H-4030' || v.tagNumber === '1540-H-4030'
+                  );
+                  if (handControllerVar && handControllerVar.cases) {
+                    const caseValue = handControllerVar.cases[selectedPVCase];
+                    if (caseValue !== undefined && caseValue !== null && caseValue !== '') {
+                      const numericValue = parseFloat(String(caseValue));
+                      if (!isNaN(numericValue)) {
+                        setLoadedCaseValue1540H4030(numericValue);
+                        setActivePVCaseId(selectedPVCase);
+                      }
+                    }
+                  }
                   toast({
                     title: "Case Loaded",
                     description: `Loaded PV Case: ${pvCaseData?.cases?.find(c => c.id === selectedPVCase)?.name || selectedPVCase}`,
