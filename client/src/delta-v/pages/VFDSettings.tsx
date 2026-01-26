@@ -1,4 +1,5 @@
-import { Settings, ArrowLeft, ExternalLink, Save, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, ArrowLeft, ExternalLink, Save, Loader2, Check } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -13,10 +14,46 @@ import {
 } from "@/components/ui/select";
 
 const VFDSettings = () => {
-  const { vfdConfig, updateVFDConfig, isVFDConfigSaving, isVFDConfigLoading } = useCompressor();
+  const { vfdConfig, setVFDConfigLocal, saveVFDConfig, isVFDConfigSaving, isVFDConfigLoading } = useCompressor();
+  
+  // Track the original saved config to detect changes
+  const [savedConfig, setSavedConfig] = useState(vfdConfig);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Update savedConfig when config changes from server (initial load or after save)
+  useEffect(() => {
+    if (!isVFDConfigLoading && !isVFDConfigSaving && !isSaving) {
+      setSavedConfig(vfdConfig);
+      setIsDirty(false);
+    }
+  }, [isVFDConfigLoading, isVFDConfigSaving, isSaving, vfdConfig]);
+
+  // Check if config has changed from saved
+  useEffect(() => {
+    const hasChanges = 
+      vfdConfig.tagName !== savedConfig.tagName ||
+      vfdConfig.description !== savedConfig.description ||
+      vfdConfig.unit !== savedConfig.unit ||
+      vfdConfig.engineeringUnits !== savedConfig.engineeringUnits ||
+      vfdConfig.transparentBackground !== savedConfig.transparentBackground;
+    setIsDirty(hasChanges);
+  }, [vfdConfig, savedConfig]);
 
   const handleChange = (field: string, value: string | boolean) => {
-    updateVFDConfig({ [field]: value });
+    setVFDConfigLocal({ [field]: value });
+  };
+
+  const handleApplyChanges = async () => {
+    setIsSaving(true);
+    try {
+      await saveVFDConfig();
+      // savedConfig will be updated by the effect after mutation completes
+    } catch (error) {
+      // Error is handled by the mutation's onError in context
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isVFDConfigLoading) {
@@ -35,6 +72,7 @@ const VFDSettings = () => {
             <Link 
               to="/settings/controller-outputs/faceplates/compressor-faceplate" 
               className="p-2 rounded-lg bg-card hover:bg-muted border border-border transition-colors"
+              data-testid="link-back-to-compressor"
             >
               <ArrowLeft size={20} />
             </Link>
@@ -49,6 +87,16 @@ const VFDSettings = () => {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Saving...
               </span>
+            )}
+            {isDirty && !isVFDConfigSaving && (
+              <Button
+                onClick={handleApplyChanges}
+                className="bg-cyan-600 text-white"
+                data-testid="button-apply-changes"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Apply Changes
+              </Button>
             )}
           </div>
         </div>

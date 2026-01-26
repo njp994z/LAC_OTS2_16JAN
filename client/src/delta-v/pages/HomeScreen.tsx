@@ -3149,7 +3149,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               >
                 <PrimaryCompressorFaceplate 
                   data={compressorData} 
-                  transparentBackground={true}
+                  transparentBackground={vfdConfig?.transparentBackground ?? true}
                   configTagName={vfdConfig?.tagName}
                   configDescription={vfdConfig?.description}
                   configUnit={vfdConfig?.unit}
@@ -3636,7 +3636,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           >
             <PrimaryCompressorFaceplate 
               data={compressorData} 
-              transparentBackground={true}
+              transparentBackground={vfdConfig?.transparentBackground ?? true}
               configTagName={vfdConfig?.tagName}
               configDescription={vfdConfig?.description}
               configUnit={vfdConfig?.unit}

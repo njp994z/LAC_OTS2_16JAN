@@ -31,6 +31,8 @@ interface CompressorContextType {
   setFailAlarm: (active: boolean) => void;
   vfdConfig: VFDConfig;
   updateVFDConfig: (newConfig: Partial<VFDConfig>) => Promise<void>;
+  setVFDConfigLocal: (newConfig: Partial<VFDConfig>) => void;
+  saveVFDConfig: () => Promise<void>;
   isVFDConfigSaving: boolean;
   isVFDConfigLoading: boolean;
 }
@@ -94,6 +96,16 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const updated = { ...localVFDConfig, ...newConfig };
     setLocalVFDConfig(updated);
     await vfdConfigMutation.mutateAsync(updated);
+  };
+
+  // Update local state only (no save)
+  const setVFDConfigLocal = (newConfig: Partial<VFDConfig>) => {
+    setLocalVFDConfig(prev => ({ ...prev, ...newConfig }));
+  };
+
+  // Explicitly save current local config to server
+  const saveVFDConfig = async () => {
+    await vfdConfigMutation.mutateAsync(localVFDConfig);
   };
 
   const handleStart = () => {
@@ -188,6 +200,8 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setFailAlarm,
         vfdConfig: localVFDConfig,
         updateVFDConfig,
+        setVFDConfigLocal,
+        saveVFDConfig,
         isVFDConfigSaving: vfdConfigMutation.isPending,
         isVFDConfigLoading,
       }}
