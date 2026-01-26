@@ -38,6 +38,11 @@ import cyanDownArrowImg from "@assets/image_1769466582748.png";
 import metalTankImg from "@assets/image_1769466606997.png";
 import grayYellowArrowImg from "@assets/image_1769466978719.png";
 import cyanHorizArrow2Img from "@assets/image_1769466999516.png";
+import grayArrowCyanLineImg from "@assets/image_1769467350102.png";
+import cyanThinLine1Img from "@assets/image_1769467420791.png";
+import cyanThinLine2Img from "@assets/image_1769467426528.png";
+import cyanVertLine1Img from "@assets/image_1769467433951.png";
+import cyanVertLine2Img from "@assets/image_1769467436693.png";
 import {
   Menubar,
   MenubarContent,
@@ -564,6 +569,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Cyan Horizontal Arrow 2 position and size
   const [cyanHorizArrow2L2Position, setCyanHorizArrow2L2Position] = useState({ x: 1150, y: 750 });
   const [cyanHorizArrow2L2Size, setCyanHorizArrow2L2Size] = useState({ width: 200, height: 30 });
+  // L2 Gray Arrow with Cyan Line position and size
+  const [grayArrowCyanLineL2Position, setGrayArrowCyanLineL2Position] = useState({ x: 1200, y: 600 });
+  const [grayArrowCyanLineL2Size, setGrayArrowCyanLineL2Size] = useState({ width: 400, height: 50 });
+  // L2 Cyan Thin Line 1 position and size
+  const [cyanThinLine1L2Position, setCyanThinLine1L2Position] = useState({ x: 1250, y: 650 });
+  const [cyanThinLine1L2Size, setCyanThinLine1L2Size] = useState({ width: 300, height: 10 });
+  // L2 Cyan Thin Line 2 position and size
+  const [cyanThinLine2L2Position, setCyanThinLine2L2Position] = useState({ x: 1300, y: 700 });
+  const [cyanThinLine2L2Size, setCyanThinLine2L2Size] = useState({ width: 300, height: 10 });
+  // L2 Cyan Vertical Line 1 position and size
+  const [cyanVertLine1L2Position, setCyanVertLine1L2Position] = useState({ x: 1350, y: 500 });
+  const [cyanVertLine1L2Size, setCyanVertLine1L2Size] = useState({ width: 10, height: 150 });
+  // L2 Cyan Vertical Line 2 position and size
+  const [cyanVertLine2L2Position, setCyanVertLine2L2Position] = useState({ x: 1400, y: 550 });
+  const [cyanVertLine2L2Size, setCyanVertLine2L2Size] = useState({ width: 10, height: 150 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1670,6 +1690,36 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setCyanHorizArrow2L2Size({ width: cyanHorizArrow2.width, height: cyanHorizArrow2.height });
     }
 
+    const grayArrowCyanLine = positionMap.get('gray_arrow_cyan_line_l2');
+    if (grayArrowCyanLine) {
+      setGrayArrowCyanLineL2Position({ x: grayArrowCyanLine.x, y: grayArrowCyanLine.y });
+      setGrayArrowCyanLineL2Size({ width: grayArrowCyanLine.width, height: grayArrowCyanLine.height });
+    }
+
+    const cyanThinLine1 = positionMap.get('cyan_thin_line_1_l2');
+    if (cyanThinLine1) {
+      setCyanThinLine1L2Position({ x: cyanThinLine1.x, y: cyanThinLine1.y });
+      setCyanThinLine1L2Size({ width: cyanThinLine1.width, height: cyanThinLine1.height });
+    }
+
+    const cyanThinLine2 = positionMap.get('cyan_thin_line_2_l2');
+    if (cyanThinLine2) {
+      setCyanThinLine2L2Position({ x: cyanThinLine2.x, y: cyanThinLine2.y });
+      setCyanThinLine2L2Size({ width: cyanThinLine2.width, height: cyanThinLine2.height });
+    }
+
+    const cyanVertLine1 = positionMap.get('cyan_vert_line_1_l2');
+    if (cyanVertLine1) {
+      setCyanVertLine1L2Position({ x: cyanVertLine1.x, y: cyanVertLine1.y });
+      setCyanVertLine1L2Size({ width: cyanVertLine1.width, height: cyanVertLine1.height });
+    }
+
+    const cyanVertLine2 = positionMap.get('cyan_vert_line_2_l2');
+    if (cyanVertLine2) {
+      setCyanVertLine2L2Position({ x: cyanVertLine2.x, y: cyanVertLine2.y });
+      setCyanVertLine2L2Size({ width: cyanVertLine2.width, height: cyanVertLine2.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2098,6 +2148,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'metal_tank_l2', positionX: Math.round(metalTankL2Position.x), positionY: Math.round(metalTankL2Position.y), width: metalTankL2Size.width, height: metalTankL2Size.height, rotation: 0 },
         { elementId: 'gray_yellow_arrow_l2', positionX: Math.round(grayYellowArrowL2Position.x), positionY: Math.round(grayYellowArrowL2Position.y), width: grayYellowArrowL2Size.width, height: grayYellowArrowL2Size.height, rotation: 0 },
         { elementId: 'cyan_horiz_arrow_2_l2', positionX: Math.round(cyanHorizArrow2L2Position.x), positionY: Math.round(cyanHorizArrow2L2Position.y), width: cyanHorizArrow2L2Size.width, height: cyanHorizArrow2L2Size.height, rotation: 0 },
+        { elementId: 'gray_arrow_cyan_line_l2', positionX: Math.round(grayArrowCyanLineL2Position.x), positionY: Math.round(grayArrowCyanLineL2Position.y), width: grayArrowCyanLineL2Size.width, height: grayArrowCyanLineL2Size.height, rotation: 0 },
+        { elementId: 'cyan_thin_line_1_l2', positionX: Math.round(cyanThinLine1L2Position.x), positionY: Math.round(cyanThinLine1L2Position.y), width: cyanThinLine1L2Size.width, height: cyanThinLine1L2Size.height, rotation: 0 },
+        { elementId: 'cyan_thin_line_2_l2', positionX: Math.round(cyanThinLine2L2Position.x), positionY: Math.round(cyanThinLine2L2Position.y), width: cyanThinLine2L2Size.width, height: cyanThinLine2L2Size.height, rotation: 0 },
+        { elementId: 'cyan_vert_line_1_l2', positionX: Math.round(cyanVertLine1L2Position.x), positionY: Math.round(cyanVertLine1L2Position.y), width: cyanVertLine1L2Size.width, height: cyanVertLine1L2Size.height, rotation: 0 },
+        { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -3781,6 +3836,186 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-horiz-arrow-2-l2"
+              />
+            </Rnd>
+
+            {/* Gray Arrow with Cyan Line Image for L2 */}
+            <Rnd
+              key="gray-arrow-cyan-line-l2"
+              data-testid="rnd-gray-arrow-cyan-line-l2"
+              position={grayArrowCyanLineL2Position}
+              size={grayArrowCyanLineL2Size}
+              onDragStop={(e, d) => {
+                setGrayArrowCyanLineL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setGrayArrowCyanLineL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setGrayArrowCyanLineL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={20}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={grayArrowCyanLineImg} 
+                alt="Gray Arrow with Cyan Line" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-gray-arrow-cyan-line-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Thin Line 1 Image for L2 */}
+            <Rnd
+              key="cyan-thin-line-1-l2"
+              data-testid="rnd-cyan-thin-line-1-l2"
+              position={cyanThinLine1L2Position}
+              size={cyanThinLine1L2Size}
+              onDragStop={(e, d) => {
+                setCyanThinLine1L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanThinLine1L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanThinLine1L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={50}
+              minHeight={5}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanThinLine1Img} 
+                alt="Cyan Thin Line 1" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-thin-line-1-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Thin Line 2 Image for L2 */}
+            <Rnd
+              key="cyan-thin-line-2-l2"
+              data-testid="rnd-cyan-thin-line-2-l2"
+              position={cyanThinLine2L2Position}
+              size={cyanThinLine2L2Size}
+              onDragStop={(e, d) => {
+                setCyanThinLine2L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanThinLine2L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanThinLine2L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={50}
+              minHeight={5}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanThinLine2Img} 
+                alt="Cyan Thin Line 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-thin-line-2-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Vertical Line 1 Image for L2 */}
+            <Rnd
+              key="cyan-vert-line-1-l2"
+              data-testid="rnd-cyan-vert-line-1-l2"
+              position={cyanVertLine1L2Position}
+              size={cyanVertLine1L2Size}
+              onDragStop={(e, d) => {
+                setCyanVertLine1L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanVertLine1L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanVertLine1L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={5}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanVertLine1Img} 
+                alt="Cyan Vertical Line 1" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-vert-line-1-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Vertical Line 2 Image for L2 */}
+            <Rnd
+              key="cyan-vert-line-2-l2"
+              data-testid="rnd-cyan-vert-line-2-l2"
+              position={cyanVertLine2L2Position}
+              size={cyanVertLine2L2Size}
+              onDragStop={(e, d) => {
+                setCyanVertLine2L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanVertLine2L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanVertLine2L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={5}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanVertLine2Img} 
+                alt="Cyan Vertical Line 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-vert-line-2-l2"
               />
             </Rnd>
 
