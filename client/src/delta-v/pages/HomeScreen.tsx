@@ -34,7 +34,7 @@ import cyanLeftArrowImg from "@assets/image_1769463876416.png";
 import cyanLongLeftArrowImg from "@assets/image_1769463882873.png";
 import cyanUpArrow2Img from "@assets/image_1769463889633.png";
 import cyanUpArrow3Img from "@assets/image_1769466572930.png";
-import cyanDownArrowImg from "@assets/image_1769466582748.png";
+import cyanDownArrowImg from "@assets/image_1769469181228.png";
 import metalTankImg from "@assets/image_1769466606997.png";
 import grayYellowArrowImg from "@assets/image_1769466978719.png";
 import cyanHorizArrow2Img from "@assets/image_1769466999516.png";
