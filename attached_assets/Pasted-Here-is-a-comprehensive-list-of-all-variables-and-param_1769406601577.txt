@@ -1,0 +1,78 @@
+Here is a comprehensive list of all variables and parameters that appear in the provided control loop diagram for the main compressor system, together with their explanations:
+
+- **SP** — Setpoint  
+  The desired target value for the controlled variable, expressed in % HIC (percent of the Hand Indicator Controller scale).
+
+- **PV** (or PV(t)) — Process Variable  
+  The measured (actual) value of the controlled variable, expressed in % HIC. This is the feedback signal closing the loop.
+
+- **e(t)** (or e) — Error  
+  Difference between setpoint and process variable: e(t) = SP − PV(t) (or SP + PV(t) depending on direct/reverse acting configuration).
+
+- **u(t)** — Controller output  
+  The output signal from the PID controller, typically in the range 4–20 mA, sent to the Variable Frequency Drive (VFD).
+
+- **Kp** — Proportional gain  
+  Tuning parameter of the PID controller – determines the proportional response to the current error.
+
+- **Ki** — Integral gain  
+  Tuning parameter of the PID controller – determines the response to the accumulation (integral) of past errors.
+
+- **Kd** — Derivative gain  
+  Tuning parameter of the PID controller – determines the response to the rate of change of the error.
+
+- **ηVFD** (or η_VFD) — VFD efficiency  
+  Efficiency factor of the Variable Frequency Drive.
+
+- **KVFD** (or K_VFD) — VFD gain  
+  Steady-state gain of the VFD transfer function.
+
+- **τVFD** (or τ_VFD) — VFD time constant  
+  Time constant of the first-order transfer function representing VFD dynamics: 1 / (1 + τVFD s).
+
+- **ηMTR** (or η_MTR) — Motor efficiency  
+  Efficiency factor of the electric motor.
+
+- **KMTR** (or K_MTR) — Motor gain  
+  Steady-state gain of the motor transfer function.
+
+- **τMTR** (or τ_MTR) — Motor time constant  
+  Time constant of the first-order transfer function representing motor dynamics: 1 / (1 + τMTR s).
+
+- **ηCMP** (or η_CMP) — Compressor efficiency  
+  Efficiency factor of the compressor itself.
+
+- **KCMP** (or K_CMP) — Compressor gain  
+  Steady-state gain associated with the compressor characteristic.
+
+- **ωn** (or ω_n) — Natural (nominal) frequency  
+  Characteristic frequency of the compressor (appears squared in the transfer function denominator).
+
+- **ζ** — Damping ratio  
+  Damping coefficient of the second-order compressor transfer function: s² + ζ ωn s + ωn².
+
+- **Pelec** (or P_elec) — Electrical power  
+  Electrical power delivered to the motor, shown as a function of voltage and frequency: Pelec = f(V, Hz). Typically 0–7,800 hp range.
+
+- **w(t)** — Intermediate variable (after VFD)  
+  Output of the VFD block (frequently representing frequency or normalized speed command).
+
+- **x(t)** — Motor output variable  
+  Output of the motor block (frequently representing motor shaft power, torque, or speed in hp or normalized units).
+
+- **y(t)** — Compressor output before scaling  
+  Direct output of the compressor dynamic block (frequently representing speed, pressure rise, or flow in engineering units).
+
+- **z(t)** — Speed after RPM scaling  
+  Intermediate variable after linear conversion from RPM to % HIC scale (0–100%).
+
+- **K_RPM_Max** (or KRPM_Max) — RPM scaling factor  
+  Conversion constant that maps maximum RPM (4,595 RPM) to 100% HIC.
+
+- **θ** (or θ(t)) — Dead time (transport delay)  
+  Pure time delay in the measurement or process path, expressed as e^(-θs) in the Laplace domain.
+
+- **τLPF** (or τ_LPF) — Low-pass filter time constant  
+  Time constant of the first-order low-pass filter applied to the derivative action (or sometimes to the PV signal) to reduce derivative chatter: 1 / (1 + τLPF s).
+
+These are all the symbols and parameters explicitly shown or labeled in the diagram. Let me know if you would like a deeper explanation of any particular block, transfer function, or tuning implication.
