@@ -2708,7 +2708,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
         {/* L2 - Furnace Area View - Canvas with equipment */}
         {selectedScreen === "L2 – Furnace Area" && (
-          <div className="relative bg-gray-900" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+          <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
             
             {/* Furnace Pump Assembly Image */}
             <Rnd
