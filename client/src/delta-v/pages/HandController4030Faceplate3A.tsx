@@ -11,12 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
 import PIDControlLoopDiagram from '@/delta-v/components/faceplate/PIDControlLoopDiagram';
 import {
-  PIDHxBypassConfig,
-  defaultPIDHxBypassConfig,
-} from '@/delta-v/types/pidHxBypassConfig';
-
-// Independent localStorage key for this controller
-const HAND_CONTROLLER_4030_PID_CONFIG_KEY = 'hand_controller_4030_pid_config';
+  MainCompressorConfig,
+  defaultMainCompressorConfig,
+  MAIN_COMPRESSOR_CONFIG_KEY,
+} from '@/delta-v/types/mainCompressorConfig';
 
 // Stable input components to prevent re-render issues
 const StableNumberInput = ({
@@ -94,24 +92,20 @@ const HandController4030Faceplate3A = () => {
       setLocation('/delta-v');
     }
   }, [setLocation]);
-  const [config, setConfig] = useState<PIDHxBypassConfig>({
-    ...defaultPIDHxBypassConfig,
-    loop_tag: '1540-H-4030',
-    service_desc: 'Main Compressor Hand Controller',
-  });
+  const [config, setConfig] = useState<MainCompressorConfig>(defaultMainCompressorConfig);
   const [summary, setSummary] = useState<string>('');
   const [diagramOpen, setDiagramOpen] = useState(true);
   const [validationStatus, setValidationStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
 
   // Load config from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem(HAND_CONTROLLER_4030_PID_CONFIG_KEY);
+    const saved = localStorage.getItem(MAIN_COMPRESSOR_CONFIG_KEY);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as PIDHxBypassConfig;
+        const parsed = JSON.parse(saved) as MainCompressorConfig;
         setConfig(parsed);
       } catch (e) {
-        console.error('Failed to load PID HX Bypass config:', e);
+        console.error('Failed to load Main Compressor config:', e);
       }
     }
   }, []);
@@ -135,31 +129,36 @@ const HandController4030Faceplate3A = () => {
     }
   }, [state.syncedMode]);
 
-  const updateConfig = useCallback(<K extends keyof PIDHxBypassConfig>(key: K, value: PIDHxBypassConfig[K]) => {
+  const updateConfig = useCallback(<K extends keyof MainCompressorConfig>(key: K, value: MainCompressorConfig[K]) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const saveConfig = useCallback(() => {
-    localStorage.setItem(HAND_CONTROLLER_4030_PID_CONFIG_KEY, JSON.stringify(config));
+    localStorage.setItem(MAIN_COMPRESSOR_CONFIG_KEY, JSON.stringify(config));
     toast({ title: 'Configuration Saved', description: 'Settings saved to local storage.' });
   }, [config, toast]);
 
   const resetToDefaults = useCallback(() => {
-    setConfig({
-      ...defaultPIDHxBypassConfig,
-      loop_tag: '1540-H-4030',
-      service_desc: 'Main Compressor Hand Controller',
-    });
+    setConfig(defaultMainCompressorConfig);
     toast({ title: 'Reset Complete', description: 'Configuration reset to defaults.' });
   }, [toast]);
 
   const validateInputs = useCallback(() => {
     try {
-      if (config.xbar < 0 || config.xbar > 1) {
-        throw new Error('Nominal bypass fraction x̄ must be between 0 and 1.');
+      if (config.eta_VFD < 0 || config.eta_VFD > 1) {
+        throw new Error('VFD efficiency (η_VFD) must be between 0 and 1.');
       }
-      if (config.u_min >= config.u_max) {
-        throw new Error('u_min must be < u_max.');
+      if (config.eta_MTR < 0 || config.eta_MTR > 1) {
+        throw new Error('Motor efficiency (η_MTR) must be between 0 and 1.');
+      }
+      if (config.eta_CMP < 0 || config.eta_CMP > 1) {
+        throw new Error('Compressor efficiency (η_CMP) must be between 0 and 1.');
+      }
+      if (config.zeta < 0 || config.zeta > 1) {
+        throw new Error('Damping ratio (ζ) must be between 0 and 1.');
+      }
+      if (config.K_RPM_Max <= 0) {
+        throw new Error('Maximum RPM must be > 0.');
       }
       setValidationStatus('valid');
       toast({ title: 'Validation OK', description: 'All inputs are valid ✓' });
@@ -170,18 +169,38 @@ const HandController4030Faceplate3A = () => {
   }, [config, toast]);
 
   const computeSummary = useCallback(() => {
-    const dTout_dx_mix = config.Tin0 - config.Thx0;
-    const sign_hint = dTout_dx_mix < 0
-      ? 'Negative (bypass-open tends to reduce Tout)'
-      : 'Positive';
-
+    const overallGain = config.eta_VFD * config.K_VFD * config.eta_MTR * config.K_MTR * config.eta_CMP * config.K_CMP;
+    
     const lines = [
       `Loop: ${config.loop_tag}  |  ${config.service_desc}`,
       '',
-      'Core equations:',
-      '  PID (ISA/parallel): u = u_bias + Kc [ e + (1/τI)∫e dt + τD de/dt ]',
+      '=== PID Controller ===',
+      `  Kp = ${config.Kp} (Proportional Gain)`,
+      `  Ki = ${config.Ki} 1/s (Integral Gain)`,
+      `  Kd = ${config.Kd} s (Derivative Gain)`,
+      `  Mode: ${config.mode}  |  ${config.acting}`,
       '',
-      `Key parameters: Kc=${config.Kc}, τI=${config.tauI_s} s, τD=${config.tauD_s} s`,
+      '=== VFD Transfer Function ===',
+      `  G_VFD(s) = (η_VFD × K_VFD) / (1 + τ_VFD × s)`,
+      `  η_VFD = ${config.eta_VFD}  |  K_VFD = ${config.K_VFD} HP  |  τ_VFD = ${config.tau_VFD} s`,
+      '',
+      '=== Motor Transfer Function ===',
+      `  G_MTR(s) = (η_MTR × K_MTR) / (1 + τ_MTR × s)`,
+      `  η_MTR = ${config.eta_MTR}  |  K_MTR = ${config.K_MTR}  |  τ_MTR = ${config.tau_MTR} s`,
+      '',
+      '=== Compressor Transfer Function (2nd Order) ===',
+      `  G_CMP(s) = (η_CMP × K_CMP × ω_n²) / (s² + 2ζω_n·s + ω_n²)`,
+      `  η_CMP = ${config.eta_CMP}  |  K_CMP = ${config.K_CMP} RPM/HP`,
+      `  ω_n = ${config.omega_n} rad/s  |  ζ = ${config.zeta}`,
+      '',
+      '=== System Parameters ===',
+      `  K_RPM_Max = ${config.K_RPM_Max} RPM`,
+      `  Dead Time θ = ${config.theta} s`,
+      `  Low-Pass Filter τ_LPF = ${config.tau_LPF} s`,
+      '',
+      `=== Overall Steady-State Gain ===`,
+      `  K_overall = η_VFD × K_VFD × η_MTR × K_MTR × η_CMP × K_CMP`,
+      `           = ${overallGain.toFixed(2)} RPM per unit input`,
     ];
     setSummary(lines.join('\n'));
     toast({ title: 'Summary Computed', description: 'Model summary generated.' });
@@ -208,7 +227,7 @@ const HandController4030Faceplate3A = () => {
         const reader = new FileReader();
         reader.onload = (ev) => {
           try {
-            const parsed = JSON.parse(ev.target?.result as string) as PIDHxBypassConfig;
+            const parsed = JSON.parse(ev.target?.result as string) as MainCompressorConfig;
             setConfig(parsed);
             toast({ title: 'Imported', description: 'Configuration loaded from JSON.' });
           } catch {
@@ -222,13 +241,13 @@ const HandController4030Faceplate3A = () => {
   }, [toast]);
 
   // Row renderer helpers
-  const renderNumberRow = (label: string, key: keyof PIDHxBypassConfig, unit?: string, help?: string) => (
+  const renderNumberRow = (label: string, key: keyof MainCompressorConfig, unit?: string, help?: string) => (
     <tr className="border-b border-slate-700/50">
       <td className="py-2 px-3 text-sm text-muted-foreground">{label}</td>
       <td className="py-2 px-3">
         <StableNumberInput
           value={config[key] as number}
-          onChange={(val) => updateConfig(key, val as PIDHxBypassConfig[typeof key])}
+          onChange={(val) => updateConfig(key, val as MainCompressorConfig[typeof key])}
           className="w-32"
         />
       </td>
@@ -237,13 +256,13 @@ const HandController4030Faceplate3A = () => {
     </tr>
   );
 
-  const renderStringRow = (label: string, key: keyof PIDHxBypassConfig, width = 'w-48') => (
+  const renderStringRow = (label: string, key: keyof MainCompressorConfig, width = 'w-48') => (
     <tr className="border-b border-slate-700/50">
       <td className="py-2 px-3 text-sm text-muted-foreground">{label}</td>
       <td className="py-2 px-3" colSpan={3}>
         <StableStringInput
           value={config[key] as string}
-          onChange={(val) => updateConfig(key, val as PIDHxBypassConfig[typeof key])}
+          onChange={(val) => updateConfig(key, val as MainCompressorConfig[typeof key])}
           className={width}
         />
       </td>
@@ -252,7 +271,7 @@ const HandController4030Faceplate3A = () => {
 
   const renderSelectRow = (
     label: string,
-    key: keyof PIDHxBypassConfig,
+    key: keyof MainCompressorConfig,
     options: string[],
     help?: string
   ) => (
@@ -261,7 +280,7 @@ const HandController4030Faceplate3A = () => {
       <td className="py-2 px-3">
         <Select
           value={config[key] as string}
-          onValueChange={(val) => updateConfig(key, val as PIDHxBypassConfig[typeof key])}
+          onValueChange={(val) => updateConfig(key, val as MainCompressorConfig[typeof key])}
         >
           <SelectTrigger className="w-40 h-8 bg-slate-800 border-slate-600">
             <SelectValue />
@@ -272,20 +291,6 @@ const HandController4030Faceplate3A = () => {
             ))}
           </SelectContent>
         </Select>
-      </td>
-      <td className="py-2 px-3"></td>
-      <td className="py-2 px-3 text-xs text-slate-500">{help || ''}</td>
-    </tr>
-  );
-
-  const renderBoolRow = (label: string, key: keyof PIDHxBypassConfig, help?: string) => (
-    <tr className="border-b border-slate-700/50">
-      <td className="py-2 px-3 text-sm text-muted-foreground">{label}</td>
-      <td className="py-2 px-3">
-        <Switch
-          checked={config[key] as boolean}
-          onCheckedChange={(val) => updateConfig(key, val as PIDHxBypassConfig[typeof key])}
-        />
       </td>
       <td className="py-2 px-3"></td>
       <td className="py-2 px-3 text-xs text-slate-500">{help || ''}</td>
@@ -346,8 +351,9 @@ const HandController4030Faceplate3A = () => {
           <Tabs defaultValue="loop-info" className="w-full">
             <TabsList className="flex flex-wrap gap-1 h-auto bg-slate-800/50 p-1 mb-4">
               <TabsTrigger value="loop-info" className="text-xs">Loop Info</TabsTrigger>
-              <TabsTrigger value="operating-point" className="text-xs">Operating Point</TabsTrigger>
-              <TabsTrigger value="pid" className="text-xs">PID</TabsTrigger>
+              <TabsTrigger value="pid" className="text-xs">PID Controller</TabsTrigger>
+              <TabsTrigger value="transfer" className="text-xs">Transfer Functions</TabsTrigger>
+              <TabsTrigger value="system" className="text-xs">System Params</TabsTrigger>
               <TabsTrigger value="summary" className="text-xs">Summary</TabsTrigger>
             </TabsList>
 
@@ -361,36 +367,18 @@ const HandController4030Faceplate3A = () => {
                   <tbody>
                     {renderStringRow('Loop Tag', 'loop_tag', 'w-32')}
                     {renderStringRow('Service Description', 'service_desc', 'w-96')}
-                    {renderSelectRow('Engineering Units', 'eng_units', ['°C', '°F', 'K'])}
+                    {renderSelectRow('Engineering Units', 'eng_units', ['% HIC', 'RPM', 'HP'])}
                     {renderNumberRow('Sample Time Δt', 'sample_time_dt_s', 's')}
                   </tbody>
                 </table>
               </div>
             </TabsContent>
 
-            {/* Operating Point Tab */}
-            <TabsContent value="operating-point">
-              <div className="bg-slate-800/30 rounded-lg border border-amber-500/30">
-                <div className="bg-amber-900/30 px-3 py-2 border-b border-amber-500/30">
-                  <h3 className="text-sm font-semibold text-amber-400">Nominal Operating Point</h3>
-                </div>
-                <table className="w-full">
-                  <tbody>
-                    {renderNumberRow('Nominal Inlet Temp Tin0', 'Tin0', config.eng_units)}
-                    {renderNumberRow('Nominal HX Outlet Temp Thx0', 'Thx0', config.eng_units)}
-                    {renderNumberRow('Nominal Outlet Temp Tout0', 'Tout0', config.eng_units)}
-                    {renderNumberRow('Nominal Bypass Fraction x̄', 'xbar', '', '0..1')}
-                    {renderNumberRow('Nominal Controller Output u0', 'u0', '%')}
-                  </tbody>
-                </table>
-              </div>
-            </TabsContent>
-
-            {/* PID Tab */}
+            {/* PID Controller Tab */}
             <TabsContent value="pid">
-              <div className="bg-slate-800/30 rounded-lg border border-cyan-500/30">
-                <div className="bg-cyan-900/30 px-3 py-2 border-b border-cyan-500/30">
-                  <h3 className="text-sm font-semibold text-cyan-400">PID Controller</h3>
+              <div className="bg-slate-800/30 rounded-lg border border-green-500/30">
+                <div className="bg-green-900/30 px-3 py-2 border-b border-green-500/30">
+                  <h3 className="text-sm font-semibold text-green-400">PID Controller (H-4030)</h3>
                 </div>
                 <table className="w-full">
                   <tbody>
@@ -412,9 +400,76 @@ const HandController4030Faceplate3A = () => {
                       <td className="py-2 px-3"></td>
                     </tr>
                     {renderSelectRow('Direct/Reverse Acting', 'acting', ['Direct Acting', 'Reverse Acting'])}
-                    {renderNumberRow('Controller Gain Kc', 'Kc')}
-                    {renderNumberRow('Integral Time τI', 'tauI_s', 's')}
-                    {renderNumberRow('Derivative Time τD', 'tauD_s', 's')}
+                    {renderNumberRow('Proportional Gain Kp', 'Kp', '', 'Dimensionless')}
+                    {renderNumberRow('Integral Gain Ki', 'Ki', '1/s', 'Integral action')}
+                    {renderNumberRow('Derivative Gain Kd', 'Kd', 's', 'Derivative action')}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+
+            {/* Transfer Functions Tab */}
+            <TabsContent value="transfer">
+              <div className="space-y-4">
+                {/* VFD Transfer Function */}
+                <div className="bg-slate-800/30 rounded-lg border border-amber-500/30">
+                  <div className="bg-amber-900/30 px-3 py-2 border-b border-amber-500/30">
+                    <h3 className="text-sm font-semibold text-amber-400">VFD Transfer Function</h3>
+                    <p className="text-xs text-slate-400 mt-1">G_VFD(s) = (η_VFD × K_VFD) / (1 + τ_VFD × s)</p>
+                  </div>
+                  <table className="w-full">
+                    <tbody>
+                      {renderNumberRow('VFD Efficiency η_VFD', 'eta_VFD', '', '0..1 (typical: 0.98)')}
+                      {renderNumberRow('VFD Gain K_VFD', 'K_VFD', 'HP', 'Max electrical power output')}
+                      {renderNumberRow('VFD Time Constant τ_VFD', 'tau_VFD', 's', 'Fast response (~0.05s)')}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Motor Transfer Function */}
+                <div className="bg-slate-800/30 rounded-lg border border-purple-500/30">
+                  <div className="bg-purple-900/30 px-3 py-2 border-b border-purple-500/30">
+                    <h3 className="text-sm font-semibold text-purple-400">Motor Transfer Function</h3>
+                    <p className="text-xs text-slate-400 mt-1">G_MTR(s) = (η_MTR × K_MTR) / (1 + τ_MTR × s)</p>
+                  </div>
+                  <table className="w-full">
+                    <tbody>
+                      {renderNumberRow('Motor Efficiency η_MTR', 'eta_MTR', '', '0..1 (typical: 0.96)')}
+                      {renderNumberRow('Motor Gain K_MTR', 'K_MTR', '', 'Direct scaling')}
+                      {renderNumberRow('Motor Time Constant τ_MTR', 'tau_MTR', 's', 'Mechanical inertia (~2s)')}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Compressor Transfer Function (2nd Order) */}
+                <div className="bg-slate-800/30 rounded-lg border border-cyan-500/30">
+                  <div className="bg-cyan-900/30 px-3 py-2 border-b border-cyan-500/30">
+                    <h3 className="text-sm font-semibold text-cyan-400">Compressor Transfer Function (2nd Order)</h3>
+                    <p className="text-xs text-slate-400 mt-1">G_CMP(s) = (η_CMP × K_CMP × ω_n²) / (s² + 2ζω_n·s + ω_n²)</p>
+                  </div>
+                  <table className="w-full">
+                    <tbody>
+                      {renderNumberRow('Compressor Efficiency η_CMP', 'eta_CMP', '', '0..1 (datasheet: 0.86)')}
+                      {renderNumberRow('Compressor Gain K_CMP', 'K_CMP', 'RPM/HP', 'Speed per power')}
+                      {renderNumberRow('Natural Frequency ω_n', 'omega_n', 'rad/s', 'From critical speed')}
+                      {renderNumberRow('Damping Ratio ζ', 'zeta', '', '0..1 (typical: 0.15)')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* System Parameters Tab */}
+            <TabsContent value="system">
+              <div className="bg-slate-800/30 rounded-lg border border-rose-500/30">
+                <div className="bg-rose-900/30 px-3 py-2 border-b border-rose-500/30">
+                  <h3 className="text-sm font-semibold text-rose-400">System Parameters</h3>
+                </div>
+                <table className="w-full">
+                  <tbody>
+                    {renderNumberRow('Maximum RPM K_RPM_Max', 'K_RPM_Max', 'RPM', 'Full-scale speed (~4595)')}
+                    {renderNumberRow('Dead Time θ', 'theta', 's', 'Sensor/transport delay')}
+                    {renderNumberRow('Low-Pass Filter τ_LPF', 'tau_LPF', 's', 'Derivative noise filter')}
                   </tbody>
                 </table>
               </div>
