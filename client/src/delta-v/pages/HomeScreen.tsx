@@ -3195,7 +3195,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
-                onClick={handleSulfurValveClick}
+                onClick={isLockedL2 ? handleSulfurValveClick : undefined}
                 style={{
                   transform: `scale(${Math.min(sulfurValveL2Size.width / 100, sulfurValveL2Size.height / 140)})`,
                   transformOrigin: 'center center'
@@ -3276,7 +3276,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
-                onClick={handleJugValveClick}
+                onClick={isLockedL2 ? handleJugValveClick : undefined}
                 style={{
                   transform: `scale(${Math.min(jugValveHcvL2Size.width / 100, jugValveHcvL2Size.height / 140)})`,
                   transformOrigin: 'center center'
