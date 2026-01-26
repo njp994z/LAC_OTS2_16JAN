@@ -3116,7 +3116,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleCompressorClick}
                 style={{
-                  transform: `scale(${Math.min(vfdL2Size.width / 150, vfdL2Size.height / 160)})`,
+                  transform: `scale(${Math.min(vfdL2Size.width / 100, vfdL2Size.height / 100)})`,
                   transformOrigin: 'center center'
                 }}
               >
