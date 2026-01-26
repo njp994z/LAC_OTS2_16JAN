@@ -28,6 +28,10 @@ import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
 import furnaceEquip2Img from "@assets/image_1769401684700.png";
 import furnaceEquip3Img from "@assets/image_1769401692005.png";
+import yellowArrowImg from "@assets/image_1769462243755.png";
+import cyanArrowImg from "@assets/image_1769462251501.png";
+import sulfurFurnaceImg from "@assets/image_1769462273281.png";
+import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
 import {
   Menubar,
   MenubarContent,
@@ -514,6 +518,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Jug Valve HCV 1540-HCV-4282 position and size
   const [jugValveHcvL2Position, setJugValveHcvL2Position] = useState({ x: 800, y: 500 });
   const [jugValveHcvL2Size, setJugValveHcvL2Size] = useState({ width: 100, height: 140 });
+  // L2 Yellow Arrow position and size
+  const [yellowArrowL2Position, setYellowArrowL2Position] = useState({ x: 400, y: 700 });
+  const [yellowArrowL2Size, setYellowArrowL2Size] = useState({ width: 460, height: 60 });
+  // L2 Cyan Arrow position and size
+  const [cyanArrowL2Position, setCyanArrowL2Position] = useState({ x: 400, y: 800 });
+  const [cyanArrowL2Size, setCyanArrowL2Size] = useState({ width: 540, height: 60 });
+  // L2 Sulfur Furnace 1540-ZM-001 position and size
+  const [sulfurFurnaceL2Position, setSulfurFurnaceL2Position] = useState({ x: 550, y: 600 });
+  const [sulfurFurnaceL2Size, setSulfurFurnaceL2Size] = useState({ width: 300, height: 200 });
+  // L2 Waste Heat Boiler 1540-HX-001 position and size
+  const [wasteHeatBoilerL2Position, setWasteHeatBoilerL2Position] = useState({ x: 850, y: 600 });
+  const [wasteHeatBoilerL2Size, setWasteHeatBoilerL2Size] = useState({ width: 350, height: 200 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(false);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1542,6 +1558,30 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setFurnaceEquip3Size({ width: equip3.width, height: equip3.height });
     }
 
+    const yellowArrow = positionMap.get('yellow_arrow_l2');
+    if (yellowArrow) {
+      setYellowArrowL2Position({ x: yellowArrow.x, y: yellowArrow.y });
+      setYellowArrowL2Size({ width: yellowArrow.width, height: yellowArrow.height });
+    }
+
+    const cyanArrow = positionMap.get('cyan_arrow_l2');
+    if (cyanArrow) {
+      setCyanArrowL2Position({ x: cyanArrow.x, y: cyanArrow.y });
+      setCyanArrowL2Size({ width: cyanArrow.width, height: cyanArrow.height });
+    }
+
+    const sulfurFurnace = positionMap.get('sulfur_furnace_l2');
+    if (sulfurFurnace) {
+      setSulfurFurnaceL2Position({ x: sulfurFurnace.x, y: sulfurFurnace.y });
+      setSulfurFurnaceL2Size({ width: sulfurFurnace.width, height: sulfurFurnace.height });
+    }
+
+    const wasteHeatBoiler = positionMap.get('waste_heat_boiler_l2');
+    if (wasteHeatBoiler) {
+      setWasteHeatBoilerL2Position({ x: wasteHeatBoiler.x, y: wasteHeatBoiler.y });
+      setWasteHeatBoilerL2Size({ width: wasteHeatBoiler.width, height: wasteHeatBoiler.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -1957,6 +1997,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'sulfur_valve_l2', positionX: Math.round(sulfurValveL2Position.x), positionY: Math.round(sulfurValveL2Position.y), width: sulfurValveL2Size.width, height: sulfurValveL2Size.height, rotation: 0 },
         { elementId: 'jug_valve_hc_l2', positionX: Math.round(jugValveHandControllerL2Position.x), positionY: Math.round(jugValveHandControllerL2Position.y), width: jugValveHandControllerL2Size.width, height: jugValveHandControllerL2Size.height, rotation: 0 },
         { elementId: 'jug_valve_hcv_l2', positionX: Math.round(jugValveHcvL2Position.x), positionY: Math.round(jugValveHcvL2Position.y), width: jugValveHcvL2Size.width, height: jugValveHcvL2Size.height, rotation: 0 },
+        { elementId: 'yellow_arrow_l2', positionX: Math.round(yellowArrowL2Position.x), positionY: Math.round(yellowArrowL2Position.y), width: yellowArrowL2Size.width, height: yellowArrowL2Size.height, rotation: 0 },
+        { elementId: 'cyan_arrow_l2', positionX: Math.round(cyanArrowL2Position.x), positionY: Math.round(cyanArrowL2Position.y), width: cyanArrowL2Size.width, height: cyanArrowL2Size.height, rotation: 0 },
+        { elementId: 'sulfur_furnace_l2', positionX: Math.round(sulfurFurnaceL2Position.x), positionY: Math.round(sulfurFurnaceL2Position.y), width: sulfurFurnaceL2Size.width, height: sulfurFurnaceL2Size.height, rotation: 0 },
+        { elementId: 'waste_heat_boiler_l2', positionX: Math.round(wasteHeatBoilerL2Position.x), positionY: Math.round(wasteHeatBoilerL2Position.y), width: wasteHeatBoilerL2Size.width, height: wasteHeatBoilerL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -3278,6 +3322,150 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   valveImageSrc={jugValveImage}
                 />
               </div>
+            </Rnd>
+
+            {/* Yellow Arrow Image for L2 */}
+            <Rnd
+              key="yellow-arrow-l2"
+              data-testid="rnd-yellow-arrow-l2"
+              position={yellowArrowL2Position}
+              size={yellowArrowL2Size}
+              onDragStop={(e, d) => {
+                setYellowArrowL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setYellowArrowL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setYellowArrowL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={30}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={yellowArrowImg} 
+                alt="Yellow Arrow" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-yellow-arrow-l2"
+              />
+            </Rnd>
+
+            {/* Cyan Arrow Image for L2 */}
+            <Rnd
+              key="cyan-arrow-l2"
+              data-testid="rnd-cyan-arrow-l2"
+              position={cyanArrowL2Position}
+              size={cyanArrowL2Size}
+              onDragStop={(e, d) => {
+                setCyanArrowL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setCyanArrowL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setCyanArrowL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={30}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={cyanArrowImg} 
+                alt="Cyan Arrow" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-cyan-arrow-l2"
+              />
+            </Rnd>
+
+            {/* Sulfur Furnace 1540-ZM-001 Image for L2 */}
+            <Rnd
+              key="sulfur-furnace-l2"
+              data-testid="rnd-sulfur-furnace-l2"
+              position={sulfurFurnaceL2Position}
+              size={sulfurFurnaceL2Size}
+              onDragStop={(e, d) => {
+                setSulfurFurnaceL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setSulfurFurnaceL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setSulfurFurnaceL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={150}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 30 }}
+            >
+              <img 
+                src={sulfurFurnaceImg} 
+                alt="Sulfur Furnace 1540-ZM-001" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-sulfur-furnace-l2"
+              />
+            </Rnd>
+
+            {/* Waste Heat Boiler 1540-HX-001 Image for L2 */}
+            <Rnd
+              key="waste-heat-boiler-l2"
+              data-testid="rnd-waste-heat-boiler-l2"
+              position={wasteHeatBoilerL2Position}
+              size={wasteHeatBoilerL2Size}
+              onDragStop={(e, d) => {
+                setWasteHeatBoilerL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setWasteHeatBoilerL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setWasteHeatBoilerL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={150}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 30 }}
+            >
+              <img 
+                src={wasteHeatBoilerImg} 
+                alt="Waste Heat Boiler 1540-HX-001" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-waste-heat-boiler-l2"
+              />
             </Rnd>
           </div>
         )}
