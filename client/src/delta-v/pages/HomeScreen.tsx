@@ -2340,6 +2340,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Start Button */}
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-green-600 border border-green-600 text-white gap-2 hover:bg-green-700"
+            data-testid="button-toolbar-start"
+          >
+            <Play className="h-4 w-4" />
+            Start
+          </Button>
+
           {/* PFDs Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
