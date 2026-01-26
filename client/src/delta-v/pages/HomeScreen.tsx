@@ -492,7 +492,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate4825L4Position, setFaceplate4825L4Position] = useState({ x: 600, y: 150 });
   const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({ width: 160, height: 240 });
   const [isSavingL4, setIsSavingL4] = useState(false);
-  const [isLockedL4, setIsLockedL4] = useState(false);
+  const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
   
   // L2-Furnace Area: Equipment images position/size
@@ -531,13 +531,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [wasteHeatBoilerL2Position, setWasteHeatBoilerL2Position] = useState({ x: 850, y: 600 });
   const [wasteHeatBoilerL2Size, setWasteHeatBoilerL2Size] = useState({ width: 350, height: 200 });
   const [isSavingL2, setIsSavingL2] = useState(false);
-  const [isLockedL2, setIsLockedL2] = useState(false);
+  const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
   const [converter61Size, setConverter61Size] = useState({ width: 400, height: 600 });
-  const [isLocked61, setIsLocked61] = useState(false);
+  const [isLocked61, setIsLocked61] = useState(true);
   // 6.1 L3_1540 Converter: 1540-TI-4825 Primary Faceplate position/size
   const [faceplate4825_61Position, setFaceplate4825_61Position] = useState({ x: 850, y: 200 });
   const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
