@@ -239,8 +239,16 @@ const HomeScreen = () => {
   
   const [isLocked, setIsLocked] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
+  const [selectedScreen, setSelectedScreen] = useState(() => {
+    const saved = localStorage.getItem('deltaV_selectedScreen');
+    return saved || "L1 – System Overview";
+  });
   const [selectedMode, setSelectedMode] = useState("Static");
+  
+  // Save selected screen to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('deltaV_selectedScreen', selectedScreen);
+  }, [selectedScreen]);
   const [location] = useLocation();
   
   // Dynamic simulation state
