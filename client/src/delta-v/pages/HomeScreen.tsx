@@ -77,6 +77,7 @@ import {
   LayoutGrid,
   Settings,
   Maximize2,
+  Minimize2,
   X,
   Lock,
   LockOpen,
@@ -237,6 +238,7 @@ const HomeScreen = () => {
   }>>([]);
   
   const [isLocked, setIsLocked] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedScreen, setSelectedScreen] = useState("L1 – System Overview");
   const [selectedMode, setSelectedMode] = useState("Static");
   const [location] = useLocation();
@@ -267,6 +269,28 @@ const HomeScreen = () => {
     setDynamicSpeed(1.0);
     setDynamicDt(0.12);
   };
+  
+  // Toggle fullscreen mode
+  const handleToggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Fullscreen request failed:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+  
+  // Sync fullscreen state with browser
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
   
   // Mode options for the Mode dropdown
   const modeOptions = [
@@ -2379,12 +2403,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 hover:bg-gray-200"
+                    onClick={handleToggleFullscreen}
+                    data-testid="button-fullscreen-toggle"
                   >
-                    <Maximize2 className="h-5 w-5 text-gray-600" />
+                    {isFullscreen ? (
+                      <Minimize2 className="h-5 w-5 text-gray-600" />
+                    ) : (
+                      <Maximize2 className="h-5 w-5 text-gray-600" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p>Resize Window</p>
+                  <p>{isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}</p>
                 </TooltipContent>
               </Tooltip>
 
