@@ -76,7 +76,12 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogHeader,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
   Search,
@@ -587,6 +592,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
+
+  // Open PV Case dialog state
+  const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
+  const [selectedPVCase, setSelectedPVCase] = useState<string | null>(null);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -1496,6 +1505,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     queryKey: ['/api/homescreen-layout/L4'],
   });
 
+  // Fetch PV case columns for the Open dialog
+  const { data: pvCaseData } = useQuery<{ 
+    variables: Array<any>; 
+    cases: Array<{ id: string; name: string; description: string }> 
+  }>({
+    queryKey: ['/api/process-variables'],
+  });
+
   // Apply loaded L4 positions to state when data arrives (only when not dirty)
   useEffect(() => {
     if (!layoutDataL4?.layouts || layoutDataL4.layouts.length === 0) return;
@@ -2312,7 +2329,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
               <MenubarItem className="text-gray-800" data-testid="menu-file-new">New</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-file-open">Open</MenubarItem>
+              <MenubarItem 
+                className="text-gray-800" 
+                data-testid="menu-file-open"
+                onClick={() => setIsOpenPVCaseDialogOpen(true)}
+              >Open</MenubarItem>
               <MenubarItem className="text-gray-800" data-testid="menu-file-save">Save</MenubarItem>
               <MenubarItem className="text-gray-800" data-testid="menu-file-save-as">Save As</MenubarItem>
               <MenubarSeparator />
@@ -5652,6 +5673,68 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       
       {/* PFD Navigation */}
       <PFDNavigation position="bottom-right" />
+
+      {/* Open PV Case Selection Dialog */}
+      <Dialog open={isOpenPVCaseDialogOpen} onOpenChange={setIsOpenPVCaseDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Open PV Case</DialogTitle>
+            <DialogDescription>
+              Select a Process Variable case to load.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <RadioGroup 
+              value={selectedPVCase || ""} 
+              onValueChange={(value) => setSelectedPVCase(value)}
+              className="space-y-3"
+            >
+              {pvCaseData?.cases?.map((pvCase) => (
+                <div 
+                  key={pvCase.id} 
+                  className="flex items-start space-x-3 p-3 rounded-md border hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setSelectedPVCase(pvCase.id)}
+                >
+                  <RadioGroupItem value={pvCase.id} id={pvCase.id} className="mt-0.5" />
+                  <Label htmlFor={pvCase.id} className="flex flex-col cursor-pointer flex-1">
+                    <span className="font-medium text-sm">{pvCase.name}</span>
+                    <span className="text-xs text-muted-foreground">{pvCase.description}</span>
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+            {(!pvCaseData?.cases || pvCaseData.cases.length === 0) && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No PV cases available. Configure cases in the Process Variables settings.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpenPVCaseDialogOpen(false)}
+              data-testid="button-cancel-pv-case"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedPVCase) {
+                  toast({
+                    title: "Case Loaded",
+                    description: `Loaded PV Case: ${pvCaseData?.cases?.find(c => c.id === selectedPVCase)?.name || selectedPVCase}`,
+                  });
+                  setIsOpenPVCaseDialogOpen(false);
+                }
+              }}
+              disabled={!selectedPVCase}
+              data-testid="button-open-pv-case"
+            >
+              Open
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
   </div>
   );
 };
