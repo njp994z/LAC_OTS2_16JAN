@@ -26,11 +26,6 @@ import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-fil
 import converter4L4Img from "@assets/image_1769028207381.png";
 import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
-import furnaceEquip2Img from "@assets/image_1769401684700.png";
-import furnaceEquip3Img from "@assets/image_1769401692005.png";
-import yellowArrowImg from "@assets/image_1769462243755.png";
-import cyanArrowImg from "@assets/image_1769462251501.png";
-import sulfurFurnaceImg from "@assets/image_1769462273281.png";
 import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
 import yellowHorizArrowImg from "@assets/image_1769462953963.png";
 import cyanLongArrowImg from "@assets/image_1769463862442.png";
@@ -501,11 +496,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
   
-  // L2-Furnace Area: Equipment images position/size
-  const [furnaceEquip2Position, setFurnaceEquip2Position] = useState({ x: 100, y: 100 });
-  const [furnaceEquip2Size, setFurnaceEquip2Size] = useState({ width: 300, height: 150 });
-  const [furnaceEquip3Position, setFurnaceEquip3Position] = useState({ x: 100, y: 400 });
-  const [furnaceEquip3Size, setFurnaceEquip3Size] = useState({ width: 300, height: 150 });
   // L2 Hand Controller 1540-H-4030 position and size
   const [handControllerL2Position, setHandControllerL2Position] = useState({ x: 800, y: 200 });
   const [handControllerL2Size, setHandControllerL2Size] = useState({ width: 220, height: 200 });
@@ -1570,18 +1560,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       });
     });
 
-    const equip2 = positionMap.get('furnace_equip2_l2');
-    if (equip2) {
-      setFurnaceEquip2Position({ x: equip2.x, y: equip2.y });
-      setFurnaceEquip2Size({ width: equip2.width, height: equip2.height });
-    }
-
-    const equip3 = positionMap.get('furnace_equip3_l2');
-    if (equip3) {
-      setFurnaceEquip3Position({ x: equip3.x, y: equip3.y });
-      setFurnaceEquip3Size({ width: equip3.width, height: equip3.height });
-    }
-
     const yellowArrow = positionMap.get('yellow_arrow_l2');
     if (yellowArrow) {
       setYellowArrowL2Position({ x: yellowArrow.x, y: yellowArrow.y });
@@ -2049,8 +2027,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     setIsSavingL2(true);
     try {
       const layouts = [
-        { elementId: 'furnace_equip2_l2', positionX: Math.round(furnaceEquip2Position.x), positionY: Math.round(furnaceEquip2Position.y), width: furnaceEquip2Size.width, height: furnaceEquip2Size.height, rotation: 0 },
-        { elementId: 'furnace_equip3_l2', positionX: Math.round(furnaceEquip3Position.x), positionY: Math.round(furnaceEquip3Position.y), width: furnaceEquip3Size.width, height: furnaceEquip3Size.height, rotation: 0 },
         { elementId: 'hand_controller_l2', positionX: Math.round(handControllerL2Position.x), positionY: Math.round(handControllerL2Position.y), width: handControllerL2Size.width, height: handControllerL2Size.height, rotation: 0 },
         { elementId: 'vfd_l2', positionX: Math.round(vfdL2Position.x), positionY: Math.round(vfdL2Position.y), width: vfdL2Size.width, height: vfdL2Size.height, rotation: 0 },
         { elementId: 'sulfur_flow_l2', positionX: Math.round(sulfurFlowL2Position.x), positionY: Math.round(sulfurFlowL2Position.y), width: sulfurFlowL2Size.width, height: sulfurFlowL2Size.height, rotation: 0 },
