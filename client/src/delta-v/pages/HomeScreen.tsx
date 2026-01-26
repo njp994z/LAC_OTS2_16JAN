@@ -476,6 +476,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [furnaceEquip2Size, setFurnaceEquip2Size] = useState({ width: 300, height: 150 });
   const [furnaceEquip3Position, setFurnaceEquip3Position] = useState({ x: 100, y: 400 });
   const [furnaceEquip3Size, setFurnaceEquip3Size] = useState({ width: 300, height: 150 });
+  // L2 Hand Controller 1540-H-4030 position and size
+  const [handControllerL2Position, setHandControllerL2Position] = useState({ x: 800, y: 200 });
+  const [handControllerL2Size, setHandControllerL2Size] = useState({ width: 220, height: 200 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(false);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -2985,6 +2988,47 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </div>
               </Rnd>
             ))}
+
+            {/* Hand Controller 1540-H-4030 Faceplate for L2 */}
+            <Rnd
+              key="hand-controller-l2"
+              position={handControllerL2Position}
+              size={handControllerL2Size}
+              onDragStop={(e, d) => {
+                setHandControllerL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setHandControllerL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setHandControllerL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleHandControllerClick}
+                style={{
+                  transform: `scale(${Math.min(handControllerL2Size.width / 220, handControllerL2Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={handControllerData}
+                  isTransparent={true}
+                  controllerId="1540-H-4030"
+                />
+              </div>
+            </Rnd>
           </div>
         )}
 
