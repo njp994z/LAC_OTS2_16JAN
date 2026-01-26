@@ -26,6 +26,9 @@ import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-fil
 import converter4L4Img from "@assets/image_1769028207381.png";
 import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
+import furnacePumpAssemblyImg from "@assets/image_1769401672158.png";
+import furnaceEquip2Img from "@assets/image_1769401684700.png";
+import furnaceEquip3Img from "@assets/image_1769401692005.png";
 import {
   Menubar,
   MenubarContent,
@@ -441,6 +444,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(false);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
+  
+  // L2-Furnace Area: Equipment images position/size
+  const [furnacePumpPosition, setFurnacePumpPosition] = useState({ x: 800, y: 300 });
+  const [furnacePumpSize, setFurnacePumpSize] = useState({ width: 600, height: 280 });
+  const [furnaceEquip2Position, setFurnaceEquip2Position] = useState({ x: 100, y: 100 });
+  const [furnaceEquip2Size, setFurnaceEquip2Size] = useState({ width: 300, height: 150 });
+  const [furnaceEquip3Position, setFurnaceEquip3Position] = useState({ x: 100, y: 400 });
+  const [furnaceEquip3Size, setFurnaceEquip3Size] = useState({ width: 300, height: 150 });
+  const [isSavingL2, setIsSavingL2] = useState(false);
+  const [isLockedL2, setIsLockedL2] = useState(false);
+  const [isL2Dirty, setIsL2Dirty] = useState(false);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -1426,6 +1440,53 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   }, [layoutDataL4, isL4Dirty]);
 
+  // Query for L2-Furnace Area layout
+  const { data: layoutDataL2 } = useQuery<{ layouts: Array<{
+    elementId: string;
+    positionX: number;
+    positionY: number;
+    width: number;
+    height: number;
+    rotation: number;
+    viewScreen?: string;
+  }> }>({
+    queryKey: ['/api/homescreen-layout/L2'],
+  });
+
+  // Apply loaded L2 positions to state when data arrives (only when not dirty)
+  useEffect(() => {
+    if (!layoutDataL2?.layouts || layoutDataL2.layouts.length === 0) return;
+    if (isL2Dirty) return;
+    
+    const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
+    layoutDataL2.layouts.forEach((item) => {
+      positionMap.set(item.elementId, {
+        x: item.positionX,
+        y: item.positionY,
+        width: item.width,
+        height: item.height,
+      });
+    });
+
+    const furnacePump = positionMap.get('furnace_pump_l2');
+    if (furnacePump) {
+      setFurnacePumpPosition({ x: furnacePump.x, y: furnacePump.y });
+      setFurnacePumpSize({ width: furnacePump.width, height: furnacePump.height });
+    }
+
+    const equip2 = positionMap.get('furnace_equip2_l2');
+    if (equip2) {
+      setFurnaceEquip2Position({ x: equip2.x, y: equip2.y });
+      setFurnaceEquip2Size({ width: equip2.width, height: equip2.height });
+    }
+
+    const equip3 = positionMap.get('furnace_equip3_l2');
+    if (equip3) {
+      setFurnaceEquip3Position({ x: equip3.x, y: equip3.y });
+      setFurnaceEquip3Size({ width: equip3.width, height: equip3.height });
+    }
+  }, [layoutDataL2, isL2Dirty]);
+
   // Apply loaded positions to state when data arrives
   useEffect(() => {
     if (!layoutData?.layouts || layoutData.layouts.length === 0) return;
@@ -1791,6 +1852,48 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   };
 
+  // Save L2-Furnace Area layout to database
+  const handleSaveL2Layout = async () => {
+    setIsSavingL2(true);
+    try {
+      const layouts = [
+        { elementId: 'furnace_pump_l2', positionX: Math.round(furnacePumpPosition.x), positionY: Math.round(furnacePumpPosition.y), width: furnacePumpSize.width, height: furnacePumpSize.height, rotation: 0 },
+        { elementId: 'furnace_equip2_l2', positionX: Math.round(furnaceEquip2Position.x), positionY: Math.round(furnaceEquip2Position.y), width: furnaceEquip2Size.width, height: furnaceEquip2Size.height, rotation: 0 },
+        { elementId: 'furnace_equip3_l2', positionX: Math.round(furnaceEquip3Position.x), positionY: Math.round(furnaceEquip3Position.y), width: furnaceEquip3Size.width, height: furnaceEquip3Size.height, rotation: 0 },
+        // Add vertical arrows for L2-Furnace Area screen
+        ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
+          elementId: va.id,
+          positionX: Math.round(va.x),
+          positionY: Math.round(va.y),
+          width: va.width,
+          height: va.height,
+          rotation: va.rotation,
+          viewScreen: va.screen,
+        })),
+        // Add vertical lines for L2-Furnace Area screen
+        ...verticalLines.filter(vl => vl.screen === 'L2 – Furnace Area').map(vl => ({
+          elementId: vl.id,
+          positionX: Math.round(vl.x),
+          positionY: Math.round(vl.y),
+          width: vl.width,
+          height: vl.height,
+          rotation: 0,
+          viewScreen: vl.screen,
+        })),
+      ];
+
+      await apiRequest('PUT', '/api/homescreen-layout/L2', { layouts });
+      setIsL2Dirty(false);
+      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L2'] });
+      toast({ title: "Layout saved", description: "L2 Furnace Area layout saved to database." });
+    } catch (error) {
+      console.error('Failed to save L2 layout:', error);
+      toast({ title: "Error", description: "Failed to save L2 layout positions.", variant: "destructive" });
+    } finally {
+      setIsSavingL2(false);
+    }
+  };
+
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -2041,7 +2144,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </TooltipContent>
             </Tooltip>
 
-            {/* Lock Button - screen-aware for L4 vs other screens */}
+            {/* Lock Button - screen-aware for L4, L2 vs other screens */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2051,13 +2154,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   onClick={() => {
                     if (selectedScreen === "L4-Converter") {
                       setIsLockedL4(!isLockedL4);
+                    } else if (selectedScreen === "L2 – Furnace Area") {
+                      setIsLockedL2(!isLockedL2);
                     } else {
                       setIsLocked(!isLocked);
                     }
                   }}
                   data-testid="button-lock-toggle"
                 >
-                  {(selectedScreen === "L4-Converter" ? isLockedL4 : isLocked) ? (
+                  {(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? (
                     <Lock className="h-5 w-5 text-yellow-600" />
                   ) : (
                     <LockOpen className="h-5 w-5 text-gray-500" />
@@ -2065,7 +2170,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -2079,18 +2184,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   onClick={() => {
                     if (selectedScreen === "L4-Converter") {
                       handleSaveL4Layout();
+                    } else if (selectedScreen === "L2 – Furnace Area") {
+                      handleSaveL2Layout();
                     } else {
                       handleSaveLayout();
                     }
                   }}
-                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : isSaving}
+                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving}
                   data-testid="button-save-layout"
                 >
-                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
+                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : isSaving) ? "Saving..." : "Save Layout"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? "Saving..." : "Save Layout"}</p>
               </TooltipContent>
             </Tooltip>
             
@@ -2599,15 +2706,111 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           </div>
         )}
 
-        {/* L2 - Furnace Area View - Blank Canvas (half area of L1) */}
+        {/* L2 - Furnace Area View - Canvas with equipment */}
         {selectedScreen === "L2 – Furnace Area" && (
-          <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center text-gray-400">
-                <p className="text-2xl font-semibold">L2 – Furnace Area</p>
-                <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
-              </div>
-            </div>
+          <div className="relative bg-gray-900" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+            
+            {/* Furnace Pump Assembly Image */}
+            <Rnd
+              key="furnace-pump-l2"
+              position={furnacePumpPosition}
+              size={furnacePumpSize}
+              onDragStop={(e, d) => {
+                setFurnacePumpPosition({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFurnacePumpSize({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setFurnacePumpPosition(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={furnacePumpAssemblyImg} 
+                alt="Furnace Pump Assembly" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-furnace-pump-l2"
+              />
+            </Rnd>
+
+            {/* Furnace Equipment 2 Image */}
+            <Rnd
+              key="furnace-equip2-l2"
+              position={furnaceEquip2Position}
+              size={furnaceEquip2Size}
+              onDragStop={(e, d) => {
+                setFurnaceEquip2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFurnaceEquip2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setFurnaceEquip2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={furnaceEquip2Img} 
+                alt="Furnace Equipment 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-furnace-equip2-l2"
+              />
+            </Rnd>
+
+            {/* Furnace Equipment 3 Image */}
+            <Rnd
+              key="furnace-equip3-l2"
+              position={furnaceEquip3Position}
+              size={furnaceEquip3Size}
+              onDragStop={(e, d) => {
+                setFurnaceEquip3Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFurnaceEquip3Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setFurnaceEquip3Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={furnaceEquip3Img} 
+                alt="Furnace Equipment 3" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-furnace-equip3-l2"
+              />
+            </Rnd>
 
             {/* Render vertical arrows for L2-Furnace Area */}
             {verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map((vArrow) => (
@@ -2619,6 +2822,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   setVerticalArrows(prev => prev.map(va => 
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
+                  setIsL2Dirty(true);
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
                   const isHorizontal = vArrow.rotation % 180 !== 0;
@@ -2632,21 +2836,22 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                         }
                       : va
                   ));
+                  setIsL2Dirty(true);
                 }}
                 minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
                 minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
                 maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
                 maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
-                disableDragging={isLocked}
-                enableResizing={!isLocked ? { 
+                disableDragging={isLockedL2}
+                enableResizing={!isLockedL2 ? { 
                   top: vArrow.rotation % 180 === 0, 
                   bottom: vArrow.rotation % 180 === 0, 
                   left: vArrow.rotation % 180 !== 0, 
                   right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
+                className={`${isLockedL2 ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
                 <div className="relative w-full h-full">
@@ -2662,7 +2867,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   >
                     <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
                   </div>
-                  {!isLocked && (
+                  {!isLockedL2 && (
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
                                     flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
                       <button
@@ -2699,6 +2904,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   setVerticalLines(prev => prev.map(vl => 
                     vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
                   ));
+                  setIsL2Dirty(true);
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
                   setVerticalLines(prev => prev.map(vl => 
@@ -2706,22 +2912,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                       ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
                       : vl
                   ));
+                  setIsL2Dirty(true);
                 }}
                 minWidth={24}
                 minHeight={50}
                 maxWidth={24}
                 bounds="parent"
-                disableDragging={isLocked}
-                enableResizing={!isLocked ? { 
+                disableDragging={isLockedL2}
+                enableResizing={!isLockedL2 ? { 
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
-                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
+                className={`${isLockedL2 ? "cursor-default" : "cursor-move"} group`}
                 style={{ zIndex: 35 }}
               >
                 <div className="relative w-full h-full">
                   <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
-                  {!isLocked && (
+                  {!isLockedL2 && (
                     <button
                       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
                                  w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
