@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { ArrowLeft, Download, Upload, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -82,9 +82,18 @@ const StableStringInput = ({
 
 const HandController4030Faceplate3A = () => {
   const activeControllerId = '1540-H-4030';
+  const [, setLocation] = useLocation();
   
   const { toast } = useToast();
   const { state } = useControllerSync(activeControllerId);
+  
+  const handleBackNavigation = useCallback(() => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      setLocation('/delta-v');
+    }
+  }, [setLocation]);
   const [config, setConfig] = useState<PIDHxBypassConfig>({
     ...defaultPIDHxBypassConfig,
     loop_tag: '1540-H-4030',
@@ -289,13 +298,14 @@ const HandController4030Faceplate3A = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <Link
-              to="/settings/controller-outputs/faceplates/hand-controller-4030"
+            <button
+              onClick={handleBackNavigation}
               className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
+              data-testid="button-back-to-last-screen"
             >
               <ArrowLeft size={18} />
-              <span>Back to 1540-H-4030 Main Compressor Hand Controller</span>
-            </Link>
+              <span>Back to Last Screen</span>
+            </button>
             <h1 className="text-xl font-bold text-faceplate-border glow-text">
               PID Control Loop Configuration
             </h1>
