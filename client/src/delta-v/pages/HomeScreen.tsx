@@ -1170,6 +1170,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build Jug Valve Hand Controller 1540-H-4282 data from synced state
+  // Use SP limits for range since this is a hand controller where SP defines the operating range
   const jugValveHandControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: jugValveHandControllerConfig.TAGNAME || '1540-H-4282',
@@ -1179,8 +1180,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     out: jugValveHandControllerSyncState.syncedOUT,
     mode: jugValveHandControllerSyncState.syncedMode,
     pvUnits: jugValveHandControllerConfig.EU || '%',
-    pvRangeMin: jugValveHandControllerConfig.PV_SCALE_LO ?? 0,
-    pvRangeMax: jugValveHandControllerConfig.PV_SCALE_HI ?? 100,
+    pvRangeMin: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
+    pvRangeMax: jugValveHandControllerConfig.SP_LIM_HI ?? 30,
     alarmActive: jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.H || 
                  jugValveHandControllerSyncState.alarmStates.L || jugValveHandControllerSyncState.alarmStates.LL,
     alarmColor: (jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.LL) ? 'red' : 
