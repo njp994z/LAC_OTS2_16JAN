@@ -972,6 +972,10 @@ const SulfurFlowControllerFaceplateMain = () => {
       alarmColor: primaryAlarmColor,
       alarmType: hasRedAlarm ? 'HIHI' : (hasYellowAlarm ? 'HI' : undefined),
       mode: syncState.syncedMode,
+      // Sync engineering units and range from config
+      pvUnits: config.EU || defaultControllerData.pvUnits,
+      pvRangeMin: config.PV_SCALE_LO ?? defaultControllerData.pvRangeMin,
+      pvRangeMax: config.PV_SCALE_HI ?? defaultControllerData.pvRangeMax,
       // Activate interlock when HH or LL alarm is active
       interlockActive: interlockIsActive,
       // Lock comes on when Interlock is active
