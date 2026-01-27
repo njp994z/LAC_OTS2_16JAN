@@ -157,21 +157,30 @@ const AlarmBanner = ({
         {/* Right side controls */}
         <div className="flex items-center gap-1">
           {/* Acknowledge button */}
-          <ControlButton>
+          <button
+            onClick={() => console.log("Clicked: Acknowledge (red check)")}
+            className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
+          >
             <div className="w-5 h-5 bg-gradient-to-br from-red-500 to-red-700 rounded flex items-center justify-center shadow-md shadow-red-500/30">
               <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
             </div>
-          </ControlButton>
+          </button>
           
           {/* Faceplate button */}
-          <ControlButton>
+          <button
+            onClick={() => console.log("Clicked: Faceplate (gear)")}
+            className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
+          >
             <Settings className="w-4 h-4 text-muted-foreground" />
-          </ControlButton>
+          </button>
           
           {/* Primary Control button */}
-          <ControlButton>
+          <button
+            onClick={() => console.log("Clicked: Primary Control (gauge)")}
+            className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
+          >
             <Gauge className="w-4 h-4 text-muted-foreground" />
-          </ControlButton>
+          </button>
           
           {/* Node Name box */}
           <div className="h-7 px-3 flex items-center justify-center bg-gradient-to-r from-cyan-500 to-cyan-600 rounded font-mono font-bold text-xs text-white shadow-lg shadow-cyan-500/30">
@@ -199,20 +208,23 @@ const AlarmBanner = ({
           </div>
           
           {/* Diagnostics button */}
-          <ControlButton>
+          <button
+            onClick={() => console.log("Clicked: Diagnostics (question mark)")}
+            className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
+          >
             <HelpCircle className="w-4 h-4 text-muted-foreground" />
-          </ControlButton>
+          </button>
           
-          {/* Interlock Logic button */}
+          {/* Interlock Logic button - CYAN BORDER to make it distinct */}
           <button
             onClick={() => {
               console.log("Shield button clicked - navigating to /settings/interlock-logic");
               setLocation("/settings/interlock-logic");
             }}
-            className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
+            className="h-7 px-2 flex items-center justify-center bg-cyan-500/20 hover:bg-cyan-500/40 rounded border-2 border-cyan-500 transition-all hover:shadow-lg hover:shadow-cyan-500/30"
             data-testid="button-interlock-logic"
           >
-            <Shield className="w-4 h-4 text-muted-foreground" />
+            <Shield className="w-4 h-4 text-cyan-400" />
           </button>
         </div>
       </div>
