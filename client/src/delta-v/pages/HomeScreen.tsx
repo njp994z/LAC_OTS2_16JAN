@@ -741,6 +741,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [selectedPVCase, setSelectedPVCase] = useState<string | null>(null);
   // Loaded PV case value for 1540-H-4030 controller (used in Static mode)
   const [loadedCaseValue1540H4030, setLoadedCaseValue1540H4030] = useState<number | null>(null);
+  // Loaded PV case value for 1530-F-2602 sulfur flow controller (used in Static mode)
+  const [loadedCaseValueSulfurFlow, setLoadedCaseValueSulfurFlow] = useState<number | null>(null);
+  // Loaded PV case value for 1540-H-4282 jug valve controller (used in Static mode)
+  const [loadedCaseValueJugValve, setLoadedCaseValueJugValve] = useState<number | null>(null);
+  // Loaded PV case value for 1540-H-4283 WHB dP controller (used in Static mode)
+  const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<number | null>(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
   
   // Auto-load static values when PV case is selected in Static mode
@@ -752,7 +758,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
     
     if (selectedMode === "Static" && activePVCaseId) {
-      // Fetch PV data and set the static value for 1540-H-4030
+      // Fetch PV data and set the static values for controllers
       fetch('/api/process-variables')
         .then(res => res.json())
         .then((pvData) => {
@@ -774,12 +780,69 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               console.log('No case value found for 1540-H-4030, using default 75%');
               setLoadedCaseValue1540H4030(75);
             }
+            
+            // Look for sulfur flow value in the selected case
+            const sulfurFlowVar = pvData.variables.find(
+              (v: any) => v.tag === '1530-F-2602' || v.tagNumber === '1530-F-2602' || 
+                          v.description?.toLowerCase().includes('sulfur_flow') ||
+                          v.description?.toLowerCase().includes('sulfur flow')
+            );
+            if (sulfurFlowVar?.cases?.[activePVCaseId]) {
+              const val = parseFloat(String(sulfurFlowVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(val)) {
+                console.log('Auto-loading static value for 1530-F-2602:', val);
+                setLoadedCaseValueSulfurFlow(val);
+              }
+            } else {
+              // Default to 79 gpm if no case value found (typical sulfur flow)
+              console.log('No case value found for 1530-F-2602, using default 79 gpm');
+              setLoadedCaseValueSulfurFlow(79);
+            }
+            
+            // Look for jug valve value in the selected case
+            const jugValveVar = pvData.variables.find(
+              (v: any) => v.tag === '1540-H-4282' || v.tagNumber === '1540-H-4282' || 
+                          v.description?.toLowerCase().includes('jug_valve') ||
+                          v.description?.toLowerCase().includes('jug valve')
+            );
+            if (jugValveVar?.cases?.[activePVCaseId]) {
+              const val = parseFloat(String(jugValveVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(val)) {
+                console.log('Auto-loading static value for 1540-H-4282:', val);
+                setLoadedCaseValueJugValve(val);
+              }
+            } else {
+              // Default to 50% if no case value found
+              console.log('No case value found for 1540-H-4282, using default 50%');
+              setLoadedCaseValueJugValve(50);
+            }
+            
+            // Look for WHB dP value in the selected case
+            const whbVar = pvData.variables.find(
+              (v: any) => v.tag === '1540-H-4283' || v.tagNumber === '1540-H-4283' || 
+                          v.description?.toLowerCase().includes('whb') ||
+                          v.description?.toLowerCase().includes('outlet dp')
+            );
+            if (whbVar?.cases?.[activePVCaseId]) {
+              const val = parseFloat(String(whbVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(val)) {
+                console.log('Auto-loading static value for 1540-H-4283:', val);
+                setLoadedCaseValueWHBdP(val);
+              }
+            } else {
+              // Default to 50% if no case value found
+              console.log('No case value found for 1540-H-4283, using default 50%');
+              setLoadedCaseValueWHBdP(50);
+            }
           }
         })
         .catch(err => console.error('Error loading PV case data:', err));
     } else if (selectedMode !== "Static") {
-      // Clear static value when not in Static mode
+      // Clear static values when not in Static mode
       setLoadedCaseValue1540H4030(null);
+      setLoadedCaseValueSulfurFlow(null);
+      setLoadedCaseValueJugValve(null);
+      setLoadedCaseValueWHBdP(null);
     }
   }, [selectedMode, activePVCaseId]);
   
@@ -1021,13 +1084,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   }, [jugValveHandControllerConfig, initJugValveHandController, updateJugValveHandControllerAlarmLimits]);
   
   // Build controller data from synced state
+  // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
+  const useStaticSulfurFlow = selectedMode === "Static" && loadedCaseValueSulfurFlow !== null;
   const sulfurFlowData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: sulfurFlowConfig.TAGNAME || '1530-F-2602',
     description: sulfurFlowConfig.DESC || 'Sulfur Flow Controller',
-    pv: sulfurSyncState.syncedPV,
-    sp: sulfurSyncState.syncedSP,
-    out: sulfurSyncState.syncedOUT,
+    pv: useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedPV,
+    sp: useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedSP,
+    out: useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedOUT,
     mode: sulfurSyncState.syncedMode,
     pvUnits: sulfurFlowConfig.EU || 'gpm',
     pvRangeMin: sulfurFlowConfig.PV_SCALE_LO ?? 0,
@@ -1151,13 +1216,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build WHB Outlet dP Hand Controller 1540-H-4283 data from synced state
+  // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
+  const useStaticWHBdP = selectedMode === "Static" && loadedCaseValueWHBdP !== null;
   const whbHandControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: whbHandControllerConfig.TAGNAME || '1540-H-4283',
     description: whbHandControllerConfig.DESC || 'WHB Outlet dP Hand Controller',
-    pv: whbHandControllerSyncState.syncedPV,
-    sp: whbHandControllerSyncState.syncedSP,
-    out: whbHandControllerSyncState.syncedOUT,
+    pv: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedPV,
+    sp: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
+    out: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedOUT,
     mode: whbHandControllerSyncState.syncedMode,
     pvUnits: whbHandControllerConfig.EU || '%',
     pvRangeMin: whbHandControllerConfig.PV_SCALE_LO ?? 0,
@@ -1173,14 +1240,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build Jug Valve Hand Controller 1540-H-4282 data from synced state
+  // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
+  const useStaticJugValve = selectedMode === "Static" && loadedCaseValueJugValve !== null;
   // Use SP limits for range since this is a hand controller where SP defines the operating range
   const jugValveHandControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: jugValveHandControllerConfig.TAGNAME || '1540-H-4282',
     description: jugValveHandControllerConfig.DESC || 'Jug Valve Hand Controller',
-    pv: jugValveHandControllerSyncState.syncedPV,
-    sp: jugValveHandControllerSyncState.syncedSP,
-    out: jugValveHandControllerSyncState.syncedOUT,
+    pv: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedPV,
+    sp: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
+    out: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedOUT,
     mode: jugValveHandControllerSyncState.syncedMode,
     pvUnits: jugValveHandControllerConfig.EU || '%',
     pvRangeMin: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
