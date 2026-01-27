@@ -729,6 +729,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Black Vertical Line position and size
   const [blackVertLineL2Position, setBlackVertLineL2Position] = useState({ x: 500, y: 300 });
   const [blackVertLineL2Size, setBlackVertLineL2Size] = useState({ width: 10, height: 200 });
+  // L2 Temperature Sensor 1540-TI-4200A position and size
+  const [tempSensor4200AL2Position, setTempSensor4200AL2Position] = useState({ x: 1200, y: 400 });
+  const [tempSensor4200AL2Size, setTempSensor4200AL2Size] = useState({ width: 180, height: 120 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1975,6 +1978,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setBlackVertLineL2Size({ width: blackVertLine.width, height: blackVertLine.height });
     }
 
+    const tempSensor4200AL2 = positionMap.get('temp_sensor_4200a_l2');
+    if (tempSensor4200AL2) {
+      setTempSensor4200AL2Position({ x: tempSensor4200AL2.x, y: tempSensor4200AL2.y });
+      setTempSensor4200AL2Size({ width: tempSensor4200AL2.width, height: tempSensor4200AL2.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2409,6 +2418,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_vert_line_1_l2', positionX: Math.round(cyanVertLine1L2Position.x), positionY: Math.round(cyanVertLine1L2Position.y), width: cyanVertLine1L2Size.width, height: cyanVertLine1L2Size.height, rotation: 0 },
         { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
         { elementId: 'black_vert_line_l2', positionX: Math.round(blackVertLineL2Position.x), positionY: Math.round(blackVertLineL2Position.y), width: blackVertLineL2Size.width, height: blackVertLineL2Size.height, rotation: 0 },
+        { elementId: 'temp_sensor_4200a_l2', positionX: Math.round(tempSensor4200AL2Position.x), positionY: Math.round(tempSensor4200AL2Position.y), width: tempSensor4200AL2Size.width, height: tempSensor4200AL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -4324,6 +4334,48 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 draggable={false}
                 data-testid="img-black-vert-line-l2"
               />
+            </Rnd>
+
+            {/* Temperature Sensor 1540-TI-4200A Faceplate for L2 */}
+            <Rnd
+              key="temp-sensor-4200a-l2"
+              data-testid="rnd-temp-sensor-4200a-l2"
+              position={tempSensor4200AL2Position}
+              size={tempSensor4200AL2Size}
+              onDragStop={(e, d) => {
+                setTempSensor4200AL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setTempSensor4200AL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setTempSensor4200AL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={80}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 40 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleTempSensor4200AClick}
+                style={{
+                  transform: `scale(${Math.min(tempSensor4200AL2Size.width / 180, tempSensor4200AL2Size.height / 120)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <TempSensorPrimaryFaceplate 
+                  data={tempSensor4200AData}
+                  isTransparent={true}
+                />
+              </div>
             </Rnd>
 
           </div>

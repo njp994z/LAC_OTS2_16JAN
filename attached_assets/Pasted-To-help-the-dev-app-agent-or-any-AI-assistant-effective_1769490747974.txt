@@ -1,0 +1,108 @@
+To help the dev app agent (or any AI assistant) effectively troubleshoot why your sulfur flow controller is **not behaving statically** (i.e. why the output / valve position / flow is drifting, oscillating, or not settling to a steady value when it should in static simulation mode), follow this structured diagnostic and communication approach.
+
+### 1. First, clearly define what “not static” actually means in your case
+Most helpful statements (ranked from most → least diagnostic value):
+
+- The displayed sulfur flow (PV) keeps slowly changing even when SP, valve position, and all boundary conditions are fixed.
+- The controller output (OUT %) is continuously increasing/decreasing instead of stabilizing.
+- The valve position is moving when it should be locked (in manual or when deviation = 0).
+- After loading a case, the sulfur flow stabilizes but at the wrong value (wrong steady-state gain).
+- The flow stabilizes correctly in one case but not in another (e.g. clean vs dirty, high vs low rate).
+
+Pick the 1–2 observations that best match your symptom and lead with them.
+
+### 2. Provide the minimal diagnostic dataset in your next message
+Copy-paste or describe **one representative bad situation** with these values (ideally right after loading a case or after 30–60 seconds of runtime):
+
+```text
+Current situation:
+- Active case:               Case 1 (2480 STPD Clean)
+- Sulfur flow SP:            79 gpm
+- Sulfur flow PV (current):  _____ gpm     ← what number is shown now?
+- Sulfur valve position:     _____ %       ← is this moving?
+- Controller mode:           MAN / AUTO / CAS ?
+- Controller OUT %:          _____ %       ← is this changing?
+- Controller deviation:      _____ gpm     ← SP – PV
+- Pit level (if adjustable): _____ ft
+- Any recent user action:    just loaded case / changed SP / switched mode / …
+
+After 60 seconds:
+- Did PV change by more than ±0.2 gpm?     yes/no   how much?
+- Did valve % move by more than ±0.5%?     yes/no
+```
+
+Even approximate numbers are valuable.
+
+### 3. Confirm which calculation path is actually being used
+Many teams accidentally run dynamic code in “static” view. Ask or state:
+
+- Is the displayed sulfur flow coming from:
+  - the static hydraulics solver (`StaticSulfurSprayHydraulics.calculate()`) ?
+  - a dynamic / integrating model (ODE, lag, pump curve + accumulator)?
+  - direct table lookup from precomputed cases?
+- Is there a separate “static simulation” toggle / button / mode in the UI? Is it turned on?
+
+### 4. Share the currently active configuration values
+The most common reasons for non-static behavior are mismatched parameters between UI, case data, and calculation. Include:
+
+```text
+Active config values:
+- Cv_max:               _____
+- R (equal %)           _____
+- Cv_nozzle             _____
+- pump_coeffs           [a, b, c, d] = [________]
+- downstream_header_psig (calibrated value): _____
+- discharge_line_loss_psi: _____
+- furnace_static_psi:   _____
+- SG:                   _____
+```
+
+### 5. Describe your expectation vs. reality in one sentence each
+Example:
+
+Expectation:  
+“When SP = 79 gpm, valve in AUTO, and no disturbances, the controller should drive PV to 79 ± 0.1 gpm and then hold valve position constant.”
+
+Reality:  
+“PV stabilizes at 76.3 gpm and valve keeps slowly opening (0.1–0.3%/min).”
+
+### 6. If you want faster help, also provide:
+- Whether the **compressor part** is static (usually easier to verify).
+- A screenshot (or description) of the sulfur controller faceplate showing SP / PV / OUT / mode / bar graph.
+- The last 5–10 lines of console/network log when you load the case or when the drift happens (look for WebSocket updates or calculation errors).
+
+### Suggested next message structure (copy-paste & fill in)
+
+```text
+I'm seeing the sulfur flow controller is not holding static conditions.
+
+Current symptom:
+- Active case: Case 1
+- Sulfur SP: 79 gpm
+- Sulfur PV now: __ gpm
+- Valve position: __ %
+- Controller mode: AUTO
+- Controller OUT: __ %
+- Deviation: __ gpm
+- After 60 s, PV changed by __ gpm, valve moved by __ %
+
+Expectation: PV should settle at SP and valve should stop moving.
+
+Reality: [one sentence description]
+
+Calculation path:
+- Using static hydraulics solver? Yes/No/Unsure
+- Static simulation mode enabled? Yes/No
+
+Config highlights:
+- Cv_max = __
+- R = __
+- Cv_nozzle = __
+- downstream_header_psig = __
+
+Can you help identify why it's not stabilizing?
+```
+
+Once you provide this level of structured information, most AI assistants (including me) can usually point to the exact likely cause within 1–2 turns — usually a calibration mismatch, missing anti-windup, wrong execution path, or gain scheduling issue.
+
+Would you like to draft your next message together using the template above?
