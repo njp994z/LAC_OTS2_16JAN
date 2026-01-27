@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, RotateCcw } from "lucide-react";
+import { ArrowLeft, Play, RotateCcw, Settings } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 interface SimulationResults {
@@ -149,18 +150,26 @@ export default function JugValveWHB() {
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card/50">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/unit-operation-simulator")}
-              data-testid="button-back"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold" data-testid="text-page-title">
-              Jug Valve, WHB Hot-side, Positioner
-            </h1>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation("/unit-operation-simulator")}
+                data-testid="button-back"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-bold" data-testid="text-page-title">
+                Jug Valve, WHB Hot-side, Positioner
+              </h1>
+            </div>
+            <Link href="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282/3e">
+              <Button variant="outline" className="gap-2" data-testid="button-configure-3e">
+                <Settings className="h-4 w-4" />
+                Configure (3E)
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
