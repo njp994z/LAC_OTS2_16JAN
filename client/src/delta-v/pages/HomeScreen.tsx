@@ -1348,6 +1348,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   };
 
+  // L2 Sulfur Valve click handler - navigates to instrument page
+  const handleSulfurValveL2Click = () => {
+    if (isLockedL2) {
+      setLocation('/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602');
+    }
+  };
+
   const handleJugValveClick = () => {
     if (isLocked) {
       setLocation('/jug-valve/3e');
