@@ -415,8 +415,11 @@ const HomeScreen = () => {
         throw new Error('Compressor simulation failed');
       }
       
-      const simResults = await simResponse.json();
-      console.log('Static simulation results:', simResults);
+      const simResponseData = await simResponse.json();
+      console.log('Static simulation results:', simResponseData);
+      
+      // Extract the results from the nested structure
+      const simResults = simResponseData.results || simResponseData;
       setStaticSimulationResults(simResults);
       
       // 5. Update faceplate displays with results
@@ -424,6 +427,7 @@ const HomeScreen = () => {
       // In Static mode: PV = SP = OUT = same value
       if (simResults.compressor_speed !== undefined) {
         const speedPercent = (simResults.compressor_speed / 4505) * 100;
+        console.log('Setting static case value for 1540-H-4030:', speedPercent);
         setLoadedCaseValue1540H4030(speedPercent);
       }
       
@@ -731,6 +735,46 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Loaded PV case value for 1540-H-4030 controller (used in Static mode)
   const [loadedCaseValue1540H4030, setLoadedCaseValue1540H4030] = useState<number | null>(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
+  
+  // Auto-load static values when PV case is selected in Static mode
+  useEffect(() => {
+    // Default to case1 if no case is selected when entering Static mode
+    if (selectedMode === "Static" && !activePVCaseId) {
+      setActivePVCaseId('case1');
+      return;
+    }
+    
+    if (selectedMode === "Static" && activePVCaseId) {
+      // Fetch PV data and set the static value for 1540-H-4030
+      fetch('/api/process-variables')
+        .then(res => res.json())
+        .then((pvData) => {
+          if (pvData?.variables) {
+            // Look for main compressor value in the selected case
+            const compressorVar = pvData.variables.find(
+              (v: any) => v.tag === '1540-H-4030' || v.tagNumber === '1540-H-4030' || 
+                          v.description?.toLowerCase().includes('main_comp') ||
+                          v.description?.toLowerCase().includes('compressor')
+            );
+            if (compressorVar?.cases?.[activePVCaseId]) {
+              const val = parseFloat(String(compressorVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(val)) {
+                console.log('Auto-loading static value for 1540-H-4030:', val);
+                setLoadedCaseValue1540H4030(val);
+              }
+            } else {
+              // Default to 75% if no case value found
+              console.log('No case value found for 1540-H-4030, using default 75%');
+              setLoadedCaseValue1540H4030(75);
+            }
+          }
+        })
+        .catch(err => console.error('Error loading PV case data:', err));
+    } else if (selectedMode !== "Static") {
+      // Clear static value when not in Static mode
+      setLoadedCaseValue1540H4030(null);
+    }
+  }, [selectedMode, activePVCaseId]);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -1239,8 +1283,43 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     handleModeChange,
     handleSpeedSPChange,
     handleClearAlarm,
+    setStaticValues,
     vfdConfig,
   } = useCompressor();
+
+  // Update compressor context when static mode is active
+  useEffect(() => {
+    if (selectedMode === "Static") {
+      // Use simulation results if available, otherwise use loaded case value
+      if (staticSimulationResults) {
+        const speedPercent = staticSimulationResults.compressor_speed 
+          ? (staticSimulationResults.compressor_speed / 4505) * 100 
+          : 75;
+        
+        setStaticValues({
+          speedPV: speedPercent,
+          speedSP: speedPercent,
+          motorSpeedRPM: staticSimulationResults.compressor_speed || 0,
+          compressorSpeedRPM: staticSimulationResults.compressor_speed || 0,
+          motorPowerHP: staticSimulationResults.brake_power_hp || 0,
+          state: "RUNNING",
+          deviceState: "Static Mode",
+        });
+      } else if (loadedCaseValue1540H4030 !== null) {
+        // Use the auto-loaded case value for VFD display
+        const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
+        setStaticValues({
+          speedPV: loadedCaseValue1540H4030,
+          speedSP: loadedCaseValue1540H4030,
+          motorSpeedRPM: speedRPM,
+          compressorSpeedRPM: speedRPM,
+          motorPowerHP: 0,
+          state: "RUNNING",
+          deviceState: "Static Mode",
+        });
+      }
+    }
+  }, [selectedMode, staticSimulationResults, loadedCaseValue1540H4030, setStaticValues]);
 
   const handleCompressorClick = () => {
     if (isLocked) {

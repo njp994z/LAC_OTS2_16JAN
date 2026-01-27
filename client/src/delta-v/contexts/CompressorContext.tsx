@@ -29,6 +29,7 @@ interface CompressorContextType {
   handleClearAlarm: () => void;
   setPermitActive: (active: boolean) => void;
   setFailAlarm: (active: boolean) => void;
+  setStaticValues: (values: Partial<CompressorData>) => void;
   vfdConfig: VFDConfig;
   updateVFDConfig: (newConfig: Partial<VFDConfig>) => Promise<void>;
   setVFDConfigLocal: (newConfig: Partial<VFDConfig>) => void;
@@ -158,6 +159,10 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setCompressorData(prev => ({ ...prev, failAlarm: active }));
   };
 
+  // Set static values from simulation results (used in Static mode)
+  const setStaticValues = (values: Partial<CompressorData>) => {
+    setCompressorData(prev => ({ ...prev, ...values }));
+  };
 
   // Simulate speed PV tracking speed SP when running - always fluctuate
   useEffect(() => {
@@ -198,6 +203,7 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         handleClearAlarm,
         setPermitActive,
         setFailAlarm,
+        setStaticValues,
         vfdConfig: localVFDConfig,
         updateVFDConfig,
         setVFDConfigLocal,
