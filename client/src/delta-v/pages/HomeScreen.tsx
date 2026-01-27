@@ -1498,12 +1498,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build secondary faceplate data from synced state
+  // In Static mode, use the loaded case value for PV, SP, and OUT to match the primary faceplate
+  const staticSulfurValue = useStaticSulfurFlow && loadedCaseValueSulfurFlow !== null 
+    ? loadedCaseValueSulfurFlow 
+    : null;
+  
   const sulfurFlowSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: sulfurSyncState.syncedPV,
-    SP: sulfurSyncState.syncedSP,
-    TSP: sulfurSyncState.syncedSP,
-    OUT_PCT: sulfurSyncState.syncedOUT,
+    PV: staticSulfurValue ?? sulfurSyncState.syncedPV,
+    SP: staticSulfurValue ?? sulfurSyncState.syncedSP,
+    TSP: staticSulfurValue ?? sulfurSyncState.syncedSP,
+    OUT_PCT: staticSulfurValue ?? sulfurSyncState.syncedOUT,
     MODE_AUTOMAN: sulfurSyncState.syncedMode === 'AUTO' || sulfurSyncState.syncedMode === 'MAN' 
       ? sulfurSyncState.syncedMode 
       : 'AUTO',
