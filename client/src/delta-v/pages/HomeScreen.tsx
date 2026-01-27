@@ -1433,6 +1433,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   };
 
+  // Furnace click handler - navigates to sulfur furnace simulator with current values
+  const handleFurnaceClick = () => {
+    if (isLockedL2) {
+      // Get the current sulfur flow value in gpm (use static value if available, otherwise synced value)
+      const sulfurFlowGpm = useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedPV;
+      // Navigate with sulfur flow as URL parameter (in gpm units) - air flow will be calculated from sulfur flow
+      setLocation(`/unit-operation/sulfur-furnace?sulfurFlowGpm=${sulfurFlowGpm?.toFixed(2) || '79'}`);
+    }
+  };
+
   const handleJugValvePositionerClick = () => {
     if (isLocked) {
       setLocation('/jug-valve-positioner/3e');
@@ -4108,13 +4118,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 30 }}
             >
-              <img 
-                src={metalTankImg} 
-                alt="Metal Tank" 
-                className="w-full h-full object-contain"
-                draggable={false}
-                data-testid="img-metal-tank-l2"
-              />
+              <div 
+                className={`w-full h-full ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleFurnaceClick}
+              >
+                <img 
+                  src={metalTankImg} 
+                  alt="Metal Tank" 
+                  className="w-full h-full object-contain"
+                  draggable={false}
+                  data-testid="img-metal-tank-l2"
+                />
+              </div>
             </Rnd>
 
             {/* Gray Yellow Arrow Image for L2 */}

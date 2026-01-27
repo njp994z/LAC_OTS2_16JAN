@@ -1,5 +1,5 @@
-import { Link } from "wouter";
-import { useState } from "react";
+import { Link, useSearch } from "wouter";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,11 +66,34 @@ const defaultOutputs: OutputParams = {
   stream6: { ...defaultStream }
 };
 
+const formatValue = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value === null || value === undefined || isNaN(value)) return "---";
+  if (Math.abs(value) >= 1000000) return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  if (Math.abs(value) >= 1000) return value.toLocaleString('en-US', { maximumFractionDigits: decimals });
+  return value.toFixed(decimals);
+};
+
+const formatStream = (stream: any): StreamData => ({
+  scfmSo2: formatValue(stream?.scfm_so2, 0),
+  scfmSo3: formatValue(stream?.scfm_so3, 0),
+  scfmO2: formatValue(stream?.scfm_o2, 0),
+  scfmN2: formatValue(stream?.scfm_n2, 0),
+  scfmDryTotal: formatValue(stream?.scfm_dry_total, 0),
+  pctSo2: formatValue(stream?.pct_so2, 2),
+  pctSo3: formatValue(stream?.pct_so3, 2),
+  pctO2: formatValue(stream?.pct_o2, 2),
+  pctN2: formatValue(stream?.pct_n2, 2),
+  tF: formatValue(stream?.T_f, 0),
+  pInwc: formatValue(stream?.P_inwc, 0)
+});
+
 export default function SulfurFurnace() {
   const { toast } = useToast();
+  const searchString = useSearch();
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [simulationMode, setSimulationMode] = useState<SimulationMode>("static");
   const [previousTemp, setPreviousTemp] = useState<number>(2000.0);
+  const hasAutoRun = useRef(false);
 
   const [inputParams, setInputParams] = useState<InputParams>({
     airScfm: "115301",
@@ -81,30 +104,81 @@ export default function SulfurFurnace() {
 
   const [outputParams, setOutputParams] = useState<OutputParams>(defaultOutputs);
 
+  // Parse URL parameters and auto-run simulation if sulfurFlowGpm is provided
+  useEffect(() => {
+    if (hasAutoRun.current) return;
+    
+    const params = new URLSearchParams(searchString);
+    // Check for sulfurFlowGpm (explicit gpm unit) or fall back to sulfurFlow for backwards compatibility
+    const sulfurFlowParam = params.get('sulfurFlowGpm') || params.get('sulfurFlow');
+    
+    if (sulfurFlowParam) {
+      const sulfurFlowGpm = parseFloat(sulfurFlowParam);
+      if (!isNaN(sulfurFlowGpm) && sulfurFlowGpm > 0) {
+        // Convert sulfur flow from gpm to klb/hr
+        // Conversion: sulfur flow (gpm) * SG * 60 min/hr * 8.33 lb/gal / 1000 = klb/hr
+        // Molten sulfur SG ≈ 1.8, so: gpm * 1.8 * 60 * 8.33 / 1000 = klb/hr ≈ gpm * 0.8996
+        const sulfurKlbHr = (sulfurFlowGpm * 1.8 * 60 * 8.33 / 1000).toFixed(2);
+        
+        // Calculate air flow from sulfur flow
+        // Stoichiometric ratio: approximately 1624 SCFM air per klb/hr sulfur (based on typical plant data)
+        const calculatedSulfurKlbHr = parseFloat(sulfurKlbHr);
+        const airScfm = Math.round(calculatedSulfurKlbHr * 1624).toString();
+        
+        // Update input parameters with calculated values
+        setInputParams(prev => ({
+          ...prev,
+          airScfm: airScfm,
+          sulfurKlbHr: sulfurKlbHr
+        }));
+        
+        hasAutoRun.current = true;
+        
+        // Auto-run simulation after a short delay to allow state to update
+        setIsRunningSimulation(true);
+        setTimeout(async () => {
+          try {
+            const response = await apiRequest("POST", "/api/sulfur-furnace-simulation", {
+              air_scfm: parseFloat(airScfm),
+              sulfur_klb_hr: calculatedSulfurKlbHr,
+              sulfur_temp_f: 275, // Default inlet temperature
+              mode: "static",
+              time_step_seconds: 60,
+              previous_temp: 2000.0
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              const r = data.results;
+              setOutputParams({
+                mode: r.mode || "Static",
+                airScfmGf0: formatValue(r.air_scfm_gf0, 0),
+                sulfurKlbHr: formatValue(r.sulfur_klb_hr, 2),
+                sulfurTempF: formatValue(r.sulfur_temp_f, 1),
+                heatReleaseBtuHr: formatValue(r.heat_release_btu_hr, 0),
+                stream5: formatStream(r.stream5),
+                stream6: formatStream(r.stream6)
+              });
+              
+              toast({
+                title: "Auto-Calculation Complete",
+                description: `Calculated furnace outputs for ${sulfurFlowGpm.toFixed(1)} gpm sulfur flow.`,
+              });
+            }
+          } catch (error) {
+            console.error("Auto-simulation error:", error);
+          } finally {
+            setIsRunningSimulation(false);
+          }
+        }, 100);
+      }
+    }
+  }, [searchString, toast]);
+
   const handleInputChange = (field: keyof InputParams, value: string) => {
     setInputParams(prev => ({ ...prev, [field]: value }));
   };
-
-  const formatValue = (value: number | null | undefined, decimals: number = 2): string => {
-    if (value === null || value === undefined || isNaN(value)) return "---";
-    if (Math.abs(value) >= 1000000) return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
-    if (Math.abs(value) >= 1000) return value.toLocaleString('en-US', { maximumFractionDigits: decimals });
-    return value.toFixed(decimals);
-  };
-
-  const formatStream = (stream: any): StreamData => ({
-    scfmSo2: formatValue(stream?.scfm_so2, 0),
-    scfmSo3: formatValue(stream?.scfm_so3, 0),
-    scfmO2: formatValue(stream?.scfm_o2, 0),
-    scfmN2: formatValue(stream?.scfm_n2, 0),
-    scfmDryTotal: formatValue(stream?.scfm_dry_total, 0),
-    pctSo2: formatValue(stream?.pct_so2, 2),
-    pctSo3: formatValue(stream?.pct_so3, 2),
-    pctO2: formatValue(stream?.pct_o2, 2),
-    pctN2: formatValue(stream?.pct_n2, 2),
-    tF: formatValue(stream?.T_f, 0),
-    pInwc: formatValue(stream?.P_inwc, 0)
-  });
 
   const runSimulation = async () => {
     setIsRunningSimulation(true);
