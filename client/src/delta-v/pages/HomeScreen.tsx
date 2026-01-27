@@ -71,7 +71,6 @@ import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta
 import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
-import { PFDNavigation } from "@/delta-v/components/PFDNavigation";
 import { pfdConfigs } from "@/delta-v/config/pfdConfig";
 import { VerticalLine } from "@/delta-v/components/VerticalLine";
 import {
@@ -6293,9 +6292,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           />
         </DialogContent>
       </Dialog>
-      
-      {/* PFD Navigation */}
-      <PFDNavigation position="bottom-right" />
 
       {/* Open PV Case Selection Dialog */}
       <Dialog open={isOpenPVCaseDialogOpen} onOpenChange={setIsOpenPVCaseDialogOpen}>
