@@ -5906,8 +5906,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             controllerId="1540-H-4030"
             onClose={() => setIsHandControllerModalOpen(false)}
             onModeChange={(mode) => updateHandControllerMode(mode)}
-            onSpChange={(value) => updateHandControllerSP(value)}
-            onOutChange={(value) => updateHandControllerOUT(value)}
+            onSpChange={(value) => {
+              updateHandControllerSP(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValue1540H4030(value);
+              }
+            }}
+            onOutChange={(value) => {
+              updateHandControllerOUT(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValue1540H4030(value);
+              }
+            }}
             fromSource="home-screen"
             selectedMode={selectedMode}
             loadedCaseValue={loadedCaseValue1540H4030}

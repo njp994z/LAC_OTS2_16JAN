@@ -167,31 +167,35 @@ export const SecondaryControllerFaceplate = ({
   // PV status
   const pvOk = data.PV_OK !== false;
 
-  // SP adjustment handlers
+  // SP adjustment handlers - use displayed value (safeSP) for correct behavior in Static mode
   const handleSpIncrement = () => {
     if (onSpChange) {
-      const newValue = Math.min(data.SP + 1, config.SP_LIM_HI);
+      const currentValue = safeSP;
+      const newValue = Math.min(currentValue + 1, config.SP_LIM_HI);
       onSpChange(newValue);
     }
   };
 
   const handleSpDecrement = () => {
     if (onSpChange) {
-      const newValue = Math.max(data.SP - 1, config.SP_LIM_LO);
+      const currentValue = safeSP;
+      const newValue = Math.max(currentValue - 1, config.SP_LIM_LO);
       onSpChange(newValue);
     }
   };
 
   const handleOutIncrement = () => {
     if (onOutChange) {
-      const newValue = Math.min(data.OUT_PCT + 1, 100);
+      const currentValue = safeOUT;
+      const newValue = Math.min(currentValue + 1, 100);
       onOutChange(newValue);
     }
   };
 
   const handleOutDecrement = () => {
     if (onOutChange) {
-      const newValue = Math.max(data.OUT_PCT - 1, 0);
+      const currentValue = safeOUT;
+      const newValue = Math.max(currentValue - 1, 0);
       onOutChange(newValue);
     }
   };
