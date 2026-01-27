@@ -5777,6 +5777,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onOutChange={(value) => updateSulfurOUT(value)}
             onModelockOverrideChange={(active) => setSulfurFlowModelockOverride(active)}
             fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={null}
           />
         </DialogContent>
       </Dialog>
@@ -5856,6 +5858,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onSpChange={(value) => updateHandControllerSP(value)}
             onOutChange={(value) => updateHandControllerOUT(value)}
             fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={loadedCaseValue1540H4030}
           />
         </DialogContent>
       </Dialog>
@@ -5875,6 +5879,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onSpChange={(value) => updateJugValveHandControllerSP(value)}
             onOutChange={(value) => updateJugValveHandControllerOUT(value)}
             fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={null}
           />
         </DialogContent>
       </Dialog>
@@ -5894,6 +5900,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onSpChange={(value) => updateWhbHandControllerSP(value)}
             onOutChange={(value) => updateWhbHandControllerOUT(value)}
             fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={null}
           />
         </DialogContent>
       </Dialog>

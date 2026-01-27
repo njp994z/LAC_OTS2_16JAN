@@ -80,6 +80,8 @@ interface SecondaryControllerFaceplateProps {
   onBypassChange?: (active: boolean) => void;
   isTransparent?: boolean;
   fromSource?: string; // Source page for back navigation (e.g., 'home-screen')
+  selectedMode?: string; // "Static" | "Dynamic" - simulation mode
+  loadedCaseValue?: number | null; // Static value from loaded case
 }
 
 // Mode button styling config
@@ -104,9 +106,15 @@ export const SecondaryControllerFaceplate = ({
   onModelockOverrideChange,
   onBypassChange,
   isTransparent = false,
-  fromSource
+  fromSource,
+  selectedMode,
+  loadedCaseValue
 }: SecondaryControllerFaceplateProps) => {
   const [showModelockConfirm, setShowModelockConfirm] = useState(false);
+  
+  // In Static mode, PV = SP = OUT = loadedCaseValue
+  const isStaticMode = selectedMode === 'Static';
+  const staticValue = loadedCaseValue ?? data.PV;
 
   // Calculate percentage for bar display using PV_SCALE_LO/HI as the range (matches the scale shown)
   // Guard against NaN by ensuring valid range and using fallbacks
@@ -115,9 +123,16 @@ export const SecondaryControllerFaceplate = ({
   const rangeDenom = rangeMax - rangeMin;
   const safeRangeDenom = rangeDenom !== 0 && Number.isFinite(rangeDenom) ? rangeDenom : 100;
   
-  const safePV = Number.isFinite(data.PV) ? data.PV : rangeMin;
-  const safeSP = Number.isFinite(data.SP) ? data.SP : rangeMin;
-  const safeOUT = Number.isFinite(data.OUT_PCT) ? data.OUT_PCT : 0;
+  // Use static value for PV, SP, and OUT when in Static mode
+  const safePV = isStaticMode && loadedCaseValue !== null 
+    ? staticValue 
+    : (Number.isFinite(data.PV) ? data.PV : rangeMin);
+  const safeSP = isStaticMode && loadedCaseValue !== null 
+    ? staticValue 
+    : (Number.isFinite(data.SP) ? data.SP : rangeMin);
+  const safeOUT = isStaticMode && loadedCaseValue !== null 
+    ? staticValue 
+    : (Number.isFinite(data.OUT_PCT) ? data.OUT_PCT : 0);
   
   const pvPercent = ((safePV - rangeMin) / safeRangeDenom) * 100;
   const outPercent = safeOUT;
@@ -221,7 +236,7 @@ export const SecondaryControllerFaceplate = ({
             "bg-cyan-400 text-black font-mono font-bold text-xs",
             "shadow-lg shadow-cyan-400/30"
           )}>
-            {data.OUT_PCT.toFixed(1)}%
+            {safeOUT.toFixed(1)}%
           </div>
           {/* PV Box */}
           <div className={cn(
@@ -229,7 +244,7 @@ export const SecondaryControllerFaceplate = ({
             "bg-amber-400 text-black font-mono font-bold text-xs",
             "shadow-lg shadow-amber-400/30"
           )}>
-            {data.PV.toFixed(1)} {config.EU}
+            {safePV.toFixed(1)} {config.EU}
           </div>
         </div>
 
@@ -506,7 +521,7 @@ export const SecondaryControllerFaceplate = ({
                 ? "bg-cyan-400 text-black"
                 : "bg-white text-black"
             )}>
-              {isManMode ? `${data.OUT_PCT.toFixed(1)}%` : data.SP.toFixed(1)}
+              {isManMode ? `${safeOUT.toFixed(1)}%` : safeSP.toFixed(1)}
             </div>
             
             {/* Up/Down Buttons - Orange in Manual mode */}
