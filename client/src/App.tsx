@@ -388,11 +388,11 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/:valveId" component={FlowControlValveDetail} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/:valveId/3e" component={FlowControlValve3E} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/temperature-control/:id" component={TempControlValveDetail} />
-      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/:id" component={HandControlValveDetail} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282" component={JugValveDetail} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282/3e" component={JugValve3E} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4281" component={JugValvePositionerDetail} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4281/3e" component={JugValvePositioner3E} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/:id" component={HandControlValveDetail} />
       <Route path="/settings/controller-outputs/faceplates/alarm-blocks" component={AlarmFaceplate} />
       
       {/* Delta-V Controller Faceplates */}
