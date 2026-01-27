@@ -299,11 +299,14 @@ export default function SulfurFurnace() {
     <div className="min-h-screen bg-background" data-testid="page-sulfur-furnace">
       <header className="border-b bg-card" data-testid="header-sulfur-furnace">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/unit-operation-simulator">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => window.history.back()}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
           <h1 className="text-xl font-semibold" data-testid="text-page-title">Lithium Americas</h1>
         </div>
