@@ -205,7 +205,10 @@ const AlarmBanner = ({
           
           {/* Interlock Logic button */}
           <button
-            onClick={() => setLocation("/settings/interlock-logic")}
+            onClick={() => {
+              console.log("Shield button clicked - navigating to /settings/interlock-logic");
+              setLocation("/settings/interlock-logic");
+            }}
             className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
             data-testid="button-interlock-logic"
           >
