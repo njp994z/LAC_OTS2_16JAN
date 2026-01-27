@@ -127,39 +127,11 @@ export default function SulfurControlHydraulics() {
     pvUnits: valveConfig.EU || '%',
     pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
-    pv: valveSyncState.syncedPV,
-    sp: valveSyncState.syncedSP,
-    out: valveSyncState.syncedOUT,
+    pv: 50,  // Default static value
+    sp: 50,  // PV = SP in static mode
+    out: 50, // OUT = PV = SP in static mode
     valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
   });
-  
-  // Update valve faceplate data when sync state changes
-  useEffect(() => {
-    setValveFaceplateData(prev => ({
-      ...prev,
-      pv: valveSyncState.syncedPV,
-      sp: valveSyncState.syncedSP,
-      out: valveSyncState.syncedOUT,
-      mode: valveSyncState.syncedMode,
-      instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
-      description: valveConfig.DESC || 'Sulfur Feed Control Valve',
-      pvUnits: valveConfig.EU || '%',
-      pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
-      pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
-      valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
-      showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
-      showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
-      showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
-      showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
-      showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
-      showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
-      showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
-      showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
-      showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
-      showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
-      holdActive: valveConfig.HOLD_ACTIVE ?? false,
-    }));
-  }, [valveSyncState.syncedPV, valveSyncState.syncedSP, valveSyncState.syncedOUT, valveSyncState.syncedMode, valveConfig]);
   
   const [mode, setMode] = useState<SimulationMode>("static");
   const [isCalculating, setIsCalculating] = useState(false);
@@ -268,6 +240,66 @@ export default function SulfurControlHydraulics() {
       }
     };
   }, []);
+  
+  // Update valve faceplate data based on simulation mode
+  // Static mode: PV = SP = OUT (valve position %)
+  // Dynamic mode: Use synced values from ControllerSyncContext
+  useEffect(() => {
+    if (mode === "static") {
+      // Use valve position from static results if available, otherwise use default
+      const valvePositionPct = staticResults?.valve_position_percent ?? 50;
+      setValveFaceplateData(prev => ({
+        ...prev,
+        pv: valvePositionPct,
+        sp: valvePositionPct,  // PV = SP in static mode
+        out: valvePositionPct, // OUT = valve position in static mode
+        mode: 'AUTO',
+        instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
+        description: valveConfig.DESC || 'Sulfur Feed Control Valve',
+        pvUnits: valveConfig.EU || '%',
+        pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
+        pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
+        valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
+        showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
+        showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
+        showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
+        showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
+        showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
+        showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
+        showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
+        showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
+        showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
+        showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
+        holdActive: valveConfig.HOLD_ACTIVE ?? false,
+      }));
+    } else {
+      // Dynamic mode: Use synced values from ControllerSyncContext
+      setValveFaceplateData(prev => ({
+        ...prev,
+        pv: valveSyncState.syncedPV,
+        sp: valveSyncState.syncedSP,
+        out: valveSyncState.syncedOUT,
+        mode: valveSyncState.syncedMode,
+        instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
+        description: valveConfig.DESC || 'Sulfur Feed Control Valve',
+        pvUnits: valveConfig.EU || '%',
+        pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
+        pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
+        valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
+        showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
+        showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
+        showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
+        showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
+        showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
+        showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
+        showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
+        showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
+        showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
+        showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
+        holdActive: valveConfig.HOLD_ACTIVE ?? false,
+      }));
+    }
+  }, [mode, staticResults, valveSyncState.syncedPV, valveSyncState.syncedSP, valveSyncState.syncedOUT, valveSyncState.syncedMode, valveConfig]);
   
   const runStaticCalculation = async () => {
     setIsCalculating(true);
