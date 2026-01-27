@@ -1,0 +1,130 @@
+To ensure the **Secondary Controller Faceplate** for the sulfur flow controller (1530-F-2602) behaves consistently with the **Primary Controller Faceplate** on the home screen, the implementation should follow the same visual style, interaction patterns, layout structure, and state handling logic. Below is precise, structured guidance you can provide directly to your development agent or use as acceptance criteria during code review.
+
+### 1. Layout and Visual Consistency Requirements
+
+Both faceplates must share identical structural and stylistic elements:
+
+- **Header / Title Block**
+  - Tag number: Large, bold (e.g. "1530-F-2602")
+  - Description: Smaller text below (e.g. "Sulfur Flow Controller")
+  - Background: Same gradient or solid color as primary (currently dark navy/gray)
+
+- **Main PV / SP / OUT Display Area**
+  - Three horizontal blocks (or stacked on narrow screens):
+    1. Controller Output % (blue background, cyan text) – e.g. "46.5%"
+    2. Process Variable (PV) value (yellow/orange background, black text) – e.g. "87.4 GPM"
+    3. Setpoint (SP) value (yellow background, black text) – e.g. "100 GPM" (should be editable via arrows when in AUTO/MAN)
+  - All three blocks should have identical:
+    - Font family, size, weight
+    - Padding and border-radius
+    - Shadow / elevation
+    - Color scheme (match exact hex codes from primary faceplate)
+
+- **Bar Graphs / Deviation Indicators**
+  - Left bar: Controller output (blue fill, 0–100%)
+  - Right bar: Deviation or scaled PV vs SP (yellow/orange fill)
+  - Center numeric deviation display (e.g. "77.5" in white box)
+  - Use the same bar height, width ratio, and animation easing as the primary faceplate
+
+- **Mode Buttons (ROUT, RCAS, AUTO, MAN, BYPASS)**
+  - Same grid layout (2–3 columns)
+  - Identical button sizes, colors, and hover/active states
+  - Green for AUTO, gray for others (match primary exactly)
+  - Lock icon / Modelock button in same position and style
+
+- **Bottom Status / Area Strip**
+  - Area label: "Drying / Acid"
+  - Status indicators: PV OK, OUT OK (green diamonds or circles)
+  - Trend icon, alarm bell, etc. – same placement and icons
+
+- **Close (×) Button**
+  - Same size, position (top-right), and hover effect
+
+### 2. Interaction and Behavior Parity
+
+- **Up/Down Arrows on SP**
+  - Must be enabled when controller is in **AUTO** or **MAN** mode (same as primary)
+  - Increment/decrement step size should match primary (typically 1% or 1 GPM – confirm exact value from primary)
+  - Real-time update to SP value and immediate recalculation of deviation bar
+  - If in CAS/ROUT mode, arrows should be disabled or hidden (match primary logic)
+
+- **Mode Switching**
+  - Clicking AUTO/MAN should immediately update:
+    - Button highlighting
+    - Enable/disable SP arrows
+    - Change deviation bar behavior if needed
+  - ROUT/RCAS should toggle remote setpoint tracking (if implemented)
+
+- **Real-time PV Updates**
+  - PV value (87.4 GPM in screenshot) must update smoothly when static simulation re-runs or when sulfur hydraulics solver returns new flow
+  - Use the same animation/framerate as primary faceplate updates
+
+- **Deviation Calculation & Coloring**
+  - Deviation = SP – PV (or PV – SP – confirm direction from primary)
+  - Bar fill color should shift to red/yellow/green based on deviation magnitude (match primary thresholds)
+
+### 3. Code Structure Recommendations
+
+Assuming you are using the same component library and patterns as the primary faceplate:
+
+```tsx
+// Recommended structure for SecondaryControllerFaceplate.tsx
+// (or wherever 1530-F-2602 is rendered)
+
+import { SecondaryControllerFaceplate } from '@/delta-v/components/faceplate/SecondaryControllerFaceplate';
+
+<SecondaryControllerFaceplate
+  data={{
+    tag: "1530-F-2602",
+    description: "Sulfur Flow Controller",
+    mode: "AUTO",                // from state or context
+    pv: 87.4,                    // from sulfur hydraulics result.flow_gpm
+    sp: 100.0,                   // from case or user input
+    out: 46.5,                   // controller output %
+    deviation: 77.5,             // sp - pv or similar
+    unit: "GPM",
+    area: "Drying / Acid",
+    pvOk: true,
+    outOk: true,
+  }}
+  config={{
+    maxPv: 100,                  // scale for bar
+    incrementStep: 1,            // GPM per arrow click – match primary
+    enableSpArrowsInModes: ["AUTO", "MAN"],
+    // ... any other primary-compatible config
+  }}
+  onSpChange={(newSp) => {
+    // Update local state or dispatch to simulation engine
+    updateSulfurSp(newSp);
+  }}
+  onModeChange={(newMode) => {
+    // Update controller mode and re-evaluate control logic
+  }}
+  onOutChange={(newOut) => {
+    // If manual mode → force valve position
+  }}
+  fromSource="home-screen"
+/>
+```
+
+### 4. Quick Diagnostic Checklist for Agent
+
+Ask the agent to verify:
+
+1. Is `SecondaryControllerFaceplate` receiving the same props structure as `ControllerFaceplate`?
+2. Are CSS classes / Tailwind utilities identical for PV/SP/OUT blocks?
+3. Is the arrow interaction handler (`onSpChange`) wired up correctly and triggering simulation update?
+4. Is the component re-rendering when sulfur hydraulics result changes (use `useEffect` or context subscription)?
+5. Are mode-specific behaviors (arrow enable/disable) using the same conditional logic as primary?
+
+### 5. Acceptance Test
+
+After changes, confirm:
+- Load Case 1 → SP = 100 GPM, PV settles near 87–100 GPM, valve % stabilizes
+- Click up/down arrows → SP changes, deviation bar moves immediately
+- Switch to MAN → arrows still work, OUT % becomes adjustable
+- Visual comparison side-by-side with primary faceplate → no noticeable layout/color differences
+
+Provide this list verbatim to your dev agent. It should give them a clear, actionable path to achieve matching behavior between the two faceplates.
+
+If you would like me to refine any specific section or add example code snippets for the handler logic, please let me know.
