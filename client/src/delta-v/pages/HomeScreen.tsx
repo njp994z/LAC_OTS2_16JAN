@@ -1302,18 +1302,22 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           motorSpeedRPM: staticSimulationResults.compressor_speed || 0,
           compressorSpeedRPM: staticSimulationResults.compressor_speed || 0,
           motorPowerHP: staticSimulationResults.brake_power_hp || 0,
+          currentPV: staticSimulationResults.vfd_current || 0,
           state: "RUNNING",
           deviceState: "Static Mode",
         });
       } else if (loadedCaseValue1540H4030 !== null) {
         // Use the auto-loaded case value for VFD display
         const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
+        // Calculate estimated VFD current based on speed percentage (rough estimate)
+        const estimatedCurrent = (loadedCaseValue1540H4030 / 100) * 50;
         setStaticValues({
           speedPV: loadedCaseValue1540H4030,
           speedSP: loadedCaseValue1540H4030,
           motorSpeedRPM: speedRPM,
           compressorSpeedRPM: speedRPM,
           motorPowerHP: 0,
+          currentPV: estimatedCurrent,
           state: "RUNNING",
           deviceState: "Static Mode",
         });
