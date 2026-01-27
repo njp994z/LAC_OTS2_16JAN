@@ -1,0 +1,169 @@
+### Python Script for Simulating the Sulfur Flow Control Loop
+
+The following Python script implements a dynamic simulation of the control loop based on the provided control diagram. It models the PID controller (assuming a PI configuration, as derivative terms are not explicitly stored in the state from the reference code), valve position dynamics with a first-order lag, and the hydraulic process to compute the process variable (PV, i.e., flow in gpm) at the next time step. The hydraulic model uses a series resistance approach, treating each component (line, orifice, valve, nozzle) as an equivalent Cv, with the total driving pressure drop assumed constant (derived from design conditions with a fixed pump head). The script discretizes the system using Euler integration for simplicity and applies first-order lags for valve and flow dynamics.
+
+The script includes:
+- System parameters based on defaults from the provided code, with assumed design values for orifice and valve pressure drops (consistent with typical industrial practices for sulfur recovery units, where nozzle drops can range from 50-150 psi for atomization).
+- Calculation of equivalent Cv values for fixed components.
+- A step function to advance the simulation by one time step, updating the PV.
+- An example usage loop to demonstrate simulation over multiple steps.
+
+```python
+import math
+
+# System parameters (defaults from the control code, with design assumptions)
+system_params = {
+    "pipe_dia_in": 4.0,
+    "line_length_ft": 80.0,
+    "deltaP_nozzle_psi": 150.0,  # Design pressure drop for nozzle
+    "furnace_static_psi": 7.0,
+    "friction_factor": 0.018,
+    "K_minor_losses": 7.5,
+    "SG": 1.79,
+    "Cv_max": 548.0,
+    "barometric_psia": 14.696,
+    "pit_level_ft": 7.0,
+    "valve_profile_type": "equal_percentage",
+    "R_value": 85,
+    "tau_valve": 8.0,
+    "tau_flow": 4.0,
+    "dt": 0.5,
+    "Kp": 0.5,  # Proportional gain (% output per gpm error); assumed typical for flow loop
+    "Ki": 0.1,  # Integral gain (% output per gpm per second); assumed for fast response
+    "design_flow_gpm": 87.0,
+    "design_dP_orifice_psi": 50.0,  # Assumed design drop for orifice (adjustable trim)
+    "design_dP_valve_psi": 20.0,    # Assumed design drop for valve (typical control valve sizing)
+}
+
+# Helper function to calculate Cv from flow, dP, and SG
+def calculate_cv(Q, dP, SG):
+    return Q / math.sqrt(dP / SG)
+
+# Precompute fixed Cv values for line, orifice, and nozzle based on design conditions
+SG = system_params["SG"]
+Q_design = system_params["design_flow_gpm"]
+Cv_nozzle = calculate_cv(Q_design, system_params["deltaP_nozzle_psi"], SG)
+Cv_orifice = calculate_cv(Q_design, system_params["design_dP_orifice_psi"], SG)
+
+# Compute Cv_line from friction and minor losses at design flow
+dia_ft = system_params["pipe_dia_in"] / 12.0
+A_ft2 = math.pi * (dia_ft / 2.0) ** 2
+Q_cfs = Q_design / 448.8  # Convert gpm to cfs
+V_fps = Q_cfs / A_ft2
+g = 32.2  # ft/s^2
+head_friction_ft = system_params["friction_factor"] * system_params["line_length_ft"] / dia_ft * (V_fps ** 2) / (2 * g)
+head_minor_ft = system_params["K_minor_losses"] * (V_fps ** 2) / (2 * g)
+head_line_ft = head_friction_ft + head_minor_ft
+dP_line_psi = head_line_ft * 0.433 * SG
+Cv_line = calculate_cv(Q_design, dP_line_psi, SG)
+
+# Compute fixed pump dP (constant head assumption) and static contributions at design
+static_head_psi = system_params["pit_level_ft"] * 0.433 * SG
+dP_valve_design_psi = system_params["design_dP_valve_psi"]
+dP_orifice_design_psi = system_params["design_dP_orifice_psi"]
+dP_nozzle_design_psi = system_params["deltaP_nozzle_psi"]
+dP_total_design_psi = dP_line_psi + dP_orifice_design_psi + dP_valve_design_psi + dP_nozzle_design_psi
+pump_dP_fixed_psi = dP_total_design_psi + system_params["furnace_static_psi"] - static_head_psi
+
+# Function to compute valve Cv from position
+def get_cv_valve(position_pct, Cv_max, R, profile_type="equal_percentage"):
+    pos_frac = position_pct / 100.0
+    if profile_type == "linear":
+        return Cv_max * pos_frac
+    elif profile_type == "equal_percentage":
+        return (Cv_max / R) * math.pow(R, pos_frac)
+    return 0.0
+
+# Function to compute target equilibrium flow from current valve position (hydraulic balance)
+def calculate_target_flow(valve_pos_pct, system_params, Cv_line, Cv_orifice, Cv_nozzle, pump_dP_fixed_psi, static_head_psi):
+    Cv_valve = get_cv_valve(valve_pos_pct, system_params["Cv_max"], system_params["R_value"], system_params["valve_profile_type"])
+    if Cv_valve <= 0:
+        return 0.0
+    sum_inv_cv_sq = (1 / Cv_valve**2) + (1 / Cv_orifice**2) + (1 / Cv_line**2) + (1 / Cv_nozzle**2)
+    Cv_eq = 1.0 / math.sqrt(sum_inv_cv_sq)
+    total_dP_drops_psi = pump_dP_fixed_psi + static_head_psi - system_params["furnace_static_psi"]
+    target_Q = Cv_eq * math.sqrt(total_dP_drops_psi / system_params["SG"])
+    return target_Q
+
+# Step function to advance the simulation by one time step and compute next PV
+def step_dynamic(state, system_params, Cv_line, Cv_orifice, Cv_nozzle, pump_dP_fixed_psi, static_head_psi):
+    dt = system_params["dt"]
+    
+    # PID controller (PI form)
+    SP = state["setpoint_gpm"]
+    PV = state["flow_gpm"]
+    error = SP - PV
+    state["integral_error"] += error * dt
+    controller_output_pct = (system_params["Kp"] * error) + (system_params["Ki"] * state["integral_error"])
+    controller_output_pct = max(0.0, min(100.0, controller_output_pct))  # Clamp to 0-100%
+    state["controller_output_pct"] = controller_output_pct
+    controller_output_mA = 4.0 + (16.0 * (controller_output_pct / 100.0))
+    state["controller_output_mA"] = controller_output_mA
+    
+    # Valve position dynamics (first-order lag)
+    target_pos_pct = ((controller_output_mA - 4.0) / 16.0) * 100.0
+    valve_pos_pct = state["valve_pos_pct"]
+    valve_pos_pct += (target_pos_pct - valve_pos_pct) * (dt / system_params["tau_valve"])
+    state["valve_pos_pct"] = valve_pos_pct
+    
+    # Hydraulic calculation for target flow
+    target_flow = calculate_target_flow(
+        state["valve_pos_pct"], system_params, Cv_line, Cv_orifice, Cv_nozzle, pump_dP_fixed_psi, static_head_psi
+    )
+    
+    # Flow dynamics (first-order lag to measured PV)
+    flow_gpm = state["flow_gpm"] + (target_flow - state["flow_gpm"]) * (dt / system_params["tau_flow"])
+    state["flow_gpm"] = flow_gpm
+    state["time_s"] += dt
+    
+    # The next PV is the updated flow_gpm
+    return state
+
+# Example initial state
+initial_state = {
+    "time_s": 0.0,
+    "setpoint_gpm": 87.0,
+    "flow_gpm": 0.0,  # Initial PV
+    "valve_pos_pct": 0.0,
+    "controller_output_pct": 0.0,
+    "controller_output_mA": 4.0,
+    "integral_error": 0.0,
+    "error": 0.0,
+    "pit_level_ft": 7.0,
+}
+
+# Example simulation loop (run 10 steps and print states)
+state = initial_state.copy()
+for _ in range(10):
+    state = step_dynamic(
+        state, system_params, Cv_line, Cv_orifice, Cv_nozzle, pump_dP_fixed_psi, static_head_psi
+    )
+    print(f"Time: {state['time_s']:.1f} s, PV (flow_gpm): {state['flow_gpm']:.2f}")
+```
+
+### Table of Initial Input Values
+
+The following table provides a set of initial input values for the simulation, derived from the defaults in the provided code and reasonable assumptions for design conditions based on typical sulfur recovery unit parameters (e.g., nozzle pressure drops of 50-150 psi for effective atomization, as confirmed from industry sources).
+
+| Parameter                  | Value   | Unit         | Description                                      |
+|----------------------------|---------|--------------|--------------------------------------------------|
+| Pipe Diameter              | 4.0     | in           | Internal diameter of the sulfur line.            |
+| Line Length                | 80.0    | ft           | Length of the piping.                            |
+| Design Nozzle ΔP           | 150.0   | psi          | Pressure drop across spray nozzle at design flow.|
+| Furnace Static Pressure    | 7.0     | psi          | Static pressure in the furnace (gauge).          |
+| Friction Factor            | 0.018   | -            | Darcy friction factor for the pipe.              |
+| Minor Losses Coefficient   | 7.5     | -            | Sum of K values for fittings and losses.         |
+| Specific Gravity           | 1.79    | -            | SG of molten sulfur.                             |
+| Maximum Valve Cv           | 548.0   | -            | Maximum flow coefficient of the control valve.   |
+| Barometric Pressure        | 14.696  | psia         | Atmospheric pressure.                            |
+| Pit Level                  | 7.0     | ft           | Liquid level in sulfur pit.                      |
+| Valve Profile Type         | equal_percentage | -     | Valve characteristic (equal percentage).         |
+| Rangeability (R)           | 85      | -            | For equal percentage valve.                      |
+| Valve Time Constant        | 8.0     | s            | Time constant for valve positioner/actuator.     |
+| Flow Time Constant         | 4.0     | s            | Time constant for flow measurement/process lag.  |
+| Time Step                  | 0.5     | s            | Simulation time increment (dt).                  |
+| Proportional Gain (Kp)     | 0.5     | % / gpm      | PID proportional gain.                           |
+| Integral Gain (Ki)         | 0.1     | % / gpm / s  | PID integral gain.                               |
+| Design Flow                | 87.0    | gpm          | Design sulfur flow rate.                         |
+| Design Orifice ΔP          | 50.0    | psi          | Pressure drop across orifice at design flow.     |
+| Design Valve ΔP            | 20.0    | psi          | Pressure drop across valve at design flow.       |
