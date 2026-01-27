@@ -26,12 +26,7 @@ export const PrimaryCompressorFaceplate = ({
 
   return (
     <div
-      className={cn(
-        "relative rounded border p-1.5 transition-all duration-300 w-fit",
-        isRunning && "border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]",
-        isStopped && "border-slate-500 shadow-[0_0_6px_rgba(100,116,139,0.3)]",
-        data.failAlarm && "border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]"
-      )}
+      className="relative rounded border p-1.5 transition-all duration-300 w-fit border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] pl-[4px] pr-[4px] pt-[4px] pb-[4px]"
       style={{
         background: transparentBackground 
           ? "#FFFFFF" 
@@ -44,7 +39,6 @@ export const PrimaryCompressorFaceplate = ({
         alt="Compressor Equipment" 
         className="w-full h-auto max-w-[140px] mx-auto"
       />
-
       {/* Two Blue Range Bars - Positioned under motor and VFD */}
       <div className="flex justify-end gap-6 mt-1 pr-2">
         {/* Motor Speed Bar */}
@@ -75,7 +69,6 @@ export const PrimaryCompressorFaceplate = ({
           </div>
         </div>
       </div>
-
       {/* Tag and Status */}
       <div className="flex items-center justify-between mt-1.5 px-1">
         <div>
