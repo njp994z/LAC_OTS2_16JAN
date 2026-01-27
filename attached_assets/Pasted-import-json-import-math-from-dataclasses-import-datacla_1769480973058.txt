@@ -1,0 +1,343 @@
+import json
+import math
+from dataclasses import dataclass, asdict, field
+from typing import Tuple, Dict
+
+# Constants from 05A_compressor_calculator (2).py
+R_AIR = 53.35  # Gas constant for air, ft·lbf/(lbm·°R)
+GAMMA = 1.4    # Specific heat ratio for air (Cp/Cv)
+MW_AIR = 28.97 # Molecular weight of air, lb/lbmol
+EFFICIENCY = 0.9  # Adjusted isentropic efficiency to match datasheet outlet temps
+
+# Reference conditions
+MAX_RPM = 4505.0  # Max speed from datasheet
+
+# Inlet gas composition (mole %)
+INLET_GAS_COMPOSITION = {
+    "SO2": 0.0,
+    "SO3": 0.0,
+    "O2": 21.0,
+    "N2": 79.0,
+    "H2O": 0.0,
+    "H2SO4": 0.0
+}
+
+@dataclass
+class StreamComposition:
+    SO2: float = 0.0
+    SO3: float = 0.0
+    O2: float = 0.0
+    N2: float = 0.0
+    H2O: float = 0.0
+    H2SO4: float = 0.0
+    total: float = 0.0
+    pressure: float = 0.0
+    temperature: float = 0.0
+
+# Dirty plant condition multiplier for pressure rise
+DIRTY_MULTIPLIER = {"clean": 1.00, "dirty": 1.45}
+
+@dataclass
+class CompressorInput:
+    """Input parameters for compressor calculation"""
+    rpms: float           # Compressor speed, 1/min
+    inlet_temp_F: float   # Inlet temperature, °F
+    inlet_pressure_inwc: float  # Inlet pressure, IN WC (gauge)
+    barometric_atm: float # Barometric pressure, ATM
+    plant_condition: str = "clean"  # "clean" or "dirty"
+
+@dataclass  
+class CompressorOutput:
+    """Output parameters from compressor calculation"""
+    inlet_flow_acfm: float      # Actual inlet flow, acfm
+    inlet_flow_am3hr: float     # Actual inlet flow, Am3/hr
+    outlet_temp_F: float        # Outlet temperature, °F
+    outlet_temp_C: float        # Outlet temperature, °C
+    outlet_pressure_inwc: float # Outlet pressure, IN WC
+    outlet_pressure_mmwg: float # Outlet pressure, mm WG
+    temp_rise_F: float          # Temperature rise, °F
+    temp_rise_C: float          # Temperature rise, °C
+    pressure_rise_inwc: float   # Pressure rise, IN WC
+    pressure_rise_mmwg: float   # Pressure rise, mm WG
+    standard_flow_scfm: float   # Standard flow, scfm
+    standard_flow_nm3hr: float  # Standard flow, Nm3/hr
+    outlet_flow_acfm: float     # Outlet flow, acfm
+    outlet_flow_am3hr: float    # Outlet flow, Am3/hr
+    mass_flow_klbhr: float      # Mass flow, klb/hr
+    mass_flow_MThr: float       # Mass flow, MT/hr
+    isentropic_head_ftlblb: float  # Isentropic head, ft·lb/lb
+    isentropic_head_kJkg: float    # Isentropic head, kJ/kg
+    brake_power_hp: float       # Brake power, hp
+    brake_power_MW: float       # Brake power, MW
+    motor_power_hp: float       # Motor power, hp
+    motor_power_MW: float       # Motor power, MW
+    driver_speed: float         # Driver speed (motor speed), 1/min
+    driver_speed_rpm: float     # Driver speed (motor speed), 1/min (alias for compatibility)
+    vfd_current: float          # VFD current, Amps
+    compressor_speed: float     # Compressor speed, RPM
+    inlet_pressure_inwc: float  # Inlet pressure, IN WC
+    inlet_stream: Dict = field(default_factory=dict)   # Inlet stream composition
+    outlet_stream: Dict = field(default_factory=dict)  # Outlet stream composition
+
+def inwc_to_psia(inwc: float, barometric_atm: float) -> float:
+    """Convert inches water column (gauge) to psia"""
+    barometric_psia = barometric_atm * 14.696
+    inwc_to_psi = inwc * 0.03613  # 1 inWC = 0.03613 psi
+    return barometric_psia + inwc_to_psi
+
+def psia_to_inwc(psia: float, barometric_atm: float) -> float:
+    """Convert psia to inches water column (gauge)"""
+    barometric_psia = barometric_atm * 14.696
+    gauge_psi = psia - barometric_psia
+    return gauge_psi / 0.03613
+
+def fahrenheit_to_celsius(temp_F: float) -> float:
+    """Convert Fahrenheit to Celsius"""
+    return (temp_F - 32) * 5 / 9
+
+def inwc_to_mmwg(inwc: float) -> float:
+    """Convert inches water column to mm water gauge"""
+    return inwc * 25.4  # 1 inch = 25.4 mm
+
+def acfm_to_am3hr(acfm: float) -> float:
+    """Convert acfm to Am3/hr"""
+    return acfm * (0.3048**3) * 60  # 1 ft3 = 0.0283168 m3, *60 for hr
+
+def scfm_to_nm3hr(scfm: float) -> float:
+    """Convert scfm to Nm3/hr"""
+    return scfm * 1.607  # Approximate conversion, standard conditions similar
+
+def calculate_stream_compositions(
+    standard_flow_scfm: float,
+    inlet_pressure_inwc: float,
+    outlet_pressure_inwc: float,
+    inlet_temp_F: float,
+    outlet_temp_F: float
+) -> Tuple[StreamComposition, StreamComposition]:
+    """Calculate inlet and outlet stream compositions"""
+    # Base total moles assuming air basis, normalized to 100 moles
+    total_moles = 100.0
+    
+    inlet_comp = StreamComposition(
+        SO2=INLET_GAS_COMPOSITION["SO2"] / 100 * total_moles,
+        SO3=INLET_GAS_COMPOSITION["SO3"] / 100 * total_moles,
+        O2=INLET_GAS_COMPOSITION["O2"] / 100 * total_moles,
+        N2=INLET_GAS_COMPOSITION["N2"] / 100 * total_moles,
+        H2O=INLET_GAS_COMPOSITION["H2O"] / 100 * total_moles,
+        H2SO4=INLET_GAS_COMPOSITION["H2SO4"] / 100 * total_moles,
+        total=total_moles,
+        pressure=inlet_pressure_inwc,
+        temperature=inlet_temp_F
+    )
+    
+    # Assume no reaction in compressor, same moles
+    outlet_comp = StreamComposition(
+        SO2=inlet_comp.SO2,
+        SO3=inlet_comp.SO3,
+        O2=inlet_comp.O2,
+        N2=inlet_comp.N2,
+        H2O=inlet_comp.H2O,
+        H2SO4=inlet_comp.H2SO4,
+        total=total_moles,
+        pressure=outlet_pressure_inwc,
+        temperature=outlet_temp_F
+    )
+    
+    return inlet_comp, outlet_comp
+
+def calculate_compressor_performance(inp: CompressorInput) -> CompressorOutput:
+    """Calculate compressor performance parameters"""
+    # Convert temperatures to Rankine
+    inlet_temp_R = inp.inlet_temp_F + 459.67
+    
+    # Convert pressures to absolute
+    inlet_psia = inwc_to_psia(inp.inlet_pressure_inwc, inp.barometric_atm)
+    
+    # Inlet density
+    inlet_density = (inlet_psia * 144) / (R_AIR * inlet_temp_R)  # lb/ft3
+    
+    # Reference pressure rise from datasheet (adjusted for better match)
+    ref_pressure_rise_inwc = 124.0 * DIRTY_MULTIPLIER[inp.plant_condition.lower()]  # Base rise at max RPM, clean/dirty
+    
+    # Scale pressure rise with speed squared (fan law)
+    speed_ratio = inp.rpms / MAX_RPM
+    pressure_rise_inwc = ref_pressure_rise_inwc * (speed_ratio ** 2)
+    
+    outlet_psia = inlet_psia + (pressure_rise_inwc * 0.03613)
+    
+    # Isentropic compression
+    k_minus_1_over_k = (GAMMA - 1) / GAMMA
+    pressure_ratio = outlet_psia / inlet_psia
+    isentropic_temp_rise = inlet_temp_R * (pressure_ratio ** k_minus_1_over_k - 1)
+    
+    # Actual temperature rise accounting for efficiency
+    actual_temp_rise = isentropic_temp_rise / EFFICIENCY
+    outlet_temp_R = inlet_temp_R + actual_temp_rise
+    outlet_temp_F = outlet_temp_R - 459.67
+    
+    # Isentropic head
+    isentropic_head = (R_AIR * inlet_temp_R / (MW_AIR / 1000)) * k_minus_1_over_k / (GAMMA - 1) * (pressure_ratio ** k_minus_1_over_k - 1) * 778.16  # ft·lb/lb (approx)
+    
+    # Inlet flow from speed (fan law: flow proportional to speed)
+    ref_inlet_flow_acfm = 45000.0  # Reference flow at max RPM from datasheet approximation
+    inlet_flow_acfm = ref_inlet_flow_acfm * speed_ratio
+    
+    # Mass flow
+    mass_flow_lbhr = inlet_flow_acfm * inlet_density * 60  # lb/hr
+    
+    # Standard flow (at 29.92 inHg, 32°F per datasheet Note 4)
+    std_temp_R = 32 + 459.67  # 32°F
+    std_pressure = 14.696  # psia
+    std_density = (std_pressure * 144) / (R_AIR * std_temp_R)
+    standard_flow_scfm = mass_flow_lbhr / (std_density * 60)
+    
+    # Outlet flow (at outlet conditions)
+    outlet_density = (outlet_psia * 144) / (R_AIR * outlet_temp_R)
+    outlet_flow_acfm = mass_flow_lbhr / (outlet_density * 60)
+    
+    # Power calculation
+    # P = m_dot * H_is / (efficiency * 33000)
+    # where 33000 converts ft·lbf/min to hp
+    brake_power_hp = (mass_flow_lbhr / 60) * isentropic_head / (EFFICIENCY * 33000)
+    motor_power_hp = brake_power_hp / 0.96  # Motor efficiency ~96%
+    
+    # Driver speed (gearbox ratio from reference data)
+    # At 4174 rpm compressor, driver is ~1654 rpm (ratio ~2.524)
+    gearbox_ratio = 4174.0 / 1654.0  # ≈ 2.524
+    driver_speed = inp.rpms / gearbox_ratio
+    
+    # VFD Current calculation (assuming 4160V, 3-phase, PF=0.85, VFD eta=0.97)
+    voltage = 4160.0  # Volts
+    power_factor = 0.85
+    vfd_efficiency = 0.97
+    electric_power_kw = motor_power_hp * 0.7457 / vfd_efficiency
+    vfd_current = (electric_power_kw * 1000) / (voltage * math.sqrt(3) * power_factor)
+    
+    # Calculate outlet pressure in inwc
+    outlet_pressure_inwc = inp.inlet_pressure_inwc + pressure_rise_inwc
+    
+    # Calculate stream compositions
+    inlet_stream, outlet_stream = calculate_stream_compositions(
+        standard_flow_scfm,
+        inp.inlet_pressure_inwc,
+        outlet_pressure_inwc,
+        inp.inlet_temp_F,
+        outlet_temp_F
+    )
+    
+    # Build output
+    return CompressorOutput(
+        inlet_flow_acfm=inlet_flow_acfm,
+        inlet_flow_am3hr=acfm_to_am3hr(inlet_flow_acfm),
+        outlet_temp_F=outlet_temp_F,
+        outlet_temp_C=fahrenheit_to_celsius(outlet_temp_F),
+        outlet_pressure_inwc=inp.inlet_pressure_inwc + pressure_rise_inwc,
+        outlet_pressure_mmwg=inwc_to_mmwg(inp.inlet_pressure_inwc + pressure_rise_inwc),
+        temp_rise_F=outlet_temp_F - inp.inlet_temp_F,
+        temp_rise_C=fahrenheit_to_celsius(outlet_temp_F) - fahrenheit_to_celsius(inp.inlet_temp_F),
+        pressure_rise_inwc=pressure_rise_inwc,
+        pressure_rise_mmwg=inwc_to_mmwg(pressure_rise_inwc),
+        standard_flow_scfm=standard_flow_scfm,
+        standard_flow_nm3hr=scfm_to_nm3hr(standard_flow_scfm),
+        outlet_flow_acfm=outlet_flow_acfm,
+        outlet_flow_am3hr=acfm_to_am3hr(outlet_flow_acfm),
+        mass_flow_klbhr=mass_flow_lbhr / 1000,
+        mass_flow_MThr=mass_flow_lbhr / 2204.62,
+        isentropic_head_ftlblb=isentropic_head,
+        isentropic_head_kJkg=isentropic_head * 0.001356,  # ft·lb/lb to kJ/kg
+        brake_power_hp=brake_power_hp,
+        brake_power_MW=brake_power_hp * 0.0007457,
+        motor_power_hp=motor_power_hp,
+        motor_power_MW=motor_power_hp * 0.0007457,
+        driver_speed=driver_speed,
+        driver_speed_rpm=driver_speed,  # Alias for backward compatibility
+        vfd_current=vfd_current,
+        compressor_speed=inp.rpms,
+        inlet_pressure_inwc=inp.inlet_pressure_inwc,
+        inlet_stream=asdict(inlet_stream),
+        outlet_stream=asdict(outlet_stream)
+    )
+
+# Data from 03A_process-variables (1).tsx and 02_set-point-variables.tsx for Case 1
+process_variables_case1 = {
+    "ambient_pressure": "Realtime – ATM",
+    "ambient_temperature": "Realtime – F",
+    "ambient_moister": "Realtime – gr / lb BDA",
+    "pass_1_ash_dp": "0 inch wc",
+    "dt_acid_flow": "3500 gpm",
+    "dt_inlet_temp": "150 F",
+    "main_comp": "87%",
+    "sulfur_flow": "79 gpm",
+    "pass_1_inlet_temp": "779 F",
+    "pass_2_inlet_temp": "806 F",
+    "pass_3_inlet_temp": "806 F",
+    "pass_4_inlet_temp": "779 F",
+    "econ_4a_temp_outlet": "275 F",
+    "econ_3b_temp_outlet": "330 F",
+    "ipat_acid_temp_in": "180 F",
+    "fat_acid_temp_in": "180 F",
+    "ipat_acid_flow_in": "4800 gpm",
+    "fat_acid_flow_in": "3000 gpm"
+}
+
+set_point_variables_case1 = {
+    "pass_1_inlet_temp_sp": "779 F",
+    "pass_2_inlet_temp_sp": "806 F",
+    "pass_3_inlet_temp_sp": "806 F",
+    "pass_4_inlet_temp_sp": "779 F",
+    "sulfur_flow_sp": "79 gpm",
+    "main_comp_speed_sp": "87%",
+    "dt_acid_flow_sp": "3500 gpm",
+    "dt_inlet_temp_sp": "150 F",
+    "ipat_acid_flow_sp": "4800 gpm",
+    "fat_acid_flow_sp": "3000 gpm",
+    "ipat_acid_temp_sp": "180 F",
+    "fat_acid_temp_sp": "180 F",
+    "econ_4a_temp_sp": "275 F",
+    "econ_3b_temp_sp": "330 F"
+}
+
+# Compressor types from 07_compressor.ts
+compressor_data = {
+    "tag": "B-101",
+    "description": "Flue Gas Feed Blower",
+    "permitActive": True,
+    "state": "RUNNING",
+    "mode": "AUTO",
+    "speedSP": 75.0,
+    "speedPV": 74.8,
+    "currentPV": 45.2,
+    "powerPV": 125.5,
+    "failAlarm": False,
+    "deviceState": "Confirmed Running",
+    "motorPowerHP": 125.5,
+    "vfdCurrentAmps": 45.2,
+    "motorSpeedRPM": 1475,
+    "compressorSpeedRPM": 8500
+}
+
+# Function call to compressor calculator with inputs from Case 1
+rpm_percent = 87  # From main_comp in process_variables_case1
+temp = 150  # From dt_inlet_temp
+inlet_pressure_inwc = -3.0  # Default value
+barometric_atm = 0.85  # Assumed from context (realtime ATM approximated)
+plant_condition = "clean"  # From Case 1 description
+
+rpms = rpm_percent / 100 * MAX_RPM
+
+params = CompressorInput(
+    rpms=rpms,
+    inlet_temp_F=temp,
+    inlet_pressure_inwc=inlet_pressure_inwc,
+    barometric_atm=barometric_atm,
+    plant_condition=plant_condition
+)
+
+result = calculate_compressor_performance(params)
+out_dict = asdict(result)
+
+# Print populated data
+print("Populated Compressor Data (Case 1):")
+print(json.dumps(out_dict, indent=2))
+
+# To integrate with UI components, this data can be passed to React components like HomeScreen, ProcessVariables, etc., via API or state management.
