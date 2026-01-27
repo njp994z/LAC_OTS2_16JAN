@@ -749,6 +749,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<number | null>(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
   
+  // Furnace outlet temperature from sulfur furnace simulation (linked to 1540-TI-4200A)
+  const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(null);
+  
   // Auto-load static values when PV case is selected in Static mode
   useEffect(() => {
     // Default to case1 if no case is selected when entering Static mode
@@ -922,7 +925,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const tempSensorConfig = getControllerConfig('1520-TI-5821');
   
   // Get real-time synced state for Temperature Sensor 1540-TI-4200A
-  const { state: tempSensor4200ASyncState, initializeController: initTempSensor4200A, updateAlarmLimits: updateTempSensor4200AAlarmLimits } = useControllerSync('1540-TI-4200A');
+  const { state: tempSensor4200ASyncState, initializeController: initTempSensor4200A, updateAlarmLimits: updateTempSensor4200AAlarmLimits, updateSyncedPV: updateTempSensor4200APV } = useControllerSync('1540-TI-4200A');
   const tempSensor4200AConfig = getControllerConfig('1540-TI-4200A');
   
   // Get real-time synced state for Temperature Sensor 1540-TI-4200B
@@ -1042,6 +1045,53 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
     });
   }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
+  
+  // Function to call sulfur furnace API and update furnace outlet temperature (4200A)
+  const calculateFurnaceTemperature = useCallback(async (sulfurFlowGpm: number) => {
+    if (!sulfurFlowGpm || sulfurFlowGpm <= 0) return;
+    
+    try {
+      // Convert gpm to klb/hr: gpm * 1.8 sg * 60 min/hr * 8.33 lb/gal / 1000 = klb/hr
+      const sulfurKlbHr = sulfurFlowGpm * 1.8 * 60 * 8.33 / 1000;
+      // Calculate air flow based on sulfur flow: klb/hr * 1624 SCFM per klb/hr
+      const airScfm = sulfurKlbHr * 1624;
+      
+      const response = await fetch('/api/sulfur-furnace-simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          air_scfm: airScfm,
+          sulfur_klb_hr: sulfurKlbHr,
+          sulfur_temp_f: 300, // Default sulfur inlet temperature
+          mode: 'static'
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Sulfur furnace API error:', response.statusText);
+        return;
+      }
+      
+      const result = await response.json();
+      // The furnace outlet temperature is in stream5.temperature_f
+      if (result.stream5?.temperature_f) {
+        const furnaceTemp = result.stream5.temperature_f;
+        setFurnaceOutletTemp(furnaceTemp);
+        // Update the 1540-TI-4200A temperature sensor PV with the furnace outlet temperature
+        updateTempSensor4200APV(furnaceTemp);
+      }
+    } catch (error) {
+      console.error('Failed to calculate furnace temperature:', error);
+    }
+  }, [updateTempSensor4200APV]);
+  
+  // Auto-recalculate furnace temperature when sulfur flow changes (static value or synced PV)
+  useEffect(() => {
+    const sulfurFlowGpm = loadedCaseValueSulfurFlow ?? sulfurSyncState.syncedPV;
+    if (sulfurFlowGpm && sulfurFlowGpm > 0) {
+      calculateFurnaceTemperature(sulfurFlowGpm);
+    }
+  }, [loadedCaseValueSulfurFlow, sulfurSyncState.syncedPV, calculateFurnaceTemperature]);
   
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
   useEffect(() => {
