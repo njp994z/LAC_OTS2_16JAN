@@ -44,6 +44,7 @@ import cyanThinLine2Img from "@assets/image_1769467426528.png";
 import cyanVertLine1Img from "@assets/image_1769467433951.png";
 import cyanVertLine2Img from "@assets/image_1769467436693.png";
 import blackVertLineImg from "@assets/image_1769482798195.png";
+import acidBoilerImg from "@assets/image_1769495696418.png";
 import {
   Menubar,
   MenubarContent,
@@ -735,6 +736,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
+
+  // L2_1520 ACID: Acid Boiler position and size
+  const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
+  const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
+  const [isLockedL21520, setIsLockedL21520] = useState(true);
 
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
@@ -6034,6 +6040,62 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         </Rnd>
 
         </div>
+        )}
+
+        {/* L2_1520 ACID View */}
+        {selectedScreen === "L2_1520 ACID" && (
+          <div className="relative bg-black" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+            {/* Lock/Unlock Button for L2_1520 */}
+            <div className="absolute top-4 right-4 z-50 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsLockedL21520(!isLockedL21520)}
+                className={`${isLockedL21520 ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-green-500/20 border-green-500 text-green-400'}`}
+                data-testid="button-lock-toggle-l2-1520"
+              >
+                {isLockedL21520 ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <LockOpen className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Acid Boiler Equipment Image */}
+            <Rnd
+              key="acid-boiler-l2-1520"
+              data-testid="rnd-acid-boiler-l2-1520"
+              position={acidBoilerPosition}
+              size={acidBoilerSize}
+              onDragStop={(e, d) => {
+                setAcidBoilerPosition({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidBoilerSize({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidBoilerPosition(position);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidBoilerImg} 
+                alt="Acid Boiler Heat Exchanger" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-boiler-l2-1520"
+              />
+            </Rnd>
+          </div>
         )}
       </div>
 
