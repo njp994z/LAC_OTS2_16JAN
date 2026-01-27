@@ -753,6 +753,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(null);
   // Track last calculated sulfur flow to prevent duplicate API calls
   const lastCalculatedSulfurFlowRef = useRef<number | null>(null);
+  // Debounce timer for SP changes to prevent API spam during user edits
+  const spDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Auto-load static values when PV case is selected in Static mode
   useEffect(() => {
@@ -1087,24 +1089,58 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   }, [updateTempSensor4200APV]);
   
-  // Auto-recalculate furnace temperature when sulfur flow static value changes
-  // Only triggers on loadedCaseValueSulfurFlow changes to avoid spamming API on every synced PV update
+  // Sync loaded case value to sync context when case is loaded in Static mode
+  // This ensures the synced SP reflects the loaded case value
   useEffect(() => {
-    // Only recalculate when in Static mode with a loaded case value
-    if (selectedMode !== 'Static' || loadedCaseValueSulfurFlow === null) return;
+    if (selectedMode === 'Static' && loadedCaseValueSulfurFlow !== null) {
+      updateSulfurSP(loadedCaseValueSulfurFlow);
+    }
+  }, [selectedMode, loadedCaseValueSulfurFlow, updateSulfurSP]);
+  
+  // Auto-recalculate furnace temperature when sulfur flow SP changes
+  // Uses the synced SP value which reflects both loaded case values and user edits
+  // Single unified effect with debouncing to prevent API spam
+  useEffect(() => {
+    // Only recalculate when in Static mode
+    if (selectedMode !== 'Static') {
+      // Reset tracking when leaving Static mode
+      lastCalculatedSulfurFlowRef.current = null;
+      if (spDebounceTimerRef.current) {
+        clearTimeout(spDebounceTimerRef.current);
+        spDebounceTimerRef.current = null;
+      }
+      return;
+    }
+    
+    // Use the synced SP value which reflects both case loads and user edits
+    const currentFlow = sulfurSyncState.syncedSP;
+    
+    if (currentFlow === null || currentFlow === undefined || !Number.isFinite(currentFlow)) return;
     
     // Check if sulfur flow has changed significantly (more than 0.5 gpm difference)
-    const currentFlow = loadedCaseValueSulfurFlow;
     const lastFlow = lastCalculatedSulfurFlowRef.current;
     
     if (lastFlow !== null && Math.abs(currentFlow - lastFlow) < 0.5) {
       return; // Skip if change is too small
     }
     
-    // Update ref and trigger calculation
-    lastCalculatedSulfurFlowRef.current = currentFlow;
-    calculateFurnaceTemperature(currentFlow);
-  }, [selectedMode, loadedCaseValueSulfurFlow, calculateFurnaceTemperature]);
+    // Clear any existing debounce timer
+    if (spDebounceTimerRef.current) {
+      clearTimeout(spDebounceTimerRef.current);
+    }
+    
+    // Debounce all SP changes by 300ms to prevent API spam while allowing responsive updates
+    spDebounceTimerRef.current = setTimeout(() => {
+      lastCalculatedSulfurFlowRef.current = currentFlow;
+      calculateFurnaceTemperature(currentFlow);
+    }, 300);
+    
+    return () => {
+      if (spDebounceTimerRef.current) {
+        clearTimeout(spDebounceTimerRef.current);
+      }
+    };
+  }, [selectedMode, sulfurSyncState.syncedSP, calculateFurnaceTemperature]);
   
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
   useEffect(() => {
