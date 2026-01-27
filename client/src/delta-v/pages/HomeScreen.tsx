@@ -1356,8 +1356,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   const handleJugValveClick = () => {
-    if (isLocked) {
-      setLocation('/jug-valve/3e');
+    if (isLocked || isLockedL2) {
+      setLocation('/unit-operation/jug-valve-whb');
     }
   };
 
