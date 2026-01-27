@@ -3039,7 +3039,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <DropdownMenuItem 
                   key={option.id}
                   onClick={() => setSelectedScreen(option.label)}
-                  className={`text-gray-800 ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
+                  className={`text-gray-800 bg-white ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-view-option-${option.id}`}
                 >
                   {option.label}
