@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { SecondaryControllerData, SecondaryControllerConfig } from '@/delta-v/types/secondaryController';
 import { X, History, Settings, Activity, Link2, Sliders, Bell, ChevronUp, ChevronDown, Lock, Unlock } from 'lucide-react';
@@ -112,6 +112,19 @@ export const SecondaryControllerFaceplate = ({
 }: SecondaryControllerFaceplateProps) => {
   const [showModelockConfirm, setShowModelockConfirm] = useState(false);
   
+  // Editable SP/OUT value state
+  const [isEditingSpOut, setIsEditingSpOut] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditingSpOut && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditingSpOut]);
+  
   // In Static mode, PV = SP = OUT = loadedCaseValue
   const isStaticMode = selectedMode === 'Static';
   const staticValue = loadedCaseValue ?? data.PV;
@@ -180,6 +193,43 @@ export const SecondaryControllerFaceplate = ({
     if (onOutChange) {
       const newValue = Math.max(data.OUT_PCT - 1, 0);
       onOutChange(newValue);
+    }
+  };
+
+  // Handle starting edit mode for SP/OUT value
+  const handleStartEdit = () => {
+    const currentValue = isManMode ? safeOUT : safeSP;
+    setEditValue(currentValue.toFixed(1));
+    setIsEditingSpOut(true);
+  };
+
+  // Handle submitting the edited value
+  const handleSubmitEdit = () => {
+    const parsedValue = parseFloat(editValue);
+    if (!isNaN(parsedValue)) {
+      if (isManMode) {
+        // OUT% is bounded 0-100
+        const clampedValue = Math.max(0, Math.min(100, parsedValue));
+        if (onOutChange) {
+          onOutChange(clampedValue);
+        }
+      } else {
+        // SP is bounded by config limits
+        const clampedValue = Math.max(config.SP_LIM_LO, Math.min(config.SP_LIM_HI, parsedValue));
+        if (onSpChange) {
+          onSpChange(clampedValue);
+        }
+      }
+    }
+    setIsEditingSpOut(false);
+  };
+
+  // Handle keyboard events in edit mode
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSubmitEdit();
+    } else if (e.key === 'Escape') {
+      setIsEditingSpOut(false);
     }
   };
 
@@ -512,17 +562,42 @@ export const SecondaryControllerFaceplate = ({
 
           {/* Right Column: SP/OUT Display with Up/Down Arrows */}
           <div className="flex flex-col items-center justify-center gap-0.5 ml-0.5">
-            {/* SP/OUT Value Box - Shows SP in Auto, OUT in Manual */}
-            <div className={cn(
-              "px-1.5 py-1 rounded text-center min-w-[50px]",
-              "font-mono font-bold text-[10px]",
-              "shadow-lg border border-gray-300",
-              isManMode
-                ? "bg-cyan-400 text-black"
-                : "bg-white text-black"
-            )}>
-              {isManMode ? `${safeOUT.toFixed(1)}%` : safeSP.toFixed(1)}
-            </div>
+            {/* SP/OUT Value Box - Shows SP in Auto, OUT in Manual - Clickable to edit */}
+            {isEditingSpOut ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={handleSubmitEdit}
+                onKeyDown={handleEditKeyDown}
+                className={cn(
+                  "px-1 py-0.5 rounded text-center w-[50px]",
+                  "font-mono font-bold text-[10px]",
+                  "shadow-lg border-2 border-blue-500 outline-none",
+                  isManMode
+                    ? "bg-cyan-400 text-black"
+                    : "bg-white text-black"
+                )}
+                data-testid="input-spout-edit"
+              />
+            ) : (
+              <div 
+                onClick={handleStartEdit}
+                className={cn(
+                  "px-1.5 py-1 rounded text-center min-w-[50px] cursor-pointer",
+                  "font-mono font-bold text-[10px]",
+                  "shadow-lg border border-gray-300 hover:border-blue-400 transition-colors",
+                  isManMode
+                    ? "bg-cyan-400 text-black"
+                    : "bg-white text-black"
+                )}
+                title="Click to edit"
+                data-testid="button-spout-value"
+              >
+                {isManMode ? `${safeOUT.toFixed(1)}%` : safeSP.toFixed(1)}
+              </div>
+            )}
             
             {/* Up/Down Buttons - Orange in Manual mode */}
             <div className="flex flex-col gap-0.5">
