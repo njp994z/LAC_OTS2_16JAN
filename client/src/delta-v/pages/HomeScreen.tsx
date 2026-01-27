@@ -6044,7 +6044,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
         {/* L2_1520 ACID View */}
         {selectedScreen === "L2_1520 ACID" && (
-          <div className="relative bg-black" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+          <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
             {/* Lock/Unlock Button for L2_1520 */}
             <div className="absolute top-4 right-4 z-50 flex gap-2">
               <Button
