@@ -204,7 +204,7 @@ const AlarmBanner = ({
           
           {/* Interlock Logic link */}
           <Link 
-            href="/settings/interlock-logic" 
+            to="/settings/interlock-logic" 
             className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
             data-testid="link-interlock-logic"
           >
