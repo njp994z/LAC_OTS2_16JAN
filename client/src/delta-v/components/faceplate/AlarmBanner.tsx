@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Info, Check, Settings, Gauge, HelpCircle, AlertTriangle, XCircle, Shield } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 
 interface Alarm {
   id: string;
@@ -125,6 +125,7 @@ const AlarmBanner = ({
   nodeStatus = "online",
 }: AlarmBannerProps) => {
   const [selectedAlarmId, setSelectedAlarmId] = useState<string | null>(alarms[0]?.id || null);
+  const [, setLocation] = useLocation();
   
   const selectedAlarm = alarms.find(a => a.id === selectedAlarmId) || alarms[0];
 
@@ -202,14 +203,14 @@ const AlarmBanner = ({
             <HelpCircle className="w-4 h-4 text-muted-foreground" />
           </ControlButton>
           
-          {/* Interlock Logic link */}
-          <Link 
-            to="/settings/interlock-logic" 
+          {/* Interlock Logic button */}
+          <button
+            onClick={() => setLocation("/settings/interlock-logic")}
             className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
-            data-testid="link-interlock-logic"
+            data-testid="button-interlock-logic"
           >
             <Shield className="w-4 h-4 text-muted-foreground" />
-          </Link>
+          </button>
         </div>
       </div>
       
