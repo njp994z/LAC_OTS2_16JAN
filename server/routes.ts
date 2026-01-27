@@ -1981,9 +1981,9 @@ Be professional, concise, and helpful. If asked about features not yet implement
   // Main Compressor Simulation endpoint
   app.post('/api/compressor-simulation', async (req: Request, res: Response) => {
     try {
-      const { rpm_percent, temp, barometricPressure, plant_condition } = req.body;
+      const { rpm_percent, temp, barometricPressure, plant_condition, inlet_pressure_inwc } = req.body;
 
-      // Validate required fields (pressure is now calculated by Python backend from system curve)
+      // Validate required fields
       if (rpm_percent === undefined || temp === undefined || barometricPressure === undefined) {
         return res.status(400).json({ message: "Missing required compressor input parameters" });
       }
@@ -1991,6 +1991,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const rpmPercentVal = parseFloat(rpm_percent);
       const tempVal = parseFloat(temp);
       const baroVal = parseFloat(barometricPressure);
+      const inletPressureVal = inlet_pressure_inwc !== undefined ? parseFloat(inlet_pressure_inwc) : -3.0;
 
       // Validate numeric inputs
       if (isNaN(rpmPercentVal) || isNaN(tempVal) || isNaN(baroVal)) {
@@ -2001,12 +2002,13 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const validConditions = ["clean", "dirty"];
       const condition = validConditions.includes(plant_condition) ? plant_condition : "clean";
 
-      // Prepare input for Python script (inlet pressure calculated from system curve)
+      // Prepare input for Python script
       const pythonInput = {
         rpm_percent: rpmPercentVal,
         temp: tempVal,
         barometricPressure: baroVal,
-        plant_condition: condition
+        plant_condition: condition,
+        inlet_pressure_inwc: inletPressureVal
       };
 
       // Run Python compressor calculator

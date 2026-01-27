@@ -110,6 +110,7 @@ import {
   Play,
   Pause,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -310,6 +311,137 @@ const HomeScreen = () => {
     setDynamicElapsed(0);
     setDynamicSpeed(1.0);
     setDynamicDt(0.12);
+  };
+  
+  // Static simulation state
+  const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
+  const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
+  
+  // Run static simulation when Start button is clicked in Static mode
+  const runStaticSimulation = async () => {
+    if (staticSimulationRunning) return;
+    
+    setStaticSimulationRunning(true);
+    try {
+      // 1. Fetch PV case data
+      const pvResponse = await fetch('/api/process-variables');
+      const pvData = await pvResponse.json();
+      
+      // 2. Fetch SP case data (for setpoint values)
+      const spResponse = await fetch('/api/setpoint-variables');
+      const spData = await spResponse.json();
+      
+      // 3. Extract compressor inputs from selected case or defaults
+      // Use activePVCaseId if available, otherwise use default values
+      let rpmPercent = 87; // Default
+      let inletTemp = 150; // Default in F
+      let barometricPressure = 0.85; // Default in atm
+      let plantCondition = "clean"; // Default
+      let inletPressureInwc = -3.0; // Default in wc
+      
+      // Helper function to extract numeric value from case data
+      const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
+        if (!variables || !caseId) return null;
+        for (const pattern of tagPatterns) {
+          const variable = variables.find((v: any) => 
+            v.tag === pattern || 
+            v.tagNumber === pattern || 
+            v.tag?.includes(pattern) ||
+            v.description?.toLowerCase().includes(pattern.toLowerCase())
+          );
+          if (variable?.cases?.[caseId]) {
+            const val = parseFloat(String(variable.cases[caseId]).replace(/[^0-9.-]/g, ''));
+            if (!isNaN(val)) return val;
+          }
+        }
+        return null;
+      };
+      
+      // Extract values from PV case data
+      if (pvData?.variables && activePVCaseId) {
+        // Main compressor RPM (1540-H-4030)
+        const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor'], activePVCaseId);
+        if (rpmVal !== null) rpmPercent = rpmVal;
+        
+        // DT inlet temperature
+        const tempVal = extractCaseValue(pvData.variables, ['dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
+        if (tempVal !== null) inletTemp = tempVal;
+        
+        // Barometric pressure (ambient_pressure)
+        const baroVal = extractCaseValue(pvData.variables, ['ambient_pressure', 'barometric'], activePVCaseId);
+        if (baroVal !== null) barometricPressure = baroVal;
+        
+        // Inlet pressure (pass_1_ash_dp or similar)
+        const pressVal = extractCaseValue(pvData.variables, ['pass_1_ash_dp', 'inlet_pressure', 'inlet press'], activePVCaseId);
+        if (pressVal !== null) inletPressureInwc = pressVal;
+        
+        // Plant condition (if stored in PV data)
+        const plantVar = pvData.variables.find((v: any) => 
+          v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
+        );
+        if (plantVar?.cases?.[activePVCaseId]) {
+          const val = String(plantVar.cases[activePVCaseId]).toLowerCase();
+          if (val === 'dirty' || val === 'clean') plantCondition = val;
+        }
+      }
+      
+      // Also check SP data for setpoint overrides
+      if (spData?.variables && activePVCaseId) {
+        // Main compressor SP
+        const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
+        if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal; // Use SP if PV not found
+        
+        // DT inlet temp SP
+        const tempSpVal = extractCaseValue(spData.variables, ['dt_inlet_temp_sp'], activePVCaseId);
+        if (tempSpVal !== null && inletTemp === 150) inletTemp = tempSpVal; // Use SP if PV not found
+      }
+      
+      console.log('Static simulation inputs:', { rpmPercent, inletTemp, barometricPressure, plantCondition, inletPressureInwc });
+      
+      // 4. Call compressor simulation API
+      const simResponse = await fetch('/api/compressor-simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rpm_percent: rpmPercent,
+          temp: inletTemp,
+          barometricPressure: barometricPressure,
+          plant_condition: plantCondition,
+          inlet_pressure_inwc: inletPressureInwc
+        })
+      });
+      
+      if (!simResponse.ok) {
+        throw new Error('Compressor simulation failed');
+      }
+      
+      const simResults = await simResponse.json();
+      console.log('Static simulation results:', simResults);
+      setStaticSimulationResults(simResults);
+      
+      // 5. Update faceplate displays with results
+      // Update the loaded case value to show the compressor speed % in the controller
+      // In Static mode: PV = SP = OUT = same value
+      if (simResults.compressor_speed !== undefined) {
+        const speedPercent = (simResults.compressor_speed / 4505) * 100;
+        setLoadedCaseValue1540H4030(speedPercent);
+      }
+      
+      toast({
+        title: "Static Simulation Complete",
+        description: `Compressor: ${simResults.compressor_speed?.toFixed(0) || 'N/A'} RPM, Outlet: ${simResults.outlet_temp_F?.toFixed(1) || 'N/A'}°F, Power: ${simResults.brake_power_hp?.toFixed(1) || 'N/A'} HP`,
+      });
+      
+    } catch (error) {
+      console.error('Static simulation error:', error);
+      toast({
+        title: "Simulation Error",
+        description: error instanceof Error ? error.message : "Failed to run static simulation",
+        variant: "destructive",
+      });
+    } finally {
+      setStaticSimulationRunning(false);
+    }
   };
   
   // Toggle fullscreen mode
@@ -2636,15 +2768,26 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Start Button */}
+          {/* Start Button - runs static simulation in Static mode */}
           <Button
             variant="default"
             size="sm"
-            className="bg-green-600 border border-green-600 text-white gap-2 hover:bg-green-700"
+            className={`gap-2 ${staticSimulationRunning ? 'bg-yellow-600 border-yellow-600' : 'bg-green-600 border border-green-600'} text-white hover:bg-green-700`}
             data-testid="button-toolbar-start"
+            onClick={runStaticSimulation}
+            disabled={staticSimulationRunning || selectedMode !== "Static"}
           >
-            <Play className="h-4 w-4" />
-            Start
+            {staticSimulationRunning ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                Start
+              </>
+            )}
           </Button>
 
           {/* PFDs Dropdown Menu */}
