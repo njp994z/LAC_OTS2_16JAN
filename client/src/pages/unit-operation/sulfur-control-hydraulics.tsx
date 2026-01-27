@@ -9,6 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
+import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
+import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
+import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 
 interface ProcessNode {
   tagId: string;
@@ -107,8 +111,55 @@ export default function SulfurControlHydraulics() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);
-  const fromHomeScreen = searchParams.get('from') === 'home-screen';
+  const fromHomeScreen = searchParams.get('from') === 'home-screen' || searchParams.get('from') === 'l2-furnace';
   const { toast } = useToast();
+  
+  // Valve faceplate controller sync
+  const VALVE_CONTROLLER_ID = '1540-FCV-2602';
+  const { state: valveSyncState } = useControllerSync(VALVE_CONTROLLER_ID);
+  const { getControllerConfig } = useControllerConfig();
+  const valveConfig = getControllerConfig(VALVE_CONTROLLER_ID);
+  
+  const [valveFaceplateData, setValveFaceplateData] = useState<ControllerData>({
+    ...defaultControllerData,
+    instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
+    description: valveConfig.DESC || 'Sulfur Feed Control Valve',
+    pvUnits: valveConfig.EU || '%',
+    pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
+    pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
+    pv: valveSyncState.syncedPV,
+    sp: valveSyncState.syncedSP,
+    out: valveSyncState.syncedOUT,
+    valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
+  });
+  
+  // Update valve faceplate data when sync state changes
+  useEffect(() => {
+    setValveFaceplateData(prev => ({
+      ...prev,
+      pv: valveSyncState.syncedPV,
+      sp: valveSyncState.syncedSP,
+      out: valveSyncState.syncedOUT,
+      mode: valveSyncState.syncedMode,
+      instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
+      description: valveConfig.DESC || 'Sulfur Feed Control Valve',
+      pvUnits: valveConfig.EU || '%',
+      pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
+      pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
+      valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
+      showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
+      showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
+      showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
+      showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
+      showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
+      showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
+      showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
+      showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
+      showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
+      showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
+      holdActive: valveConfig.HOLD_ACTIVE ?? false,
+    }));
+  }, [valveSyncState.syncedPV, valveSyncState.syncedSP, valveSyncState.syncedOUT, valveSyncState.syncedMode, valveConfig]);
   
   const [mode, setMode] = useState<SimulationMode>("static");
   const [isCalculating, setIsCalculating] = useState(false);
@@ -597,6 +648,31 @@ export default function SulfurControlHydraulics() {
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </CardContent>
+          </Card>
+
+          {/* Valve Faceplate Display */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Gauge className="h-5 w-5" />
+                1540-FCV-2602 - Sulfur Feed Control Valve
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-4">
+                <ValveFaceplate 
+                  data={valveFaceplateData} 
+                  onSelect={() => console.log('Valve faceplate selected:', VALVE_CONTROLLER_ID)}
+                  isTransparent={valveConfig.TRANSPARENT_BG}
+                />
+                <Link href="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602">
+                  <Button variant="outline" size="sm" data-testid="button-configure-valve">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configure Valve (3E)
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
