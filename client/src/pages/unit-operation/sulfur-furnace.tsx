@@ -369,9 +369,8 @@ export default function SulfurFurnace() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <StreamTable title="Stream 5 – Furnace Outlet" stream={outputParams.stream5} testIdPrefix="stream5" />
-          <StreamTable title="Stream 6 – Downstream Approximation" stream={outputParams.stream6} testIdPrefix="stream6" />
         </div>
 
         <div className="mt-6 p-4 bg-muted/50 rounded-md" data-testid="div-notes">
@@ -381,7 +380,6 @@ export default function SulfurFurnace() {
           <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
             <li>Assumes complete S → SO₂ combustion with ~1.8% SO₃ formation</li>
             <li>Temperature calibrated to match plant data (~2073°F at base case)</li>
-            <li>Stream 6 is an approximation with minor flow reduction</li>
           </ul>
         </div>
       </main>
