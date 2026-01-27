@@ -25,12 +25,12 @@ const systemParameters = [
 ];
 
 const streams = [
-  { id: "GF1", header: "Furnace Outlet\n1540-TI-42220ABC\nGF1" },
-  { id: "GB0", header: "Waste Heat\nBoiler In\nGB0" },
-  { id: "GJV0", header: "Jug Valve Inlet\nGJV0" },
-  { id: "GB1", header: "Waste Heat\nBoiler Out\nGB1" },
-  { id: "GPV1", header: "Positioner\nOutlet\nGPV1" },
-  { id: "GP10", header: "Gas Pass\n1 Inlet\nGP10" },
+  { id: "GF1", header: "Stream #5\nFurnace Outlet\n1540-TI-42220ABC\nGF1" },
+  { id: "GB0", header: "Stream #6\nWaste Heat\nBoiler In\nGB0" },
+  { id: "GJV0", header: "Stream #7\nJug Valve Inlet\nGJV0" },
+  { id: "GB1", header: "Stream #8A\nWaste Heat\nBoiler Out\nGB1" },
+  { id: "GPV1", header: "Stream #8B\nPositioner\nOutlet\nGPV1" },
+  { id: "GP10", header: "Stream #9\nGas Pass\n1 Inlet\nGP10" },
 ];
 
 const rowItems = [
