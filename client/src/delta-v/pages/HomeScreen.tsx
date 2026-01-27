@@ -1348,10 +1348,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   };
 
-  // L2 Sulfur Valve click handler - navigates to instrument page
+  // L2 Sulfur Valve click handler - navigates to sulfur hydraulics page
   const handleSulfurValveL2Click = () => {
     if (isLockedL2) {
-      setLocation('/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602');
+      setLocation('/unit-operation/sulfur-control-hydraulics?from=l2-furnace');
     }
   };
 
@@ -3581,7 +3581,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
-                onClick={isLockedL2 ? handleSulfurValveClick : undefined}
+                onClick={isLockedL2 ? handleSulfurValveL2Click : undefined}
                 style={{
                   transform: `scale(${Math.min(sulfurValveL2Size.width / 100, sulfurValveL2Size.height / 140)})`,
                   transformOrigin: 'center center'
