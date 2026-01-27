@@ -4,7 +4,7 @@
 
 
 import { Link, useLocation } from "wouter";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -751,6 +751,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   
   // Furnace outlet temperature from sulfur furnace simulation (linked to 1540-TI-4200A)
   const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(null);
+  // Track last calculated sulfur flow to prevent duplicate API calls
+  const lastCalculatedSulfurFlowRef = useRef<number | null>(null);
   
   // Auto-load static values when PV case is selected in Static mode
   useEffect(() => {
@@ -1085,13 +1087,24 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   }, [updateTempSensor4200APV]);
   
-  // Auto-recalculate furnace temperature when sulfur flow changes (static value or synced PV)
+  // Auto-recalculate furnace temperature when sulfur flow static value changes
+  // Only triggers on loadedCaseValueSulfurFlow changes to avoid spamming API on every synced PV update
   useEffect(() => {
-    const sulfurFlowGpm = loadedCaseValueSulfurFlow ?? sulfurSyncState.syncedPV;
-    if (sulfurFlowGpm && sulfurFlowGpm > 0) {
-      calculateFurnaceTemperature(sulfurFlowGpm);
+    // Only recalculate when in Static mode with a loaded case value
+    if (selectedMode !== 'Static' || loadedCaseValueSulfurFlow === null) return;
+    
+    // Check if sulfur flow has changed significantly (more than 0.5 gpm difference)
+    const currentFlow = loadedCaseValueSulfurFlow;
+    const lastFlow = lastCalculatedSulfurFlowRef.current;
+    
+    if (lastFlow !== null && Math.abs(currentFlow - lastFlow) < 0.5) {
+      return; // Skip if change is too small
     }
-  }, [loadedCaseValueSulfurFlow, sulfurSyncState.syncedPV, calculateFurnaceTemperature]);
+    
+    // Update ref and trigger calculation
+    lastCalculatedSulfurFlowRef.current = currentFlow;
+    calculateFurnaceTemperature(currentFlow);
+  }, [selectedMode, loadedCaseValueSulfurFlow, calculateFurnaceTemperature]);
   
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
   useEffect(() => {
@@ -1337,11 +1350,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build Temperature Sensor 1540-TI-4200A data from synced state
+  // Use furnace outlet temperature from simulation when available (Static mode), otherwise use synced PV
+  const tempSensor4200APV = selectedMode === 'Static' && furnaceOutletTemp !== null 
+    ? furnaceOutletTemp 
+    : tempSensor4200ASyncState.syncedPV;
+  
   const tempSensor4200AData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: tempSensor4200AConfig.TAGNAME || '1540-TI-4200A',
     description: tempSensor4200AConfig.DESC || 'Furnace Temp Out A',
-    pv: tempSensor4200ASyncState.syncedPV,
+    pv: tempSensor4200APV,
     sp: tempSensor4200ASyncState.syncedSP,
     out: tempSensor4200ASyncState.syncedOUT,
     mode: tempSensor4200ASyncState.syncedMode,
