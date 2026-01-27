@@ -11,7 +11,6 @@ import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
-import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 
 interface ProcessNode {
@@ -114,11 +113,13 @@ export default function SulfurControlHydraulics() {
   const fromHomeScreen = searchParams.get('from') === 'home-screen' || searchParams.get('from') === 'l2-furnace';
   const { toast } = useToast();
   
-  // Valve faceplate controller sync
+  // Valve faceplate configuration (NOT using sync context for static mode)
   const VALVE_CONTROLLER_ID = '1540-FCV-2602';
-  const { state: valveSyncState } = useControllerSync(VALVE_CONTROLLER_ID);
   const { getControllerConfig } = useControllerConfig();
   const valveConfig = getControllerConfig(VALVE_CONTROLLER_ID);
+  
+  // Static valve position state - this is the master value for static mode (PV = SP = OUT)
+  const [staticValvePosition, setStaticValvePosition] = useState<number>(50);
   
   const [valveFaceplateData, setValveFaceplateData] = useState<ControllerData>({
     ...defaultControllerData,
@@ -130,6 +131,7 @@ export default function SulfurControlHydraulics() {
     pv: 50,  // Default static value
     sp: 50,  // PV = SP in static mode
     out: 50, // OUT = PV = SP in static mode
+    mode: 'AUTO',
     valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
   });
   
@@ -241,65 +243,34 @@ export default function SulfurControlHydraulics() {
     };
   }, []);
   
-  // Update valve faceplate data based on simulation mode
-  // Static mode: PV = SP = OUT (valve position %)
-  // Dynamic mode: Use synced values from ControllerSyncContext
+  // Update valve faceplate data when static valve position changes
+  // Static mode: PV = SP = OUT (all equal to valve position %)
   useEffect(() => {
-    if (mode === "static") {
-      // Use valve position from static results if available, otherwise use default
-      const valvePositionPct = staticResults?.valve_position_percent ?? 50;
-      setValveFaceplateData(prev => ({
-        ...prev,
-        pv: valvePositionPct,
-        sp: valvePositionPct,  // PV = SP in static mode
-        out: valvePositionPct, // OUT = valve position in static mode
-        mode: 'AUTO',
-        instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
-        description: valveConfig.DESC || 'Sulfur Feed Control Valve',
-        pvUnits: valveConfig.EU || '%',
-        pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
-        pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
-        valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
-        showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
-        showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
-        showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
-        showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
-        showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
-        showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
-        showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
-        showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
-        showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
-        showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
-        holdActive: valveConfig.HOLD_ACTIVE ?? false,
-      }));
-    } else {
-      // Dynamic mode: Use synced values from ControllerSyncContext
-      setValveFaceplateData(prev => ({
-        ...prev,
-        pv: valveSyncState.syncedPV,
-        sp: valveSyncState.syncedSP,
-        out: valveSyncState.syncedOUT,
-        mode: valveSyncState.syncedMode,
-        instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
-        description: valveConfig.DESC || 'Sulfur Feed Control Valve',
-        pvUnits: valveConfig.EU || '%',
-        pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
-        pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
-        valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
-        showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
-        showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
-        showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
-        showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
-        showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
-        showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
-        showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
-        showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
-        showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
-        showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
-        holdActive: valveConfig.HOLD_ACTIVE ?? false,
-      }));
-    }
-  }, [mode, staticResults, valveSyncState.syncedPV, valveSyncState.syncedSP, valveSyncState.syncedOUT, valveSyncState.syncedMode, valveConfig]);
+    setValveFaceplateData(prev => ({
+      ...prev,
+      pv: staticValvePosition,
+      sp: staticValvePosition,  // PV = SP in static mode
+      out: staticValvePosition, // OUT = valve position in static mode
+      mode: 'AUTO',
+      instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
+      description: valveConfig.DESC || 'Sulfur Feed Control Valve',
+      pvUnits: valveConfig.EU || '%',
+      pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
+      pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
+      valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
+      showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
+      showInterlockIndicator: valveConfig.SHOW_INTERLOCK_INDICATOR,
+      showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
+      showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
+      showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
+      showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
+      showBlueAlarmIndicator: valveConfig.SHOW_BLUE_ALARM_INDICATOR,
+      showBadIOIndicator: valveConfig.SHOW_BAD_IO_INDICATOR,
+      showModuleNotRunning: valveConfig.SHOW_MODULE_NOT_RUNNING,
+      showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
+      holdActive: valveConfig.HOLD_ACTIVE ?? false,
+    }));
+  }, [staticValvePosition, valveConfig]);
   
   const runStaticCalculation = async () => {
     setIsCalculating(true);
@@ -322,6 +293,11 @@ export default function SulfurControlHydraulics() {
       
       const data = await response.json();
       setStaticResults(data);
+      
+      // Update valve faceplate with calculated valve position (PV = SP = OUT)
+      if (data.valve_position_percent !== undefined) {
+        setStaticValvePosition(data.valve_position_percent);
+      }
       
       // Update process nodes table with calculation results
       const flowGpm = data.flow_gpm?.toString() || "0";
