@@ -25,6 +25,7 @@ interface InputParams {
   rpmPercent: string;
   temp: string;
   barometricPressure: string;
+  inletPressure: string;
 }
 
 interface OutputParams {
@@ -37,6 +38,9 @@ interface OutputParams {
   brakePowerHp: string;
   driverSpeed: string;
   inletPressureInwc: string;
+  vfdCurrent: string;
+  motorSpeed: string;
+  compressorSpeed: string;
 }
 
 interface StreamData {
@@ -62,7 +66,8 @@ export default function MainCompressor() {
   const [inputParams, setInputParams] = useState<InputParams>({
     rpmPercent: "88",
     temp: "150",
-    barometricPressure: "0.85"
+    barometricPressure: "0.85",
+    inletPressure: "-3"
   });
 
   const [outputParams, setOutputParams] = useState<OutputParams>({
@@ -74,7 +79,10 @@ export default function MainCompressor() {
     massFlowKlbhr: "---",
     brakePowerHp: "---",
     driverSpeed: "---",
-    inletPressureInwc: "---"
+    inletPressureInwc: "---",
+    vfdCurrent: "---",
+    motorSpeed: "---",
+    compressorSpeed: "---"
   });
 
   const defaultStream: StreamData = {
@@ -104,6 +112,7 @@ export default function MainCompressor() {
         rpm_percent: inputParams.rpmPercent,
         temp: inputParams.temp,
         barometricPressure: inputParams.barometricPressure,
+        inlet_pressure_inwc: inputParams.inletPressure,
         plant_condition: plantCondition
       });
 
@@ -119,8 +128,11 @@ export default function MainCompressor() {
           standardFlowScfm: formatValue(r.standard_flow_scfm, 0),
           massFlowKlbhr: formatValue(r.mass_flow_klbhr, 1),
           brakePowerHp: formatValue(r.brake_power_hp, 0),
-          driverSpeed: formatValue(r.driver_speed_rpm, 0),
-          inletPressureInwc: formatValue(r.inlet_pressure_inwc, 1)
+          driverSpeed: formatValue(r.driver_speed || r.driver_speed_rpm, 0),
+          inletPressureInwc: formatValue(r.inlet_pressure_inwc, 1),
+          vfdCurrent: formatValue(r.vfd_current, 0),
+          motorSpeed: formatValue(r.driver_speed || r.driver_speed_rpm, 0),
+          compressorSpeed: formatValue(r.compressor_speed, 0)
         });
 
         if (r.inlet_stream) {
@@ -384,6 +396,24 @@ export default function MainCompressor() {
                   </div>
                 </div>
 
+                <div data-testid="field-inlet-pressure">
+                  <label className="text-sm text-muted-foreground block mb-1" data-testid="label-inlet-pressure">
+                    Inlet Pressure
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={inputParams.inletPressure}
+                      onChange={(e) => handleInputChange("inletPressure", e.target.value)}
+                      className="w-20"
+                      data-testid="input-inlet-pressure"
+                    />
+                    <span className="text-sm" data-testid="unit-inlet-pressure">in wc</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div data-testid="field-barometric">
                   <label className="text-sm text-muted-foreground block mb-1" data-testid="label-barometric">
                     Barometric
@@ -468,10 +498,10 @@ export default function MainCompressor() {
                         {outputParams.inletFlowAcfm}
                       </td>
                     </tr>
-                    <tr className="border-b" data-testid="row-inlet-pressure-calc">
-                      <td className="py-3 px-4 font-medium" data-testid="label-inlet-pressure-calc">Inlet Pressure (calculated)</td>
-                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-inlet-pressure-calc">in wc</td>
-                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-pressure-calc">
+                    <tr className="border-b" data-testid="row-inlet-pressure-result">
+                      <td className="py-3 px-4 font-medium" data-testid="label-inlet-pressure-result">Inlet Pressure</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-inlet-pressure-result">in wc</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-inlet-pressure-result">
                         {outputParams.inletPressureInwc}
                       </td>
                     </tr>
@@ -517,11 +547,25 @@ export default function MainCompressor() {
                         {outputParams.brakePowerHp}
                       </td>
                     </tr>
-                    <tr data-testid="row-driver-speed">
-                      <td className="py-3 px-4 font-medium" data-testid="label-driver-speed">Driver Speed</td>
-                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-driver-speed">rpm</td>
-                      <td className="py-3 px-4 text-center font-mono" data-testid="value-driver-speed">
-                        {outputParams.driverSpeed}
+                    <tr className="border-b" data-testid="row-vfd-current">
+                      <td className="py-3 px-4 font-medium" data-testid="label-vfd-current">VFD Current</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-vfd-current">Amps</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-vfd-current">
+                        {outputParams.vfdCurrent}
+                      </td>
+                    </tr>
+                    <tr className="border-b" data-testid="row-motor-speed">
+                      <td className="py-3 px-4 font-medium" data-testid="label-motor-speed">Motor Speed</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-motor-speed">rpm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-motor-speed">
+                        {outputParams.motorSpeed}
+                      </td>
+                    </tr>
+                    <tr data-testid="row-compressor-speed">
+                      <td className="py-3 px-4 font-medium" data-testid="label-compressor-speed">Compressor Speed</td>
+                      <td className="py-3 px-4 text-muted-foreground" data-testid="unit-compressor-speed">rpm</td>
+                      <td className="py-3 px-4 text-center font-mono" data-testid="value-compressor-speed">
+                        {outputParams.compressorSpeed}
                       </td>
                     </tr>
                   </tbody>
