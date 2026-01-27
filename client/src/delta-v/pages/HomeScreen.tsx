@@ -5968,12 +5968,24 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onModeChange={(mode) => updateSulfurMode(mode)}
             onRoutRcasChange={(mode) => setSulfurFlowRoutRcas(mode)}
             onBypassChange={(active) => setSulfurFlowBypass(active)}
-            onSpChange={(value) => updateSulfurSP(value)}
-            onOutChange={(value) => updateSulfurOUT(value)}
+            onSpChange={(value) => {
+              updateSulfurSP(value);
+              // In Static mode, also update the loaded case value so both faceplates stay in sync
+              if (useStaticSulfurFlow) {
+                setLoadedCaseValueSulfurFlow(value);
+              }
+            }}
+            onOutChange={(value) => {
+              updateSulfurOUT(value);
+              // In Static mode, also update the loaded case value so both faceplates stay in sync
+              if (useStaticSulfurFlow) {
+                setLoadedCaseValueSulfurFlow(value);
+              }
+            }}
             onModelockOverrideChange={(active) => setSulfurFlowModelockOverride(active)}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={useStaticSulfurFlow ? loadedCaseValueSulfurFlow : null}
           />
         </DialogContent>
       </Dialog>
