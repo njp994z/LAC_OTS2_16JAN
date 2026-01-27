@@ -131,7 +131,7 @@ const FlowControlValveDetail = () => {
             <ArrowLeft size={18} />
             Back to Flow Control Valves
           </Link>
-          <Link href={`/valve/flow-control/${valveId}/3e`}>
+          <Link href={`/settings/controller-outputs/faceplates/valve-blocks/flow-control/${valveId}/3e`}>
             <Button variant="outline" className={cn("gap-2 border-primary/30 hover:border-primary", "bg-card/50 hover:bg-card")}>
               <Settings size={18} />
               Configure (3E)
