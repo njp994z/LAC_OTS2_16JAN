@@ -32,32 +32,7 @@ export const TempSensorPrimaryFaceplate = ({
 
   return (
     <div 
-      className={cn(
-        isTransparent ? "faceplate-container-transparent" : "faceplate-container",
-        "p-1 cursor-pointer select-none",
-        "transition-all duration-300",
-        "hover:scale-[1.02] hover:shadow-2xl hover:shadow-faceplate-border/20",
-        "w-full h-full min-w-[160px] min-h-[120px]",
-        // Red silhouette when HH or LL alarm is active
-        isCriticalAlarm && [
-          "ring-4 ring-red-500",
-          "shadow-[0_0_20px_rgba(239,68,68,0.6),0_0_40px_rgba(239,68,68,0.3)]",
-          "border-red-500"
-        ],
-        // Yellow silhouette when H or L alarm is active
-        isWarningAlarm && [
-          "ring-4 ring-yellow-400",
-          "shadow-[0_0_20px_rgba(250,204,21,0.6),0_0_40px_rgba(250,204,21,0.3)]",
-          "border-yellow-400"
-        ],
-        // Green silhouette when in normal state (no alarms)
-        isNormalState && [
-          "ring-4 ring-green-500",
-          "shadow-[0_0_20px_rgba(34,197,94,0.6),0_0_40px_rgba(34,197,94,0.3)]",
-          "border-green-500"
-        ],
-        className
-      )}
+      className="faceplate-container p-1 cursor-pointer select-none transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-faceplate-border/20 w-full h-full min-w-[160px] min-h-[120px] ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6),0_0_40px_rgba(250,204,21,0.3)] border-yellow-400 pl-[0px] pr-[0px] pt-[0px] pb-[0px]"
       onClick={onSelect}
     >
       {/* Instrument Tag Header */}
@@ -74,7 +49,6 @@ export const TempSensorPrimaryFaceplate = ({
           {data.description}
         </p>
       </div>
-
       {/* Main Faceplate Inner Area */}
       <div className={cn(
         isTransparent ? "faceplate-inner-light" : "faceplate-inner",

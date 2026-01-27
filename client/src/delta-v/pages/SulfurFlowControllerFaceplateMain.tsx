@@ -898,15 +898,18 @@ const SulfurFlowControllerFaceplateMain = () => {
   const { getControllerConfig, getControllerData } = useControllerConfig();
   const { toast } = useToast();
   
+  // Static mode: PV = SP = OUT, all equal to this static value
+  // Initialize from config or default to 70.0 gpm
+  const savedConfig = getControllerConfig(activeControllerId);
+  const [staticFlowValue, setStaticFlowValue] = useState<number>(savedConfig.PV_INIT_VAL ?? 70.0);
+  
   // Python code dialog state
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  // Load saved configuration from context
-  const savedConfig = getControllerConfig(activeControllerId);
-  
-  // Primary Controller state
+  // Primary Controller state - Static mode: PV = SP = OUT
+  const initialStaticValue = savedConfig.PV_INIT_VAL ?? 70.0;
   const [controllerData, setControllerData] = useState<ControllerData>({
     ...defaultControllerData,
     instrumentTag: savedConfig.TAGNAME || defaultControllerData.instrumentTag,
@@ -914,18 +917,18 @@ const SulfurFlowControllerFaceplateMain = () => {
     pvUnits: savedConfig.EU || defaultControllerData.pvUnits,
     pvRangeMin: savedConfig.PV_SCALE_LO ?? defaultControllerData.pvRangeMin,
     pvRangeMax: savedConfig.PV_SCALE_HI ?? defaultControllerData.pvRangeMax,
-    pv: syncState.syncedPV,
-    sp: syncState.syncedSP,
-    out: syncState.syncedOUT,
+    pv: initialStaticValue,
+    sp: initialStaticValue,
+    out: initialStaticValue,
   });
   
-  // Secondary Controller state
+  // Secondary Controller state - Static mode: PV = SP = OUT
   const [config, setConfig] = useState<SecondaryControllerConfig>(savedConfig);
   const [secondaryData, setSecondaryData] = useState<SecondaryControllerData>({
     ...defaultSecondaryData,
-    PV: syncState.syncedPV,
-    SP: syncState.syncedSP,
-    OUT_PCT: syncState.syncedOUT,
+    PV: initialStaticValue,
+    SP: initialStaticValue,
+    OUT_PCT: initialStaticValue,
   });
   
   // Sync config changes from Faceplate3E/3F - react to savedConfig changes from context
@@ -958,20 +961,23 @@ const SulfurFlowControllerFaceplateMain = () => {
   const primaryAlarmActive = hasRedAlarm || hasYellowAlarm;
   const primaryAlarmColor: 'red' | 'yellow' = hasRedAlarm ? 'red' : 'yellow';
 
-  // Sync Primary Controller values from context and alarm state
+  // Static mode: Update Primary Controller values with static flow value (PV = SP = OUT)
   useEffect(() => {
-    const interlockIsActive = 
-      (config.ALM_HH_LIM !== 0 && secondaryData.ALM_HH_ACT) || 
-      (config.ALM_LL_LIM !== 0 && secondaryData.ALM_LL_ACT);
+    // Compute interlock directly from staticFlowValue and config to avoid circular dependency
+    const almHHActive = config.ALM_HH_LIM !== 0 && staticFlowValue >= config.ALM_HH_LIM;
+    const almLLActive = config.ALM_LL_LIM !== 0 && staticFlowValue <= config.ALM_LL_LIM;
+    const interlockIsActive = almHHActive || almLLActive;
+    
     setControllerData(prev => ({
       ...prev,
-      pv: syncState.syncedPV,
-      sp: syncState.syncedSP,
-      out: syncState.syncedOUT,
-      alarmActive: primaryAlarmActive,
-      alarmColor: primaryAlarmColor,
-      alarmType: hasRedAlarm ? 'HIHI' : (hasYellowAlarm ? 'HI' : undefined),
-      mode: syncState.syncedMode,
+      // Static mode: PV = SP = OUT, all equal to staticFlowValue
+      pv: staticFlowValue,
+      sp: staticFlowValue,
+      out: staticFlowValue,
+      alarmActive: interlockIsActive,
+      alarmColor: interlockIsActive ? 'red' : 'yellow',
+      alarmType: almHHActive ? 'HIHI' : (almLLActive ? 'LOLO' : undefined),
+      mode: 'AUTO',
       // Sync engineering units and range from config
       pvUnits: config.EU || defaultControllerData.pvUnits,
       pvRangeMin: config.PV_SCALE_LO ?? defaultControllerData.pvRangeMin,
@@ -994,32 +1000,32 @@ const SulfurFlowControllerFaceplateMain = () => {
       showInterlockDiamond: config.SHOW_INTERLOCK_DIAMOND_INDICATOR,
       showLockIndicator: config.SHOW_LOCK_INDICATOR,
     }));
-  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, syncState.syncedMode, primaryAlarmActive, primaryAlarmColor, hasRedAlarm, hasYellowAlarm, config, secondaryData.ALM_HH_ACT, secondaryData.ALM_LL_ACT]);
+  }, [staticFlowValue, config]);
   
-  // Sync Secondary Controller values from context
+  // Static mode: Update Secondary Controller values with static flow value (PV = SP = OUT)
   useEffect(() => {
     setSecondaryData(prev => {
-      const newPV = syncState.syncedPV;
-      const dev = newPV - syncState.syncedSP;
+      // Static mode: all values equal to staticFlowValue, deviation is 0
+      const dev = 0; // In static mode, PV = SP so deviation is 0
       
       return {
         ...prev,
-        PV: newPV,
-        SP: syncState.syncedSP,
-        OUT_PCT: syncState.syncedOUT,
-        ALM_LL_ACT: config.ALM_LL_LIM !== 0 && newPV <= config.ALM_LL_LIM,
-        ALM_L_ACT: config.ALM_L_LIM !== 0 && newPV <= config.ALM_L_LIM,
+        PV: staticFlowValue,
+        SP: staticFlowValue,
+        OUT_PCT: staticFlowValue,
+        ALM_LL_ACT: config.ALM_LL_LIM !== 0 && staticFlowValue <= config.ALM_LL_LIM,
+        ALM_L_ACT: config.ALM_L_LIM !== 0 && staticFlowValue <= config.ALM_L_LIM,
         ALM_DL_ACT: config.ALM_DL_LIM !== 0 && dev <= config.ALM_DL_LIM,
         ALM_DH_ACT: config.ALM_DH_LIM !== 0 && dev >= config.ALM_DH_LIM,
-        ALM_H_ACT: config.ALM_H_LIM !== 0 && newPV >= config.ALM_H_LIM,
-        ALM_HH_ACT: config.ALM_HH_LIM !== 0 && newPV >= config.ALM_HH_LIM,
+        ALM_H_ACT: config.ALM_H_LIM !== 0 && staticFlowValue >= config.ALM_H_LIM,
+        ALM_HH_ACT: config.ALM_HH_LIM !== 0 && staticFlowValue >= config.ALM_HH_LIM,
         PV_OK: !(
-          (config.ALM_LL_LIM !== 0 && newPV <= config.ALM_LL_LIM) || 
-          (config.ALM_HH_LIM !== 0 && newPV >= config.ALM_HH_LIM)
+          (config.ALM_LL_LIM !== 0 && staticFlowValue <= config.ALM_LL_LIM) || 
+          (config.ALM_HH_LIM !== 0 && staticFlowValue >= config.ALM_HH_LIM)
         ),
       };
     });
-  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, config]);
+  }, [staticFlowValue, config]);
 
   // Expose update functions for Python integration
   useEffect(() => {
