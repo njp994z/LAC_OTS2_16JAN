@@ -43,6 +43,7 @@ import cyanThinLine1Img from "@assets/image_1769467420791.png";
 import cyanThinLine2Img from "@assets/image_1769467426528.png";
 import cyanVertLine1Img from "@assets/image_1769467433951.png";
 import cyanVertLine2Img from "@assets/image_1769467436693.png";
+import blackVertLineImg from "@assets/image_1769482798195.png";
 import {
   Menubar,
   MenubarContent,
@@ -725,6 +726,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Cyan Vertical Line 2 position and size
   const [cyanVertLine2L2Position, setCyanVertLine2L2Position] = useState({ x: 1400, y: 550 });
   const [cyanVertLine2L2Size, setCyanVertLine2L2Size] = useState({ width: 10, height: 150 });
+  // L2 Black Vertical Line position and size
+  const [blackVertLineL2Position, setBlackVertLineL2Position] = useState({ x: 500, y: 300 });
+  const [blackVertLineL2Size, setBlackVertLineL2Size] = useState({ width: 10, height: 200 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -1957,6 +1961,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setCyanVertLine2L2Size({ width: cyanVertLine2.width, height: cyanVertLine2.height });
     }
 
+    const blackVertLine = positionMap.get('black_vert_line_l2');
+    if (blackVertLine) {
+      setBlackVertLineL2Position({ x: blackVertLine.x, y: blackVertLine.y });
+      setBlackVertLineL2Size({ width: blackVertLine.width, height: blackVertLine.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2390,6 +2400,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_thin_line_2_l2', positionX: Math.round(cyanThinLine2L2Position.x), positionY: Math.round(cyanThinLine2L2Position.y), width: cyanThinLine2L2Size.width, height: cyanThinLine2L2Size.height, rotation: 0 },
         { elementId: 'cyan_vert_line_1_l2', positionX: Math.round(cyanVertLine1L2Position.x), positionY: Math.round(cyanVertLine1L2Position.y), width: cyanVertLine1L2Size.width, height: cyanVertLine1L2Size.height, rotation: 0 },
         { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
+        { elementId: 'black_vert_line_l2', positionX: Math.round(blackVertLineL2Position.x), positionY: Math.round(blackVertLineL2Position.y), width: blackVertLineL2Size.width, height: blackVertLineL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -4268,6 +4279,42 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-vert-line-2-l2"
+              />
+            </Rnd>
+
+            {/* Black Vertical Line Image for L2 */}
+            <Rnd
+              key="black-vert-line-l2"
+              data-testid="rnd-black-vert-line-l2"
+              position={blackVertLineL2Position}
+              size={blackVertLineL2Size}
+              onDragStop={(e, d) => {
+                setBlackVertLineL2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setBlackVertLineL2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setBlackVertLineL2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={5}
+              minHeight={50}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 35 }}
+            >
+              <img 
+                src={blackVertLineImg} 
+                alt="Black Vertical Line" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-black-vert-line-l2"
               />
             </Rnd>
 
