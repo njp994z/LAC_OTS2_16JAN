@@ -1,0 +1,63 @@
+# src/main_static_simulation.py
+import json
+from calculators.compressor_calculator import calculate_compressor_performance, CompressorInput, MAX_RPM
+from calculators.sulfur_hydraulics_static import StaticSulfurSprayHydraulics
+
+# Case 1 values from your PV/SP tables
+CASE_1 = {
+    "compressor_rpm_percent": 87.0,      # 1540-H-4030 or 1540-SIC-4030
+    "sulfur_flow_sp_gpm": 79.0,          # 1530-FIC-2602 SP
+    "inlet_temp_F": 150.0,
+    "inlet_pressure_inwc": -3.0,
+    "barometric_atm": 0.85,
+    "plant_condition": "clean",
+    "sulfur_valve_R": 85.0,              # equal-% characteristic
+    "pit_level_ft": 7.0
+}
+
+def run_full_static_case(case: dict) -> dict:
+    # 1. Compressor
+    rpms = case["compressor_rpm_percent"] / 100 * MAX_RPM
+    comp_input = CompressorInput(
+        rpms=rpms,
+        inlet_temp_F=case["inlet_temp_F"],
+        inlet_pressure_inwc=case["inlet_pressure_inwc"],
+        barometric_atm=case["barometric_atm"],
+        plant_condition=case["plant_condition"]
+    )
+    compressor_result = calculate_compressor_performance(comp_input)
+
+    # 2. Sulfur system — solve valve position needed for desired flow
+    sulfur = StaticSulfurSprayHydraulics(R_equal_percent=case["sulfur_valve_R"])
+
+    # Target flow from case
+    target_gpm = case["sulfur_flow_sp_gpm"]
+
+    # Inverse solve: find valve % that delivers target flow
+    low, high = 0.0, 100.0
+    for _ in range(20):
+        mid = (low + high) / 2
+        result = sulfur.calculate(valve_position_pct=mid, pit_level_ft=case["pit_level_ft"])
+        if result["flow_gpm"] < target_gpm:
+            low = mid
+        else:
+            high = mid
+
+    final_sulfur = sulfur.calculate(valve_position_pct=mid, pit_level_ft=case["pit_level_ft"])
+
+    return {
+        "case_name": "Case 1 - 2480 STPD Clean",
+        "compressor": compressor_result.__dict__,
+        "sulfur_system": final_sulfur,
+        "summary": {
+            "compressor_speed_pct": case["compressor_rpm_percent"],
+            "sulfur_flow_achieved_gpm": final_sulfur["flow_gpm"],
+            "sulfur_valve_position_pct": final_sulfur["valve_position_pct"],
+            "mass_sulfur_klb_hr": final_sulfur["mass_flow_klb_hr"],
+            "main_air_flow_klb_hr": compressor_result.mass_flow_klbhr,
+        }
+    }
+
+if __name__ == "__main__":
+    full_result = run_full_static_case(CASE_1)
+    print(json.dumps(full_result, indent=2, default=str))
