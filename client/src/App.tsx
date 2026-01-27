@@ -385,11 +385,8 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/sensor-blocks" component={SensorFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks" component={ValveFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/:valveType" component={ValveTypeDetail} />
-      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602" component={FlowControlValveDetail} />
-      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602/3e" component={FlowControlValve3E} />
-      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1520-fcv-5870" component={FlowControlValveDetail} />
-      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1520-fcv-6770" component={FlowControlValveDetail} />
-      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1520-fcv-6670" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/:valveId" component={FlowControlValveDetail} />
+      <Route path="/settings/controller-outputs/faceplates/valve-blocks/flow-control/:valveId/3e" component={FlowControlValve3E} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/temperature-control/:id" component={TempControlValveDetail} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/:id" component={HandControlValveDetail} />
       <Route path="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282" component={JugValveDetail} />

@@ -674,7 +674,7 @@ export default function SulfurControlHydraulics() {
                   onSelect={() => console.log('Valve faceplate selected:', VALVE_CONTROLLER_ID)}
                   isTransparent={valveConfig.TRANSPARENT_BG}
                 />
-                <Link href="/settings/controller-outputs/faceplates/valve/flow-control/1540-fcv-2602">
+                <Link href="/settings/controller-outputs/faceplates/valve-blocks/flow-control/1540-fcv-2602">
                   <Button variant="outline" size="sm" data-testid="button-configure-valve">
                     <Settings className="h-4 w-4 mr-2" />
                     Configure Valve (3E)
