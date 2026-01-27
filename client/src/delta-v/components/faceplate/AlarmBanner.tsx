@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Info, Check, Settings, Gauge, HelpCircle, AlertTriangle, XCircle } from "lucide-react";
+import { Info, Check, Settings, Gauge, HelpCircle, AlertTriangle, XCircle, Shield } from "lucide-react";
+import { Link } from "wouter";
 
 interface Alarm {
   id: string;
@@ -200,6 +201,15 @@ const AlarmBanner = ({
           <ControlButton>
             <HelpCircle className="w-4 h-4 text-muted-foreground" />
           </ControlButton>
+          
+          {/* Interlock Logic link */}
+          <Link 
+            href="/settings/interlock-logic" 
+            className="h-7 px-2 flex items-center justify-center bg-secondary hover:bg-muted rounded border border-border/50 transition-all hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30"
+            data-testid="link-interlock-logic"
+          >
+            <Shield className="w-4 h-4 text-muted-foreground" />
+          </Link>
         </div>
       </div>
       
