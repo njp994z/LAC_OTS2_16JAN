@@ -806,7 +806,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     updateSyncedOUT: updateSulfurOUT,
     updateSyncedMode: updateSulfurMode 
   } = useControllerSync('1530-F-2602');
-  const sulfurFlowConfig = getControllerConfig('default');
+  const sulfurFlowConfig = getControllerConfig('1530-F-2602');
   
   // Get real-time synced state for Sulfur Flow Control Valve
   const { state: valveSyncState } = useControllerSync('1540-FCV-2602');
