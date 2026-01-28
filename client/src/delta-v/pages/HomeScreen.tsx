@@ -869,6 +869,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
   // L4 Converter 4: Secondary faceplate dialog visibility when clicking on converter image
   const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] = useState(false);
+  // 6.1 L3_1540 Converter: Jug Valve Hand Controller 1540-H-4282 position/size
+  const [jugValveHandController61Position, setJugValveHandController61Position] = useState({ x: 1100, y: 400 });
+  const [jugValveHandController61Size, setJugValveHandController61Size] = useState({ width: 220, height: 200 });
 
   // New states for dynamic sizing support
   const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
