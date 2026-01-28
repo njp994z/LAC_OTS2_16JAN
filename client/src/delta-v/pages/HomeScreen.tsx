@@ -867,6 +867,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
   // 6.1 L3_1540 Converter: Secondary faceplate dialog visibility
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
+  // L4 Converter 4: Secondary faceplate dialog visibility when clicking on converter image
+  const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] = useState(false);
 
   // New states for dynamic sizing support
   const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
@@ -3306,15 +3308,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
-              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              className={isLockedL4 ? "cursor-pointer" : "cursor-move"}
               style={{ zIndex: 10 }}
             >
-              <img 
-                src={converter4L4Img} 
-                alt="Converter 4" 
-                className="w-full h-full object-contain"
-                draggable={false}
-              />
+              <div 
+                className={`w-full h-full ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
+                data-testid="converter4-l4-clickable"
+              >
+                <img 
+                  src={converter4L4Img} 
+                  alt="Converter 4" 
+                  className="w-full h-full object-contain"
+                  draggable={false}
+                />
+              </div>
             </Rnd>
 
             {/* 1540-TI-4825 Primary Faceplate (Pass 1 Catalyst In) */}
@@ -4827,6 +4835,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   config={tempSensor4825SecondaryConfig}
                   sensorId="1540-TI-4825"
                   onClose={() => setShowSecondary4825_61(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* Secondary Faceplate Dialog for Converter 4 L4 (using Pass 1 Catalyst sensor) */}
+            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>Converter 4 - 1540-TI-4825 Secondary Faceplate</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4825SecondaryData}
+                  config={tempSensor4825SecondaryConfig}
+                  sensorId="1540-TI-4825"
+                  onClose={() => setShowSecondaryConverter4L4(false)}
                 />
               </DialogContent>
             </Dialog>
