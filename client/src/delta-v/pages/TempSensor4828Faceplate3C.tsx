@@ -32,8 +32,8 @@ const chartConfig = {
   },
 };
 
-const TempSensor4827Faceplate3C = () => {
-  const activeControllerId = '1540-TI-4827';
+const TempSensor4828Faceplate3C = () => {
+  const activeControllerId = '1540-TI-4828';
   
   const { state } = useControllerSync(activeControllerId);
   const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
@@ -77,11 +77,11 @@ const TempSensor4827Faceplate3C = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
         <Link
-          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827"
+          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4828"
           className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
         >
           <ArrowLeft size={18} />
-          <span>Back to 1540-TI-4827 Temperature Sensor</span>
+          <span>Back to 1540-TI-4828 Temperature Sensor</span>
         </Link>
 
         <div className="bg-card/80 backdrop-blur border border-border rounded-lg p-8 max-w-4xl mx-auto">
@@ -168,4 +168,4 @@ const TempSensor4827Faceplate3C = () => {
   );
 };
 
-export default TempSensor4827Faceplate3C;
+export default TempSensor4828Faceplate3C;

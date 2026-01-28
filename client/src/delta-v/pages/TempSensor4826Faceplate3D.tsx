@@ -3,26 +3,26 @@ import { ArrowLeft, Settings2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PIDHxBypassConfig, defaultPIDHxBypassConfig } from '@/delta-v/types/pidHxBypassConfig';
 
-const TEMP_SENSOR_4827_PID_CONFIG_KEY = 'temp_sensor_4827_pid_config';
+const TEMP_SENSOR_4826_PID_CONFIG_KEY = 'temp_sensor_4826_pid_config';
 
-const TempSensor4827Faceplate3D = () => {
+const TempSensor4826Faceplate3D = () => {
   const [config, setConfig] = useState<PIDHxBypassConfig>({
     ...defaultPIDHxBypassConfig,
-    loop_tag: '1540-TI-4827',
-    service_desc: 'Pass 1 Catalyst Out A',
+    loop_tag: '1540-TI-4826',
+    service_desc: 'Pass 1 Catalyst Temp. Top B',
     eng_units: 'F',
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem(TEMP_SENSOR_4827_PID_CONFIG_KEY);
+    const stored = localStorage.getItem(TEMP_SENSOR_4826_PID_CONFIG_KEY);
     if (stored) {
       try {
         setConfig({ ...defaultPIDHxBypassConfig, ...JSON.parse(stored) });
       } catch {
         setConfig({
           ...defaultPIDHxBypassConfig,
-          loop_tag: '1540-TI-4827',
-          service_desc: 'Pass 1 Catalyst Out A',
+          loop_tag: '1540-TI-4826',
+          service_desc: 'Pass 1 Catalyst Temp. Top B',
           eng_units: 'F',
         });
       }
@@ -53,11 +53,11 @@ const TempSensor4827Faceplate3D = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
         <Link
-          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827"
+          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4826"
           className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
         >
           <ArrowLeft size={18} />
-          <span>Back to 1540-TI-4827 Temperature Sensor</span>
+          <span>Back to 1540-TI-4826 Temperature Sensor</span>
         </Link>
 
         <div className="bg-card/80 backdrop-blur border border-border rounded-lg p-6 max-w-6xl mx-auto">
@@ -131,4 +131,4 @@ const TempSensor4827Faceplate3D = () => {
   );
 };
 
-export default TempSensor4827Faceplate3D;
+export default TempSensor4826Faceplate3D;

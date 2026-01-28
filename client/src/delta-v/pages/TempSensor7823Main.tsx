@@ -189,8 +189,8 @@ if __name__ == "__main__":
   },
 });
 
-const TempSensor4827Main = () => {
-  const activeControllerId = '1540-TI-4827';
+const TempSensor7823Main = () => {
+  const activeControllerId = '1540-TI-7823';
   const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode } = useControllerSync(activeControllerId);
   const { getControllerConfig, getControllerData } = useControllerConfig();
   const { toast } = useToast();
@@ -203,8 +203,8 @@ const TempSensor4827Main = () => {
   
   const [controllerData, setControllerData] = useState<ControllerData>({
     ...defaultControllerData,
-    instrumentTag: savedConfig.TAGNAME || '1540-TI-4827',
-    description: savedConfig.DESC || 'Pass 1 Catalyst Out A',
+    instrumentTag: savedConfig.TAGNAME || '1540-TI-7823',
+    description: savedConfig.DESC || 'SH 1B Outlet Temp.',
     pvUnits: savedConfig.EU || 'F',
     pvRangeMin: savedConfig.SP_LIM_LO ?? 0,
     pvRangeMax: savedConfig.SP_LIM_HI ?? 2000,
@@ -224,13 +224,14 @@ const TempSensor4827Main = () => {
   useEffect(() => {
     const syncConfigFromContext = () => {
       const latestConfig = getControllerConfig(activeControllerId);
+      
       const sanitizedEU = latestConfig.EU ? latestConfig.EU.replace(/°/g, '') : 'F';
       
       setConfig({ ...latestConfig, EU: sanitizedEU });
       setControllerData(prev => ({
         ...prev,
-        instrumentTag: latestConfig.TAGNAME || '1540-TI-4827',
-        description: latestConfig.DESC || 'Pass 1 Catalyst Out A',
+        instrumentTag: latestConfig.TAGNAME || '1540-TI-7823',
+        description: latestConfig.DESC || 'SH 1B Outlet Temp.',
         pvUnits: sanitizedEU,
         pvRangeMin: latestConfig.SP_LIM_LO ?? 0,
         pvRangeMax: latestConfig.SP_LIM_HI ?? 2000,
@@ -310,16 +311,16 @@ const TempSensor4827Main = () => {
   }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, config]);
 
   useEffect(() => {
-    (window as any).updateTempSensor4827ControllerData = (newData: Partial<ControllerData>) => {
+    (window as any).updateTempSensor7823ControllerData = (newData: Partial<ControllerData>) => {
       setControllerData(prev => ({ ...prev, ...newData }));
     };
-    (window as any).updateTempSensor4827SecondaryData = (newData: Partial<SecondaryControllerData>) => {
+    (window as any).updateTempSensor7823SecondaryData = (newData: Partial<SecondaryControllerData>) => {
       setSecondaryData(prev => ({ ...prev, ...newData }));
     };
     
     return () => {
-      delete (window as any).updateTempSensor4827ControllerData;
-      delete (window as any).updateTempSensor4827SecondaryData;
+      delete (window as any).updateTempSensor7823ControllerData;
+      delete (window as any).updateTempSensor7823SecondaryData;
     };
   }, []);
 
@@ -403,7 +404,7 @@ const TempSensor4827Main = () => {
       <div className="relative max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Link
-            to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827"
+            to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-7823"
             className={cn(
               "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
               "text-muted-foreground hover:text-foreground",
@@ -451,7 +452,7 @@ const TempSensor4827Main = () => {
             "text-3xl font-bold mb-3 tracking-tight",
             "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent"
           )}>
-            1540-TI-4827 Pass 1 Catalyst Out A
+            1540-TI-7823 SH 1B Outlet Temp.
           </h1>
           <p className="text-muted-foreground text-sm tracking-wide">
             Temperature Sensor Faceplate (Primary & Secondary)
@@ -471,7 +472,7 @@ const TempSensor4827Main = () => {
             <TempSensorSecondaryFaceplate
               data={secondaryData}
               config={config}
-              sensorId="1540-TI-4827"
+              sensorId="1540-TI-7823"
             />
           </div>
         </div>
@@ -523,4 +524,4 @@ const TempSensor4827Main = () => {
   );
 };
 
-export default TempSensor4827Main;
+export default TempSensor7823Main;

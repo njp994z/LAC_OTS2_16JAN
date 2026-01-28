@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 
-const TempSensor4827Landing = () => {
+const TempSensor4821Landing = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-8">
       <div className="fixed inset-0 opacity-5">
@@ -30,7 +30,7 @@ const TempSensor4827Landing = () => {
             "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent",
           )}
         >
-          1540-TI-4827 Pass 1 Catalyst Out A
+          1540-TI-4821 Pass 1 Temperature
         </h1>
 
         <p className="text-muted-foreground text-lg mb-12 tracking-wide">
@@ -39,13 +39,13 @@ const TempSensor4827Landing = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-main", label: "1540-TI-4827 Temperature Sensor Faceplate" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3d", label: "Faceplate 3D - Control Studio" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3e", label: "Faceplate 3E - Controller Input GUI" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-main", label: "1540-TI-4821 Temperature Sensor Faceplate" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3d", label: "Faceplate 3D - Control Studio" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3e", label: "Faceplate 3E - Controller Input GUI" },
+            { to: "/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
           ].map(({ to, label }) => (
             <Link
               key={to}
@@ -69,4 +69,4 @@ const TempSensor4827Landing = () => {
   );
 };
 
-export default TempSensor4827Landing;
+export default TempSensor4821Landing;

@@ -14,8 +14,8 @@ const ALARM_INFO: Record<string, { name: string; priority: 'critical' | 'warning
   DL: { name: 'Deviation Low', priority: 'warning' },
 };
 
-const TempSensor4827Faceplate3F = () => {
-  const activeControllerId = '1540-TI-4827';
+const TempSensor7823Faceplate3F = () => {
+  const activeControllerId = '1540-TI-7823';
   
   const { state, addAlarmLogEntry, acknowledgeAlarm, acknowledgeAllAlarms, updateAlarmStates } = useControllerSync(activeControllerId);
   const { getControllerConfig } = useControllerConfig();
@@ -42,7 +42,7 @@ const TempSensor4827Faceplate3F = () => {
         
         addAlarmLogEntry({
           timestamp: new Date(),
-          tag: config.TAGNAME || '1540-TI-4827',
+          tag: config.TAGNAME || '1540-TI-7823',
           alarmType: alarmType as 'LL' | 'L' | 'DL' | 'DH' | 'H' | 'HH',
           alarmName: info.name,
           priority: info.priority,
@@ -94,11 +94,11 @@ const TempSensor4827Faceplate3F = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
         <Link
-          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827"
+          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-7823"
           className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
         >
           <ArrowLeft size={18} />
-          <span>Back to 1540-TI-4827 Temperature Sensor</span>
+          <span>Back to 1540-TI-7823 Temperature Sensor</span>
         </Link>
 
         <div className="bg-card/80 backdrop-blur border border-border rounded-lg p-8 max-w-4xl mx-auto">
@@ -236,4 +236,4 @@ const TempSensor4827Faceplate3F = () => {
   );
 };
 
-export default TempSensor4827Faceplate3F;
+export default TempSensor7823Faceplate3F;
