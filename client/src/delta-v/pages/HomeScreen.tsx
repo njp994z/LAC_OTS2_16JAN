@@ -4831,6 +4831,46 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </div>
             </Rnd>
 
+            {/* Jug Valve Hand Controller 1540-H-4282 for L3_1540 Converter */}
+            <Rnd
+              key="jug-valve-hc-61"
+              position={jugValveHandController61Position}
+              size={jugValveHandController61Size}
+              onDragStop={(e, d) => {
+                setJugValveHandController61Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setJugValveHandController61Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setJugValveHandController61Position(position);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLocked61}
+              enableResizing={!isLocked61}
+              className={isLocked61 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+              data-testid="jug-valve-hc-61-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked61 ? 'cursor-pointer' : ''}`}
+                onClick={handleJugValveHandControllerClick}
+                style={{
+                  transform: `scale(${Math.min(jugValveHandController61Size.width / 220, jugValveHandController61Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={jugValveHandControllerData}
+                  isTransparent={true}
+                  controllerId="1540-H-4282"
+                />
+              </div>
+            </Rnd>
+
             {/* Secondary Faceplate Dialog for 1540-TI-4825 */}
             <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61}>
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
