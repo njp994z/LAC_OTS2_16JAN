@@ -23,7 +23,7 @@ import sh4aImg from "@assets/delta-v/process-diagrams/sh4a.png";
 import ec3bImg from "@assets/delta-v/process-diagrams/ec3b.png";
 import sh1bImg from "@assets/delta-v/process-diagrams/sh1b.png";
 import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-filter.png";
-import converter4L4Img from "@assets/image_1769028207381.png";
+import converter4L4Img from "@assets/image_1769565285813.png";
 import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
 import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
@@ -3309,7 +3309,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
               className={isLockedL4 ? "cursor-pointer" : "cursor-move"}
-              style={{ zIndex: 10 }}
+              style={{ zIndex: 1 }}
             >
               <div 
                 className={`w-full h-full ${isLockedL4 ? 'cursor-pointer' : ''}`}
