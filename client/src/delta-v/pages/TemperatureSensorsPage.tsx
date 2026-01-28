@@ -15,12 +15,18 @@ const temperatureSensors = [
   { tag: '1540-TI-4820', description: 'Pass 1 Inlet Duct' },
   { tag: '1540-TI-4825', description: 'Pass 1 Catalyst In A' },
   { tag: '1540-TI-4827', description: 'Pass 1 Catalyst Out A' },
+  { tag: '1540-TI-4826', description: 'Pass 1 Catalyst Temp. Top B' },
+  { tag: '1540-TI-4828', description: 'Pass 1 Catalyst Temp. Bottom B' },
+  { tag: '1540-TI-7821', description: 'SH 1B Inlet Temp' },
+  { tag: '1540-TI-7823', description: 'SH 1B Outlet Temp.' },
   { tag: '1540-TI-4840', description: 'Pass 2 Catalyst In' },
   { tag: '1540-TI-4841', description: 'Pass 2 Catalyst Out' },
   { tag: '1540-TI-4842', description: 'Pass 3 Catalyst In' },
   { tag: '1540-TI-4843', description: 'Pass 3 Catalyst Out' },
+  { tag: '1540-TI-5231', description: 'Pass 3 Duct Outlet Temp.' },
   { tag: '1540-TI-4844', description: 'Pass 4 Catalyst In' },
   { tag: '1540-TI-4845', description: 'Pass 4 Catalyst Out' },
+  { tag: '1540-TI-7225', description: 'Pass 4 Outlet Temp.' },
 ];
 
 const TemperatureSensorsPage = () => {
