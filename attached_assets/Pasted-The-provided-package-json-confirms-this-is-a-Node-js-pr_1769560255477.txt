@@ -1,0 +1,77 @@
+The provided `package.json` confirms this is a **Node.js** project using **TypeScript** (evident from `.ts` files and tools like `tsx`, `esbuild`, and `tsc`). The entry point is `server/index.ts` (or possibly just `index.ts` in the `server/` directory), as indicated by the scripts:
+
+- `"dev": "NODE_ENV=development tsx server/index.ts"`
+- `"start": "NODE_ENV=production node dist/index.js"`
+- `"build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist"`
+
+This setup combines **Vite** (likely for frontend bundling) with an **Express**-style backend (common in such hybrids, especially given the custom login page and authentication flow via `exp.`). The 401 "Invalid email or password" error on the published deployment—but not in preview—almost always results from the deployed app running behind Replit's reverse proxy/load balancer. This proxy forwards requests with headers like `X-Forwarded-For`, `X-Forwarded-Proto`, and `X-Forwarded-Host`, which Express does not trust by default. As a result:
+
+- `req.protocol` may incorrectly resolve to `http` instead of `https`.
+- `req.hostname` or `req.get('host')` may show an internal address.
+- Session cookies (if using `express-session` or similar) may fail to set or validate as secure.
+- Authentication middleware (e.g., passport, JWT validation, or custom checks) may reject requests due to origin/host mismatches, CSRF failures, or incorrect redirect/URL construction.
+
+Replit's proxy configuration requires trusting exactly one hop for these headers to be honored correctly.
+
+### Recommended Fix
+1. **Locate the Express app initialization**:
+   - Open the file `server/index.ts` (or `index.ts` if not in a `server/` subfolder).
+   - Search for lines creating the Express application, such as:
+     ```ts
+     import express from 'express';
+     const app = express();
+     ```
+     or similar (possibly `const server = express();`).
+
+2. **Add the trust proxy setting**:
+   Insert this line **immediately after** the app is created, before any middleware (e.g., `app.use(...)`), routes, or auth handlers:
+   ```ts
+   app.set('trust proxy', 1);  // Trusts the first proxy (Replit's infrastructure)
+   ```
+
+   - If the project uses TypeScript strict mode and complains about types, ensure `@types/express` is installed (it likely is, given your dependencies). The setting is still valid.
+
+   Example placement:
+   ```ts
+   import express from 'express';
+   const app = express();
+
+   app.set('trust proxy', 1);
+
+   // ... existing middleware, e.g.:
+   app.use(express.json());
+   // ... auth routes, session setup, etc.
+   ```
+
+3. **Save and redeploy**:
+   - Save the file.
+   - In the Replit interface, click **Republish** (or use the Publishing tab to trigger a new deployment).
+   - Clear browser cache or test in an incognito window.
+
+4. **Test login**:
+   - Use credentials from your database inserts, e.g.:
+     - Email: `nathan.porter@exp.com`
+     - Password: `TempPassword$1`
+   - Monitor the deployment console/logs during the attempt for any remaining errors (e.g., related to sessions, CORS, or auth validation).
+
+### Why This Resolves the Issue
+Replit deployments proxy all traffic through their infrastructure. Without `trust proxy`, Express ignores `X-Forwarded-*` headers, leading to security checks failing (e.g., secure cookies not sent over perceived HTTP, mismatched hosts in session validation, or auth flows redirecting incorrectly). Setting it to `1` tells Express to trust the immediate proxy and use forwarded values—precisely what is needed here. This fix appears consistently in Replit-specific cases with identical symptoms (works in preview, 401 on deployed URL).
+
+### Additional Checks If the Issue Persists
+- **Session/cookie configuration**: If using `express-session`, ensure `secure: true` is set only in production or use a conditional:
+  ```ts
+  app.use(session({
+    // ...
+    secure: process.env.NODE_ENV === 'production',  // or rely on req.secure after trust proxy
+    sameSite: 'lax',
+  }));
+  ```
+- **CORS**: If frontend fetches to backend, add or adjust CORS middleware to allow the deployed origin (`https://your-repl-name.your-username.repl.co`).
+- **Auth specifics**: If auth uses absolute URLs (e.g., for callbacks), ensure they use relative paths or derive from `req.headers.host` + protocol.
+- **Logs**: Check deployment logs for clues like "host mismatch", "invalid origin", or session errors.
+
+If this does not resolve it after redeployment, please provide:
+- A redacted snippet from `server/index.ts` showing the Express setup and any authentication middleware/routes.
+- Any new console errors during a failed login attempt.
+
+This should restore authentication on the published application.
