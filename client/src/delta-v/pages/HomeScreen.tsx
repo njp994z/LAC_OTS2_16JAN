@@ -3350,7 +3350,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div className="flex flex-col items-center gap-1 w-full h-full" data-testid="faceplate-4825-l4-container">
+              <div 
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
+                data-testid="faceplate-4825-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
+              >
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
                 <TempSensorPrimaryFaceplate 
                   data={{
@@ -3364,7 +3368,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
-                  onSelect={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
                 />
               </div>
             </Rnd>
