@@ -3552,6 +3552,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </div>
               </Rnd>
             ))}
+
+            {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
+            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4825 Pass 1 Catalyst Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4825SecondaryData}
+                  config={tempSensor4825SecondaryConfig}
+                  sensorId="1540-TI-4825"
+                  onClose={() => setShowSecondaryConverter4L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
@@ -4895,20 +4910,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </DialogContent>
             </Dialog>
 
-            {/* Secondary Faceplate Dialog for Converter 4 L4 (using Pass 1 Catalyst sensor) */}
-            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
-              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-                <VisuallyHidden>
-                  <DialogTitle>Converter 4 - 1540-TI-4825 Secondary Faceplate</DialogTitle>
-                </VisuallyHidden>
-                <TempSensorSecondaryFaceplate
-                  data={tempSensor4825SecondaryData}
-                  config={tempSensor4825SecondaryConfig}
-                  sensorId="1540-TI-4825"
-                  onClose={() => setShowSecondaryConverter4L4(false)}
-                />
-              </DialogContent>
-            </Dialog>
           </div>
         )}
 
