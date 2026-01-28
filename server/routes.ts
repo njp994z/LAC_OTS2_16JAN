@@ -147,12 +147,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      
+      // Diagnostic logging for production debugging
+      console.log('Login attempt - protocol:', req.protocol, 'secure:', req.secure, 'host:', req.hostname);
+      console.log('Session exists:', !!req.session, 'sessionID:', req.sessionID);
 
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
       const user = await storage.getUserByEmail(email);
+      console.log('User lookup result:', user ? 'found' : 'not found', 'for email:', email);
       if (!user) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
