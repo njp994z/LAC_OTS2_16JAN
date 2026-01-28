@@ -3378,6 +3378,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  isTransparent={tempSensor4825Config.TRANSPARENT_BG ?? false}
                 />
               </div>
             </Rnd>
@@ -4891,6 +4892,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  isTransparent={tempSensor4825Config.TRANSPARENT_BG ?? false}
                 />
               </div>
             </Rnd>
