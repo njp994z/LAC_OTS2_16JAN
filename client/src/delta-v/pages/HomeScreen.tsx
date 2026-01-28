@@ -3364,6 +3364,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  onSelect={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
                 />
               </div>
             </Rnd>
