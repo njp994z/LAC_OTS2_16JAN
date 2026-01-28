@@ -869,9 +869,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
   // L4 Converter 4: Secondary faceplate dialog visibility when clicking on converter image
   const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] = useState(false);
-  // 6.1 L3_1540 Converter: Jug Valve Hand Controller 1540-H-4282 position/size
-  const [jugValveHandController61Position, setJugValveHandController61Position] = useState({ x: 1100, y: 400 });
-  const [jugValveHandController61Size, setJugValveHandController61Size] = useState({ width: 220, height: 200 });
+  // L4-Converter: Jug Valve Hand Controller 1540-H-4282 position/size
+  const [jugValveHandControllerL4Position, setJugValveHandControllerL4Position] = useState({ x: 1100, y: 400 });
+  const [jugValveHandControllerL4Size, setJugValveHandControllerL4Size] = useState({ width: 220, height: 200 });
 
   // New states for dynamic sizing support
   const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
@@ -1976,6 +1976,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setFaceplate4825L4Size({ width: faceplate4825L4.width, height: faceplate4825L4.height });
     }
 
+    const jugValveHcL4 = positionMap.get('jug_valve_hc_l4');
+    if (jugValveHcL4) {
+      setJugValveHandControllerL4Position({ x: jugValveHcL4.x, y: jugValveHcL4.y });
+      setJugValveHandControllerL4Size({ width: jugValveHcL4.width, height: jugValveHcL4.height });
+    }
+
     // Restore vertical arrows for L4-Converter
     const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
     layoutDataL4.layouts.forEach((item) => {
@@ -2549,6 +2555,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       const layouts = [
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
         { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
+        { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -3371,6 +3378,48 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                />
+              </div>
+            </Rnd>
+
+            {/* Jug Valve Hand Controller 1540-H-4282 for L4-Converter */}
+            <Rnd
+              key="jug-valve-hc-l4"
+              position={jugValveHandControllerL4Position}
+              size={jugValveHandControllerL4Size}
+              onDragStop={(e, d) => {
+                setJugValveHandControllerL4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setJugValveHandControllerL4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setJugValveHandControllerL4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+              data-testid="jug-valve-hc-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handleJugValveHandControllerClick}
+                style={{
+                  transform: `scale(${Math.min(jugValveHandControllerL4Size.width / 220, jugValveHandControllerL4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={jugValveHandControllerData}
+                  isTransparent={true}
+                  controllerId="1540-H-4282"
                 />
               </div>
             </Rnd>
@@ -4827,46 +4876,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
-                />
-              </div>
-            </Rnd>
-
-            {/* Jug Valve Hand Controller 1540-H-4282 for L3_1540 Converter */}
-            <Rnd
-              key="jug-valve-hc-61"
-              position={jugValveHandController61Position}
-              size={jugValveHandController61Size}
-              onDragStop={(e, d) => {
-                setJugValveHandController61Position({ x: d.x, y: d.y });
-              }}
-              onResizeStop={(e, dir, ref, delta, position) => {
-                setJugValveHandController61Size({
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
-                });
-                setJugValveHandController61Position(position);
-              }}
-              minWidth={100}
-              minHeight={90}
-              bounds="parent"
-              disableDragging={isLocked61}
-              enableResizing={!isLocked61}
-              className={isLocked61 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
-              data-testid="jug-valve-hc-61-rnd"
-            >
-              <div 
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked61 ? 'cursor-pointer' : ''}`}
-                onClick={handleJugValveHandControllerClick}
-                style={{
-                  transform: `scale(${Math.min(jugValveHandController61Size.width / 220, jugValveHandController61Size.height / 200)})`,
-                  transformOrigin: 'center center'
-                }}
-              >
-                <ControllerFaceplate 
-                  data={jugValveHandControllerData}
-                  isTransparent={true}
-                  controllerId="1540-H-4282"
                 />
               </div>
             </Rnd>
