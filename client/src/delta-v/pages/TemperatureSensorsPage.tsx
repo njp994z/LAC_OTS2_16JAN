@@ -13,6 +13,7 @@ const temperatureSensors = [
   { tag: '1520-TI-5821', description: 'DT Gas Out' },
   { tag: '1520-TI-5820', description: 'DT Acid Temp Out' },
   { tag: '1540-TI-4820', description: 'Pass 1 Inlet Duct' },
+  { tag: '1540-TI-4821', description: 'Pass 1 Inlet Temp.' },
   { tag: '1540-TI-4825', description: 'Pass 1 Catalyst In A' },
   { tag: '1540-TI-4827', description: 'Pass 1 Catalyst Out A' },
   { tag: '1540-TI-4826', description: 'Pass 1 Catalyst Temp. Top B' },
