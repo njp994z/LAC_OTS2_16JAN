@@ -32,7 +32,10 @@ export const TempSensorPrimaryFaceplate = ({
 
   return (
     <div 
-      className="faceplate-container p-1 cursor-pointer select-none transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-faceplate-border/20 w-fit min-w-[160px] ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6),0_0_40px_rgba(250,204,21,0.3)] border-yellow-400"
+      className={cn(
+        isTransparent ? "faceplate-container-transparent" : "faceplate-container",
+        "p-1 cursor-pointer select-none transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-faceplate-border/20 w-fit min-w-[160px] ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6),0_0_40px_rgba(250,204,21,0.3)] border-yellow-400"
+      )}
       onClick={onSelect}
     >
       {/* Instrument Tag Header */}
