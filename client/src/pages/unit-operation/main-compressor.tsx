@@ -1,5 +1,5 @@
-import { Link } from "wouter";
-import { useState, useEffect } from "react";
+import { Link, useSearch } from "wouter";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,14 +57,20 @@ interface StreamData {
 
 export default function MainCompressor() {
   const { toast } = useToast();
+  const searchString = useSearch();
   const [simulationMode, setSimulationMode] = useState<SimulationMode>("static");
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [plantCondition, setPlantCondition] = useState<"clean" | "dirty">("clean");
   const [realtimeBarometric, setRealtimeBarometric] = useState<string>("no");
   const [isLoadingBarometric, setIsLoadingBarometric] = useState(false);
+  const autorunExecutedRef = useRef(false);
+
+  const urlParams = new URLSearchParams(searchString);
+  const urlRpmPercent = urlParams.get('rpmPercent');
+  const autorun = urlParams.get('autorun') === 'true';
 
   const [inputParams, setInputParams] = useState<InputParams>({
-    rpmPercent: "88",
+    rpmPercent: urlRpmPercent || "88",
     temp: "150",
     barometricPressure: "0.85",
     inletPressure: "-3"
@@ -218,6 +224,13 @@ export default function MainCompressor() {
       fetchRealtimeBarometric();
     }
   }, [realtimeBarometric]);
+
+  useEffect(() => {
+    if (autorun && !autorunExecutedRef.current && urlRpmPercent) {
+      autorunExecutedRef.current = true;
+      runSimulation();
+    }
+  }, [autorun, urlRpmPercent]);
 
   return (
     <div className="min-h-screen bg-background" data-testid="page-main-compressor">
