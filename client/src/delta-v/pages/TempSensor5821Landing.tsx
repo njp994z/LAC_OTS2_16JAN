@@ -17,7 +17,7 @@ const TempSensor5821Landing = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/temperature-sensors"
+          href="/temperature-sensors"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -39,17 +39,17 @@ const TempSensor5821Landing = () => {
 
         <div className="flex flex-col gap-4 items-center">
           {[
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-main", label: "1520-TI-5821 Temperature Sensor Faceplate" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3d", label: "Faceplate 3D - Control Studio" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3e", label: "Faceplate 3E - Controller Input GUI" },
-            { to: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
-          ].map(({ to, label }) => (
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-main", label: "1520-TI-5821 Temperature Sensor Faceplate" },
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3a", label: "Faceplate 3A - PID Simulation" },
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3b", label: "Faceplate 3B - Parameter Tracking" },
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3c", label: "Faceplate 3C - Trend/Live Data" },
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3d", label: "Faceplate 3D - Control Studio" },
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3e", label: "Faceplate 3E - Controller Input GUI" },
+            { href: "/settings/controller-outputs/faceplates/temp-sensor-5821-faceplate-3f", label: "Faceplate 3F - Acknowledge Alarm" },
+          ].map(({ href, label }) => (
             <Link
-              key={to}
-              to={to}
+              key={href}
+              href={href}
               className={cn(
                 "group inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300",
                 "bg-gradient-to-br from-primary/20 to-cyan-600/10",
