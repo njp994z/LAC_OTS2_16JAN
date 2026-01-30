@@ -24,18 +24,29 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
+    errorLog: (err: Error) => {
+      console.error('[SESSION STORE] PostgreSQL session store error:', err);
+    },
   });
+  
+  // Log session store initialization
+  console.log('[SESSION] Initializing session store - production:', isProduction);
+  console.log('[SESSION] Database URL configured:', !!process.env.DATABASE_URL);
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
       secure: 'auto',
