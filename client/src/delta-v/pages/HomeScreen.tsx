@@ -45,6 +45,8 @@ import cyanVertLine1Img from "@assets/image_1769467433951.png";
 import cyanVertLine2Img from "@assets/image_1769467436693.png";
 import blackVertLineImg from "@assets/image_1769482798195.png";
 import acidBoilerImg from "@assets/image_1769495696418.png";
+import acidTower1Img from "@assets/l2-1520-acid-tower-1.png";
+import acidTower2Img from "@assets/l2-1520-acid-tower-2.png";
 import {
   Menubar,
   MenubarContent,
@@ -739,6 +741,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2_1520 ACID: Acid Boiler position and size
   const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
   const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
+  // L2_1520 ACID: Acid Tower 1 position and size
+  const [acidTower1Position, setAcidTower1Position] = useState({ x: 1200, y: 50 });
+  const [acidTower1Size, setAcidTower1Size] = useState({ width: 800, height: 400 });
+  // L2_1520 ACID: Acid Tower 2 position and size
+  const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
+  const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
   const [isLockedL21520, setIsLockedL21520] = useState(true);
 
   // Open PV Case dialog state
@@ -6174,6 +6182,74 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-acid-boiler-l2-1520"
+              />
+            </Rnd>
+
+            {/* Acid Tower 1 Equipment Image */}
+            <Rnd
+              key="acid-tower-1-l2-1520"
+              data-testid="rnd-acid-tower-1-l2-1520"
+              position={acidTower1Position}
+              size={acidTower1Size}
+              onDragStop={(e, d) => {
+                setAcidTower1Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidTower1Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidTower1Position(position);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidTower1Img} 
+                alt="Acid Tower 1" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-tower-1-l2-1520"
+              />
+            </Rnd>
+
+            {/* Acid Tower 2 Equipment Image */}
+            <Rnd
+              key="acid-tower-2-l2-1520"
+              data-testid="rnd-acid-tower-2-l2-1520"
+              position={acidTower2Position}
+              size={acidTower2Size}
+              onDragStop={(e, d) => {
+                setAcidTower2Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidTower2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidTower2Position(position);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidTower2Img} 
+                alt="Acid Tower 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-tower-2-l2-1520"
               />
             </Rnd>
           </div>
