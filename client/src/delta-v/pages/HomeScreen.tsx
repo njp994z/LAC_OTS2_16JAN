@@ -146,9 +146,9 @@ const toolbarItems = [
 
 const homescreenOptions = [
   { id: "L1", label: "L1 – System Overview" },
-  { id: "L2", label: "L2 – Furnace Area" },
+  { id: "L2", label: "L2 – Furnace Area", isReady: true },
   { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4-Converter" },
+  { id: "L4", label: "L4-Converter", isReady: true },
   // L2_1500 SULFUR UTILITY
   { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
   { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
@@ -162,7 +162,7 @@ const homescreenOptions = [
   { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
   { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
   // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
+  { id: "L2_1520_ACID", label: "L2_1520 ACID", isReady: true },
   { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
   { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
   { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
@@ -3058,7 +3058,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <DropdownMenuItem 
                   key={option.id}
                   onClick={() => setSelectedScreen(option.label)}
-                  className={`text-gray-800 bg-white ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
+                  className={`${option.isReady ? "bg-teal-100 text-teal-800 border-l-2 border-teal-500" : "text-gray-800 bg-white"} ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-view-option-${option.id}`}
                 >
                   {option.label}
