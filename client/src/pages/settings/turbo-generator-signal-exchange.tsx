@@ -325,7 +325,7 @@ export default function TurboGeneratorSignalExchange() {
 
             <div className="flex items-center justify-between px-4 py-3 border-t gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Rows per page:</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
                   <SelectTrigger className="w-20" data-testid="select-pagesize">
                     <SelectValue />
