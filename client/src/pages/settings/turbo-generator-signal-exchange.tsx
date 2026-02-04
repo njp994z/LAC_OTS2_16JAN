@@ -34,7 +34,7 @@ interface STGSignal {
   modbusType: string | null;
 }
 
-type SortField = 'customerTag' | 'signalName' | 'designation' | 'subSystem' | 'signalType' | 'modbusRegister';
+type SortField = 'customerTag' | 'projectKKS' | 'signalName' | 'designation' | 'subSystem' | 'signalType' | 'modbusRegister';
 type SortDirection = 'asc' | 'desc';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
@@ -137,9 +137,10 @@ export default function TurboGeneratorSignalExchange() {
   );
 
   const exportToCSV = () => {
-    const headers = ['Customer Tag', 'Signal Name', 'Designation', 'Signal Setting', 'Sub System', 'Signal Type', 'Range Low', 'Range High', 'Unit', 'DCS Type', 'Modbus Register'];
+    const headers = ['Customer Tag', 'Siemens Tag', 'Signal Name', 'Designation', 'Signal Setting', 'Sub System', 'Signal Type', 'Range Low', 'Range High', 'Unit', 'DCS Type', 'Modbus Register'];
     const rows = filteredSignals.map(s => [
       s.customerTag || '',
+      s.projectKKS || '',
       s.signalName || '',
       s.designation || '',
       s.signalSetting || '',
@@ -263,6 +264,7 @@ export default function TurboGeneratorSignalExchange() {
                 <TableHeader>
                   <TableRow>
                     <SortableHeader field="customerTag">Tag</SortableHeader>
+                    <SortableHeader field="projectKKS">Siemens Tag</SortableHeader>
                     <SortableHeader field="signalName">Signal</SortableHeader>
                     <SortableHeader field="designation">Designation</SortableHeader>
                     <TableHead>Setting</TableHead>
@@ -275,7 +277,7 @@ export default function TurboGeneratorSignalExchange() {
                 <TableBody>
                   {paginatedSignals.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         No signals found matching your filters
                       </TableCell>
                     </TableRow>
@@ -283,6 +285,7 @@ export default function TurboGeneratorSignalExchange() {
                     paginatedSignals.map((signal) => (
                       <TableRow key={signal.id} className="hover:bg-muted/50">
                         <TableCell className="font-mono text-sm">{signal.customerTag}</TableCell>
+                        <TableCell className="font-mono text-sm">{signal.projectKKS}</TableCell>
                         <TableCell className="font-mono text-sm">{signal.signalName}</TableCell>
                         <TableCell className="max-w-[200px] truncate" title={signal.designation || ''}>
                           {signal.designation}
