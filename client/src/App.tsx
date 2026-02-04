@@ -296,6 +296,7 @@ import SpreadsheetLogic from "@/pages/settings/interlock-logic/spreadsheet-logic
 import ControllerTuning from "@/pages/settings/controller-tuning";
 import UnitOperationsSettings from "@/pages/settings/unit-operations";
 import RunHistorian from "@/pages/settings/run-historian";
+import TurboGeneratorSignalExchange from "@/pages/settings/turbo-generator-signal-exchange";
 import ControllerOutputs from "@/pages/settings/controller-outputs";
 import PvOutputMessages from "@/pages/settings/controller-outputs/pv-output-messages";
 import ValveStatus from "@/pages/settings/controller-outputs/valve-status";
@@ -388,6 +389,7 @@ function Router() {
       <Route path="/sulfuric-acid-technology-deep-dive" component={SulfuricAcidTechnologyDeepDive} />
       <Route path="/ots-instructions-videos" component={OTSInstructionsVideos} />
       <Route path="/simulation-settings" component={SimulationSettings} />
+      <Route path="/settings/turbo-generator" component={TurboGeneratorSignalExchange} />
       <Route path="/settings/economics-costs" component={EconomicsCosts} />
       <Route path="/settings/input-variables" component={InputVariables} />
       <Route path="/settings/chemical-properties/pure-component" component={PureComponent} />
