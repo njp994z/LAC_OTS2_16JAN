@@ -7,3 +7,4 @@ vite.config.ts.*
 download.zip
 .replit
 ecosystem.config.cjs
+.env
