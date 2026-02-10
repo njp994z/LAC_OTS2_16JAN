@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
@@ -14,23 +15,23 @@ app.use(getSession());
 const isDevelopment = app.get("env") === "development";
 
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
       scriptSrc: ["'self'", ...(isDevelopment ? ["'unsafe-inline'", "'unsafe-eval'"] : [])],
       styleSrc: ["'self'", ...(isDevelopment ? ["'unsafe-inline'"] : []), "https://fonts.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "wss:", "ws:"],
-      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "wss:", "ws:"],
+        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
     },
-  },
-  frameguard: {
+    frameguard: {
     action: "deny"
-  },
-  crossOriginEmbedderPolicy: false,
+    },
+    crossOriginEmbedderPolicy: false,
 }));
 
 app.use((req, res, next) => {
@@ -89,10 +90,10 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
+      port,
+      host: "0.0.0.0",
+    // reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+      log(`serving on port ${port}`);
   });
 })();
