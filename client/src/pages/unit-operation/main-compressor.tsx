@@ -237,7 +237,7 @@ export default function MainCompressor() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/deltav" data-testid="link-back">
+            <Link href="/unit-operation-simulator" data-testid="link-back">
               <Button variant="ghost" size="icon" data-testid="button-back">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
