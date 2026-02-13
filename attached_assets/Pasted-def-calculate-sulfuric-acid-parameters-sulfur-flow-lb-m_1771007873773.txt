@@ -1,0 +1,83 @@
+def calculate_sulfuric_acid_parameters(sulfur_flow_lb_min, mol_so2_to_scrub, mol_so3_to_scrub, mol_o2_to_scrub, mol_n2_to_scrub):
+    """
+    Calculates key parameters for a sulfuric acid plant based on given inputs.
+    
+    Parameters:
+    - sulfur_flow_lb_min: Mass flow of sulfur in lb/min.
+    - mol_so2_to_scrub: Molar flow of SO2 to scrubber in lb-mol/min.
+    - mol_so3_to_scrub: Molar flow of SO3 to scrubber in lb-mol/min.
+    - mol_o2_to_scrub: Molar flow of O2 to scrubber in lb-mol/min.
+    - mol_n2_to_scrub: Molar flow of N2 to scrubber in lb-mol/min.
+    
+    Returns:
+    A dictionary containing the calculated key parameters.
+    """
+    import math
+    
+    # Constants
+    MW_S = 32.0  # Molecular weight of S
+    MW_SO2 = 64.0  # Molecular weight of SO2
+    MW_H2SO4 = 98.0  # Molecular weight of H2SO4
+    MINUTES_PER_DAY = 1440
+    LB_PER_SHORT_TON = 2000
+    STEAM_GEN_RATE = 1.3  # Tons steam / Ton acid
+    POWER_FACTOR = 192.6  # KW per ST/hr steam
+    SCRUBBER_SO2_REMOVAL = 0.97  # 97% removal
+    
+    # Calculate molar flow of sulfur input (lb-mol/min)
+    mol_s_min = sulfur_flow_lb_min / MW_S
+    
+    # Calculate SO2 conversion (%)
+    so2_conversion = (1 - mol_so2_to_scrub / mol_s_min) * 100
+    
+    # Calculate molar flow of acid produced (lb-mol/min)
+    mol_acid_min = mol_s_min - mol_so2_to_scrub - mol_so3_to_scrub
+    
+    # Plant rate in STPD (short tons per day of 100% H2SO4)
+    lb_acid_day = mol_acid_min * MW_H2SO4 * MINUTES_PER_DAY
+    plant_rate_stpd = lb_acid_day / LB_PER_SHORT_TON
+    
+    # Calculate total molar flow to scrubber (lb-mol/min)
+    total_mol_to_scrub = mol_so2_to_scrub + mol_so3_to_scrub + mol_o2_to_scrub + mol_n2_to_scrub
+    
+    # Calculate O2 consumed
+    o2_consumed = 1.5 * mol_s_min - 0.5 * mol_so2_to_scrub
+    
+    # Calculate initial O2 and air
+    o2_initial = mol_o2_to_scrub + o2_consumed
+    mol_air = o2_initial / 0.21
+    
+    # Pass 1 Strength: % SO2 (volume %)
+    pass1_strength = (mol_s_min / mol_air) * 100
+    
+    # Emissions: lb SO2 / STPD acid
+    emitted_mol_so2_min = (1 - SCRUBBER_SO2_REMOVAL) * mol_so2_to_scrub
+    lb_so2_day = emitted_mol_so2_min * MW_SO2 * MINUTES_PER_DAY
+    emissions_lb_stpd = lb_so2_day / plant_rate_stpd if plant_rate_stpd > 0 else 0
+    
+    # Scrubber emissions: ppmv SO2 (approximating total mol gas unchanged)
+    scrubber_emissions_ppmv = (emitted_mol_so2_min / total_mol_to_scrub) * 1e6
+    
+    # Steam generation: ST/ST (given as fixed)
+    steam_gen_st_st = STEAM_GEN_RATE
+    
+    # Gross power generation: MW
+    acid_st_per_hour = plant_rate_stpd / 24
+    steam_st_per_hour = STEAM_GEN_RATE * acid_st_per_hour
+    gross_power_kw = POWER_FACTOR * steam_st_per_hour
+    gross_power_mw = gross_power_kw / 1000
+    
+    # Return results as dictionary
+    return {
+        'Plant Rate (STPD)': round(plant_rate_stpd, 0),
+        'Pass 1 Strength (% SO2)': round(pass1_strength, 1),
+        'SO2 Conversion (%)': round(so2_conversion, 1),
+        'Emissions (lb / STPD)': round(emissions_lb_stpd, 0),
+        'Scrubber Emissions (ppmv)': round(scrubber_emissions_ppmv, 0),
+        'Steam Gen. (ST/ST)': round(steam_gen_st_st, 2),
+        'Gross Power Gen. (MW)': round(gross_power_mw, 3)
+    }
+
+# Example usage (replace with actual values)
+# parameters = calculate_sulfuric_acid_parameters(100.0, 0.5, 0.1, 10.0, 40.0)
+# print(parameters)
