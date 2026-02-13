@@ -9,10 +9,9 @@ import expLogo from "@/assets/exp-logo.png";
 
 interface Inputs {
   sulfurFlow: string;
-  molSO2: string;
-  molSO3: string;
-  molO2: string;
-  molN2: string;
+  molSO2TailHr: string;
+  molSO3TailHr: string;
+  molN2TailHr: string;
 }
 
 interface Results {
@@ -20,7 +19,6 @@ interface Results {
   compPass1: number;
   conversion: number;
   emissions: number;
-  scrubberEmissionsPpmv: number;
   steamGen: number;
   grossPowerMW: number;
   powerFactor: number;
@@ -28,62 +26,56 @@ interface Results {
 
 const defaultInputs: Inputs = {
   sulfurFlow: "1128",
-  molSO2: "0.28",
-  molSO3: "0",
-  molO2: "127.15",
-  molN2: "3100.28",
+  molSO2TailHr: "3.01",
+  molSO3TailHr: "0",
+  molN2TailHr: "14506.68",
 };
 
 const MW_S = 32.065;
 const MW_SO2 = 64.064;
 const MW_H2SO4 = 98.079;
-const MINUTES_PER_DAY = 1440;
-const LB_PER_SHORT_TON = 2000;
-const STEAM_PER_ACID = 1.3;
-const POWER_KW_PER_STPH = 243.0;
+const HR_PER_DAY = 24;
+const MIN_PER_HR = 60;
+const LB_PER_ST = 2000;
+const STEAM_T_ST = 1.3;
+const KW_PER_STPH = 243.0;
 
 function calculateParameters(
-  sulfurFlowLbMin: number,
-  molSO2ToScrub: number,
-  molSO3ToScrub: number,
-  molO2ToScrub: number,
-  molN2ToScrub: number
+  sulfurLbPerMin: number,
+  molSO2TailHr: number,
+  molSO3TailHr: number,
+  molN2TailHr: number
 ): Results {
-  const molSulfurMin = sulfurFlowLbMin / MW_S;
+  const molSMin = sulfurLbPerMin / MW_S;
+  const molSHr = molSMin * MIN_PER_HR;
 
-  const molAcidMin = molSulfurMin - molSO2ToScrub - molSO3ToScrub;
-  const lbAcidDay = molAcidMin * MW_H2SO4 * MINUTES_PER_DAY;
-  const plantRate = lbAcidDay / LB_PER_SHORT_TON;
+  const molAcidHr = molSHr - molSO2TailHr - molSO3TailHr;
+  const lbAcidDay = molAcidHr * MW_H2SO4 * HR_PER_DAY;
+  const plantRate = lbAcidDay / LB_PER_ST;
 
-  const conversion = molSulfurMin > 0 ? (molAcidMin / molSulfurMin) * 100 : 0;
+  const conversion = molSHr > 0 ? (molAcidHr / molSHr) * 100 : 0;
 
-  const molSO2Absorbed = molSulfurMin - molSO2ToScrub;
-  const o2Consumed = 0.5 * molSO2Absorbed + 1.0 * molSO3ToScrub;
-  const molO2Inlet = molO2ToScrub + o2Consumed;
-  const molAirInlet = molO2Inlet / 0.21;
-  const compPass1 = molAirInlet > 0 ? (molSulfurMin / molAirInlet) * 100 : 0;
+  const dryAirMolHr = molN2TailHr / 0.7905;
+  const compPass1 = dryAirMolHr > 0 ? (molSHr / dryAirMolHr) * 100 : 0;
 
-  const totalMolTail = molSO2ToScrub + molSO3ToScrub + molO2ToScrub + molN2ToScrub;
-  const lbSO2Day = molSO2ToScrub * MW_SO2 * MINUTES_PER_DAY;
+  const lbSO2Day = molSO2TailHr * MW_SO2 * HR_PER_DAY;
   const emissions = plantRate > 0 ? lbSO2Day / plantRate : 0;
-  const scrubberEmissionsPpmv = totalMolTail > 0 ? (molSO2ToScrub / totalMolTail) * 1e6 : 0;
 
-  const steamGen = STEAM_PER_ACID * plantRate;
+  const steamGen = STEAM_T_ST * plantRate;
 
-  const acidStPerHour = plantRate / 24.0;
-  const steamStPerHour = STEAM_PER_ACID * acidStPerHour;
-  const grossPowerKW = POWER_KW_PER_STPH * steamStPerHour;
-  const grossPowerMW = grossPowerKW / 1000.0;
+  const acidStph = plantRate / 24.0;
+  const steamStph = STEAM_T_ST * acidStph;
+  const powerKW = KW_PER_STPH * steamStph;
+  const powerMW = powerKW / 1000.0;
 
   return {
     plantRate: Math.round(plantRate),
     compPass1: Math.round(compPass1 * 100) / 100,
     conversion: Math.round(conversion * 10000) / 10000,
     emissions: Math.round(emissions * 10) / 10,
-    scrubberEmissionsPpmv: Math.round(scrubberEmissionsPpmv * 10) / 10,
     steamGen: Math.round(steamGen),
-    grossPowerMW: Math.round(grossPowerMW * 100) / 100,
-    powerFactor: POWER_KW_PER_STPH,
+    grossPowerMW: Math.round(powerMW * 100) / 100,
+    powerFactor: KW_PER_STPH,
   };
 }
 
@@ -129,12 +121,11 @@ export default function KeyPerformanceParameters() {
     try {
       setError(null);
       const sulfurFlow = parseFloat(inputs.sulfurFlow);
-      const molSO2 = parseFloat(inputs.molSO2);
-      const molSO3 = parseFloat(inputs.molSO3);
-      const molO2 = parseFloat(inputs.molO2);
-      const molN2 = parseFloat(inputs.molN2);
+      const molSO2 = parseFloat(inputs.molSO2TailHr);
+      const molSO3 = parseFloat(inputs.molSO3TailHr);
+      const molN2 = parseFloat(inputs.molN2TailHr);
 
-      if ([sulfurFlow, molSO2, molSO3, molO2, molN2].some(isNaN)) {
+      if ([sulfurFlow, molSO2, molSO3, molN2].some(isNaN)) {
         setError("Please enter valid numerical values for all fields.");
         return;
       }
@@ -143,7 +134,7 @@ export default function KeyPerformanceParameters() {
         return;
       }
 
-      setResults(calculateParameters(sulfurFlow, molSO2, molSO3, molO2, molN2));
+      setResults(calculateParameters(sulfurFlow, molSO2, molSO3, molN2));
     } catch (ex: any) {
       setError(ex.message || "Calculation error");
     }
@@ -192,10 +183,9 @@ export default function KeyPerformanceParameters() {
             </CardHeader>
             <CardContent className="px-5 pb-5 space-y-3">
               <InputField label="Sulfur Flow" value={inputs.sulfurFlow} onChange={(v) => update("sulfurFlow", v)} unit="lb/min" testId="input-sulfur-flow" />
-              <InputField label="Mol SO₂ to Scrubber" value={inputs.molSO2} onChange={(v) => update("molSO2", v)} unit="lb-mol/min" testId="input-mol-so2" />
-              <InputField label="Mol SO₃ to Scrubber" value={inputs.molSO3} onChange={(v) => update("molSO3", v)} unit="lb-mol/min" testId="input-mol-so3" />
-              <InputField label="Mol O₂ to Scrubber" value={inputs.molO2} onChange={(v) => update("molO2", v)} unit="lb-mol/min" testId="input-mol-o2" />
-              <InputField label="Mol N₂ to Scrubber" value={inputs.molN2} onChange={(v) => update("molN2", v)} unit="lb-mol/min" testId="input-mol-n2" />
+              <InputField label="SO₂ Tail Gas" value={inputs.molSO2TailHr} onChange={(v) => update("molSO2TailHr", v)} unit="lb-mol/hr" testId="input-mol-so2-tail" />
+              <InputField label="SO₃ Tail Gas" value={inputs.molSO3TailHr} onChange={(v) => update("molSO3TailHr", v)} unit="lb-mol/hr" testId="input-mol-so3-tail" />
+              <InputField label="N₂ Tail Gas" value={inputs.molN2TailHr} onChange={(v) => update("molN2TailHr", v)} unit="lb-mol/hr" testId="input-mol-n2-tail" />
             </CardContent>
           </Card>
 
@@ -217,7 +207,6 @@ export default function KeyPerformanceParameters() {
                 <ResultRow label="Comp Pass 1" value={results.compPass1.toFixed(2)} unit="% SO₂" testId="result-comp-pass1" />
                 <ResultRow label="Conversion" value={results.conversion.toFixed(4)} unit="%" testId="result-conversion" />
                 <ResultRow label="Emissions" value={results.emissions.toFixed(1)} unit="lb/ST acid" testId="result-emissions" />
-                <ResultRow label="Scrubber Emissions" value={results.scrubberEmissionsPpmv.toFixed(1)} unit="ppmv" testId="result-scrubber-emissions" />
                 <ResultRow label="Steam Gen." value={results.steamGen.toLocaleString()} unit="ST/day" testId="result-steam-gen" />
                 <ResultRow label="Gross Power Gen." value={results.grossPowerMW.toFixed(2)} unit="MW" testId="result-gross-power" />
                 <ResultRow label="Power Factor" value={results.powerFactor.toFixed(1)} unit="kW/STPH" testId="result-power-factor" />
