@@ -225,6 +225,7 @@ import ConverterPass2 from "@/pages/unit-operation/converter-pass-2";
 import ConverterPass3 from "@/pages/unit-operation/converter-pass-3";
 import ConverterPass4 from "@/pages/unit-operation/converter-pass-4";
 import GasGasHeatExchanger from "@/pages/unit-operation/gas-gas-heat-exchanger";
+import KeyPerformanceParameters from "@/pages/unit-operation/key-performance-parameters";
 import SulfuricAcidTower from "@/pages/unit-operation/sulfuric-acid-tower";
 import WasteHeatBoiler from "@/pages/unit-operation/waste-heat-boiler";
 import Superheater from "@/pages/unit-operation/superheater";
@@ -336,6 +337,7 @@ function Router() {
       <Route path="/dynamic-simulation" component={DynamicSimulation} />
       <Route path="/unit-operation-simulator" component={UnitOperationSimulator} />
       <Route path="/unit-operation/catalytic-reactor/python-code" component={CatalyticReactorPythonCode} />
+      <Route path="/unit-operation/key-performance-parameters" component={KeyPerformanceParameters} />
       <Route path="/unit-operation/converter-simulations" component={ConverterSimulations} />
       <Route path="/unit-operation/converter-pass-1" component={ConverterPass1} />
       <Route path="/unit-operation/converter-pass-2" component={ConverterPass2} />
