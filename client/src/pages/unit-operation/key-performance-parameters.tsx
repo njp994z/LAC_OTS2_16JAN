@@ -26,11 +26,11 @@ interface Results {
 }
 
 const defaultInputs: Inputs = {
-  sulfurFlow: "100.0",
-  molSO2: "0.5",
-  molSO3: "0.1",
-  molO2: "10.0",
-  molN2: "40.0",
+  sulfurFlow: "1128",
+  molSO2: "0.28",
+  molSO3: "0",
+  molO2: "127.15",
+  molN2: "3100.28",
 };
 
 const MW_S = 32.0;
