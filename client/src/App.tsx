@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -644,6 +644,8 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/faceplate-3e/:controllerId?" component={Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/faceplate-3f/:controllerId?" component={Faceplate3F} />
       
+      <Route path="/unit-operation">{() => <Redirect to="/unit-operation-simulator" />}</Route>
+
       {/* Short Path Redirects for Convenience */}
       <Route path="/delta-v/faceplate/3A" component={Faceplate3A} />
       <Route path="/delta-v/faceplate/3B" component={Faceplate3B} />
