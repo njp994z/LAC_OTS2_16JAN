@@ -17,12 +17,13 @@ interface Inputs {
 
 interface Results {
   plantRate: number;
-  pass1Strength: number;
-  so2Conversion: number;
-  emissionsLbStpd: number;
+  compPass1: number;
+  conversion: number;
+  emissions: number;
   scrubberEmissionsPpmv: number;
-  steamGenStSt: number;
+  steamGen: number;
   grossPowerMW: number;
+  powerFactor: number;
 }
 
 const defaultInputs: Inputs = {
@@ -33,14 +34,13 @@ const defaultInputs: Inputs = {
   molN2: "3100.28",
 };
 
-const MW_S = 32.0;
-const MW_SO2 = 64.0;
-const MW_H2SO4 = 98.0;
+const MW_S = 32.065;
+const MW_SO2 = 64.064;
+const MW_H2SO4 = 98.079;
 const MINUTES_PER_DAY = 1440;
 const LB_PER_SHORT_TON = 2000;
-const STEAM_GEN_RATE = 1.3;
-const POWER_FACTOR = 192.6;
-const SCRUBBER_SO2_REMOVAL = 0.97;
+const STEAM_PER_ACID = 1.3;
+const POWER_KW_PER_STPH = 243.0;
 
 function calculateParameters(
   sulfurFlowLbMin: number,
@@ -49,36 +49,41 @@ function calculateParameters(
   molO2ToScrub: number,
   molN2ToScrub: number
 ): Results {
-  const molSMin = sulfurFlowLbMin / MW_S;
-  const so2Conversion = (1 - molSO2ToScrub / molSMin) * 100;
-  const molAcidMin = molSMin - molSO2ToScrub - molSO3ToScrub;
+  const molSulfurMin = sulfurFlowLbMin / MW_S;
+
+  const molAcidMin = molSulfurMin - molSO2ToScrub - molSO3ToScrub;
   const lbAcidDay = molAcidMin * MW_H2SO4 * MINUTES_PER_DAY;
   const plantRate = lbAcidDay / LB_PER_SHORT_TON;
 
-  const totalMolToScrub = molSO2ToScrub + molSO3ToScrub + molO2ToScrub + molN2ToScrub;
-  const o2Consumed = 1.5 * molSMin - 0.5 * molSO2ToScrub;
-  const o2Initial = molO2ToScrub + o2Consumed;
-  const molAir = o2Initial / 0.21;
-  const pass1Strength = (molSMin / molAir) * 100;
+  const conversion = molSulfurMin > 0 ? (molAcidMin / molSulfurMin) * 100 : 0;
 
-  const emittedMolSO2Min = (1 - SCRUBBER_SO2_REMOVAL) * molSO2ToScrub;
-  const lbSO2Day = emittedMolSO2Min * MW_SO2 * MINUTES_PER_DAY;
-  const emissionsLbStpd = plantRate > 0 ? lbSO2Day / plantRate : 0;
-  const scrubberEmissionsPpmv = (emittedMolSO2Min / totalMolToScrub) * 1e6;
+  const molSO2Absorbed = molSulfurMin - molSO2ToScrub;
+  const o2Consumed = 0.5 * molSO2Absorbed + 1.0 * molSO3ToScrub;
+  const molO2Inlet = molO2ToScrub + o2Consumed;
+  const molAirInlet = molO2Inlet / 0.21;
+  const compPass1 = molAirInlet > 0 ? (molSulfurMin / molAirInlet) * 100 : 0;
 
-  const acidStPerHour = plantRate / 24;
-  const steamStPerHour = STEAM_GEN_RATE * acidStPerHour;
-  const grossPowerKW = POWER_FACTOR * steamStPerHour;
-  const grossPowerMW = grossPowerKW / 1000;
+  const totalMolTail = molSO2ToScrub + molSO3ToScrub + molO2ToScrub + molN2ToScrub;
+  const lbSO2Day = molSO2ToScrub * MW_SO2 * MINUTES_PER_DAY;
+  const emissions = plantRate > 0 ? lbSO2Day / plantRate : 0;
+  const scrubberEmissionsPpmv = totalMolTail > 0 ? (molSO2ToScrub / totalMolTail) * 1e6 : 0;
+
+  const steamGen = STEAM_PER_ACID * plantRate;
+
+  const acidStPerHour = plantRate / 24.0;
+  const steamStPerHour = STEAM_PER_ACID * acidStPerHour;
+  const grossPowerKW = POWER_KW_PER_STPH * steamStPerHour;
+  const grossPowerMW = grossPowerKW / 1000.0;
 
   return {
     plantRate: Math.round(plantRate),
-    pass1Strength: Math.round(pass1Strength * 10) / 10,
-    so2Conversion: Math.round(so2Conversion * 10) / 10,
-    emissionsLbStpd: Math.round(emissionsLbStpd),
-    scrubberEmissionsPpmv: Math.round(scrubberEmissionsPpmv),
-    steamGenStSt: Math.round(STEAM_GEN_RATE * 100) / 100,
-    grossPowerMW: Math.round(grossPowerMW * 1000) / 1000,
+    compPass1: Math.round(compPass1 * 100) / 100,
+    conversion: Math.round(conversion * 10000) / 10000,
+    emissions: Math.round(emissions * 10) / 10,
+    scrubberEmissionsPpmv: Math.round(scrubberEmissionsPpmv * 10) / 10,
+    steamGen: Math.round(steamGen),
+    grossPowerMW: Math.round(grossPowerMW * 100) / 100,
+    powerFactor: POWER_KW_PER_STPH,
   };
 }
 
@@ -209,12 +214,13 @@ export default function KeyPerformanceParameters() {
               </CardHeader>
               <CardContent className="px-5 pb-5">
                 <ResultRow label="Plant Rate (STPD)" value={results.plantRate.toLocaleString()} unit="ST/day" testId="result-plant-rate" />
-                <ResultRow label="Pass 1 Strength (% SO₂)" value={results.pass1Strength.toFixed(1)} unit="%" testId="result-pass1-strength" />
-                <ResultRow label="SO₂ Conversion" value={results.so2Conversion.toFixed(1)} unit="%" testId="result-so2-conversion" />
-                <ResultRow label="Emissions (lb / STPD)" value={results.emissionsLbStpd.toLocaleString()} unit="lb/STPD" testId="result-emissions" />
-                <ResultRow label="Scrubber Emissions" value={results.scrubberEmissionsPpmv.toLocaleString()} unit="ppmv" testId="result-scrubber-emissions" />
-                <ResultRow label="Steam Gen. (ST/ST)" value={results.steamGenStSt.toFixed(2)} testId="result-steam-gen" />
-                <ResultRow label="Gross Power Gen." value={results.grossPowerMW.toFixed(3)} unit="MW" testId="result-gross-power" />
+                <ResultRow label="Comp Pass 1" value={results.compPass1.toFixed(2)} unit="% SO₂" testId="result-comp-pass1" />
+                <ResultRow label="Conversion" value={results.conversion.toFixed(4)} unit="%" testId="result-conversion" />
+                <ResultRow label="Emissions" value={results.emissions.toFixed(1)} unit="lb/ST acid" testId="result-emissions" />
+                <ResultRow label="Scrubber Emissions" value={results.scrubberEmissionsPpmv.toFixed(1)} unit="ppmv" testId="result-scrubber-emissions" />
+                <ResultRow label="Steam Gen." value={results.steamGen.toLocaleString()} unit="ST/day" testId="result-steam-gen" />
+                <ResultRow label="Gross Power Gen." value={results.grossPowerMW.toFixed(2)} unit="MW" testId="result-gross-power" />
+                <ResultRow label="Power Factor" value={results.powerFactor.toFixed(1)} unit="kW/STPH" testId="result-power-factor" />
               </CardContent>
             </Card>
           )}
