@@ -73,7 +73,7 @@ export default function MainCompressor() {
     rpmPercent: urlRpmPercent || "88",
     temp: "150",
     barometricPressure: "0.85",
-    inletPressure: "-3"
+    inletPressure: "-13"
   });
 
   const [outputParams, setOutputParams] = useState<OutputParams>({
