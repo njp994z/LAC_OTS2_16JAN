@@ -10,6 +10,7 @@ import { CompressorProvider } from "@/delta-v/contexts/CompressorContext";
 import Landing from "@/pages/landing";
 
 import HomeScreen from "@/delta-v/pages/HomeScreen";
+import KPIPage from "@/pages/settings/controller-outputs/kpi";
 import EquipmentFaceplates from "@/delta-v/pages/EquipmentFaceplates";
 import ControllerFaceplates from "@/delta-v/pages/ControllerFaceplates";
 import SensorFaceplate from "@/delta-v/pages/SensorFaceplate";
@@ -438,6 +439,7 @@ function Router() {
       <Route path="/delta-v/pfd/5030-sulfur-vapor-scrubber" component={PFD5030SulfurVaporScrubber} />
       <Route path="/delta-v/pfd/5032-propane" component={PFD5032Propane} />
       <Route path="/settings/controller-outputs/faceplates/home-screen" component={HomeScreen} />
+      <Route path="/settings/controller-outputs/faceplates/kpi" component={KPIPage} />
       <Route path="/settings/controller-outputs/faceplates/rotating-equipment" component={EquipmentFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/controller-blocks" component={ControllerFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/sensor-blocks" component={SensorFaceplate} />
