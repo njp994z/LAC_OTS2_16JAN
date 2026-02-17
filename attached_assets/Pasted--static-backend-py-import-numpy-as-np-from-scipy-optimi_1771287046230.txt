@@ -1,0 +1,118 @@
+# static_backend.py
+import numpy as np
+from scipy.optimize import fsolve
+
+CONFIG = {
+    'power_h_hot': 0.6,
+    'power_h_cold': 0.8,
+    'power_dP': 1.5,
+    'barometric_P_psia': 14.696,
+    'k_304_SS': 8.7,
+    'CIP_Cv_max_36': 100000,
+    'CIP_Cv_max_78': 700000,
+    'HIP_Cv_max_48': 200000,
+    'dP_design_psi': 0.36,          # ~10 in.wc
+    'Q_design_CIP': 103736,
+    'Q_design_HIP': 104164,
+}
+
+class StaticInterpassHX:
+    def __init__(self):
+        self.percent_open = np.array([0, 22, 33, 44, 56, 67, 78, 89, 100])
+        self.rel_cv = np.array([0.0, 0.085, 0.155, 0.26, 0.40, 0.575, 0.775, 0.935, 1.0])
+
+    def cv_fraction(self, pct):
+        return np.interp(pct, self.percent_open, self.rel_cv)
+
+    def get_Cv(self, position_pct, cv_small, cv_large=None):
+        if cv_large is None:
+            return cv_small * self.cv_fraction(position_pct)
+        else:
+            if position_pct <= 50:
+                return cv_small * self.cv_fraction(position_pct * 2)
+            else:
+                return (cv_small * self.cv_fraction(100) +
+                        cv_large * self.cv_fraction((position_pct - 50) * 2))
+
+    def calculate(self,
+                  hip_hot_inlet_f,      # Stream #12
+                  cip_hot_inlet_f,      # Stream #14
+                  cip_cold_feed_f,      # Stream #17A
+                  target_pass3_f=None,  # Pass 3 mixed outlet target
+                  target_pass4_f=None): # Pass 4 mixed outlet target
+
+        results = {}
+        Cp_mass = 0.25          # BTU/lb°F (typical for this gas)
+        MW = 34
+        G = 1.2
+        P_gauge_psig = 113 / 27.7
+        P1_psia = CONFIG['barometric_P_psia'] + P_gauge_psig
+
+        # ------------------- HIP (Hot Interpass) -------------------
+        Q_total_hip = 104164
+        T_in_hot_hip = hip_hot_inlet_f
+        T_in_cold_hip = cip_cold_feed_f          # cold feed to HIP comes from CIP outlet (simplified series)
+
+        flow_hx_hip = self._solve_flow_hx_for_target(
+            Q_total_hip, target_pass3_f, T_in_hot_hip, T_in_cold_hip,
+            CONFIG['Q_design_HIP'], CONFIG['dP_design_psi'], P1_psia, Cp_mass, MW
+        )
+        cv_req_hip = self._cv_from_flow(flow_hx_hip, Q_total_hip, CONFIG['Q_design_HIP'], CONFIG['dP_design_psi'], P1_psia, T_in_hot_hip + 460, G)
+        pos_hip = self._solve_position(cv_req_hip, CONFIG['HIP_Cv_max_48'])
+
+        results['HIP'] = {
+            'stream13_temp': T_in_hot_hip - 50,          # placeholder; replace with real LMTD calc
+            'stream18E_temp': T_in_cold_hip + 120,
+            'stream19_temp': target_pass3_f or 806,
+            'bypass_flow_scfm': Q_total_hip - flow_hx_hip,
+            'valve_position_pct': pos_hip
+        }
+
+        # ------------------- CIP (Cold Interpass) -------------------
+        Q_total_cip = 103736
+        T_in_hot_cip = cip_hot_inlet_f
+        T_in_cold_cip = cip_cold_feed_f
+
+        flow_hx_cip = self._solve_flow_hx_for_target(
+            Q_total_cip, target_pass4_f, T_in_hot_cip, T_in_cold_cip,
+            CONFIG['Q_design_CIP'], CONFIG['dP_design_psi'], P1_psia, Cp_mass, MW
+        )
+        cv_req_cip = self._cv_from_flow(flow_hx_cip, Q_total_cip, CONFIG['Q_design_CIP'], CONFIG['dP_design_psi'], P1_psia, T_in_hot_cip + 460, G)
+        pos_cip = self._solve_position(cv_req_cip, CONFIG['CIP_Cv_max_36'], CONFIG['CIP_Cv_max_78'])
+
+        results['CIP'] = {
+            'stream15_temp': T_in_hot_cip - 68,
+            'stream17E_temp': T_in_cold_cip + 140,
+            'stream18_temp': target_pass4_f or 779,
+            'bypass_flow_scfm': Q_total_cip - flow_hx_cip,
+            'valve_position_36': min(pos_cip, 50) * 2,
+            'valve_position_78': max(0, pos_cip - 50) * 2,
+        }
+
+        return results
+
+    # Helper methods (same as before, slightly cleaned)
+    def _solve_flow_hx_for_target(self, Q_total, target_t_out, T_hot, T_cold, Q_design, dP_design, P1, Cp, MW):
+        def objective(flow_hx):
+            flow_byp = Q_total - flow_hx
+            dP_hx = dP_design * (flow_hx / Q_design) ** CONFIG['power_dP']
+            # Simplified mixed temp
+            t_mixed = (flow_hx * (T_hot - 80) + flow_byp * T_hot) / Q_total
+            return t_mixed - target_t_out
+        return fsolve(objective, Q_total * 0.6)[0]
+
+    def _cv_from_flow(self, flow_hx, Q_total, Q_design, dP_design, P1, T_rankine, G):
+        flow_byp = Q_total - flow_hx
+        dP_hx = dP_design * (flow_hx / Q_design) ** CONFIG['power_dP']
+        Q_scfh = flow_byp * 60
+        return Q_scfh / (1360 * np.sqrt(dP_hx * P1 / (G * T_rankine)))
+
+    def _solve_position(self, cv_req, cv_small, cv_large=None):
+        if cv_large is None:
+            return np.interp(cv_req / cv_small, self.rel_cv, self.percent_open)
+        else:
+            cv_small_full = cv_small * 1.0
+            if cv_req <= cv_small_full:
+                return np.interp(cv_req / cv_small, self.rel_cv, self.percent_open) / 2
+            else:
+                return 50 + np.interp((cv_req - cv_small_full) / cv_large, self.rel_cv, self.percent_open) / 2
