@@ -125,12 +125,127 @@ def safe_float(val, fallback):
         return fallback
 
 
+def parse_inlet_streams(params):
+    inlets = params.get('inlet_streams')
+    if inlets:
+        s12 = {}
+        s14 = {}
+        s17a = {}
+        for row in inlets:
+            p = row.get('parameter', '')
+            s12[p] = safe_float(str(row.get('stream12', '0')).replace(',', ''), 0)
+            s14[p] = safe_float(str(row.get('stream14', '0')).replace(',', ''), 0)
+            s17a[p] = safe_float(str(row.get('stream17A', '0')).replace(',', ''), 0)
+        return s12, s14, s17a
+    return None, None, None
+
+
+COMPONENTS = ["SO2", "SO3", "O2", "N2", "H2O", "H2SO4"]
+
+
+def fmt(v):
+    return f"{round(v):,}"
+
+
+def build_hip_table(s12, s17a, Q_total_hip, flow_hx_hip, hip_bypass_flow,
+                    hip_hot_inlet, stream13_temp, cip_cold_feed,
+                    stream18B_temp, stream18D_temp, stream18E_temp, stream19_temp):
+    Q_total_cold = s17a.get('TOTAL', 91588)
+    cold_hx_frac = flow_hx_hip / Q_total_hip if Q_total_hip > 0 else 1
+    cold_byp_frac = 1 - cold_hx_frac
+    rows = []
+    for comp in COMPONENTS:
+        c12 = s12.get(comp, 0)
+        c17a = s17a.get(comp, 0)
+        c_cold_hx = round(c17a * cold_hx_frac)
+        c_cold_byp = round(c17a * cold_byp_frac)
+        rows.append({
+            "parameter": comp, "units": "scfm",
+            "s12": fmt(c12), "s13": fmt(c12),
+            "s18A": fmt(c17a), "s18B": fmt(c_cold_hx),
+            "s18C": fmt(c_cold_byp), "s18D": fmt(c17a),
+            "s18E": fmt(c_cold_hx), "s19": fmt(c12),
+        })
+    rows.append({
+        "parameter": "TOTAL", "units": "scfm",
+        "s12": f"{Q_total_hip:,.0f}", "s13": f"{Q_total_hip:,.0f}",
+        "s18A": f"{Q_total_cold:,.0f}", "s18B": f"{flow_hx_hip:,.0f}",
+        "s18C": f"{round(hip_bypass_flow):,}", "s18D": f"{Q_total_cold:,.0f}",
+        "s18E": f"{flow_hx_hip:,.0f}", "s19": f"{Q_total_hip:,.0f}",
+    })
+    rows.append({
+        "parameter": "PRESSURE", "units": "in. wc.",
+        "s12": fmt(s12.get('PRESSURE', 119)), "s13": "115",
+        "s18A": fmt(s17a.get('PRESSURE', 113)), "s18B": "113",
+        "s18C": "113", "s18D": "113", "s18E": "115", "s19": "113",
+    })
+    rows.append({
+        "parameter": "TEMPERATURE", "units": "\u00b0F",
+        "s12": f"{hip_hot_inlet:.1f}", "s13": f"{stream13_temp:.1f}",
+        "s18A": f"{cip_cold_feed:.1f}", "s18B": f"{stream18B_temp:.1f}",
+        "s18C": f"{cip_cold_feed:.1f}", "s18D": f"{stream18D_temp:.1f}",
+        "s18E": f"{stream18E_temp:.1f}", "s19": f"{stream19_temp:.1f}",
+    })
+    return rows
+
+
+def build_cip_table(s14, s17a, Q_total_cip, flow_hx_cip, cip_bypass_flow,
+                    cip_hot_inlet, stream15_temp, cip_cold_feed,
+                    stream17B_temp, stream17E_temp, stream18_temp):
+    Q_total_cold = s17a.get('TOTAL', 91588)
+    cold_hx_frac = flow_hx_cip / Q_total_cip if Q_total_cip > 0 else 1
+    cold_byp_frac = 1 - cold_hx_frac
+    byp_36_frac = 0.4
+    byp_78_frac = 0.6
+    rows = []
+    for comp in COMPONENTS:
+        c14 = s14.get(comp, 0)
+        c17a = s17a.get(comp, 0)
+        c_cold_hx = round(c17a * cold_hx_frac)
+        c_cold_byp_36 = round(c17a * cold_byp_frac * byp_36_frac)
+        c_cold_byp_78 = round(c17a * cold_byp_frac * byp_78_frac)
+        rows.append({
+            "parameter": comp, "units": "scfm",
+            "s14": fmt(c14), "s15": fmt(c14),
+            "s17A": fmt(c17a), "s17B": fmt(c_cold_hx),
+            "s17C": fmt(c_cold_byp_36), "s17D": fmt(c_cold_byp_78),
+            "s17E": fmt(c_cold_hx), "s18": fmt(c14),
+        })
+    rows.append({
+        "parameter": "TOTAL", "units": "scfm",
+        "s14": f"{Q_total_cip:,.0f}", "s15": f"{Q_total_cip:,.0f}",
+        "s17A": f"{Q_total_cold:,.0f}", "s17B": f"{flow_hx_cip:,.0f}",
+        "s17C": f"{round(cip_bypass_flow * byp_36_frac):,}",
+        "s17D": f"{round(cip_bypass_flow * byp_78_frac):,}",
+        "s17E": f"{flow_hx_cip:,.0f}", "s18": f"{Q_total_cip:,.0f}",
+    })
+    rows.append({
+        "parameter": "PRESSURE", "units": "in. wc.",
+        "s14": fmt(s14.get('PRESSURE', 113)), "s15": "109",
+        "s17A": fmt(s17a.get('PRESSURE', 113)), "s17B": "113",
+        "s17C": "113", "s17D": "113", "s17E": "111", "s18": "109",
+    })
+    rows.append({
+        "parameter": "TEMPERATURE", "units": "\u00b0F",
+        "s14": f"{cip_hot_inlet:.1f}", "s15": f"{stream15_temp:.1f}",
+        "s17A": f"{cip_cold_feed:.1f}", "s17B": f"{stream17B_temp:.1f}",
+        "s17C": f"{cip_cold_feed:.1f}", "s17D": f"{cip_cold_feed:.1f}",
+        "s17E": f"{stream17E_temp:.1f}", "s18": f"{stream18_temp:.1f}",
+    })
+    return rows
+
+
 def calculate_static(params):
     hip_hot_inlet = safe_float(params.get('hip_hot_inlet'), 965)
     cip_hot_inlet = safe_float(params.get('cip_hot_inlet'), 847)
     cip_cold_feed = safe_float(params.get('cip_cold_feed'), 180)
     target_pass3 = safe_float(params.get('target_pass3'), 806)
     target_pass4 = safe_float(params.get('target_pass4'), 779)
+
+    s12_in, s14_in, s17a_in = parse_inlet_streams(params)
+    s12 = s12_in if s12_in else INLET_STREAMS_DEFAULT['stream12']
+    s14 = s14_in if s14_in else INLET_STREAMS_DEFAULT['stream14']
+    s17a = s17a_in if s17a_in else INLET_STREAMS_DEFAULT['stream17A']
 
     cfg = dict(CONFIG)
     if 'config' in params:
@@ -141,7 +256,7 @@ def calculate_static(params):
     P_gauge_psig = 113 / 27.7
     P1_psia = cfg['barometric_P_psia'] + P_gauge_psig
 
-    Q_total_hip = cfg['Q_design_HIP']
+    Q_total_hip = s12.get('TOTAL', cfg['Q_design_HIP'])
     flow_hx_hip = solve_flow_hx_for_target(
         Q_total_hip, target_pass3, hip_hot_inlet, cip_cold_feed,
         cfg['Q_design_HIP'], cfg['dP_design_psi']
@@ -154,14 +269,12 @@ def calculate_static(params):
     hip_bypass_flow = Q_total_hip - flow_hx_hip
 
     stream13_temp = hip_hot_inlet - 50
-    stream18A_temp = cip_cold_feed
     stream18B_temp = cip_cold_feed + 20
-    stream18C_flow = round(hip_bypass_flow)
-    stream18D_temp = round((hip_bypass_flow * cip_cold_feed + flow_hx_hip * (cip_cold_feed + 120)) / Q_total_hip, 1)
+    stream18D_temp = round((hip_bypass_flow * cip_cold_feed + flow_hx_hip * (cip_cold_feed + 120)) / Q_total_hip, 1) if Q_total_hip > 0 else cip_cold_feed
     stream18E_temp = cip_cold_feed + 120
     stream19_temp = target_pass3
 
-    Q_total_cip = cfg['Q_design_CIP']
+    Q_total_cip = s14.get('TOTAL', cfg['Q_design_CIP'])
     flow_hx_cip = solve_flow_hx_for_target(
         Q_total_cip, target_pass4, cip_hot_inlet, cip_cold_feed,
         cfg['Q_design_CIP'], cfg['dP_design_psi']
@@ -175,22 +288,8 @@ def calculate_static(params):
 
     stream15_temp = cip_hot_inlet - 68
     stream17B_temp = cip_cold_feed + 10
-    stream17C_flow = round(cip_bypass_flow * 0.4)
-    stream17D_flow = round(cip_bypass_flow * 0.6)
     stream17E_temp = cip_cold_feed + 140
     stream18_temp = target_pass4
-
-    inlet_table = [
-        {"parameter": "SO2", "units": "scfm", "stream12": "1,335", "stream14": "480", "stream17A": "480"},
-        {"parameter": "SO3", "units": "scfm", "stream12": "11,293", "stream14": "12,148", "stream17A": "0"},
-        {"parameter": "O2", "units": "scfm", "stream12": "4,728", "stream14": "4,300", "stream17A": "4,300"},
-        {"parameter": "N2", "units": "scfm", "stream12": "86,808", "stream14": "86,808", "stream17A": "86,808"},
-        {"parameter": "H2O", "units": "scfm", "stream12": "0", "stream14": "0", "stream17A": "0"},
-        {"parameter": "H2SO4", "units": "scfm", "stream12": "0", "stream14": "0", "stream17A": "0"},
-        {"parameter": "TOTAL", "units": "scfm", "stream12": "104,164", "stream14": "103,736", "stream17A": "91,588"},
-        {"parameter": "PRESSURE", "units": "in. wc.", "stream12": "119", "stream14": "113", "stream17A": "113"},
-        {"parameter": "TEMPERATURE", "units": "\u00b0F", "stream12": str(round(hip_hot_inlet)), "stream14": str(round(cip_hot_inlet)), "stream17A": str(round(cip_cold_feed))},
-    ]
 
     cip_36_pos = round(min(pos_cip, 50) * 2, 1)
     cip_78_pos = round(max(0, pos_cip - 50) * 2, 1)
@@ -201,17 +300,13 @@ def calculate_static(params):
     duty_hip = round((flow_hx_hip * 60 * 34 / 379 * 0.25 * (hip_hot_inlet - stream13_temp)) / 1_000_000, 2)
     duty_cip = round((flow_hx_cip * 60 * 34 / 379 * 0.25 * (cip_hot_inlet - stream15_temp)) / 1_000_000, 2)
 
-    hip_table = [
-        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s12": f"{hip_hot_inlet:.1f}", "s13": f"{stream13_temp:.1f}", "s18A": f"{stream18A_temp:.1f}", "s18B": f"{stream18B_temp:.1f}", "s18C": f"{cip_cold_feed:.1f}", "s18D": f"{stream18D_temp:.1f}", "s18E": f"{stream18E_temp:.1f}", "s19": f"{stream19_temp:.1f}"},
-        {"parameter": "TOTAL FLOW", "units": "scfm", "s12": f"{Q_total_hip:,.0f}", "s13": f"{Q_total_hip:,.0f}", "s18A": f"{Q_total_hip:,.0f}", "s18B": f"{flow_hx_hip:,.0f}", "s18C": f"{stream18C_flow:,}", "s18D": f"{Q_total_hip:,.0f}", "s18E": f"{flow_hx_hip:,.0f}", "s19": f"{Q_total_hip:,.0f}"},
-        {"parameter": "PRESSURE", "units": "in. wc.", "s12": "119", "s13": "115", "s18A": "113", "s18B": "113", "s18C": "113", "s18D": "113", "s18E": "115", "s19": "113"},
-    ]
+    hip_table = build_hip_table(s12, s17a, Q_total_hip, flow_hx_hip, hip_bypass_flow,
+                                hip_hot_inlet, stream13_temp, cip_cold_feed,
+                                stream18B_temp, stream18D_temp, stream18E_temp, stream19_temp)
 
-    cip_table = [
-        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s14": f"{cip_hot_inlet:.1f}", "s15": f"{stream15_temp:.1f}", "s17A": f"{cip_cold_feed:.1f}", "s17B": f"{stream17B_temp:.1f}", "s17C": f"{cip_cold_feed:.1f}", "s17D": f"{cip_cold_feed:.1f}", "s17E": f"{stream17E_temp:.1f}", "s18": f"{stream18_temp:.1f}"},
-        {"parameter": "TOTAL FLOW", "units": "scfm", "s14": f"{Q_total_cip:,.0f}", "s15": f"{Q_total_cip:,.0f}", "s17A": f"{Q_total_cip:,.0f}", "s17B": f"{flow_hx_cip:,.0f}", "s17C": f"{round(cip_bypass_flow * 0.4):,}", "s17D": f"{round(cip_bypass_flow * 0.6):,}", "s17E": f"{flow_hx_cip:,.0f}", "s18": f"{Q_total_cip:,.0f}"},
-        {"parameter": "PRESSURE", "units": "in. wc.", "s14": "113", "s15": "109", "s17A": "113", "s17B": "113", "s17C": "113", "s17D": "113", "s17E": "111", "s18": "109"},
-    ]
+    cip_table = build_cip_table(s14, s17a, Q_total_cip, flow_hx_cip, cip_bypass_flow,
+                                cip_hot_inlet, stream15_temp, cip_cold_feed,
+                                stream17B_temp, stream17E_temp, stream18_temp)
 
     extras = [
         {"label": "HIP 48\" Valve Position", "units": "% open", "value": f"{hip_48_pos:.1f}"},
@@ -225,7 +320,6 @@ def calculate_static(params):
 
     return {
         "success": True,
-        "inlet_table": inlet_table,
         "hip_table": hip_table,
         "cip_table": cip_table,
         "extras": extras,
@@ -241,6 +335,11 @@ def calculate_dynamic(params):
     T_out_hip = safe_float(params.get('T_out_hip'), 806.0)
     T_out_cip = safe_float(params.get('T_out_cip'), 779.0)
 
+    s12_in, s14_in, s17a_in = parse_inlet_streams(params)
+    s12 = s12_in if s12_in else INLET_STREAMS_DEFAULT['stream12']
+    s14 = s14_in if s14_in else INLET_STREAMS_DEFAULT['stream14']
+    s17a = s17a_in if s17a_in else INLET_STREAMS_DEFAULT['stream17A']
+
     dt = 0.5
     tau = 45.0
 
@@ -248,8 +347,8 @@ def calculate_dynamic(params):
     cv_cip = get_Cv(pos_cip, CONFIG['CIP_Cv_max_36'], CONFIG['CIP_Cv_max_78'])
     cv_hip = get_Cv(pos_cip, CONFIG['HIP_Cv_max_48'])
 
-    Q_total_cip = CONFIG['Q_design_CIP']
-    Q_total_hip = CONFIG['Q_design_HIP']
+    Q_total_cip = s14.get('TOTAL', CONFIG['Q_design_CIP'])
+    Q_total_hip = s12.get('TOTAL', CONFIG['Q_design_HIP'])
 
     flow_hx_cip = solve_flow_from_cv(cv_cip, Q_total_cip, CONFIG['dP_design_psi'], Q_total_cip)
     flow_hx_hip = solve_flow_from_cv(cv_hip, Q_total_hip, CONFIG['dP_design_psi'], Q_total_hip)
@@ -272,17 +371,20 @@ def calculate_dynamic(params):
     duty_hip = round((flow_hx_hip * 60 * 34 / 379 * 0.25 * (hip_hot_inlet - stream13_temp)) / 1_000_000, 2)
     duty_cip = round((flow_hx_cip * 60 * 34 / 379 * 0.25 * (cip_hot_inlet - stream15_temp_dyn)) / 1_000_000, 2)
 
-    hip_table = [
-        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s12": f"{hip_hot_inlet:.1f}", "s13": f"{stream13_temp:.1f}", "s18A": f"{cip_cold_feed:.1f}", "s18B": f"{cip_cold_feed + 20:.1f}", "s18C": f"{cip_cold_feed:.1f}", "s18D": f"{new_T_out_hip:.1f}", "s18E": f"{cip_cold_feed + 120:.1f}", "s19": f"{new_T_out_hip:.1f}"},
-        {"parameter": "TOTAL FLOW", "units": "scfm", "s12": f"{Q_total_hip:,.0f}", "s13": f"{Q_total_hip:,.0f}", "s18A": f"{Q_total_hip:,.0f}", "s18B": f"{flow_hx_hip:,.0f}", "s18C": f"{hip_bypass:,}", "s18D": f"{Q_total_hip:,.0f}", "s18E": f"{flow_hx_hip:,.0f}", "s19": f"{Q_total_hip:,.0f}"},
-        {"parameter": "PRESSURE", "units": "in. wc.", "s12": "119", "s13": "115", "s18A": "113", "s18B": "113", "s18C": "113", "s18D": "113", "s18E": "115", "s19": "113"},
-    ]
+    stream18B_temp = cip_cold_feed + 20
+    stream18D_temp = round((hip_bypass * cip_cold_feed + flow_hx_hip * (cip_cold_feed + 120)) / Q_total_hip, 1) if Q_total_hip > 0 else cip_cold_feed
+    stream18E_temp = cip_cold_feed + 120
 
-    cip_table = [
-        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s14": f"{cip_hot_inlet:.1f}", "s15": f"{new_T_out_cip:.1f}", "s17A": f"{cip_cold_feed:.1f}", "s17B": f"{cip_cold_feed + 10:.1f}", "s17C": f"{cip_cold_feed:.1f}", "s17D": f"{cip_cold_feed:.1f}", "s17E": f"{cip_cold_feed + 140:.1f}", "s18": f"{new_T_out_cip:.1f}"},
-        {"parameter": "TOTAL FLOW", "units": "scfm", "s14": f"{Q_total_cip:,.0f}", "s15": f"{Q_total_cip:,.0f}", "s17A": f"{Q_total_cip:,.0f}", "s17B": f"{flow_hx_cip:,.0f}", "s17C": f"{round(cip_bypass * 0.4):,}", "s17D": f"{round(cip_bypass * 0.6):,}", "s17E": f"{flow_hx_cip:,.0f}", "s18": f"{Q_total_cip:,.0f}"},
-        {"parameter": "PRESSURE", "units": "in. wc.", "s14": "113", "s15": "109", "s17A": "113", "s17B": "113", "s17C": "113", "s17D": "113", "s17E": "111", "s18": "109"},
-    ]
+    hip_table = build_hip_table(s12, s17a, Q_total_hip, flow_hx_hip, hip_bypass,
+                                hip_hot_inlet, stream13_temp, cip_cold_feed,
+                                stream18B_temp, stream18D_temp, stream18E_temp, new_T_out_hip)
+
+    stream17B_temp = cip_cold_feed + 10
+    stream17E_temp = cip_cold_feed + 140
+
+    cip_table = build_cip_table(s14, s17a, Q_total_cip, flow_hx_cip, cip_bypass,
+                                cip_hot_inlet, new_T_out_cip, cip_cold_feed,
+                                stream17B_temp, stream17E_temp, new_T_out_cip)
 
     extras = [
         {"label": "HIP 48\" Valve Position", "units": "% open", "value": f"{hip_48_pos:.1f}"},

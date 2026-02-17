@@ -71,7 +71,6 @@ interface ExtraRow {
 
 interface StaticResult {
   success: boolean;
-  inlet_table: InletRow[];
   hip_table: HipRow[];
   cip_table: CipRow[];
   extras: ExtraRow[];
@@ -222,6 +221,7 @@ export default function GasGasHeatExchanger() {
           cip_cold_feed: safeFloat(cipColdFeed, 180),
           target_pass3: safeFloat(pass3Target, 806),
           target_pass4: safeFloat(pass4Target, 779),
+          inlet_streams: inletData,
         }),
       });
       if (!resp.ok) {
@@ -258,6 +258,7 @@ export default function GasGasHeatExchanger() {
           time_s: state.time_s,
           T_out_hip: state.T_out_hip,
           T_out_cip: state.T_out_cip,
+          inlet_streams: inletData,
         }),
       });
       if (!resp.ok) {
@@ -281,7 +282,7 @@ export default function GasGasHeatExchanger() {
       setRunning(false);
       toast({ title: "Connection Error", description: "Lost connection to simulation backend.", variant: "destructive" });
     }
-  }, [controllerMA, hipHotInlet, cipHotInlet, cipColdFeed, toast]);
+  }, [controllerMA, hipHotInlet, cipHotInlet, cipColdFeed, inletData, toast]);
 
   const startDynamic = useCallback(() => {
     setRunning(true);
