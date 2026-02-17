@@ -3146,5 +3146,66 @@ Be professional, concise, and helpful. If asked about features not yet implement
     res.sendFile(filePath);
   });
 
+  // Interpass HX Valve & Stream Simulator endpoint
+  app.post('/api/interpass-hx', async (req: Request, res: Response) => {
+    try {
+      const { mode } = req.body;
+
+      if (!mode || !['static', 'dynamic'].includes(mode)) {
+        return res.status(400).json({ message: "Mode must be 'static' or 'dynamic'" });
+      }
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'interpass_hx_calc.py');
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdin.write(JSON.stringify(req.body));
+        pythonProcess.stdin.end();
+
+        pythonProcess.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+          if (code !== 0) {
+            console.error('Python interpass HX calculator error:', stderr);
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+            return;
+          }
+
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse Python output:', stdout);
+            reject(new Error('Failed to parse interpass HX simulation results'));
+          }
+        });
+
+        pythonProcess.on('error', (err: Error) => {
+          console.error('Failed to start Python process:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Interpass HX simulation failed" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Interpass HX simulation error:', error);
+      res.status(500).json({ message: "Failed to run interpass HX simulation" });
+    }
+  });
+
   return httpServer;
 }
