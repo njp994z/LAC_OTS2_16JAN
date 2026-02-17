@@ -84,6 +84,10 @@ const Faceplate3A = () => {
   const { controllerId } = useParams<{ controllerId?: string }>();
   const activeControllerId = controllerId || 'default';
   const metadata = getControllerMetadata(activeControllerId);
+  const getBackRoute = (): string => {
+    const br = metadata.backRoute;
+    return br.startsWith('/settings/controller-outputs/faceplates') ? br : `/settings/controller-outputs/faceplates${br}`;
+  };
   
   const { toast } = useToast();
   const { state } = useControllerSync(activeControllerId);
@@ -326,7 +330,7 @@ const Faceplate3A = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <Link
-              to={metadata.backRoute}
+              to={getBackRoute()}
               className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
             >
               <ArrowLeft size={18} />

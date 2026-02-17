@@ -34,18 +34,21 @@ interface ControllerFaceplateProps {
   isTransparent?: boolean;
   showAlarmLimits?: boolean;
   controllerId?: string;
+  normalBarColor?: string;
 }
 
-export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false, showAlarmLimits = true, controllerId }: ControllerFaceplateProps) => {
+export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false, showAlarmLimits = true, controllerId, normalBarColor }: ControllerFaceplateProps) => {
   const { getControllerConfig } = useControllerConfig();
   
   // Get config from context if controllerId is provided, for dynamic TAGNAME/DESC
   const config = controllerId ? getControllerConfig(controllerId) : null;
+  console.log('config',config);
   
   // Use config values if available, otherwise fall back to data props
   const displayTag = config?.TAGNAME || data.instrumentTag;
-  const displayDesc = config?.DESC || data.description;
-  
+  const displayDesc = config?.DESC || data.description;  
+  // Set green bar color if TAGNAME is 1530-F-2602
+  const barColor = config?.TAGNAME === "1530-F-2602" ? "hsl(142, 71%, 45%)" : normalBarColor;  
   const isCriticalAlarm = data.alarmColor === 'red' && data.alarmActive;
   const isWarningAlarm = data.alarmColor === 'yellow' && data.alarmActive;
   const isNormalState = !isCriticalAlarm && !isWarningAlarm;
@@ -141,6 +144,7 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
               alarmColor={data.alarmColor}
               units={data.pvUnits}
               showAlarmLimits={showAlarmLimits}
+              controllerId={controllerId}
             />
           </div>
         </div>

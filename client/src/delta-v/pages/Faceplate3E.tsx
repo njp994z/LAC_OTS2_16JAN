@@ -136,10 +136,16 @@ const Faceplate3E = () => {
     }
     if (fromSource === 'faceplate') {
       // Return to the specific controller's faceplate page
-      return getControllerMetadata(activeControllerId).backRoute;
+      const br = getControllerMetadata(activeControllerId).backRoute;
+      return br.startsWith('/settings/controller-outputs/faceplates')
+        ? br
+        : `/settings/controller-outputs/faceplates${br}`;
     }
     // Default fallback to the controller's metadata backRoute
-    return getControllerMetadata(activeControllerId).backRoute;
+    const br = getControllerMetadata(activeControllerId).backRoute;
+    return br.startsWith('/settings/controller-outputs/faceplates')
+      ? br
+      : `/settings/controller-outputs/faceplates${br}`;
   };
   
   // Determine back label based on source

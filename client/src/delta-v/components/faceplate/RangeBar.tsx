@@ -20,6 +20,10 @@ interface RangeBarProps {
   units?: string;
   // Whether to show alarm limit markers (LL, L, H, HH) - default true
   showAlarmLimits?: boolean;
+  // Custom color for normal state (no alarms)
+  normalBarColor?: string;
+  // Controller tag name to apply specific styling
+  controllerId?: string;
 }
 
 // Determine bar color based on alarm state from parent or PV value relative to alarm limits
@@ -28,8 +32,14 @@ const getBarColor = (
   pv: number, 
   limits: { ll?: number; l?: number; h?: number; hh?: number },
   alarmActive?: boolean,
-  alarmColor?: 'red' | 'yellow'
+  alarmColor?: 'red' | 'yellow',
+  controllerId?: string
 ): string => {
+  // For 1530-F-2602, always use green by default
+  if (controllerId === '1530-F-2602') {
+    return 'rgb(22, 162, 73)'; // green
+  }
+  
   // If alarm state is passed from parent, use it directly (syncs with silhouette)
   if (alarmActive) {
     if (alarmColor === 'red') {
@@ -74,7 +84,9 @@ export const RangeBar = ({
   alarmActive,
   alarmColor,
   units,
-  showAlarmLimits = true
+  showAlarmLimits = true,
+  normalBarColor,
+  controllerId
 }: RangeBarProps) => {
   const pvPercentage = Math.max(0, Math.min(100, ((pvValue - min) / (max - min)) * 100));
   const outPercentage = Math.max(0, Math.min(100, ((outValue - min) / (max - min)) * 100));
@@ -83,7 +95,7 @@ export const RangeBar = ({
     : 0;
 
   // Calculate dynamic bar color - prioritize parent alarm state, fallback to limit calculation
-  const barColor = getBarColor(pvValue, { ll: alarmLL, l: alarmL, h: alarmH, hh: alarmHH }, alarmActive, alarmColor);
+  const barColor = getBarColor(pvValue, { ll: alarmLL, l: alarmL, h: alarmH, hh: alarmHH }, alarmActive, alarmColor, controllerId);
 
   return (
     <div className="relative overflow-visible pt-2">
