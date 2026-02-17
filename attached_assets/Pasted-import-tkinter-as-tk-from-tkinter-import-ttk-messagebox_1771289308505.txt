@@ -1,0 +1,236 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, Entry
+
+root = tk.Tk()
+root.title("Sulfur Interpass HX Valve & Stream Simulator")
+root.geometry("1400x1050")
+root.configure(bg="#1e1e1e")
+
+style = ttk.Style()
+style.theme_use("clam")
+style.configure("TLabel", background="#1e1e1e", foreground="#e0e0e0", font=("Segoe UI", 10))
+style.configure("Treeview", background="#2d2d2d", foreground="#e0e0e0", fieldbackground="#2d2d2d")
+style.configure("Treeview.Heading", background="#3a3a3a", foreground="#ffffff")
+style.map("Treeview", background=[("selected", "#4a6a8a")])
+
+# ── Header ───────────────────────────────────────────────────────
+header_frame = ttk.Frame(root)
+header_frame.pack(fill="x", padx=20, pady=10)
+
+tk.Label(header_frame, text="Sulfur Interpass HX Valve & Stream Simulator", font=("Segoe UI", 14, "bold"), bg="#1e1e1e", fg="#00ccff").pack(side="left")
+tk.Label(header_frame, text="Three valves - Split-range - Full stream tables", font=("Segoe UI", 10), bg="#1e1e1e", fg="#a0a0a0").pack(side="left", padx=20)
+
+# ── Mode Selection ───────────────────────────────────────────────
+mode_frame = ttk.Frame(root)
+mode_frame.pack(pady=8)
+
+ttk.Label(mode_frame, text="Mode:").pack(side="left", padx=10)
+mode_var = tk.StringVar(value="Static")
+ttk.Radiobutton(mode_frame, text="Static", variable=mode_var, value="Static").pack(side="left", padx=10)
+ttk.Radiobutton(mode_frame, text="Dynamic", variable=mode_var, value="Dynamic").pack(side="left", padx=10)
+
+# ── Editable Inlet Table ─────────────────────────────────────────
+inlet_frame = ttk.LabelFrame(root, text="Editable Inlet Streams", padding=12)
+inlet_frame.pack(fill="x", padx=20, pady=10)
+
+inlet_columns = ("Parameter", "Units", "Stream #12 HIP Hot Inlet", "Stream #14 CIP Hot Inlet", "Stream #17A CIP Cold Feed")
+inlet_tree = ttk.Treeview(inlet_frame, columns=inlet_columns, show="headings", height=12)
+for col in inlet_columns:
+    inlet_tree.heading(col, text=col.split("Stream")[0].strip() if "Stream" in col else col)
+    inlet_tree.column(col, width=200 if col == "Parameter" else 180, anchor="center")
+
+inlet_tree.pack(fill="both", expand=True)
+
+# Populate inlet table (all editable)
+inlet_data = [
+    ("SO2",     "scfm",     "1,335",    "480",      "480"),
+    ("SO3",     "scfm",     "11,293",   "12,148",   "0"),
+    ("O2",      "scfm",     "4,728",    "4,300",    "4,300"),
+    ("N2",      "scfm",     "86,808",   "86,808",   "86,808"),
+    ("H2O",     "scfm",     "0",        "0",        "0"),
+    ("H2SO4",   "scfm",     "0",        "0",        "0"),
+    ("TOTAL",   "scfm",     "104,164",  "103,736",  "91,588"),
+    ("PRESSURE","in. wc.",  "119",      "113",      "113"),
+    ("TEMPERATURE", "°F",   "965",      "847",      "180"),
+]
+
+inlet_items = []
+for row in inlet_data:
+    item = inlet_tree.insert("", "end", values=row)
+    inlet_items.append(item)
+
+# Double-click to edit any cell (except Parameter column)
+edit_entry = None
+def on_double_click(event):
+    global edit_entry
+    if edit_entry: edit_entry.destroy()
+
+    item = inlet_tree.identify_row(event.y)
+    col = inlet_tree.identify_column(event.x)
+    if not item or col == "#1": return  # skip Parameter
+
+    x, y, w, h = inlet_tree.bbox(item, col)
+    edit_entry = Entry(inlet_frame, bg="#3a3a3a", fg="#ffffff", font=("Segoe UI", 10))
+    edit_entry.place(x=x, y=y, width=w, height=h)
+    edit_entry.insert(0, inlet_tree.item(item)["values"][int(col[1:]) - 1])
+    edit_entry.focus()
+
+    def save_edit(e=None):
+        global edit_entry
+        if edit_entry:
+            new_val = edit_entry.get()
+            values = list(inlet_tree.item(item)["values"])
+            values[int(col[1:]) - 1] = new_val
+            inlet_tree.item(item, values=values)
+            edit_entry.destroy()
+            edit_entry = None
+
+    edit_entry.bind("<Return>", save_edit)
+    edit_entry.bind("<FocusOut>", save_edit)
+
+inlet_tree.bind("<Double-1>", on_double_click)
+
+# ── Target Temperatures (Static only) ────────────────────────────
+target_frame = ttk.LabelFrame(root, text="Target Temperatures (Static Mode)", padding=12)
+ttk.Label(target_frame, text="Target Pass 3 Outlet Temp").grid(row=0, column=0, sticky="e", padx=10, pady=6)
+pass3_target = ttk.Entry(target_frame, width=12)
+pass3_target.insert(0, "806")
+pass3_target.grid(row=0, column=1, padx=10, pady=6, sticky="w")
+
+ttk.Label(target_frame, text="Target Pass 4 Outlet Temp").grid(row=1, column=0, sticky="e", padx=10, pady=6)
+pass4_target = ttk.Entry(target_frame, width=12)
+pass4_target.insert(0, "779")
+pass4_target.grid(row=1, column=1, padx=10, pady=6, sticky="w")
+
+# ── Output Table (matches your screenshot) ───────────────────────
+output_frame = ttk.LabelFrame(root, text="Calculated Output Streams", padding=12)
+output_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+# HIP section (top half)
+hip_frame = ttk.Frame(output_frame)
+hip_frame.pack(fill="x", pady=(0, 10))
+tk.Label(hip_frame, text="HIP Streams", bg="#2d2d2d", fg="#00ccff", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+
+hip_columns = ("Parameter", "Units", "#12", "#13", "#18A", "#18B", "#18C", "#18D", "#18E", "#19")
+hip_tree = ttk.Treeview(hip_frame, columns=hip_columns, show="headings", height=12)
+for col in hip_columns:
+    hip_tree.heading(col, text=col)
+    hip_tree.column(col, width=100, anchor="center")
+
+hip_tree.pack(fill="both", expand=True)
+
+# CIP section (bottom half)
+cip_frame = ttk.Frame(output_frame)
+cip_frame.pack(fill="x")
+tk.Label(cip_frame, text="CIP Streams", bg="#2d2d2d", fg="#00ccff", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+
+cip_columns = ("Parameter", "Units", "#14", "#15", "#17A", "#17B", "#17C", "#17D", "#17E", "#18")
+cip_tree = ttk.Treeview(cip_frame, columns=cip_columns, show="headings", height=12)
+for col in cip_columns:
+    cip_tree.heading(col, text=col)
+    cip_tree.column(col, width=100, anchor="center")
+
+cip_tree.pack(fill="both", expand=True)
+
+# Extra rows at bottom (valve positions, ratios, duties)
+extra_frame = ttk.Frame(output_frame)
+extra_frame.pack(fill="x", pady=10)
+
+extra_data = [
+    ("HIP 48\" Valve Position",     "% open",      "---"),
+    ("CIP 36\" Valve Position",     "% open",      "---"),
+    ("CIP 78\" Valve Position",     "% open",      "---"),
+    ("HIP HX / Bypass ratio",       "fraction",    "---"),
+    ("CIP HX / Bypass ratio",       "fraction",    "---"),
+    ("HIP HX Duty",                 "MMBTU/hr",    "---"),
+    ("CIP HX Duty",                 "MMBTU/hr",    "---"),
+]
+
+for label, unit, val in extra_data:
+    row_frame = ttk.Frame(extra_frame)
+    row_frame.pack(fill="x", pady=2)
+    ttk.Label(row_frame, text=label, width=30).pack(side="left", padx=10)
+    ttk.Label(row_frame, text=unit, width=10).pack(side="left", padx=10)
+    ttk.Label(row_frame, text=val, width=15, relief="sunken").pack(side="left", padx=10)
+
+# ── Calculate function ───────────────────────────────────────────
+def run_static_calculation():
+    try:
+        # Get inlet values
+        inlet_values = {inlet_tree.item(item)["values"][0]: inlet_tree.item(item)["values"] for item in inlet_tree.get_children()}
+
+        t12 = float(inlet_values["TEMPERATURE"][2])
+        t14 = float(inlet_values["TEMPERATURE"][3])
+        t17a = float(inlet_values["TEMPERATURE"][4])
+        total12 = float(inlet_values["TOTAL"][2].replace(",", ""))
+        total14 = float(inlet_values["TOTAL"][3].replace(",", ""))
+        total17a = float(inlet_values["TOTAL"][4].replace(",", ""))
+
+        target3 = float(pass3_target.get())
+        target4 = float(pass4_target.get())
+
+        # Placeholder calculation (replace with real backend)
+        hip_out = target3 - 10
+        cip_out = target4 - 10
+        hip_bypass_frac = 0.35
+        cip_bypass_frac = 0.42
+        hip_bypass = total12 * hip_bypass_frac
+        cip_bypass = total14 * cip_bypass_frac
+        hip_hx = total12 - hip_bypass
+        cip_hx = total14 - cip_bypass
+
+        # Rough duty (Q = m * Cp * ΔT, Cp≈0.25, MW≈34, 60 min/hr → MMBTU/hr)
+        duty_hip = (hip_hx * 60 * 34 / 379 * 0.25 * 80) / 1_000_000
+        duty_cip = (cip_hx * 60 * 34 / 379 * 0.25 * 70) / 1_000_000
+
+        hip_pos = 65.0
+        cip_36_pos = 100 if hip_pos > 50 else 0
+        cip_78_pos = max(0, (hip_pos - 50) * 2)
+
+        # Update HIP table
+        hip_tree.delete(*hip_tree.get_children())
+        hip_tree.insert("", "end", values=("TEMPERATURE", "°F", f"{t12:.1f}", f"{hip_out:.1f}", f"{t17a:.1f}", f"{t17a:.1f}", f"{hip_bypass:,.0f}", f"{target3:.1f}", f"{t17a + 120:.1f}", f"{target3:.1f}"))
+
+        # Update CIP table
+        cip_tree.delete(*cip_tree.get_children())
+        cip_tree.insert("", "end", values=("TEMPERATURE", "°F", f"{t14:.1f}", f"{cip_out:.1f}", f"{t17a:.1f}", f"{t17a:.1f}", f"{cip_bypass:,.0f}", f"{cip_bypass:,.0f}", f"{t17a + 140:.1f}", f"{target4:.1f}"))
+
+        # Update extra rows
+        extra_labels = ["HIP 48\" Valve Position", "CIP 36\" Valve Position", "CIP 78\" Valve Position", "HIP HX / Bypass ratio", "CIP HX / Bypass ratio", "HIP HX Duty", "CIP HX Duty"]
+        extra_values = [f"{hip_pos:.1f}", f"{cip_36_pos:.1f}", f"{cip_78_pos:.1f}", f"{hip_hx/total12:.3f}", f"{cip_hx/total14:.3f}", f"{duty_hip:.2f}", f"{duty_cip:.2f}"]
+        for i, (label, val) in enumerate(zip(extra_labels, extra_values)):
+            row = extra_frame.winfo_children()[i]
+            row.winfo_children()[2].config(text=val)
+
+        messagebox.showinfo("Calculation Complete", "Output streams and HX duties updated.")
+
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
+# ── Buttons ──────────────────────────────────────────────────────
+btn_frame = ttk.Frame(root)
+btn_frame.pack(pady=20)
+
+ttk.Button(btn_frame, text="Reset", command=lambda: messagebox.showinfo("Reset", "Not implemented")).pack(side="left", padx=30)
+ttk.Button(btn_frame, text="Calculate Static", command=run_static_calculation).pack(side="left", padx=30)
+
+# ── Mode toggle ──────────────────────────────────────────────────
+def toggle_mode(*args):
+    mode = mode_var.get()
+    target_frame.pack(fill="x", padx=20, pady=6) if mode == "Static" else target_frame.pack_forget()
+
+target_frame = ttk.LabelFrame(root, text="Target Temperatures (Static Mode)", padding=12)
+ttk.Label(target_frame, text="Target Pass 3 Outlet Temp").grid(row=0, column=0, sticky="e", padx=10, pady=6)
+pass3_target = ttk.Entry(target_frame, width=12)
+pass3_target.insert(0, "806")
+pass3_target.grid(row=0, column=1, padx=10, pady=6, sticky="w")
+
+ttk.Label(target_frame, text="Target Pass 4 Outlet Temp").grid(row=1, column=0, sticky="e", padx=10, pady=6)
+pass4_target = ttk.Entry(target_frame, width=12)
+pass4_target.insert(0, "779")
+pass4_target.grid(row=1, column=1, padx=10, pady=6, sticky="w")
+
+mode_var.trace("w", toggle_mode)
+toggle_mode()  # initial state
+
+root.mainloop()
