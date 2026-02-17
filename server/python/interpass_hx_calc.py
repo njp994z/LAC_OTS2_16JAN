@@ -198,42 +198,37 @@ def calculate_static(params):
     hip_hx_ratio = round(flow_hx_hip / Q_total_hip, 3) if Q_total_hip > 0 else 0
     cip_hx_ratio = round(flow_hx_cip / Q_total_cip, 3) if Q_total_cip > 0 else 0
 
-    output_table = [
-        {"stream": "#13 HIP Hot Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream13_temp:.1f}"},
-        {"stream": "#18A HIP Cold Feed", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream18A_temp:.1f}"},
-        {"stream": "#18B HIP Cold Inlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream18B_temp:.1f}"},
-        {"stream": "#18C HIP BYP", "parameter": "TOTAL FLOW", "units": "scfm", "value": f"{stream18C_flow:,}"},
-        {"stream": "#18D HIP BYP Mix", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream18D_temp:.1f}"},
-        {"stream": "#18E HIP Cold Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream18E_temp:.1f}"},
-        {"stream": "#19 HIP Cold Mixed", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream19_temp:.1f}"},
-        {"stream": "#15 CIP Hot Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream15_temp:.1f}"},
-        {"stream": "#17B CIP Cold Inlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream17B_temp:.1f}"},
-        {"stream": "#17C CIP BYP V_in", "parameter": "TOTAL FLOW", "units": "scfm", "value": f"{stream17C_flow:,}"},
-        {"stream": "#17D CIP BYP V_out", "parameter": "TOTAL FLOW", "units": "scfm", "value": f"{stream17D_flow:,}"},
-        {"stream": "#17E CIP Cold Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream17E_temp:.1f}"},
-        {"stream": "#18 CIP Cold Out", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{stream18_temp:.1f}"},
-        {"stream": "HIP 48\" Valve Position", "parameter": "% open", "units": "", "value": f"{hip_48_pos:.1f}"},
-        {"stream": "CIP 36\" Valve Position", "parameter": "% open", "units": "", "value": f"{cip_36_pos:.1f}"},
-        {"stream": "CIP 78\" Valve Position", "parameter": "% open", "units": "", "value": f"{cip_78_pos:.1f}"},
-        {"stream": "HIP HX / Bypass ratio", "parameter": "fraction", "units": "", "value": f"{hip_hx_ratio:.3f}"},
-        {"stream": "CIP HX / Bypass ratio", "parameter": "fraction", "units": "", "value": f"{cip_hx_ratio:.3f}"},
+    duty_hip = round((flow_hx_hip * 60 * 34 / 379 * 0.25 * (hip_hot_inlet - stream13_temp)) / 1_000_000, 2)
+    duty_cip = round((flow_hx_cip * 60 * 34 / 379 * 0.25 * (cip_hot_inlet - stream15_temp)) / 1_000_000, 2)
+
+    hip_table = [
+        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s12": f"{hip_hot_inlet:.1f}", "s13": f"{stream13_temp:.1f}", "s18A": f"{stream18A_temp:.1f}", "s18B": f"{stream18B_temp:.1f}", "s18C": f"{cip_cold_feed:.1f}", "s18D": f"{stream18D_temp:.1f}", "s18E": f"{stream18E_temp:.1f}", "s19": f"{stream19_temp:.1f}"},
+        {"parameter": "TOTAL FLOW", "units": "scfm", "s12": f"{Q_total_hip:,.0f}", "s13": f"{Q_total_hip:,.0f}", "s18A": f"{Q_total_hip:,.0f}", "s18B": f"{flow_hx_hip:,.0f}", "s18C": f"{stream18C_flow:,}", "s18D": f"{Q_total_hip:,.0f}", "s18E": f"{flow_hx_hip:,.0f}", "s19": f"{Q_total_hip:,.0f}"},
+        {"parameter": "PRESSURE", "units": "in. wc.", "s12": "119", "s13": "115", "s18A": "113", "s18B": "113", "s18C": "113", "s18D": "113", "s18E": "115", "s19": "113"},
     ]
 
-    valve_results = {
-        "hip_48_position": hip_48_pos,
-        "hip_48_cv_req": round(cv_req_hip, 0),
-        "cip_36_position": cip_36_pos,
-        "cip_78_position": cip_78_pos,
-        "cip_cv_req": round(cv_req_cip, 0),
-        "hip_bypass_flow": round(hip_bypass_flow),
-        "cip_bypass_flow": round(cip_bypass_flow),
-    }
+    cip_table = [
+        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s14": f"{cip_hot_inlet:.1f}", "s15": f"{stream15_temp:.1f}", "s17A": f"{cip_cold_feed:.1f}", "s17B": f"{stream17B_temp:.1f}", "s17C": f"{cip_cold_feed:.1f}", "s17D": f"{cip_cold_feed:.1f}", "s17E": f"{stream17E_temp:.1f}", "s18": f"{stream18_temp:.1f}"},
+        {"parameter": "TOTAL FLOW", "units": "scfm", "s14": f"{Q_total_cip:,.0f}", "s15": f"{Q_total_cip:,.0f}", "s17A": f"{Q_total_cip:,.0f}", "s17B": f"{flow_hx_cip:,.0f}", "s17C": f"{round(cip_bypass_flow * 0.4):,}", "s17D": f"{round(cip_bypass_flow * 0.6):,}", "s17E": f"{flow_hx_cip:,.0f}", "s18": f"{Q_total_cip:,.0f}"},
+        {"parameter": "PRESSURE", "units": "in. wc.", "s14": "113", "s15": "109", "s17A": "113", "s17B": "113", "s17C": "113", "s17D": "113", "s17E": "111", "s18": "109"},
+    ]
+
+    extras = [
+        {"label": "HIP 48\" Valve Position", "units": "% open", "value": f"{hip_48_pos:.1f}"},
+        {"label": "CIP 36\" Valve Position", "units": "% open", "value": f"{cip_36_pos:.1f}"},
+        {"label": "CIP 78\" Valve Position", "units": "% open", "value": f"{cip_78_pos:.1f}"},
+        {"label": "HIP HX / Bypass ratio", "units": "fraction", "value": f"{hip_hx_ratio:.3f}"},
+        {"label": "CIP HX / Bypass ratio", "units": "fraction", "value": f"{cip_hx_ratio:.3f}"},
+        {"label": "HIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_hip:.2f}"},
+        {"label": "CIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_cip:.2f}"},
+    ]
 
     return {
         "success": True,
         "inlet_table": inlet_table,
-        "output_table": output_table,
-        "valve_results": valve_results
+        "hip_table": hip_table,
+        "cip_table": cip_table,
+        "extras": extras,
     }
 
 
@@ -272,39 +267,42 @@ def calculate_dynamic(params):
     hip_hx_ratio = round(flow_hx_hip / Q_total_hip, 3) if Q_total_hip > 0 else 0
     cip_hx_ratio = round(flow_hx_cip / Q_total_cip, 3) if Q_total_cip > 0 else 0
 
-    output_table = [
-        {"stream": "#13 HIP Hot Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{hip_hot_inlet - 50:.1f}"},
-        {"stream": "#18A HIP Cold Feed", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{cip_cold_feed:.1f}"},
-        {"stream": "#18B HIP Cold Inlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{cip_cold_feed + 20:.1f}"},
-        {"stream": "#18C HIP BYP", "parameter": "TOTAL FLOW", "units": "scfm", "value": f"{hip_bypass:,}"},
-        {"stream": "#18D HIP BYP Mix", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{new_T_out_hip:.1f}"},
-        {"stream": "#18E HIP Cold Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{cip_cold_feed + 120:.1f}"},
-        {"stream": "#19 HIP Cold Mixed", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{new_T_out_hip:.1f}"},
-        {"stream": "#15 CIP Hot Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{new_T_out_cip:.1f}"},
-        {"stream": "#17B CIP Cold Inlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{cip_cold_feed + 10:.1f}"},
-        {"stream": "#17C CIP BYP V_in", "parameter": "TOTAL FLOW", "units": "scfm", "value": f"{round(cip_bypass * 0.4):,}"},
-        {"stream": "#17D CIP BYP V_out", "parameter": "TOTAL FLOW", "units": "scfm", "value": f"{round(cip_bypass * 0.6):,}"},
-        {"stream": "#17E CIP Cold Outlet", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{cip_cold_feed + 140:.1f}"},
-        {"stream": "#18 CIP Cold Out", "parameter": "TEMPERATURE", "units": "\u00b0F", "value": f"{new_T_out_cip:.1f}"},
-        {"stream": "HIP 48\" Valve Position", "parameter": "% open", "units": "", "value": f"{hip_48_pos:.1f}"},
-        {"stream": "CIP 36\" Valve Position", "parameter": "% open", "units": "", "value": f"{cip_36_pos:.1f}"},
-        {"stream": "CIP 78\" Valve Position", "parameter": "% open", "units": "", "value": f"{cip_78_pos:.1f}"},
-        {"stream": "HIP HX / Bypass ratio", "parameter": "fraction", "units": "", "value": f"{hip_hx_ratio:.3f}"},
-        {"stream": "CIP HX / Bypass ratio", "parameter": "fraction", "units": "", "value": f"{cip_hx_ratio:.3f}"},
+    stream13_temp = hip_hot_inlet - 50
+    stream15_temp_dyn = new_T_out_cip
+    duty_hip = round((flow_hx_hip * 60 * 34 / 379 * 0.25 * (hip_hot_inlet - stream13_temp)) / 1_000_000, 2)
+    duty_cip = round((flow_hx_cip * 60 * 34 / 379 * 0.25 * (cip_hot_inlet - stream15_temp_dyn)) / 1_000_000, 2)
+
+    hip_table = [
+        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s12": f"{hip_hot_inlet:.1f}", "s13": f"{stream13_temp:.1f}", "s18A": f"{cip_cold_feed:.1f}", "s18B": f"{cip_cold_feed + 20:.1f}", "s18C": f"{cip_cold_feed:.1f}", "s18D": f"{new_T_out_hip:.1f}", "s18E": f"{cip_cold_feed + 120:.1f}", "s19": f"{new_T_out_hip:.1f}"},
+        {"parameter": "TOTAL FLOW", "units": "scfm", "s12": f"{Q_total_hip:,.0f}", "s13": f"{Q_total_hip:,.0f}", "s18A": f"{Q_total_hip:,.0f}", "s18B": f"{flow_hx_hip:,.0f}", "s18C": f"{hip_bypass:,}", "s18D": f"{Q_total_hip:,.0f}", "s18E": f"{flow_hx_hip:,.0f}", "s19": f"{Q_total_hip:,.0f}"},
+        {"parameter": "PRESSURE", "units": "in. wc.", "s12": "119", "s13": "115", "s18A": "113", "s18B": "113", "s18C": "113", "s18D": "113", "s18E": "115", "s19": "113"},
+    ]
+
+    cip_table = [
+        {"parameter": "TEMPERATURE", "units": "\u00b0F", "s14": f"{cip_hot_inlet:.1f}", "s15": f"{new_T_out_cip:.1f}", "s17A": f"{cip_cold_feed:.1f}", "s17B": f"{cip_cold_feed + 10:.1f}", "s17C": f"{cip_cold_feed:.1f}", "s17D": f"{cip_cold_feed:.1f}", "s17E": f"{cip_cold_feed + 140:.1f}", "s18": f"{new_T_out_cip:.1f}"},
+        {"parameter": "TOTAL FLOW", "units": "scfm", "s14": f"{Q_total_cip:,.0f}", "s15": f"{Q_total_cip:,.0f}", "s17A": f"{Q_total_cip:,.0f}", "s17B": f"{flow_hx_cip:,.0f}", "s17C": f"{round(cip_bypass * 0.4):,}", "s17D": f"{round(cip_bypass * 0.6):,}", "s17E": f"{flow_hx_cip:,.0f}", "s18": f"{Q_total_cip:,.0f}"},
+        {"parameter": "PRESSURE", "units": "in. wc.", "s14": "113", "s15": "109", "s17A": "113", "s17B": "113", "s17C": "113", "s17D": "113", "s17E": "111", "s18": "109"},
+    ]
+
+    extras = [
+        {"label": "HIP 48\" Valve Position", "units": "% open", "value": f"{hip_48_pos:.1f}"},
+        {"label": "CIP 36\" Valve Position", "units": "% open", "value": f"{round(cip_36_pos, 1):.1f}"},
+        {"label": "CIP 78\" Valve Position", "units": "% open", "value": f"{round(cip_78_pos, 1):.1f}"},
+        {"label": "HIP HX / Bypass ratio", "units": "fraction", "value": f"{hip_hx_ratio:.3f}"},
+        {"label": "CIP HX / Bypass ratio", "units": "fraction", "value": f"{cip_hx_ratio:.3f}"},
+        {"label": "HIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_hip:.2f}"},
+        {"label": "CIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_cip:.2f}"},
     ]
 
     return {
         "success": True,
         "time_s": round(new_time, 1),
         "mA": round(mA, 2),
-        "CIP_36_position": round(cip_36_pos, 1),
-        "CIP_78_position": round(cip_78_pos, 1),
-        "HIP_48_position": round(pos_cip, 1),
-        "CIP_bypass_flow": round(Q_total_cip - flow_hx_cip),
-        "HIP_bypass_flow": round(Q_total_hip - flow_hx_hip),
         "T_out_cip": round(new_T_out_cip, 1),
         "T_out_hip": round(new_T_out_hip, 1),
-        "output_table": output_table
+        "hip_table": hip_table,
+        "cip_table": cip_table,
+        "extras": extras,
     }
 
 
