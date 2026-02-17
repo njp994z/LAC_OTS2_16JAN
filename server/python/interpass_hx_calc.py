@@ -147,6 +147,17 @@ def fmt(v):
     return f"{round(v):,}"
 
 
+def calc_lmtd(T_hot_in, T_hot_out, T_cold_out, T_cold_in):
+    dT1 = T_hot_in - T_cold_out
+    dT2 = T_hot_out - T_cold_in
+    if dT1 <= 0 or dT2 <= 0:
+        return 0.0
+    if abs(dT1 - dT2) < 0.01:
+        return dT1
+    import math
+    return (dT1 - dT2) / math.log(dT1 / dT2)
+
+
 def build_hip_table(s12, s17a, Q_total_hip, flow_hx_hip, hip_bypass_flow,
                     hip_hot_inlet, stream13_temp, cip_cold_feed,
                     stream18B_temp, stream18D_temp, stream18E_temp, stream19_temp):
@@ -300,6 +311,9 @@ def calculate_static(params):
     duty_hip = round((flow_hx_hip * 60 * 34 / 379 * 0.25 * (hip_hot_inlet - stream13_temp)) / 1_000_000, 2)
     duty_cip = round((flow_hx_cip * 60 * 34 / 379 * 0.25 * (cip_hot_inlet - stream15_temp)) / 1_000_000, 2)
 
+    lmtd_hip = calc_lmtd(hip_hot_inlet, stream13_temp, stream18E_temp, cip_cold_feed)
+    lmtd_cip = calc_lmtd(cip_hot_inlet, stream15_temp, stream17E_temp, cip_cold_feed)
+
     hip_table = build_hip_table(s12, s17a, Q_total_hip, flow_hx_hip, hip_bypass_flow,
                                 hip_hot_inlet, stream13_temp, cip_cold_feed,
                                 stream18B_temp, stream18D_temp, stream18E_temp, stream19_temp)
@@ -316,6 +330,8 @@ def calculate_static(params):
         {"label": "CIP HX / Bypass ratio", "units": "fraction", "value": f"{cip_hx_ratio:.3f}"},
         {"label": "HIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_hip:.2f}"},
         {"label": "CIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_cip:.2f}"},
+        {"label": "HIP LMTD", "units": "\u00b0F", "value": f"{lmtd_hip:.1f}"},
+        {"label": "CIP LMTD", "units": "\u00b0F", "value": f"{lmtd_cip:.1f}"},
     ]
 
     return {
@@ -386,6 +402,9 @@ def calculate_dynamic(params):
                                 cip_hot_inlet, new_T_out_cip, cip_cold_feed,
                                 stream17B_temp, stream17E_temp, new_T_out_cip)
 
+    lmtd_hip = calc_lmtd(hip_hot_inlet, stream13_temp, stream18E_temp, cip_cold_feed)
+    lmtd_cip = calc_lmtd(cip_hot_inlet, new_T_out_cip, stream17E_temp, cip_cold_feed)
+
     extras = [
         {"label": "HIP 48\" Valve Position", "units": "% open", "value": f"{hip_48_pos:.1f}"},
         {"label": "CIP 36\" Valve Position", "units": "% open", "value": f"{round(cip_36_pos, 1):.1f}"},
@@ -394,6 +413,8 @@ def calculate_dynamic(params):
         {"label": "CIP HX / Bypass ratio", "units": "fraction", "value": f"{cip_hx_ratio:.3f}"},
         {"label": "HIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_hip:.2f}"},
         {"label": "CIP HX Duty", "units": "MMBTU/hr", "value": f"{duty_cip:.2f}"},
+        {"label": "HIP LMTD", "units": "\u00b0F", "value": f"{lmtd_hip:.1f}"},
+        {"label": "CIP LMTD", "units": "\u00b0F", "value": f"{lmtd_cip:.1f}"},
     ]
 
     return {

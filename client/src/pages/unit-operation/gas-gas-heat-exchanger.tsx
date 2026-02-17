@@ -16,12 +16,12 @@ function InputField({ label, value, onChange, unit, testId }: {
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Label className="text-xs text-muted-foreground whitespace-nowrap min-w-[220px] text-right">{label}</Label>
+      <Label className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 text-right" style={{ minWidth: '200px' }}>{label}</Label>
       <Input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="text-sm font-mono w-24"
+        className="text-sm font-mono w-28"
         data-testid={testId}
       />
       {unit && <span className="text-xs text-muted-foreground whitespace-nowrap">{unit}</span>}
@@ -107,6 +107,40 @@ const DEFAULT_EXTRAS: ExtraRow[] = [
   { label: "CIP HX / Bypass ratio", units: "fraction", value: "---" },
   { label: "HIP HX Duty", units: "MMBTU/hr", value: "---" },
   { label: "CIP HX Duty", units: "MMBTU/hr", value: "---" },
+  { label: "HIP LMTD", units: "\u00b0F", value: "---" },
+  { label: "CIP LMTD", units: "\u00b0F", value: "---" },
+];
+
+interface SystemParam {
+  label: string;
+  defaultValue: string;
+}
+
+const SYSTEM_PARAMS: SystemParam[] = [
+  { label: "CIP Tube OD (in)", defaultValue: "2.565" },
+  { label: "CIP Tube Number", defaultValue: "2,148" },
+  { label: "CIP Tube Thickness (in)", defaultValue: "0.218" },
+  { label: "CIP Tube Length (ft)", defaultValue: "30.9375" },
+  { label: "HIP Tube OD (in)", defaultValue: "2.565" },
+  { label: "HIP Tube Number", defaultValue: "1,150" },
+  { label: "HIP Tube Thickness (in)", defaultValue: "0.218" },
+  { label: "HIP Tube Length (ft)", defaultValue: "25.0" },
+  { label: 'CIP Cv_Max 36"', defaultValue: "100,000.0" },
+  { label: 'HIP Cv_Max 48"', defaultValue: "200,000.0" },
+  { label: 'CIP Cv_Max 78"', defaultValue: "700,000.0" },
+  { label: "Barometric P (psia)", defaultValue: "14.696" },
+  { label: "Weather ZIP Code", defaultValue: "89801" },
+  { label: "k_304 SS (BTU/hr*ft*\u00b0F)", defaultValue: "8.7" },
+  { label: "CIP; Number of Baffles", defaultValue: "5" },
+  { label: "HIP; Number of Baffles", defaultValue: "1" },
+  { label: "CIP h_H #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "CIP h_C #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "HIP h_H #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "HIP h_C #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "CIP h_H #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "CIP h_C #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "HIP h_H #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
+  { label: "HIP h_C #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
 ];
 
 const HIP_COLS = ["#12", "#13", "#18A", "#18B", "#18C", "#18D", "#18E", "#19"] as const;
@@ -163,6 +197,22 @@ export default function GasGasHeatExchanger() {
   const [pass3Target, setPass3Target] = useState("806");
   const [pass4Target, setPass4Target] = useState("779");
   const [controllerMA, setControllerMA] = useState("12.0");
+
+  const [dynDt, setDynDt] = useState("0.5");
+  const [dynTauFilter, setDynTauFilter] = useState("2.0");
+  const [dynThetaLag, setDynThetaLag] = useState("8.0");
+  const [dynTau5224, setDynTau5224] = useState("3.0");
+  const [dynTau5220a, setDynTau5220a] = useState("3.0");
+  const [dynTau5220b, setDynTau5220b] = useState("3.0");
+  const [dynHipSetpoint, setDynHipSetpoint] = useState("806");
+  const [dynCipSetpoint, setDynCipSetpoint] = useState("779");
+
+  const [sysParams, setSysParams] = useState<Record<string, string>>(
+    () => Object.fromEntries(SYSTEM_PARAMS.map(p => [p.label, p.defaultValue]))
+  );
+  const updateSysParam = useCallback((label: string, value: string) => {
+    setSysParams(prev => ({ ...prev, [label]: value }));
+  }, []);
 
   const [hipTable, setHipTable] = useState<HipRow[]>([]);
   const [cipTable, setCipTable] = useState<CipRow[]>([]);
@@ -311,6 +361,15 @@ export default function GasGasHeatExchanger() {
     setPass3Target("806");
     setPass4Target("779");
     setControllerMA("12.0");
+    setDynDt("0.5");
+    setDynTauFilter("2.0");
+    setDynThetaLag("8.0");
+    setDynTau5224("3.0");
+    setDynTau5220a("3.0");
+    setDynTau5220b("3.0");
+    setDynHipSetpoint("806");
+    setDynCipSetpoint("779");
+    setSysParams(Object.fromEntries(SYSTEM_PARAMS.map(p => [p.label, p.defaultValue])));
     setHipTable([]);
     setCipTable([]);
     setExtras(DEFAULT_EXTRAS);
@@ -422,6 +481,46 @@ export default function GasGasHeatExchanger() {
               </Card>
             )}
           </div>
+
+          {mode === "Dynamic" && (
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm">Dynamic Control</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
+                  <InputField label="Dynamic Control (mA)" value={controllerMA} onChange={setControllerMA} unit="mA" testId="input-dyn-ma" />
+                  <InputField label="Timestep dt (s)" value={dynDt} onChange={setDynDt} unit="s" testId="input-dyn-dt" />
+                  <InputField label="Tau Low Pass Filter (s)" value={dynTauFilter} onChange={setDynTauFilter} unit="s" testId="input-dyn-tau-filter" />
+                  <InputField label="Theta Dead-Lag (s)" value={dynThetaLag} onChange={setDynThetaLag} unit="s" testId="input-dyn-theta-lag" />
+                  <InputField label="Tau TCV-5224 (s)" value={dynTau5224} onChange={setDynTau5224} unit="s" testId="input-dyn-tau-5224" />
+                  <InputField label="Tau TCV-5220A (s)" value={dynTau5220a} onChange={setDynTau5220a} unit="s" testId="input-dyn-tau-5220a" />
+                  <InputField label="Tau TCV-5220B (s)" value={dynTau5220b} onChange={setDynTau5220b} unit="s" testId="input-dyn-tau-5220b" />
+                  <InputField label="HIP TIC-5224 Set-Point Pass 3" value={dynHipSetpoint} onChange={setDynHipSetpoint} unit={"\u00b0F"} testId="input-dyn-hip-sp" />
+                  <InputField label="CIP TIC-5220 Set-Point Pass 4" value={dynCipSetpoint} onChange={setDynCipSetpoint} unit={"\u00b0F"} testId="input-dyn-cip-sp" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">System Parameters</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
+                {SYSTEM_PARAMS.map((p, i) => (
+                  <InputField
+                    key={p.label}
+                    label={p.label}
+                    value={sysParams[p.label]}
+                    onChange={(v) => updateSysParam(p.label, v)}
+                    testId={`input-sys-${i}`}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader className="py-3 px-4">
