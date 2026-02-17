@@ -263,6 +263,9 @@ import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
 
+import { Provider } from 'react-redux'
+import { store } from "./store";
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -583,6 +586,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
       <TooltipProvider>
         <SessionProvider>
           <ControllerSyncProvider>
@@ -595,6 +599,7 @@ function App() {
           </ControllerSyncProvider>
         </SessionProvider>
       </TooltipProvider>
+      </Provider>
     </QueryClientProvider>
   );
 }
