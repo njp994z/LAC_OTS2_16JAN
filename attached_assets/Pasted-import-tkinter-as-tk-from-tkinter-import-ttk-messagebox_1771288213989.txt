@@ -1,0 +1,244 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+root = tk.Tk()
+root.title("Sulfur Interpass HX Valve & Stream Simulator")
+root.geometry("1280x1024")
+root.configure(bg="#1e1e1e")
+
+style = ttk.Style()
+style.theme_use("clam")
+style.configure("TLabel", background="#1e1e1e", foreground="#e0e0e0", font=("Segoe UI", 10))
+style.configure("TEntry", fieldbackground="#2d2d2d", foreground="#ffffff")
+style.configure("TButton", background="#3a3a3a", foreground="#ffffff")
+style.configure("Treeview", background="#2d2d2d", foreground="#e0e0e0", fieldbackground="#2d2d2d")
+style.configure("Treeview.Heading", background="#3a3a3a", foreground="#ffffff")
+style.map("Treeview", background=[("selected", "#4a6a8a")])
+
+# ── Header ───────────────────────────────────────────────────────
+header = tk.Label(root, text="Sulfur Interpass HX Valve & Stream Simulator", font=("Segoe UI", 14, "bold"), bg="#1e1e1e", fg="#00ccff")
+header.pack(pady=(20, 5))
+
+subtitle = tk.Label(root, text="Three valves - Split-range - Full stream tables", font=("Segoe UI", 10), bg="#1e1e1e", fg="#a0a0a0")
+subtitle.pack()
+
+# ── Mode Selection ───────────────────────────────────────────────
+mode_frame = ttk.Frame(root)
+mode_frame.pack(pady=12)
+
+ttk.Label(mode_frame, text="Simulation Mode:").pack(side="left", padx=10)
+mode_var = tk.StringVar(value="Static")
+ttk.Radiobutton(mode_frame, text="Static Calculation", variable=mode_var, value="Static").pack(side="left", padx=15)
+ttk.Radiobutton(mode_frame, text="Dynamic Simulation", variable=mode_var, value="Dynamic").pack(side="left", padx=15)
+
+# ── Editable Inlet Temperatures ──────────────────────────────────
+inlet_frame = ttk.LabelFrame(root, text="Inlet Temperatures", padding=12)
+inlet_frame.pack(fill="x", padx=20, pady=10)
+
+labels = [
+    "Stream #12 HIP Hot Inlet Temp",
+    "Stream #14 CIP Hot Inlet Temp",
+    "Stream #17A CIP Cold Feed Temp"
+]
+entries = {}
+
+for i, label_text in enumerate(labels):
+    ttk.Label(inlet_frame, text=label_text).grid(row=i, column=0, sticky="e", padx=10, pady=6)
+    e = ttk.Entry(inlet_frame, width=12)
+    if i == 0: e.insert(0, "965")
+    if i == 1: e.insert(0, "847")
+    if i == 2: e.insert(0, "180")
+    e.grid(row=i, column=1, padx=10, pady=6, sticky="w")
+    entries[label_text] = e
+
+# ── Target Temperatures ──────────────────────────────────────────
+target_frame = ttk.LabelFrame(root, text="Target Temperatures (Static Mode)", padding=12)
+target_frame.pack(fill="x", padx=20, pady=6)
+
+ttk.Label(target_frame, text="Target Pass 3 Outlet Temp").grid(row=0, column=0, sticky="e", padx=10, pady=6)
+pass3_target = ttk.Entry(target_frame, width=12)
+pass3_target.insert(0, "806")
+pass3_target.grid(row=0, column=1, padx=10, pady=6, sticky="w")
+
+ttk.Label(target_frame, text="Target Pass 4 Outlet Temp").grid(row=1, column=0, sticky="e", padx=10, pady=6)
+pass4_target = ttk.Entry(target_frame, width=12)
+pass4_target.insert(0, "779")
+pass4_target.grid(row=1, column=1, padx=10, pady=6, sticky="w")
+
+# ── Dynamic input ────────────────────────────────────────────────
+dynamic_frame = ttk.LabelFrame(root, text="Dynamic Control (mA)", padding=12)
+ttk.Label(dynamic_frame, text="TIC-5224 Controller Output (mA)").grid(row=0, column=0, sticky="e", padx=10, pady=6)
+ma_entry = ttk.Entry(dynamic_frame, width=12)
+ma_entry.insert(0, "12.0")
+ma_entry.grid(row=0, column=1, padx=10, pady=6, sticky="w")
+
+# ── Inlet Table ──────────────────────────────────────────────────
+inlet_table_frame = ttk.LabelFrame(root, text="Stream Summary - Inlet Streams", padding=12)
+inlet_table_frame.pack(fill="x", padx=20, pady=10)
+
+inlet_columns = ("Parameter", "Units", "Stream #12", "Stream #14", "Stream #17A")
+inlet_tree = ttk.Treeview(inlet_table_frame, columns=inlet_columns, show="headings", height=12)
+inlet_tree.heading("Parameter", text="Parameter")
+inlet_tree.heading("Units", text="Units")
+inlet_tree.heading("Stream #12", text="Stream #12 HIP Hot Inlet")
+inlet_tree.heading("Stream #14", text="Stream #14 CIP Hot Inlet")
+inlet_tree.heading("Stream #17A", text="Stream #17A CIP Cold Feed")
+
+for col in inlet_columns:
+    inlet_tree.column(col, width=180 if col == "Parameter" else 140, anchor="center")
+
+inlet_tree.pack(fill="both", expand=True)
+
+def update_inlet_table():
+    t12 = entries["Stream #12 HIP Hot Inlet Temp"].get() or "965"
+    t14 = entries["Stream #14 CIP Hot Inlet Temp"].get() or "847"
+    t17a = entries["Stream #17A CIP Cold Feed Temp"].get() or "180"
+
+    data = [
+        ("SO2",     "scfm",     "1,335",    "480",      "480"),
+        ("SO3",     "scfm",     "11,293",   "12,148",   "0"),
+        ("O2",      "scfm",     "4,728",    "4,300",    "4,300"),
+        ("N2",      "scfm",     "86,808",   "86,808",   "86,808"),
+        ("H2O",     "scfm",     "0",        "0",        "0"),
+        ("H2SO4",   "scfm",     "0",        "0",        "0"),
+        ("TOTAL",   "scfm",     "104,164",  "103,736",  "91,588"),
+        ("PRESSURE","in. wc.",  "119",      "113",      "113"),
+        ("TEMPERATURE", "F",    t12,        t14,        t17a),
+    ]
+
+    for item in inlet_tree.get_children():
+        inlet_tree.delete(item)
+
+    for row in data:
+        inlet_tree.insert("", "end", values=row)
+
+update_inlet_table()
+
+# ── Output Table ─────────────────────────────────────────────────
+output_table_frame = ttk.LabelFrame(root, text="Calculated Output Streams", padding=12)
+output_table_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+output_columns = ("Stream", "Parameter", "Units", "Value")
+output_tree = ttk.Treeview(output_table_frame, columns=output_columns, show="headings", height=20)
+output_tree.heading("Stream", text="Stream")
+output_tree.heading("Parameter", text="Parameter")
+output_tree.heading("Units", text="Units")
+output_tree.heading("Value", text="Value")
+
+output_tree.column("Stream", width=160, anchor="w")
+output_tree.column("Parameter", width=180, anchor="w")
+output_tree.column("Units", width=80, anchor="center")
+output_tree.column("Value", width=140, anchor="center")
+
+output_tree.pack(fill="both", expand=True)
+
+# Initial placeholder rows
+output_rows = [
+    ("#13 HIP Hot Outlet",          "TEMPERATURE",      "F",      "---"),
+    ("#18A HIP Cold Feed",          "TEMPERATURE",      "F",      "---"),
+    ("#18B HIP Cold Inlet",         "TEMPERATURE",      "F",      "---"),
+    ("#18C HIP BYP",                "TOTAL FLOW",       "scfm",   "---"),
+    ("#18D HIP BYP Mix",            "TEMPERATURE",      "F",      "---"),
+    ("#18E HIP Cold Outlet",        "TEMPERATURE",      "F",      "---"),
+    ("#19 HIP Cold Mixed",          "TEMPERATURE",      "F",      "---"),
+    ("#15 CIP Hot Outlet",          "TEMPERATURE",      "F",      "---"),
+    ("#17B CIP Cold Inlet",         "TEMPERATURE",      "F",      "---"),
+    ("#17C CIP BYP V_in",           "TOTAL FLOW",       "scfm",   "---"),
+    ("#17D CIP BYP V_out",          "TOTAL FLOW",       "scfm",   "---"),
+    ("#17E CIP Cold Outlet",        "TEMPERATURE",      "F",      "---"),
+    ("#18 CIP Cold Out",            "TEMPERATURE",      "F",      "---"),
+    ("HIP 48\" Valve Position",     "% open",           "",       "---"),
+    ("CIP 36\" Valve Position",     "% open",           "",       "---"),
+    ("CIP 78\" Valve Position",     "% open",           "",       "---"),
+    ("HIP HX / Bypass ratio",       "fraction",         "",       "---"),
+    ("CIP HX / Bypass ratio",       "fraction",         "",       "---"),
+]
+
+for row in output_rows:
+    output_tree.insert("", "end", values=row)
+
+# ── Calculate function ───────────────────────────────────────────
+def run_static_calculation():
+    try:
+        t12 = float(entries["Stream #12 HIP Hot Inlet Temp"].get())
+        t14 = float(entries["Stream #14 CIP Hot Inlet Temp"].get())
+        t17a = float(entries["Stream #17A CIP Cold Feed Temp"].get())
+        target3 = float(pass3_target.get())
+        target4 = float(pass4_target.get())
+
+        # Update inlet table
+        update_inlet_table()
+
+        # Placeholder calculation logic (replace with real backend)
+        hip_out_temp = target3 - 10      # example
+        cip_out_temp = target4 - 8
+        hip_bypass = 104164 * 0.35       # example 35%
+        cip_bypass = 103736 * 0.42
+        hip_hx_flow = 104164 - hip_bypass
+        cip_hx_flow = 103736 - cip_bypass
+
+        hip_pos = 65.0
+        cip_36_pos = 100.0 if hip_pos > 50 else 0
+        cip_78_pos = max(0, hip_pos - 50) * 2
+
+        # Update output table
+        values_to_set = [
+            ("#13 HIP Hot Outlet",          "TEMPERATURE",      "F",      f"{hip_out_temp:.1f}"),
+            ("#18A HIP Cold Feed",          "TEMPERATURE",      "F",      f"{t17a:.1f}"),
+            ("#18B HIP Cold Inlet",         "TEMPERATURE",      "F",      f"{t17a:.1f}"),
+            ("#18C HIP BYP",                "TOTAL FLOW",       "scfm",   f"{hip_bypass:,.0f}"),
+            ("#18D HIP BYP Mix",            "TEMPERATURE",      "F",      f"{target3:.1f}"),
+            ("#18E HIP Cold Outlet",        "TEMPERATURE",      "F",      f"{t17a + 120:.1f}"),
+            ("#19 HIP Cold Mixed",          "TEMPERATURE",      "F",      f"{target3:.1f}"),
+            ("#15 CIP Hot Outlet",          "TEMPERATURE",      "F",      f"{cip_out_temp:.1f}"),
+            ("#17B CIP Cold Inlet",         "TEMPERATURE",      "F",      f"{t17a:.1f}"),
+            ("#17C CIP BYP V_in",           "TOTAL FLOW",       "scfm",   f"{cip_bypass:,.0f}"),
+            ("#17D CIP BYP V_out",          "TOTAL FLOW",       "scfm",   f"{cip_bypass:,.0f}"),
+            ("#17E CIP Cold Outlet",        "TEMPERATURE",      "F",      f"{t17a + 140:.1f}"),
+            ("#18 CIP Cold Out",            "TEMPERATURE",      "F",      f"{target4:.1f}"),
+            ("HIP 48\" Valve Position",     "% open",           "",       f"{hip_pos:.1f}"),
+            ("CIP 36\" Valve Position",     "% open",           "",       f"{cip_36_pos:.1f}"),
+            ("CIP 78\" Valve Position",     "% open",           "",       f"{cip_78_pos:.1f}"),
+            ("HIP HX / Bypass ratio",       "fraction",         "",       f"{hip_hx_flow/104164:.3f}"),
+            ("CIP HX / Bypass ratio",       "fraction",         "",       f"{cip_hx_flow/103736:.3f}"),
+        ]
+
+        for i, (stream, param, unit, val) in enumerate(values_to_set):
+            item = output_tree.get_children()[i]
+            output_tree.item(item, values=(stream, param, unit, val))
+
+        messagebox.showinfo("Calculation Complete", "Output streams updated (placeholder values)")
+
+    except ValueError as ve:
+        messagebox.showerror("Input Error", f"Invalid number:\n{ve}")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
+# ── Buttons ──────────────────────────────────────────────────────
+btn_frame = ttk.Frame(root)
+btn_frame.pack(pady=20)
+
+ttk.Button(btn_frame, text="Reset", command=lambda: messagebox.showinfo("Reset", "Reset not implemented yet")).pack(side="left", padx=20)
+ttk.Button(btn_frame, text="Calculate Static", command=run_static_calculation).pack(side="left", padx=20)
+
+# ── Mode toggle ──────────────────────────────────────────────────
+def toggle_mode(*args):
+    mode = mode_var.get()
+    if mode == "Static":
+        target_frame.pack(fill="x", padx=20, pady=6)
+        dynamic_frame.pack_forget()
+    else:
+        target_frame.pack_forget()
+        dynamic_frame.pack(fill="x", padx=20, pady=6)
+
+mode_var.trace("w", toggle_mode)
+toggle_mode()
+
+# ── Live update inlet table on temp change ──────────────────────
+def on_change(*args):
+    update_inlet_table()
+
+for e in entries.values():
+    e.bind("<KeyRelease>", on_change)
+
+root.mainloop()
