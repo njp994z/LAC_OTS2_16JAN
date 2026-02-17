@@ -8,6 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Gauge, Calculator, Play, Pause, RotateCcw, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import expLogo from "@/assets/exp-logo.png";
+import cipControlLoop from "@assets/image_1771290235296.png";
+import hipControlLoop from "@assets/image_1771290254647.png";
 
 function InputField({ label, value, onChange, unit, testId }: {
   label: string; value: string; onChange: (v: string) => void; unit?: string; testId: string;
@@ -546,6 +548,31 @@ export default function GasGasHeatExchanger() {
                   ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6 mt-6">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Control Loop — Hot Interpass HX</h3>
+              <img
+                src={hipControlLoop}
+                alt="Control Loop Hot Interpass HX"
+                className="w-full rounded-md"
+                data-testid="img-hip-control-loop"
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Control Loop — Cold Interpass HX</h3>
+              <img
+                src={cipControlLoop}
+                alt="Control Loop Cold Interpass HX"
+                className="w-full rounded-md"
+                data-testid="img-cip-control-loop"
+              />
             </CardContent>
           </Card>
         </div>
