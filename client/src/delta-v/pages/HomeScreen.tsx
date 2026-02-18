@@ -129,8 +129,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { homescreenOptions, defaultArrowPosition, defaultFilterPositions, element, ArrowColor, defaultArrowPositions } from './homeScreenOptions.constants'
+import { defaultArrowPosition, defaultFilterPositions, element, ArrowColor, defaultArrowPositions } from './homeScreenOptions.constants'
 import { HomeScreenLabels } from "@/rtkServices/layoutManagerServices/type";
+import FlowCanvas from "../components/flowCanvas";
+import { useGetLayoutsQuery } from "@/rtkServices/layoutManagerServices";
 
 const toolbarItems = [
   { icon: Search, label: "Search" },
@@ -162,6 +164,7 @@ const resizeHandleStyles = {
 
 const HomeScreen = () => {
   const [location] = useLocation();
+  const { data: layouts, isLoading: isLoadingLayouts } = useGetLayoutsQuery();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [furnacePosition, setFurnacePosition] = useState({ x: 100, y: 100 });
   const [furnaceSize, setFurnaceSize] = useState({ width: 400, height: 150 });
@@ -2998,7 +3001,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white z-50">
-              {homescreenOptions.map((option) => (
+              {
+                isLoadingLayouts ? 
+                <DropdownMenuItem 
+                  key="loading"
+                  onClick={() => {}}
+                  className={`text-gray-800 bg-gray-100`}
+                  data-testid={`dropdown-view-option-loading`}
+                >
+                  Loading...
+                </DropdownMenuItem>
+              : layouts?.map((option: any) => (
                 <DropdownMenuItem 
                   key={option.id}
                   onClick={() => handleSelectScreen(option.label)}
@@ -3244,6 +3257,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       )}
 
       {/* Main content area - scrollable container */}
+      <div className="flex-1 overflow-auto min-h-screen bg-red-400">
+        <FlowCanvas />
+      </div>
       <div className="flex-1 overflow-auto">
         {/* L4-Converter View - Canvas with Converter 4 */}
         {selectedScreen === "L4-Converter" && (

@@ -16,6 +16,7 @@ import { calculateReactorFlow, calculateGasFlowFromPlantRate } from "../shared/r
 import { sessionWS } from "./websocket";
 import { getCurrentPsychrometrics, getHistoricalPsychrometrics, isWeatherServiceConfigured, WeatherServiceError } from "./services/weatherService";
 import { weatherRequestSchema, weatherHistoryRequestSchema, catalystParameterApiSchema, insertConverterCaseSchema } from "../shared/schema";
+import { getLayout, getLayouts, setLayout } from "./services/layoutServices";
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -3066,6 +3067,29 @@ Be professional, concise, and helpful. If asked about features not yet implement
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'text/x-python');
     res.sendFile(filePath);
+  });
+
+
+  app.get('/api/layouts', (req: Request, res: Response) => {
+    const layouts = getLayouts();
+    res.json(layouts);
+  });
+
+  app.get('/api/layouts/:id', (req: Request, res: Response) => {
+    const { id } = req.params;
+    const layout = getLayout(id);
+    res.json(layout);
+  });
+
+  app.post('/api/layouts', (req: Request, res: Response) => {
+    const layouts = setLayout(req.body);
+    res.json(layouts);
+  });
+
+  app.put('/api/layouts/:id', (req: Request, res: Response) => {
+    const { id } = req.params;
+    const layouts = setLayout(req.body, id);
+    res.json(layouts);
   });
 
   return httpServer;
