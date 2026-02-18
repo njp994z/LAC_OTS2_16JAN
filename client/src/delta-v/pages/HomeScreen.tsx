@@ -3257,7 +3257,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       )}
 
       {/* Main content area - scrollable container */}
-      <div className="flex-1 overflow-auto min-h-screen bg-red-400">
+      <div className="flex-1 overflow-auto min-h-screen">
         <FlowCanvas />
       </div>
       <div className="flex-1 overflow-auto">

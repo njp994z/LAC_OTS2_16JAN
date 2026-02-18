@@ -35,3 +35,32 @@ export enum HomeScreenLabels {
   _8_2 = "8.2 L3_1570 Product Acid",
   _8_3 = "8.3 L3_1570 Startup Acid",
 }
+
+export interface FlowNode {
+    id: number;
+    label: string;
+    type: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    component: React.ReactNode;
+}
+
+export interface FlowEdge {
+    id: number;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    color: string;
+    from?: number;
+    to?: number;
+}
+
+interface DrawingEdge {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+}

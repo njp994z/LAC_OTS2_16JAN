@@ -1,4 +1,5 @@
 import { baseApi } from "..";
+import { FlowEdge, FlowNode } from "./type";
 
 const layoutManagerServices = baseApi.injectEndpoints({
     endpoints: (builder) => ({
@@ -9,7 +10,7 @@ const layoutManagerServices = baseApi.injectEndpoints({
             }),
             providesTags: ['Layouts']
         }),
-        getLayoutById: builder.query<any, string>({
+        getLayoutById: builder.query<{ nodes: FlowNode[]; edges: FlowEdge[]; nodeMap: Record<number, { label: string; outputs: number[] }> }, string>({
             query: (id: string) => ({
                 url: `/layout/${id}`,
                 method: "GET",

@@ -59,6 +59,71 @@ interface props {
     defaultData?: any;
     onSave?: (data: { nodes: FlowNode[]; edges: FlowEdge[]; nodeMap: Record<number, { label: string; outputs: number[] }> }) => void;
 }
+const ElementNode = ({
+    node,
+    setDraggingId,
+    startEdgeFromHandle,
+    deleteNode,
+    setResizingId
+}: {
+    node: FlowNode;
+    setDraggingId: (id: number | null) => void;
+    startEdgeFromHandle: (x: number, y: number) => void;
+    deleteNode: (id: number) => void;
+    setResizingId: (id: number | null) => void;
+}) => (
+    <motion.div
+        className="absolute shadow-none hover:shadow-md bg-transparent"
+        style={{
+            left: node.x,
+            top: node.y,
+            width: node.width,
+            height: node.height,
+        }}
+        onMouseDown={() => setDraggingId(node.id)}
+        whileHover={{ scale: 1.02 }}
+    >
+        {node.component}
+        {/* EDGE START HANDLES (center of edges) */}
+        {[
+            { x: node.width / 2, y: 0 },
+            { x: node.width / 2, y: node.height },
+            { x: 0, y: node.height / 2 },
+            { x: node.width, y: node.height / 2 },
+        ].map((p, i) => (
+            <div
+                key={i}
+                className="absolute w-3 h-3 bg-blue-600 rounded-full cursor-crosshair"
+                style={{ left: p.x - 6, top: p.y - 6 }}
+                onMouseDown={(e) => {
+                    e.stopPropagation();
+                    startEdgeFromHandle(node.x + p.x, node.y + p.y);
+                }}
+            />
+        ))}
+
+        {/* Delete */}
+        <div
+            className="absolute w-4 h-4 bg-gray-600/20 hover:bg-gray-600/80 top-0 right-0 cursor-pointer"
+            onMouseDown={(e) => {
+                e.stopPropagation();
+                deleteNode(node.id);
+            }}
+        >
+            <Trash2 className="w-4 h-4" />
+        </div>
+
+        {/* Resize */}
+        <div
+            className="absolute w-4 h-4 bg-gray-600/20 hover:bg-gray-600/80 bottom-0 right-0 cursor-se-resize"
+            onMouseDown={(e) => {
+                e.stopPropagation();
+                setResizingId(node.id);
+            }}
+        />
+    </motion.div>
+);
+
 const FlowCanvas = ({
     defaultData,
     onSave
@@ -193,7 +258,7 @@ const FlowCanvas = ({
         if (drawingEdge) {
             setEdges((prev) => [
                 ...prev,
-                { ...drawingEdge, id: edgeCounter++, color: "red" },
+                { ...drawingEdge, id: edgeCounter++, color: "black" },
             ]);
             setDrawingEdge(null);
         }
@@ -303,69 +368,13 @@ const FlowCanvas = ({
     );
 
     // --------------------
-    // NODE COMPONENT
-    // --------------------
-    const Node = ({ node }: { node: FlowNode }) => (
-        <motion.div
-            className="absolute shadow-none hover:shadow-md bg-transparent"
-            style={{
-                left: node.x,
-                top: node.y,
-                width: node.width,
-                height: node.height,
-            }}
-            onMouseDown={() => setDraggingId(node.id)}
-            whileHover={{ scale: 1.02 }}
-        >
-            {node.component}
-            {/* EDGE START HANDLES (center of edges) */}
-            {[
-                { x: node.width / 2, y: 0 },
-                { x: node.width / 2, y: node.height },
-                { x: 0, y: node.height / 2 },
-                { x: node.width, y: node.height / 2 },
-            ].map((p, i) => (
-                <div
-                    key={i}
-                    className="absolute w-3 h-3 bg-blue-600 rounded-full cursor-crosshair"
-                    style={{ left: p.x - 6, top: p.y - 6 }}
-                    onMouseDown={(e) => {
-                        e.stopPropagation();
-                        startEdgeFromHandle(node.x + p.x, node.y + p.y);
-                    }}
-                />
-            ))}
-
-            {/* Delete */}
-            <div
-                className="absolute w-4 h-4 bg-gray-600/20 hover:bg-gray-600/80 top-0 right-0 cursor-pointer"
-                onMouseDown={(e) => {
-                    e.stopPropagation();
-                    deleteNode(node.id);
-                }}
-            >
-                <Trash2 className="w-4 h-4" />
-            </div>
-
-            {/* Resize */}
-            <div
-                className="absolute w-4 h-4 bg-gray-600/20 hover:bg-gray-600/80 bottom-0 right-0 cursor-se-resize"
-                onMouseDown={(e) => {
-                    e.stopPropagation();
-                    setResizingId(node.id);
-                }}
-            />
-        </motion.div>
-    );
-
-    // --------------------
     // UI
     // --------------------
     return (
-        <div className="w-full h-screen flex">
+        <div className="w-full h-screen flex flex-col">
             {/* Toolbar */}
-            <div className="w-full flex justify-between h-fit max-h-[70px] px-2">
-                <div className=" overflow-x-scroll px-2">
+            <div className="w-full flex justify-between h-fit max-h-[70px] px-2 border-b bg-white z-10">
+                <div className=" overflow-x-scroll px-2 py-2">
 
                     <div className="flex space-x-2">
                         {ELEMENT_LIST.map((el) => (
@@ -376,7 +385,7 @@ const FlowCanvas = ({
                     </div>
                 </div>
 
-                <div className="flex space-x-2 h-fit px-2">
+                <div className="flex space-x-2 h-fit px-2 py-2">
                     <Button className="w-fit px-2" onClick={addTextNode}>
                         Add Text
                     </Button>
@@ -387,7 +396,7 @@ const FlowCanvas = ({
                 </div>
 
                 {selectedEdge && (
-                    <div className="space-y-2 pt-4 h-fit px-2">
+                    <div className="space-y-2 pt-2 h-fit px-2">
                         <p className="text-sm">Edge Color</p>
                         <div className="flex gap-2">
                             {["black", "red", "green", "blue", "orange"].map((c) => (
@@ -406,16 +415,16 @@ const FlowCanvas = ({
             {/* Canvas */}
             <div
                 ref={canvasRef}
-                className="flex-1 relative bg-gray-50"
+                className="flex-1 relative bg-gray-50 overflow-hidden"
                 onMouseMove={onMouseMove}
             >
-                <svg className="absolute inset-0 w-full h-full">
+                <svg className="absolute inset-0 w-full h-full pointer-events-none">
                     <defs>
                         <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
                             <path d="M0,0 L10,3 L0,6 Z" fill="black" />
                         </marker>
                     </defs>
-                    {renderEdges()}
+                    <g className="pointer-events-auto">{renderEdges()}</g>
 
                     {drawingEdge && (
                         <path
@@ -428,7 +437,14 @@ const FlowCanvas = ({
                 </svg>
 
                 {nodes.map((node) => (
-                    <Node key={node.id} node={node} />
+                    <ElementNode 
+                        key={node.id} 
+                        node={node} 
+                        setDraggingId={setDraggingId}
+                        startEdgeFromHandle={startEdgeFromHandle}
+                        deleteNode={deleteNode}
+                        setResizingId={setResizingId}
+                    />
                 ))}
             </div>
         </div>
