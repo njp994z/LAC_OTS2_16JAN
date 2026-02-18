@@ -1296,11 +1296,11 @@ export default function SulfurControlHydraulics() {
                     </tr>
                     <tr className="border-b">
                       <td className="p-2 font-medium">Pressure</td>
-                      <td className="p-2 text-muted-foreground">psia</td>
+                      <td className="p-2 text-muted-foreground">psig</td>
                       {(mode === 'static' ? staticProcessNodes : dynamicProcessNodes).map((node, idx) => (
                         <td key={idx} className="p-2 text-center">
                           <div className="h-8 flex items-center justify-center font-mono text-sm bg-muted/50 rounded border border-border max-w-[80px] mx-auto" data-testid={`output-pressure-${idx}`}>
-                            {node.pressurePsia}
+                            {mode === 'static' ? (parseFloat(node.pressurePsia) - 14.696).toFixed(3) : node.pressurePsia}
                           </div>
                         </td>
                       ))}
