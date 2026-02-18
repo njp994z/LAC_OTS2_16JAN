@@ -341,7 +341,7 @@ const FlowCanvas = ({
                         d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
                         fill="none"
                         stroke={edge.color}
-                        strokeWidth="2"
+                        strokeWidth="4"
                         markerEnd="url(#arrow)"
                         onClick={(e) => {
                             e.stopPropagation();
