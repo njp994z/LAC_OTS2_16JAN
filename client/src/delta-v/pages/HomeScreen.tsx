@@ -129,6 +129,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { defaultArrowPosition, defaultFilterPositions, element, ArrowColor, defaultArrowPositions } from './homeScreenOptions.constants'
+import { HomeScreenLabels } from "@/rtkServices/layoutManagerServices/type";
+import FlowCanvas from "../components/flowCanvas";
+import { useGetLayoutsQuery } from "@/rtkServices/layoutManagerServices";
+
 const toolbarItems = [
   { icon: Search, label: "Search" },
   { icon: Activity, label: "Errors" },
@@ -140,51 +145,6 @@ const toolbarItems = [
   { icon: History, label: "Process History View" },
   { icon: ClipboardList, label: "Batch History View" },
   { icon: LayoutGrid, label: "Batch Operator Interface" },
-];
-
-const homescreenOptions = [
-  { id: "L1", label: "L1 – System Overview" },
-  { id: "L2", label: "L2 – Furnace Area" },
-  { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4-Converter" },
-  // L2_1500 SULFUR UTILITY
-  { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
-  { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
-  { id: "2.2", label: "2.2 L3_1520 Fin Fan Expansion Tank" },
-  { id: "2.3", label: "2.3 L3_1550 AP Cooling Tower" },
-  { id: "2.4", label: "2.4 L3_1560 Water Distribution" },
-  { id: "2.5", label: "2.5 L3_1560 Water Treatment" },
-  // L2_1500 SULFUR TREATMENT
-  { id: "L2_1500_SULFUR_TREATMENT", label: "L2_1500 SULFUR TREATMENT" },
-  { id: "3.1", label: "3.1 L3_1510 Sulfur Scrubber" },
-  { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
-  { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
-  // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
-  { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
-  { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
-  { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
-  { id: "4.4", label: "4.4 L3_1520 Interpass Tower" },
-  // L2_1540 SULFUR BURNER
-  { id: "L2_1540_SULFUR_BURNER", label: "L2_1540 SULFUR BURNER" },
-  { id: "5.1", label: "5.1 L3_1510 Sulfur Storage" },
-  { id: "5.2", label: "5.2 L3_1540 Compressor" },
-  { id: "5.3", label: "5.3 L3_1540 Sulfur Furnace" },
-  // L2_1500 GAS
-  { id: "L2_1500_GAS", label: "L2_1500 GAS" },
-  { id: "6.1", label: "6.1 L3_1540 Converter" },
-  { id: "6.2", label: "6.2 L3_1540 Deaerator" },
-  { id: "6.3", label: "6.3 L3_1540 Waste Heat Boiler" },
-  // L2_1560 TURBO GENERATOR
-  { id: "L2_1560_TURBO_GENERATOR", label: "L2_1560 TURBO GENERATOR" },
-  { id: "7.1", label: "7.1 L3_1560 Air Cooled Condenser" },
-  { id: "7.2", label: "7.2 L3_1560 Generator" },
-  { id: "7.3", label: "7.3 L3_1560 IP Aux Boiler" },
-  // L2_1500 PRODUCT ACID
-  { id: "L2_1500_PRODUCT_ACID", label: "L2_1500 PRODUCT ACID" },
-  { id: "8.1", label: "8.1 L3_1520 Dilution Pump Tank" },
-  { id: "8.2", label: "8.2 L3_1570 Product Acid" },
-  { id: "8.3", label: "8.3 L3_1570 Startup Acid" },
 ];
 
 const resizeHandleStyle = {
@@ -203,49 +163,15 @@ const resizeHandleStyles = {
 };
 
 const HomeScreen = () => {
+  const [location] = useLocation();
+  const { data: layouts, isLoading: isLoadingLayouts } = useGetLayoutsQuery();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [furnacePosition, setFurnacePosition] = useState({ x: 100, y: 100 });
   const [furnaceSize, setFurnaceSize] = useState({ width: 400, height: 150 });
   const [compressorPosition, setCompressorPosition] = useState({ x: 520, y: 100 });
   const [compressorSize, setCompressorSize] = useState({ width: 200, height: 180 });
   // Array of arrows with position, size, and rotation
-  const [arrows, setArrows] = useState([
-    { id: 'arrow_1', x: 180, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_2', x: 180, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_3', x: 180, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_4', x: 180, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_5', x: 450, y: 280, width: 250, height: 60, rotation: 0, color: 'yellow' as const },
-    { id: 'arrow_6', x: 450, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_7', x: 450, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_8', x: 450, y: 520, width: 250, height: 60, rotation: 0, color: 'purple' as const },
-    { id: 'arrow_9', x: 720, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_10', x: 720, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_11', x: 720, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_12', x: 720, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_13', x: 990, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_14', x: 990, y: 360, width: 250, height: 60, rotation: 0, color: 'purple' as const },
-    { id: 'arrow_15', x: 1260, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_16', x: 1260, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_17', x: 1260, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_18', x: 1260, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_19', x: 1530, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_20', x: 1530, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_21', x: 1530, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_22', x: 1530, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_23', x: 1800, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_24', x: 1800, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_25', x: 1800, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_26', x: 1800, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_27', x: 2070, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_28', x: 2070, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_29', x: 2070, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_30', x: 2070, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_31', x: 2340, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_32', x: 2340, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_33', x: 2340, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_34', x: 2340, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_35', x: 2610, y: 280, width: 250, height: 60, rotation: 0, color: 'purple' as const },
-  ]);
+  const [arrows, setArrows] = useState(defaultArrowPosition);
   
   // Vertical arrows - narrow width, variable height, positioned near edges
   // Each arrow has a 'screen' property to track which view it belongs to
@@ -277,7 +203,7 @@ const HomeScreen = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedScreen, setSelectedScreen] = useState(() => {
     const saved = localStorage.getItem('deltaV_selectedScreen');
-    return saved || "L1 – System Overview";
+    return saved ? saved as HomeScreenLabels : HomeScreenLabels.L1;
   });
   const [selectedMode, setSelectedMode] = useState("Static");
   
@@ -285,7 +211,6 @@ const HomeScreen = () => {
   useEffect(() => {
     localStorage.setItem('deltaV_selectedScreen', selectedScreen);
   }, [selectedScreen]);
-  const [location] = useLocation();
   
   // Dynamic simulation state
   const [dynamicRunning, setDynamicRunning] = useState(false);
@@ -2718,6 +2643,89 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     handleDeleteVerticalLine(lastLine.id);
   };
 
+  function handleSelectScreen(screen: HomeScreenLabels) {
+    const defaultFilterPosition = defaultFilterPositions[screen];
+    setSelectedScreen(screen);
+    const furnacePosition = defaultFilterPosition?.find((item) => item.element === element.Furnace);
+    if(furnacePosition) {
+      setFurnacePosition({x: furnacePosition.x, y: furnacePosition.y})
+      setFurnaceSize({width: furnacePosition.width, height: furnacePosition.height})
+    }
+    const dtPosition = defaultFilterPosition?.find((item) => item.element === element.DT);
+    if(dtPosition) {
+      setDt2Position({x: dtPosition.x, y: dtPosition.y})
+      setDt2Size({width: dtPosition.width, height: dtPosition.height})
+    }
+    const ifPosition = defaultFilterPosition?.find((item) => item.element === element.IF);
+    if(ifPosition) {
+      setFilterPosition({x: ifPosition.x, y: ifPosition.y})
+      setFilterSize({width: ifPosition.width, height: ifPosition.height})
+    }
+
+    const fat1Position = defaultFilterPosition?.find((item) => item.element === element.FAT);
+    if(fat1Position) {
+      setFat1Position({x: fat1Position.x, y: fat1Position.y})
+      setFat1Size({width: fat1Position.width, height: fat1Position.height})
+    }
+
+    const ipat1Position = defaultFilterPosition?.find((item) => item.element === element.IPAT);
+    if(ipat1Position) {
+      setIpat1Position({x: ipat1Position.x, y: ipat1Position.y})
+      setIpat1Size({width: ipat1Position.width, height: ipat1Position.height})
+    }
+
+    const hip1Position = defaultFilterPosition?.find((item) => item.element === element.HIP);
+    if(hip1Position) {
+      setHip1Position({x: hip1Position.x, y: hip1Position.y})
+      setHip1Size({width: hip1Position.width, height: hip1Position.height})
+    }
+
+    const cipPosition = defaultFilterPosition?.find((item) => item.element === element.CIP);
+    if(cipPosition) {
+      setCipPosition({x: cipPosition.x, y: cipPosition.y})
+      setCipSize({width: cipPosition.width, height: cipPosition.height})
+    }
+
+    const converter4Position = defaultFilterPosition?.find((item) => item.element === element.Converter4);
+    if(converter4Position) {
+      setConverter4Position({x: converter4Position.x, y: converter4Position.y})
+      setConverter4Size({width: converter4Position.width, height: converter4Position.height})
+    }
+
+    const sh4aPosition = defaultFilterPosition?.find((item) => item.element === element.SH4A_EC4C_EC4A);
+    if(sh4aPosition) {
+      setSh4aPosition({x: sh4aPosition.x, y: sh4aPosition.y})
+      setSh4aSize({width: sh4aPosition.width, height: sh4aPosition.height})
+    }
+
+    const ec3bPosition = defaultFilterPosition?.find((item) => item.element === element.EC3B);
+    if(ec3bPosition) {
+      setEc3bPosition({x: ec3bPosition.x, y: ec3bPosition.y})
+      setEc3bSize({width: ec3bPosition.width, height: ec3bPosition.height})
+    }
+
+    const jugValvePosition = defaultFilterPosition?.find((item) => item.element === element.JV);
+    if(jugValvePosition) {
+      setJugValvePosition({x: jugValvePosition.x, y: jugValvePosition.y})
+      setJugValveSize({width: jugValvePosition.width, height: jugValvePosition.height})
+    }
+
+    const jugValveHandControllerPosition = defaultFilterPosition?.find((item) => item.element === element.JVP);
+    if(jugValveHandControllerPosition) {
+      setJugValveHandControllerPosition({x: jugValveHandControllerPosition.x, y: jugValveHandControllerPosition.y})
+      setJugValveHandControllerSize({width: jugValveHandControllerPosition.width, height: jugValveHandControllerPosition.height})
+    }
+
+    const sh1bPosition = defaultFilterPosition?.find((item) => item.element === element.SH1B);
+    if(sh1bPosition) {
+      setSh1bPosition({x: sh1bPosition.x, y: sh1bPosition.y})
+      setSh1bSize({width: sh1bPosition.width, height: sh1bPosition.height})
+    }
+
+    const defaultArrowPosition = defaultArrowPositions[screen];
+    if(defaultArrowPosition) setArrows(defaultArrowPosition);
+  }
+
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Traditional Menu Bar */}
@@ -2993,10 +3001,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white z-50">
-              {homescreenOptions.map((option) => (
+              {
+                isLoadingLayouts ? 
+                <DropdownMenuItem 
+                  key="loading"
+                  onClick={() => {}}
+                  className={`text-gray-800 bg-gray-100`}
+                  data-testid={`dropdown-view-option-loading`}
+                >
+                  Loading...
+                </DropdownMenuItem>
+              : layouts?.map((option: any) => (
                 <DropdownMenuItem 
                   key={option.id}
-                  onClick={() => setSelectedScreen(option.label)}
+                  onClick={() => handleSelectScreen(option.label)}
                   className={`text-gray-800 ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-view-option-${option.id}`}
                 >
@@ -3239,6 +3257,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       )}
 
       {/* Main content area - scrollable container */}
+      <div className="flex-1 overflow-auto min-h-screen">
+        <FlowCanvas />
+      </div>
       <div className="flex-1 overflow-auto">
         {/* L4-Converter View - Canvas with Converter 4 */}
         {selectedScreen === "L4-Converter" && (
@@ -4795,6 +4816,66 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         {/* L1 - System Overview - Fixed-size canvas for scrollable content */}
         {selectedScreen === "L1 – System Overview" && (
         <div className="relative" style={{ width: '5200px', height: '1600px', minWidth: '5200px', minHeight: '1600px' }}>
+        
+            {/* Industrial Filter */}
+            <Rnd
+              position={filterPosition}
+              size={filterSize}
+              onDragStop={(e, d) => setFilterPosition({ x: d.x, y: d.y })}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFilterSize({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setFilterPosition(position);
+              }}
+              minWidth={40}
+              minHeight={60}
+              bounds="parent"
+              disableDragging={isLocked}
+              enableResizing={!isLocked}
+              lockAspectRatio={true}
+              className={isLocked ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <img
+                src={industrialFilterImg}
+                alt="Industrial Filter"
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            </Rnd>
+
+            {/* DT2 - Drying Tower Graphic */}
+            <Rnd
+              position={dt2Position}
+              size={dt2Size}
+              onDragStop={(e, d) => setDt2Position({ x: d.x, y: d.y })}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setDt2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setDt2Position(position);
+              }}
+              minWidth={60}
+              minHeight={150}
+              bounds="parent"
+              disableDragging={isLocked}
+              enableResizing={!isLocked}
+              lockAspectRatio={true}
+              className={isLocked ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <img
+                src={dt2Img}
+                alt="Drying Tower (DT)"
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            </Rnd>
+
+            {/* Furnace */}
         <Rnd
           position={furnacePosition}
           size={furnaceSize}
@@ -5310,35 +5391,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           />
         </Rnd>
 
-        {/* DT2 - Drying Tower Graphic */}
-        <Rnd
-          position={dt2Position}
-          size={dt2Size}
-          onDragStop={(e, d) => setDt2Position({ x: d.x, y: d.y })}
-          onResizeStop={(e, dir, ref, delta, position) => {
-            setDt2Size({
-              width: parseInt(ref.style.width),
-              height: parseInt(ref.style.height)
-            });
-            setDt2Position(position);
-          }}
-          minWidth={60}
-          minHeight={150}
-          bounds="parent"
-          disableDragging={isLocked}
-          enableResizing={!isLocked}
-          lockAspectRatio={true}
-          className={isLocked ? "cursor-default" : "cursor-move"}
-          style={{ zIndex: 20 }}
-        >
-          <img 
-            src={dt2Img} 
-            alt="Drying Tower (DT)"
-            className="w-full h-full object-contain"
-            draggable={false}
-          />
-        </Rnd>
-
         {/* FAT1 - Final Absorbing Tower */}
         <Rnd
           position={fat1Position}
@@ -5542,35 +5594,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           />
         </Rnd>
 
-        {/* Industrial Filter */}
-        <Rnd
-          position={filterPosition}
-          size={filterSize}
-          onDragStop={(e, d) => setFilterPosition({ x: d.x, y: d.y })}
-          onResizeStop={(e, dir, ref, delta, position) => {
-            setFilterSize({
-              width: parseInt(ref.style.width),
-              height: parseInt(ref.style.height)
-            });
-            setFilterPosition(position);
-          }}
-          minWidth={40}
-          minHeight={60}
-          bounds="parent"
-          disableDragging={isLocked}
-          enableResizing={!isLocked}
-          lockAspectRatio={true}
-          className={isLocked ? "cursor-default" : "cursor-move"}
-          style={{ zIndex: 20 }}
-        >
-          <img 
-            src={industrialFilterImg} 
-            alt="Industrial Filter"
-            className="w-full h-full object-contain"
-            draggable={false}
-          />
-        </Rnd>
-
         {/* Render all arrows */}
         {arrows.map((arrow) => (
           <Rnd
@@ -5610,8 +5633,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   alt={`${arrow.color} Arrow`}
                   className="w-full h-full object-fill"
                   style={
-                    arrow.color === 'yellow' ? { filter: 'hue-rotate(60deg) saturate(1.5)' } : 
-                    arrow.color === 'purple' ? { filter: 'hue-rotate(270deg) saturate(1.2)' } : 
+                    arrow.color === ArrowColor.BLUE ? { filter: 'hue-rotate(0deg) saturate(1)' } : 
+                    arrow.color === ArrowColor.YELLOW ? { filter: 'hue-rotate(60deg) saturate(1.5)' } : 
+                    arrow.color === ArrowColor.PURPLE ? { filter: 'hue-rotate(270deg) saturate(1.2)' } : 
+                    arrow.color === ArrowColor.GREEN ? { filter: 'hue-rotate(120deg) saturate(1.2)' } : 
+                    arrow.color === ArrowColor.RED ? { filter: 'hue-rotate(0deg) saturate(1.5)' } : 
+                    arrow.color === ArrowColor.ORANGE ? { filter: 'hue-rotate(30deg) saturate(1.2)' } : 
+                    arrow.color === ArrowColor.CYAN ? { filter: 'hue-rotate(180deg) saturate(1.2)' } : 
+                    arrow.color === ArrowColor.MAGENTA ? { filter: 'hue-rotate(270deg) saturate(1.2)' } : 
+                    arrow.color === ArrowColor.WHITE ? { filter: 'hue-rotate(0deg) saturate(1)' } : 
+                    arrow.color === ArrowColor.BLACK ? { filter: 'hue-rotate(0deg) saturate(1)' } : 
                     undefined
                   }
                   draggable={false}
@@ -5638,93 +5669,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 >
                   <RotateCw className="w-4 h-4 text-white" />
                 </button>
-              )}
-            </div>
-          </Rnd>
-        ))}
-
-        {/* Render vertical arrows for this screen */}
-        {verticalArrows.filter(va => va.screen === 'L1 – System Overview').map((vArrow) => (
-          <Rnd
-            key={`${vArrow.id}-${vArrow.rotation}`}
-            position={{ x: vArrow.x, y: vArrow.y }}
-            size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
-            onDragStop={(e, d) => {
-              setVerticalArrows(prev => prev.map(va => 
-                va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
-              ));
-            }}
-            onResizeStop={(e, dir, ref, delta, position) => {
-              const isHorizontal = vArrow.rotation % 180 !== 0;
-              setVerticalArrows(prev => prev.map(va => 
-                va.id === vArrow.id 
-                  ? { 
-                      ...va, 
-                      height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
-                      x: position.x, 
-                      y: position.y 
-                    }
-                  : va
-              ));
-            }}
-            minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
-            minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
-            maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
-            maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
-            bounds="window"
-            disableDragging={isLocked}
-            enableResizing={!isLocked ? { 
-              top: vArrow.rotation % 180 === 0, 
-              bottom: vArrow.rotation % 180 === 0, 
-              left: vArrow.rotation % 180 !== 0, 
-              right: vArrow.rotation % 180 !== 0,
-              topLeft: false,
-              topRight: false,
-              bottomLeft: false,
-              bottomRight: false
-            } : false}
-            className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
-            style={{ zIndex: 35 }}
-          >
-            <div className="relative w-full h-full">
-              <div 
-                style={{ 
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
-                  width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
-                  height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
-                }}
-              >
-                <VerticalArrow 
-                  width={vArrow.width} 
-                  height={vArrow.height} 
-                  color="#53B1D8"
-                />
-              </div>
-              {!isLocked && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
-                  <button
-                    className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                               flex items-center justify-center shadow-lg"
-                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                    title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                  >
-                    <RotateCw className="w-3 h-3 text-white" />
-                  </button>
-                  <button
-                    className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
-                               flex items-center justify-center shadow-lg"
-                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
-                    title="Delete arrow"
-                  >
-                    <Trash2 className="w-3 h-3 text-white" />
-                  </button>
-                </div>
               )}
             </div>
           </Rnd>
@@ -5842,7 +5786,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         </Rnd>
 
         {/* Dashed Line 2 */}
-        <Rnd
+        {/* <Rnd
           position={dashedLine2Position}
           size={dashedLine2Size}
           onDragStop={(e, d) => setDashedLine2Position({ x: d.x, y: d.y })}
@@ -5891,10 +5835,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </button>
             )}
           </div>
-        </Rnd>
+        </Rnd> */}
 
         {/* Dashed Line 3 */}
-        <Rnd
+        {/* <Rnd
           position={dashedLine3Position}
           size={dashedLine3Size}
           onDragStop={(e, d) => setDashedLine3Position({ x: d.x, y: d.y })}
@@ -5943,10 +5887,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </button>
             )}
           </div>
-        </Rnd>
+        </Rnd> */}
 
         {/* Dashed Line 4 */}
-        <Rnd
+        {/* <Rnd
           position={dashedLine4Position}
           size={dashedLine4Size}
           onDragStop={(e, d) => setDashedLine4Position({ x: d.x, y: d.y })}
@@ -5995,7 +5939,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </button>
             )}
           </div>
-        </Rnd>
+        </Rnd> */}
 
         </div>
         )}
