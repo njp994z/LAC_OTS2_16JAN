@@ -355,8 +355,7 @@ const FlowCanvas = ({
                         cx={mid.x}
                         cy={mid.y}
                         r={6}
-                        fill="#2563eb"
-                        className="cursor-crosshair"
+                        className="cursor-crosshair fill-transparent group-hover:fill-blue-500"
                         onMouseDown={(e) => {
                             e.stopPropagation();
                             startEdgeFromHandle(mid.x, mid.y);
@@ -378,7 +377,7 @@ const FlowCanvas = ({
 
                     <div className="flex space-x-2">
                         {ELEMENT_LIST.map((el) => (
-                            <Button type={'button'} variant={'ghost'} key={el.name} className="w-fit px-2 " onClick={() => addNode(el)}>
+                            <Button type={'button'} variant={'secondary'} key={el.name} className="w-fit px-2 " onClick={() => addNode(el)}>
                                 {el.name}
                             </Button>
                         ))}
@@ -424,7 +423,7 @@ const FlowCanvas = ({
                             <path d="M0,0 L10,3 L0,6 Z" fill="black" />
                         </marker>
                     </defs>
-                    <g className="pointer-events-auto">{renderEdges()}</g>
+                    <g className="pointer-events-auto group">{renderEdges()}</g>
 
                     {drawingEdge && (
                         <path
@@ -437,9 +436,9 @@ const FlowCanvas = ({
                 </svg>
 
                 {nodes.map((node) => (
-                    <ElementNode 
-                        key={node.id} 
-                        node={node} 
+                    <ElementNode
+                        key={node.id}
+                        node={node}
                         setDraggingId={setDraggingId}
                         startEdgeFromHandle={startEdgeFromHandle}
                         deleteNode={deleteNode}
