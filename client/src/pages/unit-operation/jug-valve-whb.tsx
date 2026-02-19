@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Play, RotateCcw, Settings } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import processFlowDiagram from "@assets/image_1771460875737.png";
 
 interface SimulationResults {
   [key: string]: number;
@@ -211,6 +212,17 @@ export default function JugValveWHB() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <img
+              src={processFlowDiagram}
+              alt="Jug Valve & WHB Process Flow Diagram - Control Loop for Pass 1 Inlet Temperature"
+              className="w-full rounded"
+              data-testid="img-process-flow-diagram"
+            />
           </CardContent>
         </Card>
 
