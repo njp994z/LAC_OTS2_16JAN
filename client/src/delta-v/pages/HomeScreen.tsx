@@ -2819,6 +2819,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setArrows([
         // === Air Feed ===
         { id: '1', x: 0, y: 410, width: 50, height: 20, rotation: 0, color: 'blue' as const },
+        { id: '1.1', x: 0, y: 380, width: 50, height: 20, rotation: 0, color: 'blue' as const },
+        { id: '1.2', x: 0, y: 440, width: 50, height: 20, rotation: 0, color: 'blue' as const },
         { id: '2', x: 150, y: 410, width: 60, height: 20, rotation: 0, color: 'blue' as const },
         // DT -> Compressor
         { id: '3', x: 280, y: 400, width: 200, height: 20, rotation: 0, color: 'blue' as const },
