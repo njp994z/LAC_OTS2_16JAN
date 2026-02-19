@@ -216,17 +216,6 @@ export default function JugValveWHB() {
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <img
-              src={processFlowDiagram}
-              alt="Jug Valve & WHB Process Flow Diagram - Control Loop for Pass 1 Inlet Temperature"
-              className="w-full rounded"
-              data-testid="img-process-flow-diagram"
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base" data-testid="text-system-inputs-title">
               System Inputs
@@ -363,6 +352,17 @@ export default function JugValveWHB() {
             Reset
           </Button>
         </div>
+
+        <Card>
+          <CardContent className="p-4">
+            <img
+              src={processFlowDiagram}
+              alt="Jug Valve & WHB Process Flow Diagram - Control Loop for Pass 1 Inlet Temperature"
+              className="w-full rounded"
+              data-testid="img-process-flow-diagram"
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
