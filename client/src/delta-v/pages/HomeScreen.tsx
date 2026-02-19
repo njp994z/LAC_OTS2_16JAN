@@ -129,6 +129,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+interface Arrow {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  color: 'blue' | 'yellow' | 'purple' | 'black' | 'red' | 'green';
+}
 const toolbarItems = [
   { icon: Search, label: "Search" },
   { icon: Activity, label: "Errors" },
@@ -209,7 +218,7 @@ const HomeScreen = () => {
   const [compressorPosition, setCompressorPosition] = useState({ x: 520, y: 100 });
   const [compressorSize, setCompressorSize] = useState({ width: 200, height: 180 });
   // Array of arrows with position, size, and rotation
-  const [arrows, setArrows] = useState([
+  const [arrows, setArrows] = useState<Array<Arrow>>([
     { id: 'arrow_1', x: 180, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
     { id: 'arrow_2', x: 180, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
     { id: 'arrow_3', x: 180, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
@@ -2718,6 +2727,162 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     handleDeleteVerticalLine(lastLine.id);
   };
 
+  const windowsWidth = window.innerWidth;
+  const windowsHeight = window.innerHeight;
+  useEffect(() => {
+    if (selectedScreen === 'L1 – System Overview') {
+      // Main Equipment
+      setFilterPosition({ x: 60, y: 325 });
+      setFilterSize({ width: 60, height: 70 });
+      
+      setDt2Position({ x: 180, y: 330 });
+      setDt2Size({ width: 134, height: 327 });
+
+      setCompressorPosition({ x: 425, y: 337 });
+      setCompressorSize({ width: 250, height: 200 });
+
+      setFurnacePosition({ x: 500, y: 550 });
+      setFurnaceSize({ width: 350, height: 180 });
+
+      setSh1bPosition({ x: 750, y: 350 });
+      setSh1bSize({ width: 100, height: 150 });
+
+      setConverter4Position({ x: 900, y: 50 });
+      setConverter4Size({ width: 180, height: 700 });
+
+      setHip1Position({ x: 1150, y: 320 });
+      setHip1Size({ width: 100, height: 150 });
+
+      setCipPosition({ x: 1300, y: 320 });
+      setCipSize({ width: 100, height: 150 });
+
+      setSh4aPosition({ x: 1450, y: 120 });
+      setSh4aSize({ width: 100, height: 150 });
+
+      setFat1Position({ x: 1950, y: 120 });
+      setFat1Size({ width: 120, height: 300 });
+
+      setEc3bPosition({ x: 1300, y: 600 });
+      setEc3bSize({ width: 100, height: 150 });
+
+      setIpat1Position({ x: 1950, y: 550 });
+      setIpat1Size({ width: 120, height: 300 });
+
+      setTurboGeneratorPosition({ x: 900, y: 800 });
+      setTurboGeneratorSize({ width: 300, height: 150 });
+
+      // Controllers & Valves
+      setHandControllerPosition({ x: 450, y: 80 }); // Compressor Controller
+      setHandControllerSize({ width: 180, height: 140 });
+
+      setSulfurFlowPosition({ x: 350, y: 550 });
+      setSulfurFlowSize({ width: 140, height: 100 });
+
+      setSulfurValvePosition({ x: 350, y: 538 });
+      setSulfurValveSize({ width: 124, height: 180 });
+
+      setJugValvePosition({ x: 637, y: 487 }); // Approx above WHB
+      setJugValveSize({ width: 80, height: 162 });
+
+      setJugValvePositionerPosition({ x: 650, y: 380 });
+      setJugValvePositionerSize({ width: 140, height: 170 });
+
+      setJugValveHandControllerPosition({ x: 750, y: 380 });
+      setJugValveHandControllerSize({ width: 140, height: 100 });
+
+      setWhbHandControllerPosition({ x: 750, y: 650 });
+      setWhbHandControllerSize({ width: 140, height: 100 });
+
+      // Sensors
+      setTempSensorPosition({ x: 800, y: 650 }); // Furnace Outlet
+      setTempSensorSize({ width: 140, height: 80 });
+
+      setTempSensor4200APosition({ x: 1100, y: 150 }); // Pass 1/2 Area
+      setTempSensor4200ASize({ width: 140, height: 80 });
+
+      setTempSensor4200BPosition({ x: 1100, y: 470 }); // Pass 3 Area
+      setTempSensor4200BSize({ width: 140, height: 80 });
+
+      setTempSensor4200CPosition({ x: 1450, y: 470 }); // Pass 4 Area
+      setTempSensor4200CSize({ width: 140, height: 80 });
+
+      // Lines
+      setDashedLine1Position({ x: 0, y: 0 }); // Reset or remove if not needed immediately
+      setDashedLine1Size({ width: 0, height: 0 });
+      setDashedLine2Position({ x: 0, y: 0 });
+      setDashedLine2Size({ width: 0, height: 0 });
+      setDashedLine3Position({ x: 0, y: 0 });
+      setDashedLine3Size({ width: 0, height: 0 });
+      setDashedLine4Position({ x: 0, y: 0 });
+      setDashedLine4Size({ width: 0, height: 0 });
+
+      setArrows([
+        // === Air Feed ===
+        { id: '1', x: 0, y: 410, width: 50, height: 20, rotation: 0, color: 'blue' as const },
+        { id: '2', x: 150, y: 410, width: 60, height: 20, rotation: 0, color: 'blue' as const },
+        // DT -> Compressor
+        { id: '3', x: 280, y: 400, width: 200, height: 20, rotation: 0, color: 'blue' as const },
+        
+        // === Sulfur Feed ===
+        { id: '5', x: 163, y: 657, width: 230, height: 20, rotation: 0, color: 'yellow' as const },
+        { id: '6', x: 423, y: 540, width: 96, height: 20, rotation: 0, color: 'yellow' as const },
+        
+        // === WHB Outlet & SH1B Bypass Logic ===
+        // WHB Exit (Vertical Up) -> Split to Jug/SH1B
+        // Line exiting WHB Top-Right (x~830)
+        
+        // Horizontal: Split -> Jug Valve Inlet (Left)
+        { id: 'whb_to_jug', x: 677, y: 560, width: 160, height: 20, rotation: 180, color: 'blue' as const },
+        
+        // Horizontal: Jug Valve Outlet -> Join SH1B Inlet (Right)
+        { id: 'jug_out_to_join', x: 677, y: 320, width: 160, height: 20, rotation: 0, color: 'blue' as const },
+        
+        // Horizontal: Join Point -> SH1B Inlet (Right)
+        { id: 'join_to_sh1b_in', x: 620, y: 560, width: 40, height: 20, rotation: 180, color: 'blue' as const },
+
+        // Horizontal: SH1B Outlet -> Main Line
+        { id: 'sh1b_out_horiz', x: 800, y: 500, width: 90, height: 20, rotation: 0, color: 'blue' as const },
+        
+        // Horizontal: Main Line -> Converter Pass 1
+        { id: 'to_conv_pass1', x: 890, y: 150, width: 30, height: 20, rotation: 0, color: 'blue' as const },
+
+        // === Interpass Logic (Right Side) ===
+        // Converter Out 1 -> Hip Inlet
+        { id: 'conv_out1_horiz', x: 1080, y: 200, width: 70, height: 20, rotation: 0, color: 'blue' as const },
+        // Hip Outlet -> Converter In 2
+        { id: 'hip_out_horiz', x: 1080, y: 380, width: 70, height: 20, rotation: 180, color: 'blue' as const },
+        
+        // Converter Out 2 -> Cip Inlet
+        { id: 'conv_out2_horiz', x: 1080, y: 550, width: 220, height: 20, rotation: 0, color: 'blue' as const },
+        
+        // Cip Outlet -> Converter In 3
+        { id: 'cip_out_horiz', x: 1400, y: 550, width: 50, height: 20, rotation: 0, color: 'blue' as const },
+        
+        // Converter Out 3 -> Exit
+        { id: 'final_out', x: 1080, y: 700, width: 220, height: 20, rotation: 0, color: 'blue' as const },
+      ]);
+
+      setVerticalLines([
+        // Compressor OUT Down
+        { id: 'vl_comp_out', x: 700, y: 350, width: 10, height: 200, screen: 'L1 – System Overview' },
+        
+        // WHB Rising Main Line
+        { id: 'vl_whb_rise', x: 837, y: 320, width: 10, height: 240, screen: 'L1 – System Overview' },
+        
+        // Jug Valve Vertical Line
+        { id: 'vl_jug', x: 677, y: 320, width: 10, height: 240, screen: 'L1 – System Overview' },
+
+        // SH1B Outlet Down
+        { id: 'vl_sh1b_out', x: 800, y: 500, width: 10, height: 200, screen: 'L1 – System Overview' },
+        
+        // Converter Inlet Rise
+        { id: 'vl_conv_in', x: 890, y: 150, width: 10, height: 550, screen: 'L1 – System Overview' },
+      ]);
+      
+      setVerticalArrows([]);
+    }
+  }, [selectedScreen]);
+
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Traditional Menu Bar */}
@@ -4795,6 +4960,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         {/* L1 - System Overview - Fixed-size canvas for scrollable content */}
         {selectedScreen === "L1 – System Overview" && (
         <div className="relative" style={{ width: '5200px', height: '1600px', minWidth: '5200px', minHeight: '1600px' }}>
+          <Rnd
+            position={{x:0,y:0}}
+            size={{width:100,height:100}}>
+
+          </Rnd>
         <Rnd
           position={furnacePosition}
           size={furnaceSize}
@@ -4998,7 +5168,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         </Rnd>
 
         {/* Jug Valve Positioner Faceplate */}
-        <Rnd
+        {/* <Rnd
           position={jugValvePositionerPosition}
           size={jugValvePositionerSize}
           onDragStop={(e, d) => setJugValvePositionerPosition({ x: d.x, y: d.y })}
@@ -5031,7 +5201,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               valveImageSrc={jugValvePositionerImage}
             />
           </div>
-        </Rnd>
+        </Rnd> */}
 
         {/* Hand Controller 1540-H-4030 Faceplate */}
         <Rnd
@@ -5331,12 +5501,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           className={isLocked ? "cursor-default" : "cursor-move"}
           style={{ zIndex: 20 }}
         >
+          <div className="flex flex-col items-center justify-center relative ">
+
           <img 
             src={dt2Img} 
             alt="Drying Tower (DT)"
             className="w-full h-full object-contain"
             draggable={false}
           />
+          <p className="text-xs text-black absolute bottom-0 right-0 text-center">DRYING TOWER
+            <br />
+1520-TW-001</p>
+          </div>
         </Rnd>
 
         {/* FAT1 - Final Absorbing Tower */}
@@ -5563,12 +5739,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           className={isLocked ? "cursor-default" : "cursor-move"}
           style={{ zIndex: 20 }}
         >
+          <div className="flex flex-col items-center justify-center ">
+            <p className="text-xs text-black">INLET AIR FILTER
+            <br />
+1520-FL-001</p>
           <img 
             src={industrialFilterImg} 
             alt="Industrial Filter"
             className="w-full h-full object-contain"
             draggable={false}
           />
+          </div>
         </Rnd>
 
         {/* Render all arrows */}
@@ -5612,6 +5793,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   style={
                     arrow.color === 'yellow' ? { filter: 'hue-rotate(60deg) saturate(1.5)' } : 
                     arrow.color === 'purple' ? { filter: 'hue-rotate(270deg) saturate(1.2)' } : 
+                    arrow.color === 'black' ? { filter: 'hue-rotate(0deg) saturate(1.2)' } :
+                    arrow.color === 'red' ? { filter: 'hue-rotate(0deg) saturate(1.2)' } :
+                    arrow.color === 'green' ? { filter: 'hue-rotate(0deg) saturate(1.2)' } :
                     undefined
                   }
                   draggable={false}
@@ -6279,3 +6463,4 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 };
 
 export default HomeScreen;
+
