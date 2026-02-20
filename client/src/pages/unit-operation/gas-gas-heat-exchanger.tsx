@@ -390,7 +390,7 @@ export default function GasGasHeatExchanger() {
             <div className="flex items-center gap-2">
               <Gauge className="h-5 w-5 text-primary" />
               <div>
-                <h1 className="text-lg font-bold leading-tight" data-testid="text-page-title">Sulfur Interpass HX Valve & Stream Simulator</h1>
+                <h1 className="text-lg font-bold leading-tight" data-testid="text-page-title">CIP & HIP Heat Exchangers</h1>
                 <p className="text-xs text-muted-foreground">Three valves - Split-range - Full stream tables</p>
               </div>
             </div>
