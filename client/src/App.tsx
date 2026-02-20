@@ -226,6 +226,7 @@ import ConverterPass2 from "@/pages/unit-operation/converter-pass-2";
 import ConverterPass3 from "@/pages/unit-operation/converter-pass-3";
 import ConverterPass4 from "@/pages/unit-operation/converter-pass-4";
 import GasGasHeatExchanger from "@/pages/unit-operation/gas-gas-heat-exchanger";
+import GasGasHxSystemParameters from "@/pages/unit-operation/gas-gas-hx-system-parameters";
 import KeyPerformanceParameters from "@/pages/unit-operation/key-performance-parameters";
 import SulfuricAcidTower from "@/pages/unit-operation/sulfuric-acid-tower";
 import WasteHeatBoiler from "@/pages/unit-operation/waste-heat-boiler";
@@ -346,6 +347,7 @@ function Router() {
       <Route path="/unit-operation/converter-pass-4" component={ConverterPass4} />
       <Route path="/unit-operation/catalytic-reactor" component={CatalyticReactor} />
       <Route path="/unit-operation/gas-gas-heat-exchanger" component={GasGasHeatExchanger} />
+      <Route path="/unit-operation/gas-gas-hx-system-parameters" component={GasGasHxSystemParameters} />
       <Route path="/unit-operation/sulfuric-acid-tower" component={SulfuricAcidTower} />
       <Route path="/unit-operation/waste-heat-boiler" component={WasteHeatBoiler} />
       <Route path="/unit-operation/superheater" component={Superheater} />

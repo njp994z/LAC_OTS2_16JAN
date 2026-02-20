@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Gauge, Calculator, Play, Pause, RotateCcw, Loader2 } from "lucide-react";
+import { ArrowLeft, Gauge, Calculator, Play, Pause, RotateCcw, Loader2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import expLogo from "@/assets/exp-logo.png";
 import cipControlLoop from "@assets/image_1771290235296.png";
@@ -396,6 +396,11 @@ export default function GasGasHeatExchanger() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/unit-operation/gas-gas-hx-system-parameters">
+              <Button variant="default" className="bg-blue-600 border-blue-600" data-testid="button-system-parameters">
+                <Settings className="mr-2 h-4 w-4" />System Parameters
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleReset} data-testid="button-reset">
               <RotateCcw className="mr-2 h-4 w-4" />Reset
             </Button>
