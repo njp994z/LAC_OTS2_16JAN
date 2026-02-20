@@ -262,6 +262,7 @@ import AdminUsers from "@/pages/admin-users";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
+import CommonControllerFaceplatePage from "./delta-v/pages/commonControllerFaceplate";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -398,6 +399,7 @@ function Router() {
       {/* Delta-V Controller Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/temperature-controller" component={TemperatureControllerFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/controller-6622" component={ControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/controller/:id" component={CommonControllerFaceplatePage} />
       <Route path="/settings/controller-outputs/faceplates/level-controller" component={LevelControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/concentration-controller" component={ConcentrationControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/flow-controller" component={FlowControllerFaceplate} />
