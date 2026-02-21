@@ -149,46 +149,6 @@ const HIP_KEYS: (keyof HipRow)[] = ["s12", "s13", "s18A", "s18B", "s18C", "s18D"
 const CIP_COLS = ["#14", "#15", "#17A", "#17B", "#17C", "#17D", "#17E", "#18"] as const;
 const CIP_KEYS: (keyof CipRow)[] = ["s14", "s15", "s17A", "s17B", "s17C", "s17D", "s17E", "s18"];
 
-function EditableCell({ value, onChange, testId }: {
-  value: string; onChange: (v: string) => void; testId: string;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editing]);
-
-  if (editing) {
-    return (
-      <Input
-        ref={inputRef}
-        type="text"
-        value={editValue}
-        onChange={(e) => setEditValue(e.target.value)}
-        onBlur={() => { onChange(editValue); setEditing(false); }}
-        onKeyDown={(e) => { if (e.key === "Enter") { onChange(editValue); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
-        className="text-xs font-mono w-20 text-right"
-        data-testid={testId}
-      />
-    );
-  }
-
-  return (
-    <span
-      className="cursor-pointer hover:text-primary transition-colors"
-      onDoubleClick={() => { setEditValue(value); setEditing(true); }}
-      data-testid={testId}
-    >
-      {value}
-    </span>
-  );
-}
-
 export default function GasGasHeatExchanger() {
   const [mode, setMode] = useState<"Static" | "Dynamic">("Static");
   const { toast } = useToast();
@@ -222,6 +182,7 @@ export default function GasGasHeatExchanger() {
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const driftRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dynamicStateRef = useRef({ time_s: 0, T_out_hip: 806.0, T_out_cip: 779.0 });
 
   const safeFloat = (val: string, fallback: number) => {
@@ -355,6 +316,70 @@ export default function GasGasHeatExchanger() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [running, runDynamicStep]);
+
+  const DRIFT_EXCLUDE = new Set(["TOTAL", "PRESSURE", "TEMPERATURE"]);
+
+  const applyDrift = useCallback(() => {
+    setInletData(prev => {
+      const drifted = prev.map(row => {
+        if (DRIFT_EXCLUDE.has(row.parameter)) return row;
+        const driftCell = (val: string): string => {
+          const num = parseFloat(val.replace(/,/g, ''));
+          if (isNaN(num) || num === 0) return val;
+          const pct = 0.002;
+          const delta = num * pct * (Math.random() * 2 - 1);
+          const result = num + delta;
+          if (Math.abs(result) >= 1000) {
+            return Math.round(result).toLocaleString();
+          }
+          if (Math.abs(result) >= 1) {
+            return result.toFixed(1);
+          }
+          return result.toFixed(3);
+        };
+        return {
+          ...row,
+          stream12: driftCell(row.stream12),
+          stream14: driftCell(row.stream14),
+          stream17A: driftCell(row.stream17A),
+        };
+      });
+
+      const sumCol = (col: 'stream12' | 'stream14' | 'stream17A') => {
+        let total = 0;
+        for (const r of drifted) {
+          if (r.parameter !== "TOTAL" && r.parameter !== "PRESSURE" && r.parameter !== "TEMPERATURE") {
+            total += parseFloat(r[col].replace(/,/g, '')) || 0;
+          }
+        }
+        return Math.round(total).toLocaleString();
+      };
+
+      return drifted.map(row => {
+        if (row.parameter === "TOTAL") {
+          return {
+            ...row,
+            stream12: sumCol('stream12'),
+            stream14: sumCol('stream14'),
+            stream17A: sumCol('stream17A'),
+          };
+        }
+        return row;
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (running && mode === "Dynamic") {
+      driftRef.current = setInterval(applyDrift, 1500);
+    } else if (driftRef.current) {
+      clearInterval(driftRef.current);
+      driftRef.current = null;
+    }
+    return () => {
+      if (driftRef.current) clearInterval(driftRef.current);
+    };
+  }, [running, mode, applyDrift]);
 
   const handleReset = useCallback(() => {
     setInletData(DEFAULT_INLET_DATA);
@@ -529,7 +554,7 @@ export default function GasGasHeatExchanger() {
 
           <Card>
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">Editable Inlet Streams <span className="text-xs text-muted-foreground font-normal ml-2">(double-click any cell to edit)</span></CardTitle>
+              <CardTitle className="text-sm">Editable Inlet Streams {mode === "Dynamic" && running && <span className="text-xs text-muted-foreground font-normal ml-2">(values drifting — pause to edit)</span>}</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="overflow-x-auto">
@@ -548,14 +573,35 @@ export default function GasGasHeatExchanger() {
                       <tr key={i} className="border-b border-border/50 last:border-0" data-testid={`row-inlet-${i}`}>
                         <td className="py-1.5 px-3 font-mono text-xs font-semibold">{row.parameter}</td>
                         <td className="py-1.5 px-3 text-xs text-muted-foreground">{row.units}</td>
-                        <td className="py-1.5 px-3 text-right font-mono text-xs">
-                          <EditableCell value={row.stream12} onChange={(v) => updateInletCell(i, 'stream12', v)} testId={`cell-inlet-${i}-s12`} />
+                        <td className="py-1 px-2">
+                          <Input
+                            type="text"
+                            value={row.stream12}
+                            onChange={(e) => updateInletCell(i, 'stream12', e.target.value)}
+                            readOnly={mode === "Dynamic" && running}
+                            className="text-xs font-mono w-24 text-right"
+                            data-testid={`cell-inlet-${i}-s12`}
+                          />
                         </td>
-                        <td className="py-1.5 px-3 text-right font-mono text-xs">
-                          <EditableCell value={row.stream14} onChange={(v) => updateInletCell(i, 'stream14', v)} testId={`cell-inlet-${i}-s14`} />
+                        <td className="py-1 px-2">
+                          <Input
+                            type="text"
+                            value={row.stream14}
+                            onChange={(e) => updateInletCell(i, 'stream14', e.target.value)}
+                            readOnly={mode === "Dynamic" && running}
+                            className="text-xs font-mono w-24 text-right"
+                            data-testid={`cell-inlet-${i}-s14`}
+                          />
                         </td>
-                        <td className="py-1.5 px-3 text-right font-mono text-xs">
-                          <EditableCell value={row.stream17A} onChange={(v) => updateInletCell(i, 'stream17A', v)} testId={`cell-inlet-${i}-s17a`} />
+                        <td className="py-1 px-2">
+                          <Input
+                            type="text"
+                            value={row.stream17A}
+                            onChange={(e) => updateInletCell(i, 'stream17A', e.target.value)}
+                            readOnly={mode === "Dynamic" && running}
+                            className="text-xs font-mono w-24 text-right"
+                            data-testid={`cell-inlet-${i}-s17a`}
+                          />
                         </td>
                       </tr>
                     ))}
