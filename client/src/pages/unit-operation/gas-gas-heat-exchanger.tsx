@@ -526,33 +526,33 @@ export default function GasGasHeatExchanger() {
                       <tr key={i} className="border-b border-border/50 last:border-0" data-testid={`row-inlet-${i}`}>
                         <td className="py-1.5 px-3 font-mono text-xs font-semibold">{row.parameter}</td>
                         <td className="py-1.5 px-3 text-xs text-muted-foreground">{row.units}</td>
-                        <td className="py-1 px-2">
+                        <td className="py-1 px-2 text-center">
                           <Input
                             type="text"
                             value={row.stream12}
                             onChange={(e) => updateInletCell(i, 'stream12', e.target.value)}
                             readOnly={mode === "Dynamic" && running}
-                            className="text-xs font-mono w-24 text-right"
+                            className="text-xs font-mono w-24 text-right mx-auto"
                             data-testid={`cell-inlet-${i}-s12`}
                           />
                         </td>
-                        <td className="py-1 px-2">
+                        <td className="py-1 px-2 text-center">
                           <Input
                             type="text"
                             value={row.stream14}
                             onChange={(e) => updateInletCell(i, 'stream14', e.target.value)}
                             readOnly={mode === "Dynamic" && running}
-                            className="text-xs font-mono w-24 text-right"
+                            className="text-xs font-mono w-24 text-right mx-auto"
                             data-testid={`cell-inlet-${i}-s14`}
                           />
                         </td>
-                        <td className="py-1 px-2">
+                        <td className="py-1 px-2 text-center">
                           <Input
                             type="text"
                             value={row.stream17A}
                             onChange={(e) => updateInletCell(i, 'stream17A', e.target.value)}
                             readOnly={mode === "Dynamic" && running}
-                            className="text-xs font-mono w-24 text-right"
+                            className="text-xs font-mono w-24 text-right mx-auto"
                             data-testid={`cell-inlet-${i}-s17a`}
                           />
                         </td>
