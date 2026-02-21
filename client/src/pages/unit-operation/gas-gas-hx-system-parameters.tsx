@@ -120,7 +120,6 @@ const ALL_PARAMS = [
 const STORAGE_KEY = "gas-gas-hx-system-params";
 
 export default function GasGasHxSystemParameters() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
