@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CIP HX — Integrated Geometry & Area Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --disk-color: #f97316; --donut-color: #38bdf8;
+    --tube-color: #64748b; --gap-color: #22c55e;
+    --shell-color: #a78bfa; --text: #e6edf3; --muted: #7d8590; --accent: #fbbf24;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Crimson Pro', serif; padding: 20px; }
+  h1 { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+  .subtitle { color: var(--muted); font-size: .9rem; font-style: italic; margin-bottom: 16px; }
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1280px; margin: 0 auto; }
+  .full { grid-column: 1/-1; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .panel-title { font-family: 'JetBrains Mono', monospace; font-size: .75rem; font-weight: 700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--border); }
+  svg { width:100%; height:auto; display:block; border-radius: 4px; background: #000; }
+  .controls { margin-top:10px; display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono',monospace; font-size:.7rem; }
+  input[type=range] { flex:1; accent-color:var(--accent); }
+  .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:.67rem; }
+  .stat { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:6px 8px; }
+  .stat-label { color:var(--muted); font-size:.58rem; margin-bottom:2px; }
+  .stat-val { font-size:.78rem; font-weight:600; }
+  
+  /* Calculator Styles */
+  .calc-container { display: flex; gap: 20px; align-items: flex-start; }
+  .calc-input-group { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .calc-row { display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono'; font-size: 0.8rem; }
+  .calc-row input { background: #000; border: 1px solid var(--border); color: #fff; padding: 5px; width: 80px; border-radius: 4px; }
+  .result-box { background: #22c55e15; border: 1px solid var(--gap-color); padding: 15px; border-radius: 8px; min-width: 250px; }
+</style>
+</head>
+<body>
+
+<h1>// CIP HEAT EXCHANGER — INTERACTIVE CROSSFLOW MODEL</h1>
+<p class="subtitle">Dimensions Updated: Shell ID 182" | Disk 158" | Donut Hole 101.55" | Tube OD 2.5"</p>
+
+<div class="layout">
+
+  <div class="panel">
+    <div class="panel-title" style="color:var(--disk-color)">Disk Pass — Flow to Shell Wall</div>
+    <svg id="svg-disk" viewBox="-100 -100 200 200"></svg>
+    <div class="controls">
+      <span>Table Row k:</span>
+      <input type="range" id="sl-disk" min="0" max="32" value="27" step="1">
+      <span id="lbl-disk" style="color:var(--accent);min-width:55px">k = 27</span>
+    </div>
+    <div class="stats-grid" id="stats-disk"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title" style="color:var(--donut-color)">Donut Pass — Flow to Center</div>
+    <svg id="svg-donut" viewBox="-100 -100 200 200"></svg>
+    <div class="controls">
+      <span>Table Row k:</span>
+      <input type="range" id="sl-donut" min="0" max="32" value="3" step="1">
+      <span id="lbl-donut" style="color:var(--accent);min-width:55px">k = 3</span>
+    </div>
+    <div class="stats-grid" id="stats-donut"></div>
+  </div>
+
+  <div class="panel full">
+    <div class="panel-title" style="color:var(--gap-color)">Manual Verification Tool (Verify Printed Table Rows)</div>
+    <div class="calc-container">
+      <div class="calc-input-group">
+        <div class="calc-row">
+            <label>Chord Length L(y) from Table:</label>
+            <input type="number" id="manual_Ly" value="43.002" step="0.001">
+        </div>
+        <div class="calc-row">
+            <label>Number of Tubes (kN) in Row:</label>
+            <input type="number" id="manual_kN" value="14">
+        </div>
+        <div class="calc-row">
+            <label>Baffle Spacing (B):</label>
+            <input type="number" id="manual_B" value="128">
+        </div>
+      </div>
+      <div class="result-box">
+        <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 5px;">CALCULATED RESULTS</div>
+        <div class="calc-row" style="margin-bottom: 8px;">
+            <span>Gap Width (Wgap):</span>
+            <span id="res_wgap" style="color:var(--gap-color); font-weight: bold;">--</span>
+        </div>
+        <div class="calc-row">
+            <span>Net Flow Area (A1):</span>
+            <span id="res_a1" style="color:var(--accent); font-size: 1.2rem; font-weight: bold;">--</span>
+        </div>
+        <div style="font-size: 0.6rem; color: var(--muted); margin-top: 10px;">Formula: A1 = (L(y) - (kN * 2.5)) * B</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── UPDATED PHYSICAL CONSTANTS ──────────────────────────────────────────
+const PT    = 3.125;   // Pitch
+const Do    = 2.5;     // Tube OD from your specific data
+const g     = PT - Do; // Gap = 0.625"
+const s_row = 0.8660 * PT; 
+
+const R_shell   = 91.0;     // 182" ID
+const R_disk    = 79.0;     // 158" OD
+const R_donutID = 50.775;   // 101.55" ID hole
+const B_default = 128.0;
+
+// ─── TUBE GENERATION ─────────────────────────────────────────────────────
+function generateTubes() {
+  const tubes = [];
+  const R_outer_limit = 88.0; // Tube bundle edge
+  const R_inner_limit = 50.0;
+  for (let k = -40; k <= 40; k++) {
+    const y = k * s_row;
+    const xOffset = (Math.abs(k) % 2 === 0) ? 0 : PT / 2;
+    for (let n = -40; n <= 40; n++) {
+      const x = n * PT + xOffset;
+      const r = Math.sqrt(x*x + y*y);
+      if (r >= R_inner_limit && r <= R_outer_limit) tubes.push({x, y, k, n});
+    }
+  }
+  return tubes;
+}
+const TUBES = generateTubes();
+
+// ─── DRAWING LOGIC ───────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function mkEl(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+function updateVisuals(svgId, activeK, passType) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    const color = passType === 'disk' ? '#f97316' : '#38bdf8';
+    const SC = 95 / R_shell;
+
+    // Shell & Baffles
+    svg.appendChild(mkEl('circle', {cx:0,cy:0,r:R_shell*SC, fill:'none', stroke:'#a78bfa', 'stroke-width':1}));
+    if(passType==='disk') svg.appendChild(mkEl('circle', {cx:0,cy:0,r:R_disk*SC, fill:'#1e2530', stroke:color, 'stroke-opacity':0.5}));
+    if(passType==='donut') svg.appendChild(mkEl('circle', {cx:0,cy:0,r:R_donutID*SC, fill:'none', stroke:color, 'stroke-dasharray':'4,2'}));
+
+    // Tubes
+    TUBES.forEach(t => {
+        const r = Math.sqrt(t.x*t.x + t.y*t.y);
+        const isActive = (t.k === activeK);
+        let participating = false;
+        if(passType==='disk') participating = (r >= R_disk - 1) && isActive;
+        if(passType==='donut') participating = (r <= R_donutID + 1) && isActive;
+
+        svg.appendChild(mkEl('circle', {
+            cx: t.x*SC, cy: t.y*SC, r: (Do/2)*SC,
+            fill: participating ? color : '#1a1f2a',
+            stroke: participating ? '#fff' : '#374151',
+            'stroke-width': participating ? 0.5 : 0.2,
+            opacity: participating ? 1 : 0.3
+        }));
+    });
+}
+
+// ─── STATS & CALCULATOR ──────────────────────────────────────────────────
+function runCalculator() {
+    const L = parseFloat(document.getElementById('manual_Ly').value);
+    const N = parseFloat(document.getElementById('manual_kN').value);
+    const B = parseFloat(document.getElementById('manual_B').value);
+
+    const wgap = L - (N * Do);
+    const a1 = wgap * B;
+
+    document.getElementById('res_wgap').innerText = wgap.toFixed(3) + '"';
+    document.getElementById('res_a1').innerText = a1.toFixed(2) + ' sq in';
+}
+
+function renderRowStats(id, k, passType) {
+    const y = k * s_row;
+    let L = 0;
+    if(passType === 'disk') {
+        const outer = Math.sqrt(Math.max(R_shell**2 - y**2, 0));
+        const inner = Math.sqrt(Math.max(R_disk**2 - y**2, 0));
+        L = 2 * (outer - inner);
+    } else {
+        L = 2 * Math.sqrt(Math.max(R_donutID**2 - y**2, 0));
+    }
+    const N = Math.max(Math.floor(L/PT), 0);
+    const W = L - (N * Do);
+    
+    document.getElementById(id).innerHTML = `
+        <div class="stat"><div class="stat-label">Dist y_k</div><div class="stat-val">${y.toFixed(2)}"</div></div>
+        <div class="stat"><div class="stat-label">Chord L(y)</div><div class="stat-val">${L.toFixed(2)}"</div></div>
+        <div class="stat"><div class="stat-label">kN (Est)</div><div class="stat-val">${N}</div></div>
+    `;
+}
+
+// ─── INITIALIZE ──────────────────────────────────────────────────────────
+['sl-disk', 'sl-donut', 'manual_Ly', 'manual_kN', 'manual_B'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+        const diskK = parseInt(document.getElementById('sl-disk').value);
+        const donutK = parseInt(document.getElementById('sl-donut').value);
+        
+        document.getElementById('lbl-disk').innerText = `k = ${diskK}`;
+        document.getElementById('lbl-donut').innerText = `k = ${donutK}`;
+        
+        updateVisuals('svg-disk', diskK, 'disk');
+        updateVisuals('svg-donut', donutK, 'donut');
+        renderRowStats('stats-disk', diskK, 'disk');
+        renderRowStats('stats-donut', donutK, 'donut');
+        runCalculator();
+    });
+});
+
+// Run on boot
+updateVisuals('svg-disk', 27, 'disk');
+updateVisuals('svg-donut', 3, 'donut');
+renderRowStats('stats-disk', 27, 'disk');
+renderRowStats('stats-donut', 3, 'donut');
+runCalculator();
+
+</script>
+</body>
+</html>
