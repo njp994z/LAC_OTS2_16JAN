@@ -563,9 +563,9 @@ export default function GasGasHeatExchanger() {
                     <tr className="border-b border-border">
                       <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Parameter</th>
                       <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Units</th>
-                      <th className="text-right py-2 px-3 text-xs text-muted-foreground font-medium">Stream #12<br/>HIP Hot Inlet</th>
-                      <th className="text-right py-2 px-3 text-xs text-muted-foreground font-medium">Stream #14<br/>CIP Hot Inlet</th>
-                      <th className="text-right py-2 px-3 text-xs text-muted-foreground font-medium">Stream #17A<br/>CIP Cold Feed</th>
+                      <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Stream #12<br/>HIP Hot Inlet</th>
+                      <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Stream #14<br/>CIP Hot Inlet</th>
+                      <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Stream #17A<br/>CIP Cold Feed</th>
                     </tr>
                   </thead>
                   <tbody>
