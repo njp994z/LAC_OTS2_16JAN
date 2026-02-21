@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
-import L1SystemElementsMap, { L1SystemElements } from "./components";
+import L1SystemElementsMap, { ElementType, L1SystemElements } from "./components";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -11,52 +11,74 @@ import {
     ContextMenuSubContent,
     ContextMenuCheckboxItem,
 } from "@/components/ui/context-menu";
-
-interface FlowEdge {
-    id: number;
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-    color: string;
-    hasPointer?: boolean;
-    style?: 'solid' | 'dashed';
-    from?: string;
-    to?: string;
-}
-
-interface DrawingEdge {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-}
+import { useGetLayoutByIdQuery, useUpdateLayoutMutation } from "@/rtkServices/layoutManagerServices";
+import { useCompressor } from "@/delta-v/contexts/CompressorContext";
+import { Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { FlowEdge, DrawingEdge } from "@/rtkServices/layoutManagerServices/type";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useLocation } from "wouter";
 
 const customColors = [
     { id: "light-blue", label: "Light Blue", fill: "rgb(130,204,237)" },
     { id: "yellow", label: "Yellow", fill: "rgb(252,253,1)" },
     { id: "light-green", label: "Light Green", fill: "rgb(142,217,115)" },
     { id: "orange", label: "Orange", fill: "rgb(192,79,21)" },
-    { id: "gray-gradient", label: "Gray Gradient", fill: "url(#gray-gradient)", filterStyle: { background: "linear-gradient(to right, rgb(133,132,130), rgb(193,193,193))" } }
+    { id: "gray-gradient", label: "Gray Gradient", fill: "url(#gray-gradient)", filterStyle: { background: "linear-gradient(to top, rgb(133,132,130), rgb(193,193,193))" } }
 ];
 
-const L1SystemOverview = () => {
+type TempSensor = {
+    id: string;
+    data: any;
+    config: any;
+}
+
+export enum Mode {
+    Static = 'static',
+    View = 'view',
+    Edit = 'edit'
+}
+
+const L1SystemOverview = ({
+    defaultMode = Mode.View
+}: {
+    defaultMode?: Mode;
+}) => {
+    const { toast } = useToast();
+    const [, setLocation] = useLocation();
+    const [tempSensor, setTempSensor] = useState<TempSensor | null>(null);
+    const [mode, setMode] = useState<Mode>(defaultMode);
+    const [editMode, setEditMode] = useState<'components' | 'edges'>('components');
+    const {
+        data: layoutData,
+        isLoading,
+        isError
+    } = useGetLayoutByIdQuery("L1");
+
+    const [updateLayout, { isLoading: isUpdatingLayout }] = useUpdateLayoutMutation();
 
     const { getControllerConfig } = useControllerConfig();
-    const L1Elements = L1SystemElementsMap(getControllerConfig, false);
+    const compressor1540GB001 = useCompressor();
+
+    const L1Elements = L1SystemElementsMap(getControllerConfig, false, compressor1540GB001);
 
     const canvasRef = useRef<HTMLDivElement>(null);
-    const [positions, setPositions] = useState<Record<string, { x: number, y: number }>>({});
+    const [positions, setPositions] = useState<Record<string, { x: number, y: number, z?: number, h?: number, w?: number }>>({});
     const [draggingId, setDraggingId] = useState<string | null>(null);
 
     const [edges, setEdges] = useState<FlowEdge[]>([]);
     const [drawingEdge, setDrawingEdge] = useState<DrawingEdge | null>(null);
     const [selectedEdge, setSelectedEdge] = useState<number | null>(null);
 
-    const [layout, setLayout] = useState<{
-        positions: Record<string, { x: number, y: number }>;
-        edges: FlowEdge[];
-    } | null>(null);
     
     // Instead of global edgeCounter which can reset on HMR, use a ref
     const edgeCounterRef = useRef<number>(1);
@@ -82,10 +104,13 @@ const L1SystemOverview = () => {
 
     const onMouseUp = () => {
         if (drawingEdge) {
-            setEdges((prev) => [
-                ...prev,
-                { ...drawingEdge, id: edgeCounterRef.current++, color: customColors[0].id, hasPointer: true },
-            ]);
+            const dist = Math.hypot(drawingEdge.x2 - drawingEdge.x1, drawingEdge.y2 - drawingEdge.y1);
+            if (dist > 5) {
+                setEdges((prev) => [
+                    ...prev,
+                    { ...drawingEdge, id: edgeCounterRef.current++, color: customColors[0].id, hasPointer: true },
+                ]);
+            }
             setDrawingEdge(null);
         }
         setDraggingId(null);
@@ -97,6 +122,7 @@ const L1SystemOverview = () => {
     }, [drawingEdge]);
 
     const handleCanvasMouseDown = (e: React.MouseEvent) => {
+        if (mode !== Mode.Edit || editMode !== 'edges') return;
         if (e.button !== 0) return;
 
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -130,6 +156,14 @@ const L1SystemOverview = () => {
         );
     };
 
+    const changeEdgeZ = (id: number, z: number) => {
+        setEdges((prev) =>
+            prev.map((e) =>
+                e.id === id ? { ...e, z } : e
+            )
+        );
+    };
+
     const toggleEdgePointer = (id: number) => {
         setEdges((prev) =>
             prev.map((e) =>
@@ -138,22 +172,32 @@ const L1SystemOverview = () => {
         );
     };
 
+    const deleteEdge = (id: number) => {
+        setEdges((prev) => prev.filter((e) => e.id !== id));
+    };
+
+    const cancelDeleteEdge = (id: number) => {
+        setEdges((prev) => prev.filter((e) => e.id !== id));
+    };
+
     const handleSave = () => {
         const layout = { positions, edges };
         console.log("Saving layout:", layout);
-        setLayout(layout);
+        updateLayout({ id: "L1", layout }).unwrap().then(() => {
+            toast({ title: "Success", description: "Layout saved successfully" });
+        });
     };
 
     const handleLoad = () => {
-        if (layout) {
-            setPositions(layout.positions);
-            setEdges(layout.edges);
+        if (layoutData) {
+            setPositions(layoutData.positions);
+            setEdges(layoutData.edges);
         }
     };
 
     useEffect(() => {
         handleLoad();
-    }, [layout]);
+    }, [layoutData]);
 
     const getColorFill = (colorId: string) => {
         const c = customColors.find(c => c.id === colorId);
@@ -167,6 +211,11 @@ const L1SystemOverview = () => {
             )
         );
     };
+
+    function handleStopPropagation(e: React.MouseEvent, callback: () => void) {
+        e.stopPropagation();
+        callback();
+    }
 
     const renderEdges = () => (
         edges.map((edge) => {
@@ -182,10 +231,8 @@ const L1SystemOverview = () => {
                                 stroke="transparent"
                                 strokeWidth="20"
                                 className="cursor-pointer"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedEdge(edge.id);
-                                }}
+                                onClick={(e) => handleStopPropagation(e, () => setSelectedEdge(edge.id))}
+                                onMouseDown={(e) => e.stopPropagation()}
                             />
                             <path
                                 d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
@@ -203,8 +250,10 @@ const L1SystemOverview = () => {
                                 r={6}
                                 className="cursor-crosshair fill-transparent hover:fill-blue-500"
                                 onMouseDown={(e) => {
-                                    e.stopPropagation();
-                                    startEdgeFromHandle(mid.x, mid.y);
+                                    if (mode === Mode.Edit && editMode === 'edges') {
+                                        e.stopPropagation();
+                                        startEdgeFromHandle(mid.x, mid.y);
+                                    }
                                 }}
                             />
                         </g>
@@ -214,7 +263,7 @@ const L1SystemOverview = () => {
                             <ContextMenuSubTrigger>Edge Color</ContextMenuSubTrigger>
                             <ContextMenuSubContent>
                                 {customColors.map((c) => (
-                                    <ContextMenuItem key={c.id} onClick={() => changeEdgeColor(edge.id, c.id)}>
+                                    <ContextMenuItem key={c.id} onClick={(e) => handleStopPropagation(e, () => changeEdgeColor(edge.id, c.id))}>
                                         <div style={c.filterStyle || { background: c.fill }} className="w-4 h-4 rounded-full mr-2 border border-black/20" />
                                         {c.label}
                                     </ContextMenuItem>
@@ -222,12 +271,23 @@ const L1SystemOverview = () => {
                             </ContextMenuSubContent>
                         </ContextMenuSub>
                         <ContextMenuSub>
+                            <ContextMenuSubTrigger>Edge Z</ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) + 1))}>
+                                    Increase Z
+                                </ContextMenuItem>
+                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) - 1))}>
+                                    Decrease Z
+                                </ContextMenuItem>
+                            </ContextMenuSubContent>
+                        </ContextMenuSub>
+                        <ContextMenuSub>
                             <ContextMenuSubTrigger>Edge Style</ContextMenuSubTrigger>
                             <ContextMenuSubContent>
-                                <ContextMenuItem onClick={() => setEdgeStyle(edge.id, 'solid')}>
+                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => setEdgeStyle(edge.id, 'solid'))}>
                                     Solid Line
                                 </ContextMenuItem>
-                                <ContextMenuItem onClick={() => setEdgeStyle(edge.id, 'dashed')}>
+                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => setEdgeStyle(edge.id, 'dashed'))}>
                                     Dashed Line
                                 </ContextMenuItem>
                             </ContextMenuSubContent>
@@ -238,29 +298,68 @@ const L1SystemOverview = () => {
                         >
                             Show Arrow Pointer
                         </ContextMenuCheckboxItem>
+                        <ContextMenuSub>
+                            <ContextMenuSubTrigger>
+                                <Trash2 />
+                            </ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => deleteEdge(edge.id))}>
+                                    Confirm Delete
+                                </ContextMenuItem>
+                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => cancelDeleteEdge(edge.id))}>
+                                    Cancel Delete
+                                </ContextMenuItem>
+                            </ContextMenuSubContent>
+                        </ContextMenuSub>
                     </ContextMenuContent>
                 </ContextMenu>
             );
         })
     );
 
+    const handleEdit = () => {
+        setMode(Mode.Edit);
+    };
+
     return (
+        <>
         <div className="w-full h-screen flex flex-col pt-10">
-            <div className="w-full flex justify-end h-fit max-h-[70px] px-4 py-2 border-b bg-white z-10">
+            {mode !== Mode.Static && <div className="w-full flex justify-between items-center h-fit max-h-[70px] px-4 py-2 border-b bg-white z-10 shadow-sm">
+                {mode === Mode.Edit ? (
+                    <div className="flex gap-4 items-center">
+                        <span className="text-sm font-semibold text-gray-700">Editing:</span>
+                        <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                            <button 
+                                className={`px-4 py-1.5 text-sm transition-colors ${editMode === 'components' ? 'bg-blue-600 text-white font-medium' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                onClick={() => setEditMode('components')}
+                            >
+                                Components
+                            </button>
+                            <button 
+                                className={`px-4 py-1.5 text-sm transition-colors ${editMode === 'edges' ? 'bg-blue-600 text-white font-medium' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                onClick={() => setEditMode('edges')}
+                            >
+                                Edges
+                            </button>
+                        </div>
+                    </div>
+                ) : <div />}
                 <button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
-                    onClick={handleSave}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
+                    onClick={mode === Mode.Edit ? handleSave : handleEdit}
                 >
-                    Save Layout
+                    {isLoading ? 'Saving...' : mode === Mode.Edit ? 'Save Layout' : 'Edit Layout'}
                 </button>
-            </div>
-            <div 
-                ref={canvasRef}
-                className="flex-1 relative bg-gray-50 overflow-hidden"
-                onMouseMove={onMouseMove}
-                onMouseDown={handleCanvasMouseDown}
-            >
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+            </div>}
+            <div className="flex-1 overflow-auto bg-gray-50">
+                <div 
+                    ref={canvasRef}
+                    className="relative"
+                    style={{ width: '5200px', height: '3000px', minWidth: '5200px', minHeight: '3000px' }}
+                    onMouseMove={onMouseMove}
+                    onMouseDown={handleCanvasMouseDown}
+                >
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
                     <defs>
                         <linearGradient id="gray-gradient" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="rgb(133,132,130)" />
@@ -307,7 +406,7 @@ const L1SystemOverview = () => {
                         const elData = L1Elements[element];
                         if (!elData) return null;
                         
-                        const pos = positions[element] || { x: (index % 5) * 200, y: Math.floor(index / 5) * 200 };
+                        const pos = positions?.[element] || { x: (index % 5) * 200, y: Math.floor(index / 5) * 200 };
                         return (
                             <div 
                                 key={`${elData.tag}-${index}`}
@@ -315,14 +414,31 @@ const L1SystemOverview = () => {
                                 style={{
                                     left: pos.x,
                                     top: pos.y,
+                                    zIndex: pos.z || 10,
                                 }}
                                 onMouseDown={(e) => {
-                                    e.stopPropagation();
-                                    setDraggingId(element);
+                                    if (mode === Mode.Edit && editMode === 'components') {
+                                        e.stopPropagation();
+                                        setDraggingId(element);
+                                    }
                                 }}
                             >
                                 <div className="bg-transparent p-2 rounded cursor-move flex flex-col items-center">
-                                    <div className="pointer-events-none">
+                                    <div className="pointer-events-none"
+                                    onClick={(e) => {
+                                        console.log(elData);
+                                        if (elData?.type === ElementType.TemperatureController) {
+                                            setTempSensor({
+                                                id: element,
+                                                data: (elData as any)?.data,
+                                                config: (elData as any)?.config,
+                                            });
+                                        }
+                                        else if (elData?.type === ElementType.TurboGenerator) {
+                                            setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
+                                        }
+                                    }}
+                                    >
                                         {elData.component}
                                     </div>
                                 </div>
@@ -330,8 +446,23 @@ const L1SystemOverview = () => {
                         )
                     })
                 }
+                </div>
             </div>
         </div>
+        <Dialog open={!!tempSensor} onOpenChange={(open) => setTempSensor(open ? tempSensor : null)}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                  <VisuallyHidden>
+                    <DialogTitle>Temperature Sensor 1540-TI-4200B</DialogTitle>
+                  </VisuallyHidden>
+                  {tempSensor && <TempSensorSecondaryFaceplate
+                    data={tempSensor?.data}
+                    config={tempSensor?.config}
+                    sensorId={tempSensor?.id!}
+                    onClose={() => setTempSensor(null)}
+                  />}
+                </DialogContent>
+              </Dialog>
+        </>
     );
 };
 

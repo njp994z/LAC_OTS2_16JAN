@@ -272,6 +272,9 @@ import TempSensorFaceplate3D from "./delta-v/pages/TempSensor/faceplate-3d";
 import TempSensorFaceplate3E from "./delta-v/pages/TempSensor/faceplate-3e";
 import TempSensorFaceplate3F from "./delta-v/pages/TempSensor/faceplate-3f";
 
+import { Provider } from 'react-redux'
+import { store } from "./store";
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -604,6 +607,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
       <TooltipProvider>
         <SessionProvider>
           <ControllerSyncProvider>
@@ -616,6 +620,7 @@ function App() {
           </ControllerSyncProvider>
         </SessionProvider>
       </TooltipProvider>
+      </Provider>
     </QueryClientProvider>
   );
 }

@@ -3,6 +3,10 @@ import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { SecondaryControllerConfig } from "@/delta-v/types/secondaryController";
 import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
 
+import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
+import jugValveImage from "./assets/jug-valve.png";
+import SulferControllerValveImage from "./assets/open-valve-dark.png";
+
 import IPAT from "./ipat";
 import FAT from "./fat";
 import CIP from "./cip";
@@ -13,6 +17,12 @@ import SH1B from "./sh1b";
 import Converter4 from "./converter4";
 import IndustrialFilter from "./industrialFilter";
 import DryingTower from "./dryingTower";
+import FurnaceWhbt from "./furnace-whb";
+import { PrimaryCompressorFaceplate } from "@/delta-v/components/faceplate/PrimaryCompressorFaceplate";
+import { CompressorContextType } from "@/delta-v/contexts/CompressorContext";
+
+import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
+import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
 
 export enum L1SystemElement {
     '1540-PI-4072' = '1540-PI-4072',
@@ -49,6 +59,7 @@ export enum L1SystemElement {
     "Converter4" = "Converter4",
     "IndustrialFilter" = "IndustrialFilter",
     "DT" = "DT",
+    "FurnaceWhbt" = "FurnaceWhbt",
 
     //Text Elements
     "To Acid Pump Tank" = "To Acid Pump Tank",
@@ -61,7 +72,9 @@ export enum L1SystemElement {
     "COLD INTERPASS HX 1540-HX-008" = "COLD INTERPASS HX 1540-HX-008",
     "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007" = "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
     "ECONOMIZER 3B 1540-HX-002" = "ECONOMIZER 3B 1540-HX-002",
-    
+    "To Condenser" = "To Condenser",
+    "SULFUR FURNACE 1540-ZM-001" = "SULFUR FURNACE 1540-ZM-001",
+    "WASTE HEAT BOILER (WHB) 1540-HX-001" = "WASTE HEAT BOILER (WHB) 1540-HX-001",
 }
 
 export const L1SystemElements = [
@@ -99,6 +112,7 @@ export const L1SystemElements = [
     L1SystemElement['Converter4'],
     L1SystemElement['IndustrialFilter'],
     L1SystemElement['DT'],
+    L1SystemElement['FurnaceWhbt'],
 
     //Text Elements
     L1SystemElement['To Acid Pump Tank'],
@@ -110,12 +124,30 @@ export const L1SystemElements = [
     L1SystemElement['HOT INTERPASS HX 1540-HX-009'],
     L1SystemElement['COLD INTERPASS HX 1540-HX-008'],
     L1SystemElement['HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007'],
-    L1SystemElement['ECONOMIZER 3B 1540-HX-002']
+    L1SystemElement['ECONOMIZER 3B 1540-HX-002'],
+    L1SystemElement['To Condenser'],
+    L1SystemElement['SULFUR FURNACE 1540-ZM-001'],
+    L1SystemElement['WASTE HEAT BOILER (WHB) 1540-HX-001'],
 ];
 
-const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => SecondaryControllerConfig, isLocked: boolean) => {
+export enum ElementType {
+    Text,
+    Image,
+    TemperatureController,
+    PressureController,
+    FlowController,
+    Compressor,
+    ValveController,
+    CompressorController,
+    TurboGenerator
+}
 
-        //1540-PI-4072
+const L1SystemElementsMap = (getControllerConfig: (
+    controllerId: string) => SecondaryControllerConfig,
+    isLocked: boolean, compressor: CompressorContextType
+) => {
+
+    //1540-PI-4072
     //Compressor Inlet Pressure
     const compressorInletPressure4072Config = getControllerConfig(L1SystemElement['1540-PI-4072']);
     const compressorInletPressure4072Data = useControllerSync(L1SystemElement['1540-PI-4072']);
@@ -146,7 +178,7 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
     // Sulpur Controller Valve
     const sulfurControllerValve2602Config = getControllerConfig(L1SystemElement['1540-VCF-2602']);
     const sulfurControllerValve2602Data = useControllerSync(L1SystemElement['1540-VCF-2602']);
- 
+
 
     //1540-F-2602
     //Sulphuric Flow Controller
@@ -234,11 +266,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-PI-4072": {
             tag: L1SystemElement["1540-PI-4072"],
             description: "Compressor Inlet Pressure",
+            type: ElementType.PressureController,
             config: compressorInletPressure4072Config,
             data: compressorInletPressure4072Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -272,11 +305,11 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-H-4030": {
             tag: L1SystemElement["1540-H-4030"],
             description: "1540-H-4030 Main Compressor Controller",
+            type: ElementType.CompressorController,
             config: compressorController4030Config,
             data: compressorController4030Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -310,49 +343,35 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-GB-001": {
             tag: L1SystemElement["1540-GB-001"],
             description: "Main Compressor",
+            type: ElementType.Compressor,
             config: mainCompressor001Config,
             data: mainCompressor001Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
-                    data={{
-                        ...defaultControllerData,
-                        instrumentTag: mainCompressor001Config?.TAGNAME,
-                        description: mainCompressor001Config?.DESC || 'Main Compressor',
-                        pv: mainCompressor001Data?.state?.syncedPV ?? 0,
-                        sp: mainCompressor001Data?.state?.syncedSP ?? 0,
-                        out: mainCompressor001Data?.state?.syncedOUT ?? 0,
-                        mode: mainCompressor001Data?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: mainCompressor001Config?.EU || '°C',
-                        pvRangeMin: mainCompressor001Config?.SP_LIM_LO ?? 0,
-                        pvRangeMax: mainCompressor001Config?.SP_LIM_HI ?? 500,
-                        alarmActive: mainCompressor001Data?.state?.alarmStates?.HH || mainCompressor001Data?.state?.alarmStates?.H ||
-                            mainCompressor001Data?.state?.alarmStates?.L || mainCompressor001Data?.state?.alarmStates?.LL || false,
-                        alarmColor: (mainCompressor001Data?.state?.alarmStates?.HH || mainCompressor001Data?.state?.alarmStates?.LL) ? 'red' :
-                            (mainCompressor001Data?.state?.alarmStates?.H || mainCompressor001Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: mainCompressor001Config?.ALM_LL_LIM,
-                        alarmL: mainCompressor001Config?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
-                    } as ControllerData}
-                    isTransparent={true}
-                />
+                <PrimaryCompressorFaceplate
+                    data={compressor.compressorData}
+                    transparentBackground={true}
+                    configTagName={compressor.vfdConfig?.tagName}
+                    configDescription={compressor.vfdConfig?.description}
+                    configUnit={compressor.vfdConfig?.unit}
+            />
             </div>
         },
         "1540-PI-4002": {
             tag: "1540-PI-4002",
             description: "Compressor Outlet Pressure",
+            type: ElementType.PressureController,
             config: compressorOutletPressure4002Config,
             data: compressorOutletPressure4002Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -386,49 +405,52 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-VCF-2602": {
             tag: "1540-VCF-2602",
             description: "Sulpur Controller Valve",
+            type: ElementType.ValveController,
             config: sulfurControllerValve2602Config,
             data: sulfurControllerValve2602Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ValveFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
-                    } as ControllerData}
+                        instrumentTag: sulfurControllerValve2602Config?.TAGNAME,
+                        description: sulfurControllerValve2602Config?.DESC || 'Sulfer Controller Valve',
+                        pv: sulfurControllerValve2602Data?.state?.syncedPV ?? 0,
+                        sp: sulfurControllerValve2602Data?.state?.syncedSP ?? 0,
+                        out: sulfurControllerValve2602Data?.state?.syncedOUT ?? 0,
+                        mode: sulfurControllerValve2602Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: sulfurControllerValve2602Config?.EU || '°C',
+                        pvRangeMin: sulfurControllerValve2602Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: sulfurControllerValve2602Config?.SP_LIM_HI ?? 500,
+                        alarmActive: sulfurControllerValve2602Data?.state?.alarmStates?.HH || sulfurControllerValve2602Data?.state?.alarmStates?.H ||
+                            sulfurControllerValve2602Data?.state?.alarmStates?.L || sulfurControllerValve2602Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (sulfurControllerValve2602Data?.state?.alarmStates?.HH || sulfurControllerValve2602Data?.state?.alarmStates?.LL) ? 'red' :
+                            (sulfurControllerValve2602Data?.state?.alarmStates?.H || sulfurControllerValve2602Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: sulfurControllerValve2602Config?.ALM_LL_LIM,
+                        alarmL: sulfurControllerValve2602Config?.ALM_L_LIM,
+                        alarmH: sulfurControllerValve2602Config?.ALM_H_LIM,
+                        alarmHH: sulfurControllerValve2602Config?.ALM_HH_LIM,
+                    }}
                     isTransparent={true}
+                    valveImageSrc={SulferControllerValveImage}
                 />
             </div>
         },
         "1540-F-2602": {
             tag: "1540-F-2602",
             description: "Sulphuric Flow Controller",
+            type: ElementType.FlowController,
             config: sulphuricFlowController2602Config,
             data: sulphuricFlowController2602Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -462,11 +484,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-PI-2604": {
             tag: "1540-PI-2604",
             description: "Furnace Sulfur Inlet Pressure",
+            type: ElementType.PressureController,
             config: furnaceSulfurInletPressure2604Config,
             data: furnaceSulfurInletPressure2604Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -500,11 +523,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-4020": {
             tag: "1540-TI-4020",
             description: "Furnace Inlet Temperature",
+            type: ElementType.TemperatureController,
             config: furnaceInletTemperature4020Config,
             data: furnaceInletTemperature4020Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -538,49 +562,52 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-HCV-4282": {
             tag: "1540-HCV-4282",
             description: "Jug Controller Valve",
+            type: ElementType.ValveController,
             config: jugControllerValve4282Config,
             data: jugControllerValve4282Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ValveFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
-                    } as ControllerData}
+                        instrumentTag: jugControllerValve4282Config?.TAGNAME,
+                        description: jugControllerValve4282Config?.DESC || 'Jug Controller Valve',
+                        pv: jugControllerValve4282Data?.state?.syncedPV ?? 0,
+                        sp: jugControllerValve4282Data?.state?.syncedSP ?? 0,
+                        out: jugControllerValve4282Data?.state?.syncedOUT ?? 0,
+                        mode: jugControllerValve4282Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: jugControllerValve4282Config?.EU || '°C',
+                        pvRangeMin: jugControllerValve4282Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: jugControllerValve4282Config?.SP_LIM_HI ?? 500,
+                        alarmActive: jugControllerValve4282Data?.state?.alarmStates?.HH || jugControllerValve4282Data?.state?.alarmStates?.H ||
+                            jugControllerValve4282Data?.state?.alarmStates?.L || jugControllerValve4282Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (jugControllerValve4282Data?.state?.alarmStates?.HH || jugControllerValve4282Data?.state?.alarmStates?.LL) ? 'red' :
+                            (jugControllerValve4282Data?.state?.alarmStates?.H || jugControllerValve4282Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: jugControllerValve4282Config?.ALM_LL_LIM,
+                        alarmL: jugControllerValve4282Config?.ALM_L_LIM,
+                        alarmH: jugControllerValve4282Config?.ALM_H_LIM,
+                        alarmHH: jugControllerValve4282Config?.ALM_HH_LIM,
+                    }}
                     isTransparent={true}
+                    valveImageSrc={jugValveImage}
                 />
             </div>
         },
         "1540-TIC-4822": {
             tag: "1540-TIC-4822",
             description: "Pass 2 Inlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass2InletTemperature4822Config,
             data: pass2InletTemperature4822Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -614,11 +641,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-8721": {
             tag: "1540-TI-8721",
             description: "Pass 1 Outlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass1OutletTemperature8721Config,
             data: pass1OutletTemperature8721Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -652,49 +680,34 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1560-TG-001": {
             tag: "1560-TG-001",
             description: "Pass 2 Turbo Generator Set",
+            type: ElementType.TurboGenerator,
             config: pass2TurboGeneratorSet001Config,
             data: pass2TurboGeneratorSet001Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
-                    data={{
-                        ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
-                    } as ControllerData}
-                    isTransparent={true}
-                />
+                <TurboGeneratorProvider>
+                    <PrimaryTurboGeneratorFaceplate
+                        data={compressor.compressorData}
+                        transparentBackground={true}
+                    />
+                </TurboGeneratorProvider>
             </div>
         },
         "1540-TIC-5224": {
             tag: "1540-TIC-5224",
             description: "Pass 4 Inlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass4InletTemperature5224Config,
             data: pass4InletTemperature5224Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -728,11 +741,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-7225": {
             tag: "1540-TI-7225",
             description: "Pass 4 Outlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass4OutletTemperature7225Config,
             data: pass4OutletTemperature7225Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -766,11 +780,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TIC-5220": {
             tag: "1540-TIC-5220",
             description: "Pass 2 Inlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass2InletTemperature5220Config,
             data: pass2InletTemperature5220Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -804,11 +819,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-5232": {
             tag: "1540-TI-5232",
             description: "Pass 2 Outlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass2OutletTemperature5232Config,
             data: pass2OutletTemperature5232Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -842,11 +858,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TIC-7221": {
             tag: "1540-TIC-7221",
             description: "Economizer 4A Outlet Temp",
+            type: ElementType.TemperatureController,
             config: economizer4AOutletTemp7221Config,
             data: economizer4AOutletTemp7221Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -880,11 +897,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-5231": {
             tag: "1540-TI-5231",
             description: "Pass 3 Outlet Temperature",
+            type: ElementType.TemperatureController,
             config: pass3OutletTemperature5231Config,
             data: pass3OutletTemperature5231Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -918,11 +936,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-8421": {
             tag: "1540-TI-8421",
             description: "CIP Inlet Temperature",
+            type: ElementType.TemperatureController,
             config: cipInletTemperature8421Config,
             data: cipInletTemperature8421Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -956,11 +975,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TIC-7224": {
             tag: "1540-TIC-7224",
             description: "Economizer 3B Outlet Temp",
+            type: ElementType.TemperatureController,
             config: economizer3BOutletTemp7224Config,
             data: economizer3BOutletTemp7224Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -994,11 +1014,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1520-TI-6624": {
             tag: "1520-TI-6624",
             description: "FAT Outlet Temperature",
+            type: ElementType.TemperatureController,
             config: fatOutletTemperature6624Config,
             data: fatOutletTemperature6624Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -1032,11 +1053,12 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
         "1540-TI-4200A": {
             tag: "1540-TI-4200A",
             description: "Furnace Outlet Temperature A",
+            type: ElementType.TemperatureController,
             config: furnaceOutletTemperature4200AConfig,
             data: furnaceOutletTemperature4200AData,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                onClick={() => { }}
+                
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -1067,79 +1089,138 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
                 />
             </div>
         },
-        "DT": { tag: L1SystemElement["DT"], description: "Drying Tower", component: <DryingTower /> },
-        "IPAT": { tag: L1SystemElement["IPAT"], description: "IPAT Tower", component: <IPAT /> },
-        "FAT": { tag: L1SystemElement["FAT"], description: "Final Absorbing Tower", component: <FAT /> },
-        "CIP": { tag: L1SystemElement["CIP"], description: "Cold Interpass Absorber", component: <CIP /> },
-        "SH42EC4cEC4a": { tag: L1SystemElement["SH42EC4cEC4a"], description: "SH42EC4cEC4a", component: <SH42EC4cEC4a /> },
-        "HIP": { tag: L1SystemElement["HIP"], description: "Hot Interpass Absorber", component: <HIP /> },
-        "EC3B": { tag: L1SystemElement["EC3B"], description: "Economizer 3B", component: <EC3B /> },
-        "SH1B": { tag: L1SystemElement["SH1B"], description: "Superheater 1B", component: <SH1B /> },
-        "Converter4": { tag: L1SystemElement["Converter4"], description: "Converter 4", component: <Converter4 /> },
-        "IndustrialFilter": { tag: L1SystemElement["IndustrialFilter"], description: "Industrial Filter", component: <IndustrialFilter /> },
-        "To Acid Pump Tank": { tag: L1SystemElement["To Acid Pump Tank"], description: "To Acid Pump Tank", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+        "DT": { tag: L1SystemElement["DT"],
+            type: ElementType.Image,
+             description: "Drying Tower", component: <DryingTower /> },
+        "IPAT": { tag: L1SystemElement["IPAT"],
+            type: ElementType.Image,
+             description: "IPAT Tower", component: <IPAT /> },
+        "FAT": { tag: L1SystemElement["FAT"],
+            type: ElementType.Image,
+             description: "Final Absorbing Tower", component: <FAT /> },
+        "CIP": { tag: L1SystemElement["CIP"],
+            type: ElementType.Image,
+             description: "Cold Interpass Absorber", component: <CIP /> },
+        "SH42EC4cEC4a": { tag: L1SystemElement["SH42EC4cEC4a"],
+            type: ElementType.Image,
+             description: "SH42EC4cEC4a", component: <SH42EC4cEC4a /> },
+        "HIP": { tag: L1SystemElement["HIP"],
+            type: ElementType.Image,
+             description: "Hot Interpass Absorber", component: <HIP /> },
+        "EC3B": { tag: L1SystemElement["EC3B"],
+            type: ElementType.Image,
+             description: "Economizer 3B", component: <EC3B /> },
+        "SH1B": { tag: L1SystemElement["SH1B"],
+            type: ElementType.Image,
+             description: "Superheater 1B", component: <SH1B /> },
+        "Converter4": { tag: L1SystemElement["Converter4"],
+            type: ElementType.Image,
+             description: "Converter 4", component: <Converter4 /> },
+        "IndustrialFilter": { tag: L1SystemElement["IndustrialFilter"],
+            type: ElementType.Image,
+             description: "Industrial Filter", component: <IndustrialFilter /> },
+        "FurnaceWhbt": { tag: L1SystemElement["FurnaceWhbt"],
+            type: ElementType.Image,
+             description: "Furnace Whbt", component: <FurnaceWhbt /> },
+
+        "To Acid Pump Tank": {
+            tag: L1SystemElement["To Acid Pump Tank"],
+            type: ElementType.Text,
+             description: "To Acid Pump Tank",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
-                    To Acid 
+                    To Acid
                     <br />
                     Pump Tank
                 </p>
-            </div> },
-        "From Acid System": { tag: L1SystemElement["From Acid System"], description: "From Acid System", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+            </div>
+        },
+        "From Acid System": {
+            tag: L1SystemElement["From Acid System"],
+            type: ElementType.Text,
+             description: "From Acid System",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>From Acid
-                <br />
-                System</p>
-            </div> },
-        "Ambient Air": { tag: L1SystemElement["Ambient Air"], description: "Ambient Air", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+                    <br />
+                    System</p>
+            </div>
+        },
+        "Ambient Air": {
+            tag: L1SystemElement["Ambient Air"],
+            type: ElementType.Text,
+             description: "Ambient Air",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>Ambient
-                <br />
-                Air</p>
-            </div> },
-        "To SO2 Scrubber": { tag: L1SystemElement["To SO2 Scrubber"], description: "To SO2 Scrubber", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+                    <br />
+                    Air</p>
+            </div>
+        },
+        "To SO2 Scrubber": {
+            tag: L1SystemElement["To SO2 Scrubber"],
+            type: ElementType.Text,
+             description: "To SO2 Scrubber",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     To SO2
                     <br />
                     Scrubber
                 </p>
-            </div> },
-        "From SO2 Scrubber": { tag: L1SystemElement["From SO2 Scrubber"], description: "From SO2 Scrubber", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+            </div>
+        },
+        "From SO2 Scrubber": {
+            tag: L1SystemElement["From SO2 Scrubber"],
+            type: ElementType.Text,
+             description: "From SO2 Scrubber",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     From SO2
                     <br />
                     Scrubber
                 </p>
-            </div> },
+            </div>
+        },
 
-        "SUPERHEATER 1B 1540-HX-003": { tag: L1SystemElement["SUPERHEATER 1B 1540-HX-003"], description: "SUPERHEATER 1B 1540-HX-003", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+        "SUPERHEATER 1B 1540-HX-003": {
+            tag: L1SystemElement["SUPERHEATER 1B 1540-HX-003"],
+            type: ElementType.Text,
+             description: "SUPERHEATER 1B 1540-HX-003",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     SUPERHEATER 1B
                     <br />
                     1540-HX-003
                 </p>
-            </div> },
-        "HOT INTERPASS HX 1540-HX-009": { tag: L1SystemElement["HOT INTERPASS HX 1540-HX-009"], description: "HOT INTERPASS HX 1540-HX-009", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+            </div>
+        },
+        "HOT INTERPASS HX 1540-HX-009": {
+            tag: L1SystemElement["HOT INTERPASS HX 1540-HX-009"],
+            type: ElementType.Text,
+             description: "HOT INTERPASS HX 1540-HX-009",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     HOT INTERPASS HX
                     <br />
                     1540-HX-009
                 </p>
-            </div> },
-        "COLD INTERPASS HX 1540-HX-008": { tag: L1SystemElement["COLD INTERPASS HX 1540-HX-008"], description: "COLD INTERPASS HX 1540-HX-008", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+            </div>
+        },
+        "COLD INTERPASS HX 1540-HX-008": {
+            tag: L1SystemElement["COLD INTERPASS HX 1540-HX-008"],
+            type: ElementType.Text,
+             description: "COLD INTERPASS HX 1540-HX-008",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     COLD INTERPASS HX
                     <br />
                     1540-HX-008
                 </p>
-            </div> },
-        "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007": { tag: L1SystemElement["HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007"], description: "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+            </div>
+        },
+        "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007": {
+            tag: L1SystemElement["HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007"],
+            type: ElementType.Text,
+             description: "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     HP SUPERHEATER 4A
                     <br />
@@ -1147,15 +1228,56 @@ const L1SystemElementsMap = (getControllerConfig: (controllerId: string) => Seco
                     <br />
                     1540-HX-004/006/007
                 </p>
-            </div> },
-        "ECONOMIZER 3B 1540-HX-002": { tag: L1SystemElement["ECONOMIZER 3B 1540-HX-002"], description: "ECONOMIZER 3B 1540-HX-002", 
-        component: <div className=" text-black text-lg font-semibold text-center">
+            </div>
+        },
+        "ECONOMIZER 3B 1540-HX-002": {
+            tag: L1SystemElement["ECONOMIZER 3B 1540-HX-002"],
+            type: ElementType.Text,
+             description: "ECONOMIZER 3B 1540-HX-002",
+            component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     ECONOMIZER 3B
                     <br />
                     1540-HX-002
                 </p>
-            </div> },
+            </div>
+        },
+        "To Condenser": {
+            tag: L1SystemElement["To Condenser"],
+            type: ElementType.Text,
+             description: "To Condenser",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    To Condenser
+                </p>
+            </div>
+        },
+        "SULFUR FURNACE 1540-ZM-001": {
+            tag: L1SystemElement["SULFUR FURNACE 1540-ZM-001"],
+            type: ElementType.Text,
+             description: "SULFUR FURNACE 1540-ZM-001",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    SULFUR FURNACE
+                    <br />
+                    1540-ZM-001
+                </p>
+            </div>
+        },
+        "WASTE HEAT BOILER (WHB) 1540-HX-001": {
+            tag: L1SystemElement["WASTE HEAT BOILER (WHB) 1540-HX-001"],
+            type: ElementType.Text,
+             description: "WASTE HEAT BOILER (WHB) 1540-HX-001",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    WASTE HEAT BOILER
+                    <br />
+                    {`(WHB)`}
+                    <br />
+                    1540-HX-001
+                </p>
+            </div>
+        }
     }
 
 }

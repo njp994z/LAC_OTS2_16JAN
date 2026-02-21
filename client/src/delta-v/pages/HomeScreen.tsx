@@ -59,8 +59,6 @@ import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/Sec
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { TempSensorPrimaryFaceplate } from "@/delta-v/components/faceplate/TempSensorPrimaryFaceplate";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
-import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
-import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
