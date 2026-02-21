@@ -111,37 +111,6 @@ const DEFAULT_EXTRAS: ExtraRow[] = [
   { label: "CIP LMTD", units: "\u00b0F", value: "---" },
 ];
 
-interface SystemParam {
-  label: string;
-  defaultValue: string;
-}
-
-const SYSTEM_PARAMS: SystemParam[] = [
-  { label: "CIP Tube OD (in)", defaultValue: "2.565" },
-  { label: "CIP Tube Number", defaultValue: "2,148" },
-  { label: "CIP Tube Thickness (in)", defaultValue: "0.218" },
-  { label: "CIP Tube Length (ft)", defaultValue: "30.9375" },
-  { label: "HIP Tube OD (in)", defaultValue: "2.565" },
-  { label: "HIP Tube Number", defaultValue: "1,150" },
-  { label: "HIP Tube Thickness (in)", defaultValue: "0.218" },
-  { label: "HIP Tube Length (ft)", defaultValue: "25.0" },
-  { label: 'CIP Cv_Max 36"', defaultValue: "100,000.0" },
-  { label: 'HIP Cv_Max 48"', defaultValue: "200,000.0" },
-  { label: 'CIP Cv_Max 78"', defaultValue: "700,000.0" },
-  { label: "Barometric P (psia)", defaultValue: "14.696" },
-  { label: "Weather ZIP Code", defaultValue: "89801" },
-  { label: "k_304 SS (BTU/hr*ft*\u00b0F)", defaultValue: "8.7" },
-  { label: "CIP; Number of Baffles", defaultValue: "5" },
-  { label: "HIP; Number of Baffles", defaultValue: "1" },
-  { label: "CIP h_H #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "CIP h_C #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "HIP h_H #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "HIP h_C #1 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "CIP h_H #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "CIP h_C #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "HIP h_H #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-  { label: "HIP h_C #2 (BTU/hr*ft\u00b2*\u00b0F)", defaultValue: "10.0" },
-];
 
 const HIP_COLS = ["#12", "#13", "#18A", "#18B", "#18C", "#18D", "#18E", "#19"] as const;
 const HIP_KEYS: (keyof HipRow)[] = ["s12", "s13", "s18A", "s18B", "s18C", "s18D", "s18E", "s19"];
@@ -167,12 +136,6 @@ export default function GasGasHeatExchanger() {
   const [dynHipSetpoint, setDynHipSetpoint] = useState("806");
   const [dynCipSetpoint, setDynCipSetpoint] = useState("779");
 
-  const [sysParams, setSysParams] = useState<Record<string, string>>(
-    () => Object.fromEntries(SYSTEM_PARAMS.map(p => [p.label, p.defaultValue]))
-  );
-  const updateSysParam = useCallback((label: string, value: string) => {
-    setSysParams(prev => ({ ...prev, [label]: value }));
-  }, []);
 
   const [hipTable, setHipTable] = useState<HipRow[]>([]);
   const [cipTable, setCipTable] = useState<CipRow[]>([]);
@@ -394,7 +357,6 @@ export default function GasGasHeatExchanger() {
     setDynTau5220b("3.0");
     setDynHipSetpoint("806");
     setDynCipSetpoint("779");
-    setSysParams(Object.fromEntries(SYSTEM_PARAMS.map(p => [p.label, p.defaultValue])));
     setHipTable([]);
     setCipTable([]);
     setExtras(DEFAULT_EXTRAS);
@@ -542,25 +504,6 @@ export default function GasGasHeatExchanger() {
               </CardContent>
             </Card>
           )}
-
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">System Parameters</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
-                {SYSTEM_PARAMS.map((p, i) => (
-                  <InputField
-                    key={p.label}
-                    label={p.label}
-                    value={sysParams[p.label]}
-                    onChange={(v) => updateSysParam(p.label, v)}
-                    testId={`input-sys-${i}`}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader className="py-3 px-4">
