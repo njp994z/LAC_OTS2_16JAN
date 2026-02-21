@@ -421,6 +421,12 @@ export default function GasGasHeatExchanger() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" data-testid="button-cip-shell-geometry">
+              CIP Shell Geometry
+            </Button>
+            <Button variant="outline" data-testid="button-hip-shell-geometry">
+              HIP Shell Geometry
+            </Button>
             <Link href="/unit-operation/gas-gas-hx-system-parameters">
               <Button variant="default" className="bg-blue-600 border-blue-600" data-testid="button-system-parameters">
                 <Settings className="mr-2 h-4 w-4" />System Parameters
