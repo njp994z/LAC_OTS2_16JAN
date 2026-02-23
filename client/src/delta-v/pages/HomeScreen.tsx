@@ -1167,10 +1167,10 @@ const HomeScreen = () => {
       sulfurSyncState.alarmStates.L || sulfurSyncState.alarmStates.LL,
     alarmColor: (sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL) ? 'red' :
       (sulfurSyncState.alarmStates.H || sulfurSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: sulfurFlowConfig.ALM_LL_LIM ?? 0,
-    alarmL: sulfurFlowConfig.ALM_L_LIM ?? 0,
-    alarmH: sulfurFlowConfig.ALM_H_LIM ?? 0,
-    alarmHH: sulfurFlowConfig.ALM_HH_LIM ?? 0,
+    alarmLL: sulfurFlowConfig.ALM_LL_LIM || 5,
+    alarmL: sulfurFlowConfig.ALM_L_LIM || 10,
+    alarmH: sulfurFlowConfig.ALM_H_LIM || 400,
+    alarmHH: sulfurFlowConfig.ALM_HH_LIM || 450,
   };
 
   // Build valve faceplate data from synced state
@@ -3721,7 +3721,7 @@ const HomeScreen = () => {
                   data={sulfurFlowData}
                   isTransparent={true}
                   controllerId="1530-F-2602"
-                  showAlarmLimits={false}
+                  showAlarmLimits={true}
                 />
               </div>
             </Rnd>
@@ -4931,7 +4931,7 @@ const HomeScreen = () => {
                   data={sulfurFlowData}
                   isTransparent={true}
                   controllerId="1530-F-2602"
-                  showAlarmLimits={false}
+                  showAlarmLimits={true}
                 />
               </div>
             </Rnd>

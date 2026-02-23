@@ -39,20 +39,19 @@ interface ControllerFaceplateProps {
 
 export const ControllerFaceplate = ({ data, className, onSelect, isTransparent = false, showAlarmLimits = true, controllerId, normalBarColor }: ControllerFaceplateProps) => {
   const { getControllerConfig } = useControllerConfig();
-  
+
   // Get config from context if controllerId is provided, for dynamic TAGNAME/DESC
   const config = controllerId ? getControllerConfig(controllerId) : null;
-  console.log('config',config);
-  
+  console.log('config', config);
+
   // Use config values if available, otherwise fall back to data props
   const displayTag = config?.TAGNAME || data.instrumentTag;
-  const displayDesc = config?.DESC || data.description;  
-  // Set green bar color if TAGNAME is 1530-F-2602
-  const barColor = config?.TAGNAME === "1530-F-2602" ? "hsl(142, 71%, 45%)" : normalBarColor;  
+  const displayDesc = config?.DESC || data.description;
+  const barColor = normalBarColor;
   const isCriticalAlarm = data.alarmColor === 'red' && data.alarmActive;
   const isWarningAlarm = data.alarmColor === 'yellow' && data.alarmActive;
   const isNormalState = !isCriticalAlarm && !isWarningAlarm;
-  
+
   const currentModeConfig = modeConfig[data.mode] || modeConfig.AUTO;
 
   // Determine alarm circle style
@@ -71,7 +70,7 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
   const outOk = !data.alarmActive;
 
   return (
-    <div 
+    <div
       className={cn(
         isTransparent ? "faceplate-container-transparent" : "faceplate-container",
         "p-1.5 cursor-pointer select-none",
@@ -127,7 +126,7 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
 
           {/* Range Bar */}
           <div className="flex-1 max-w-[125px]">
-            <RangeBar 
+            <RangeBar
               pvValue={data.pv}
               outValue={data.out}
               setpoint={data.sp}
@@ -162,7 +161,7 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
               )}>
                 {modeAbbreviation[data.mode] || data.mode}
               </div>
-              
+
               {/* Lock Icon - conditionally rendered */}
               {(data.showLockIndicator !== false) && (
                 <div className={isTransparent ? "text-slate-600" : "text-slate-400"}>
@@ -211,7 +210,7 @@ export const ControllerFaceplate = ({ data, className, onSelect, isTransparent =
                   I
                 </div>
               )}
-              
+
               {/* Hold Indicator - conditionally rendered */}
               {(data.showHoldIndicator !== false) && (
                 <div className={cn(

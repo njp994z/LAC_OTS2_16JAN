@@ -2490,7 +2490,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       }
 
       // Run Python pass solver
-      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'pass_solver.py');
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'rk_solver.py');
 
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
