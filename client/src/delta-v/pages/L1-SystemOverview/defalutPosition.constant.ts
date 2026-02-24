@@ -49,16 +49,6 @@ export const defaultPositionL1: Layout = {
       "hasPointer": true
     },
     {
-      "z": 3,
-      "id": 9,
-      "x1": 996,
-      "x2": 1361,
-      "y1": 750,
-      "y2": 749,
-      "color": "light-blue",
-      "hasPointer": true
-    },
-    {
       "id": 10,
       "x1": 1414,
       "x2": 1416,
@@ -520,6 +510,16 @@ export const defaultPositionL1: Layout = {
       "y2": 977.2000007629395,
       "color": "gray-gradient",
       "style": "dashed",
+      "hasPointer": true
+    },
+    {
+      "z": 1,
+      "id": 1,
+      "x1": 979.3333435058594,
+      "x2": 1349.3333435058594,
+      "y1": 743.933349609375,
+      "y2": 742.933349609375,
+      "color": "light-blue",
       "hasPointer": true
     }
   ],

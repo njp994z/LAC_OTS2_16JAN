@@ -34,7 +34,7 @@ const customColors = [
     { id: "yellow", label: "Yellow", fill: "rgb(252,253,1)" },
     { id: "light-green", label: "Light Green", fill: "rgb(142,217,115)" },
     { id: "orange", label: "Orange", fill: "rgb(192,79,21)" },
-    { id: "gray-gradient", label: "Gray Gradient", fill: "url(#gray-gradient)", filterStyle: { background: "linear-gradient(to top, rgb(133,132,130), rgb(193,193,193))" } }
+    { id: "gray-gradient", label: "Gray Gradient", fill: "rgb(133,132,130)" }
 ];
 
 type TempSensor = {
@@ -247,6 +247,9 @@ const L1SystemOverview = ({
                                 filter={edge.style === 'dashed' ? undefined : "url(#black-outline)"}
                                 markerEnd={edge.hasPointer !== false ? `url(#arrow-${edge.color})` : undefined}
                                 className="pointer-events-none transition-all duration-300 ease-in-out"
+                                style={{
+                                    zIndex: edge?.z ?? 10
+                                }}
                             />
                             <circle
                                 cx={mid.x}
@@ -268,7 +271,7 @@ const L1SystemOverview = ({
                             <ContextMenuSubContent>
                                 {customColors.map((c) => (
                                     <ContextMenuItem key={c.id} onClick={(e) => handleStopPropagation(e, () => changeEdgeColor(edge.id, c.id))}>
-                                        <div style={c.filterStyle || { background: c.fill }} className="w-4 h-4 rounded-full mr-2 border border-black/20" />
+                                        <div style={{ background: c.fill }} className="w-4 h-4 rounded-full mr-2 border border-black/20" />
                                         {c.label}
                                     </ContextMenuItem>
                                 ))}
