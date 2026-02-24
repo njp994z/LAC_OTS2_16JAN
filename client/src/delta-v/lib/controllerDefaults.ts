@@ -15,9 +15,23 @@ export const getDefaultSecondaryControllerConfig = (
   controllerId: string
 ): SecondaryControllerConfig => {
   const metadata = getControllerMetadata(controllerId);
-  
+
   // Controller-specific default overrides
   const controllerDefaults: Record<string, Partial<SecondaryControllerConfig>> = {
+    '1530-F-2602': {
+      // Sulfur Flow Controller: alarm-based coloring with L/LL/H/HH reference lines
+      PV_SCALE_LO: 0,
+      PV_SCALE_HI: 500,
+      SP_LIM_LO: 0,
+      SP_LIM_HI: 500,
+      EU: 'gpm',
+      ALM_LL_LIM: 5,
+      ALM_L_LIM: 10,
+      ALM_H_LIM: 400,
+      ALM_HH_LIM: 450,
+      ALM_DL_LIM: 0,
+      ALM_DH_LIM: 0,
+    },
     '1540-HCV-4282': {
       // Jug Valve: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
@@ -130,9 +144,9 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_INTERLOCK_INDICATOR: false,
     },
   };
-  
+
   const specificDefaults = controllerDefaults[controllerId] || {};
-  
+
   return {
     ...defaultSecondaryConfig,
     ...specificDefaults,

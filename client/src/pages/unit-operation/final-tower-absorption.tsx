@@ -86,7 +86,8 @@ export default function FinalTowerAbsorption() {
   const [mode, setMode] = useState<"Static" | "Dynamic">("Static");
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [isRunningDynamic, setIsRunningDynamic] = useState(false);
-  const dynamicIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isRunningDynamicRef = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const currentFlowRef = useRef<number>(0);
 
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
@@ -191,9 +192,9 @@ export default function FinalTowerAbsorption() {
         PRESSURE_GF0: parseFloat(gasInputs.PRESSURE_GF0) || 0,
         TEMPERATURE_GF0: parseFloat(gasInputs.TEMPERATURE_GF0) || 0,
       });
-      
+
       const data = await response.json();
-      
+
       if (data.error) {
         toast({
           title: "Calculation Error",
@@ -258,38 +259,47 @@ export default function FinalTowerAbsorption() {
   }, [acidInputs, gasInputs, systemParams, toast, isRunningDynamic]);
 
   const startDynamic = () => {
-    if (isRunningDynamic) return;
-    
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    if (isRunningDynamicRef.current) return;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-    
+
     setIsRunningDynamic(true);
+    isRunningDynamicRef.current = true;
     currentFlowRef.current = parseFloat(acidInputs.Flow_AF0) || 0;
-    
-    const updateDynamic = () => {
+
+    const updateDynamic = async () => {
+      if (!isRunningDynamicRef.current) return;
+
       const target = 1500.0;
       const tau = parseFloat(dynamicParams.tau) || 6.0;
       const dt = parseFloat(dynamicParams.dt) || 0.5;
-      
+
       currentFlowRef.current += (target - currentFlowRef.current) * (1 - Math.exp(-dt / tau));
-      
+
       setAcidInputs(prev => ({
         ...prev,
         Flow_AF0: currentFlowRef.current.toFixed(1)
       }));
+
+      await runCalculation();
+
+      if (isRunningDynamicRef.current) {
+        timerRef.current = setTimeout(updateDynamic, Math.max(dt * 1000, 100));
+      }
     };
-    
+
     updateDynamic();
-    dynamicIntervalRef.current = setInterval(updateDynamic, (parseFloat(dynamicParams.dt) || 0.5) * 1000);
   };
 
   const pauseDynamic = () => {
     setIsRunningDynamic(false);
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    isRunningDynamicRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
 
@@ -300,11 +310,14 @@ export default function FinalTowerAbsorption() {
     runCalculation();
   };
 
+  // No longer needed: sequential update handled in startDynamic
+  /*
   useEffect(() => {
     if (isRunningDynamic) {
       runCalculation();
     }
   }, [acidInputs.Flow_AF0, isRunningDynamic, runCalculation]);
+  */
 
   useEffect(() => {
     if (mode === "Static" && isRunningDynamic) {
@@ -312,10 +325,17 @@ export default function FinalTowerAbsorption() {
     }
   }, [mode]);
 
+  // In Static mode, keep TEMPERATURE_GF0 in sync with acid inlet temperature (Temp_AF0)
+  useEffect(() => {
+    if (mode === "Static") {
+      setGasInputs(prev => ({ ...prev, TEMPERATURE_GF0: acidInputs.Temp_AF0 }));
+    }
+  }, [acidInputs.Temp_AF0, mode]);
+
   useEffect(() => {
     return () => {
-      if (dynamicIntervalRef.current) {
-        clearInterval(dynamicIntervalRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, []);
@@ -331,7 +351,7 @@ export default function FinalTowerAbsorption() {
 
   const gasRows = [
     { param: "SO2", unit: "scfm", inputKey: "SO2_GF0", packingKey: "SO2_GFX1", outputKey: "SO2_GF1" },
-    { param: "SO3", unit: "scfm", inputKey: "SO3_GF0", packingKey: "SO3_GFX1", outputKey: "SO3_GF1" },
+    // { param: "SO3", unit: "scfm", inputKey: "SO3_GF0", packingKey: "SO3_GFX1", outputKey: "SO3_GF1" },
     { param: "O2", unit: "scfm", inputKey: "O2_GF0", packingKey: "O2_GFX1", outputKey: "O2_GF1" },
     { param: "N2", unit: "scfm", inputKey: "N2_GF0", packingKey: "N2_GFX1", outputKey: "N2_GF1" },
     { param: "H2O", unit: "scfm", inputKey: "H2O_GF0", packingKey: "H2O_GFX1", outputKey: "H2O_GF1" },
@@ -390,8 +410,8 @@ export default function FinalTowerAbsorption() {
                 <CardTitle className="text-lg">Simulation Mode</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
-                  value={mode} 
+                <RadioGroup
+                  value={mode}
                   onValueChange={(value) => setMode(value as "Static" | "Dynamic")}
                   className="flex gap-8"
                 >
