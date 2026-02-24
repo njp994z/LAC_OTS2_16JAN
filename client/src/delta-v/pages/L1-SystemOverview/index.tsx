@@ -27,6 +27,7 @@ import {
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useLocation } from "wouter";
+import { defaultPositionL1 } from "./defalutPosition.constant";
 
 const customColors = [
     { id: "light-blue", label: "Light Blue", fill: "rgb(130,204,237)" },
@@ -49,7 +50,7 @@ export enum Mode {
 }
 
 const L1SystemOverview = ({
-    defaultMode = Mode.View
+    defaultMode = Mode.Static
 }: {
     defaultMode?: Mode;
 }) => {
@@ -61,7 +62,7 @@ const L1SystemOverview = ({
     const {
         data: layoutData,
         isLoading,
-        isError
+        isUninitialized
     } = useGetLayoutByIdQuery("L1");
 
     const [updateLayout, { isLoading: isUpdatingLayout }] = useUpdateLayoutMutation();
@@ -197,7 +198,10 @@ const L1SystemOverview = ({
 
     useEffect(() => {
         handleLoad();
-    }, [layoutData]);
+        if(!layoutData && !isLoading && !isUninitialized){
+            updateLayout({ id: "L1", layout: defaultPositionL1 }).unwrap()
+        }
+    }, [layoutData, isLoading, isUninitialized]);
 
     const getColorFill = (colorId: string) => {
         const c = customColors.find(c => c.id === colorId);
@@ -423,8 +427,8 @@ const L1SystemOverview = ({
                                     }
                                 }}
                             >
-                                <div className="bg-transparent p-2 rounded cursor-move flex flex-col items-center">
-                                    <div className="pointer-events-none"
+                                <div className="bg-transparent p-2 rounded flex flex-col items-center" style={{ cursor: mode === Mode.Edit ? 'move' : 'pointer' }}>
+                                    <div className={mode === Mode.Edit ? "pointer-events-none" : "cursor-pointer"}
                                     onClick={(e) => {
                                         console.log(elData);
                                         if (elData?.type === ElementType.TemperatureController) {
