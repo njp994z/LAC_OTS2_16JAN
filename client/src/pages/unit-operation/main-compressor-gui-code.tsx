@@ -123,7 +123,7 @@ class MainCompressorGUI:
         
         # Inlet Pressure
         ttk.Label(frame, text="Inlet Pressure:").grid(row=1, column=3, sticky="e", padx=(20, 0))
-        self.inlet_pressure_var = tk.StringVar(value="-3")
+        self.inlet_pressure_var = tk.StringVar(value="-13")
         ttk.Entry(frame, textvariable=self.inlet_pressure_var, width=15).grid(row=1, column=4)
         ttk.Label(frame, text="in wc").grid(row=1, column=5, sticky="w")
         

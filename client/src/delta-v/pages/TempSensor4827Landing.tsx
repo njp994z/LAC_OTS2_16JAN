@@ -17,7 +17,7 @@ const TempSensor4827Landing = () => {
 
       <div className="relative text-center max-w-2xl mx-auto">
         <Link
-          to="/temperature-sensors"
+          to="/settings/controller-outputs/faceplates/temperature-sensors"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -30,7 +30,7 @@ const TempSensor4827Landing = () => {
             "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent",
           )}
         >
-          1540-TI-4827 Pass 1 Catalyst Out
+          1540-TI-4827 Pass 1 Catalyst Out A
         </h1>
 
         <p className="text-muted-foreground text-lg mb-12 tracking-wide">

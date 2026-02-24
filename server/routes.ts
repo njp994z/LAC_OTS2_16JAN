@@ -81,7 +81,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize WebSocket server for real-time session broadcasting
   sessionWS.initialize(httpServer);
+  
+  // Health check endpoint - basic status only (protected details require auth)
+  app.get('
+          ', async (req: Request, res: Response) => {
+    const health: Record<string, any> = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
 
+    // Test database connection
+    try {
+      await storage.getUserByEmail('test-health-check@nonexistent.com');
+      health.database = 'connected';
+    } catch (dbError: any) {
+      health.database = 'error';
+      health.status = 'degraded';
+    }
+
+    res.json(health);
+  });
+  
+  // Detailed health check for debugging (protected)
+  app.get('/api/health/debug', isAuthenticated, async (req: Request, res: Response) => {
+    const health: Record<string, any> = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      protocol: req.protocol,
+      secure: req.secure,
+      hostname: req.hostname,
+      forwardedProto: req.get('x-forwarded-proto'),
+      sessionConfigured: !!req.session,
+      envVars: {
+        DATABASE_URL: !!process.env.DATABASE_URL,
+        SESSION_SECRET: !!process.env.SESSION_SECRET,
+        REPLIT_DOMAINS: !!process.env.REPLIT_DOMAINS,
+      }
+    };
+
+    try {
+      await storage.getUserByEmail('test-health-check@nonexistent.com');
+      health.database = { connected: true, status: 'ok' };
+    } catch (dbError: any) {
+      health.database = { 
+        connected: false, 
+        status: 'error', 
+        message: dbError.message?.substring(0, 100) 
+      };
+      health.status = 'degraded';
+    }
+
+    res.json(health);
+  });
+  
   app.use('/api/login', authLimiter);
   app.use('/api/register', authLimiter);
 
@@ -147,41 +200,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      
+      // Enhanced diagnostic logging for production debugging
+      const isProduction = process.env.NODE_ENV === 'production';
+      console.log('[LOGIN] Environment:', isProduction ? 'production' : 'development');
+      console.log('[LOGIN] Request - protocol:', req.protocol, 'secure:', req.secure, 'host:', req.hostname);
+      console.log('[LOGIN] Headers - x-forwarded-proto:', req.get('x-forwarded-proto'), 'x-forwarded-host:', req.get('x-forwarded-host'));
+      console.log('[LOGIN] Session exists:', !!req.session, 'sessionID:', req.sessionID?.substring(0, 8) + '...');
+      console.log('[LOGIN] Database URL configured:', !!process.env.DATABASE_URL);
 
       if (!email || !password) {
+        console.log('[LOGIN] Missing credentials');
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      const user = await storage.getUserByEmail(email);
+      let user;
+      try {
+        user = await storage.getUserByEmail(email);
+        console.log('[LOGIN] User lookup:', user ? 'found' : 'not found', 'for email:', email);
+      } catch (dbError) {
+        console.error('[LOGIN] Database error during user lookup:', dbError);
+        return res.status(500).json({ message: "Database connection error" });
+      }
+      
       if (!user) {
+        console.log('[LOGIN] User not found in database');
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      if (!user.hashedPassword) {
+        console.error('[LOGIN] User found but hashedPassword is missing/null');
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       const isValid = await comparePassword(password, user.hashedPassword);
+      console.log('[LOGIN] Password validation result:', isValid ? 'valid' : 'invalid');
       if (!isValid) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       req.session.regenerate((err) => {
         if (err) {
-          console.error("Session regeneration error:", err);
+          console.error("[LOGIN] Session regeneration error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
 
         req.session.userId = user.id;
+        console.log('[LOGIN] Session userId set to:', user.id);
 
         req.session.save((saveErr) => {
           if (saveErr) {
-            console.error("Session save error:", saveErr);
+            console.error("[LOGIN] Session save error:", saveErr);
             return res.status(500).json({ message: "Failed to save session" });
           }
 
+          console.log('[LOGIN] Login successful for user:', user.id);
           const { hashedPassword: _, ...userWithoutPassword } = user;
           res.json(userWithoutPassword);
         });
       });
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("[LOGIN] Unexpected error:", error);
       res.status(500).json({ message: "Failed to login" });
     }
   });

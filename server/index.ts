@@ -6,10 +6,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { getSession } from "./replitAuth";
 
 const app = express();
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-app.set("trust proxy", 1);
 app.use(getSession());
 
 const isDevelopment = app.get("env") === "development";

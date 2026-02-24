@@ -1,0 +1,39 @@
+The screenshot indicates that your deployed application (an operator training simulator for Lithium Americas, hosted via Replit and using an authentication system from exp.) returns a **401 Unauthorized** error with the message "Invalid email or password" upon login attempt.
+
+This behavior differs from local/development mode (where login presumably succeeds), which is a common pattern in Replit deployments. The most frequent underlying cause, based on documented cases, is that the deployed application runs behind Replit's reverse proxy/load balancer infrastructure. This changes how the server receives requests—particularly headers such as `X-Forwarded-For`, `X-Forwarded-Proto`, and `Host`—which many authentication libraries or frameworks rely on to construct correct URLs, validate origins, or process sessions/cookies securely.
+
+If your backend (likely Node.js/Express, given common Replit patterns and the nature of simulator apps) does not explicitly trust the proxy, it may:
+
+- Reject or misinterpret forwarded requests.
+- Generate incorrect redirect/callback URLs during authentication flows.
+- Fail session validation or CSRF checks.
+- Treat the request as unauthenticated or from an invalid origin.
+
+### Recommended Resolution Steps
+
+1. **Add Proxy Trust Configuration (Most Likely Fix)**  
+   If your backend uses Express, insert the following line early in your server setup (ideally right after `const app = express();` and before any routes or auth middleware):
+
+   ```javascript
+   app.set('trust proxy', 1);  // Trusts the first proxy hop (Replit's proxy)
+   ```
+
+   - For other frameworks (e.g., FastAPI, Flask with certain middleware, or custom auth), equivalent settings exist to honor `X-Forwarded-*` headers.
+   - Redeploy the application after this change.
+
+2. **Verify Environment Variables and Configuration**  
+   - Confirm that any base URL, callback URL, or allowed origins in your authentication setup (e.g., in exp. configuration, JWT settings, or session handling) include both the development URL and the published URL (typically `https://your-project-name.replit.app` or your custom domain).
+   - Check for hardcoded URLs pointing to `localhost`, `127.0.0.1`, or a `.replit.dev` address—these will fail on deployment.
+
+3. **Check Deployment Logs**  
+   - In the Replit Deployments tab, review runtime logs for errors related to authentication, CORS, or proxy handling during login attempts.
+   - Look for clues such as mismatched hosts, invalid redirects, or session failures.
+
+4. **Additional Checks**  
+   - Ensure the deployment type (e.g., Autoscale, Reserved VM) matches your app's needs and that ports are correctly exposed (Replit usually auto-detects, but explicit configuration in `.replit` or deployment settings can help).
+   - If using third-party auth (e.g., if exp. integrates OAuth, Firebase, or similar), verify that the deployed domain is added to allowed redirect URIs or authorized domains in the provider's dashboard.
+   - Test a minimal login flow or disable advanced auth temporarily to isolate whether the issue is purely proxy-related.
+
+Replit support and community reports confirm this proxy-trust adjustment resolves the majority of "works in dev, 401 on deploy" authentication issues. If the change does not resolve the problem after redeployment, consider sharing relevant backend code snippets (e.g., server setup and auth routes, with sensitive parts redacted) or the exact framework used, which would allow for more targeted guidance.
+
+Should these steps not suffice, posting detailed logs or code excerpts on ask.replit.com often yields rapid assistance from the Replit team or experienced users.

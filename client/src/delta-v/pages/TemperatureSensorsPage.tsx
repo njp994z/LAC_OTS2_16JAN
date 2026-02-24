@@ -13,14 +13,37 @@ const temperatureSensors = [
   { tag: '1520-TI-5821', description: 'DT Gas Out' },
   { tag: '1520-TI-5820', description: 'DT Acid Temp Out' },
   { tag: '1540-TI-4820', description: 'Pass 1 Inlet Duct' },
-  { tag: '1540-TI-4825', description: 'Pass 1 Catalyst In' },
-  { tag: '1540-TI-4827', description: 'Pass 1 Catalyst Out' },
+  { tag: '1540-TI-4821', description: 'Pass 1 Inlet Temp.' },
+  { tag: '1540-TI-4825', description: 'Pass 1 Catalyst In A' },
+  { tag: '1540-TI-4827', description: 'Pass 1 Catalyst Out A' },
+  { tag: '1540-TI-4826', description: 'Pass 1 Catalyst Temp. Top B' },
+  { tag: '1540-TI-4828', description: 'Pass 1 Catalyst Temp. Bottom B' },
+  { tag: '1540-TI-7821', description: 'SH 1B Inlet Temp' },
+  { tag: '1540-TI-7823', description: 'SH 1B Outlet Temp.' },
   { tag: '1540-TI-4840', description: 'Pass 2 Catalyst In' },
   { tag: '1540-TI-4841', description: 'Pass 2 Catalyst Out' },
   { tag: '1540-TI-4842', description: 'Pass 3 Catalyst In' },
   { tag: '1540-TI-4843', description: 'Pass 3 Catalyst Out' },
+  { tag: '1540-TI-5231', description: 'Pass 3 Duct Outlet Temp.' },
   { tag: '1540-TI-4844', description: 'Pass 4 Catalyst In' },
   { tag: '1540-TI-4845', description: 'Pass 4 Catalyst Out' },
+  { tag: '1540-TI-7225', description: 'Pass 4 Outlet Temp.' },
+];
+
+const implementedSensors = [
+  '1520-TI-5821',
+  '1540-TI-4200A',
+  '1540-TI-4200B',
+  '1540-TI-4200C',
+  '1540-TI-4820',
+  '1540-TI-4821',
+  '1540-TI-4825',
+  '1540-TI-4826',
+  '1540-TI-4827',
+  '1540-TI-4828',
+  '1540-TI-7823',
+  '1540-TI-4840',
+  '1540-TI-4841',
 ];
 
 const TemperatureSensorsPage = () => {
@@ -59,40 +82,35 @@ const TemperatureSensorsPage = () => {
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {temperatureSensors.map((sensor) => (
-            <Link
-              key={sensor.tag}
-              href={
-                sensor.tag === '1520-TI-5821' 
-                  ? '/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821'
-                  : sensor.tag === '1540-TI-4200A'
-                  ? '/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A'
-                  : sensor.tag === '1540-TI-4825'
-                  ? '/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4825'
-                  : `/settings/controller-outputs/faceplates/temp-sensor/${sensor.tag}`
-              }
-              className={cn(
-                "group relative flex flex-col items-center justify-center p-6 rounded-xl transition-all duration-300",
-                "bg-card/30 backdrop-blur-sm border border-border/50",
-                sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A' || sensor.tag === '1540-TI-4825'
-                  ? "hover:bg-blue-700/20 hover:border-blue-600/50 hover:shadow-lg hover:shadow-blue-700/20"
-                  : "hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10",
-                "active:scale-95"
-              )}
-            >
-              <span className={cn(
-                "text-lg font-semibold transition-colors",
-                sensor.tag === '1520-TI-5821' || sensor.tag === '1540-TI-4200A' || sensor.tag === '1540-TI-4825'
-                  ? "text-blue-600 group-hover:text-blue-500"
-                  : "text-foreground group-hover:text-cyan-400"
-              )}>
-                {sensor.tag}
-              </span>
-              <span className="text-sm text-muted-foreground mt-1 text-center">
-                {sensor.description}
-              </span>
-            </Link>
-          ))}
+          {temperatureSensors.map((sensor) => {
+            const isImplemented = implementedSensors.includes(sensor.tag);
+            return (
+              <Link
+                key={sensor.tag}
+                href={`/settings/controller-outputs/faceplates/temp-sensor/${sensor.tag}`}
+                className={cn(
+                  "group relative flex flex-col items-center justify-center p-6 rounded-xl transition-all duration-300",
+                  "bg-card/30 backdrop-blur-sm border border-border/50",
+                  isImplemented
+                    ? "hover:bg-blue-700/20 hover:border-blue-600/50 hover:shadow-lg hover:shadow-blue-700/20"
+                    : "hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10",
+                  "active:scale-95"
+                )}
+              >
+                <span className={cn(
+                  "text-lg font-semibold transition-colors",
+                  isImplemented
+                    ? "text-blue-600 group-hover:text-blue-500"
+                    : "text-foreground group-hover:text-cyan-400"
+                )}>
+                  {sensor.tag}
+                </span>
+                <span className="text-sm text-muted-foreground mt-1 text-center">
+                  {sensor.description}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Blocks, Activity, Database, Table2 } from "lucide-react";
+import { ArrowLeft, Blocks, Activity, Database, Table2, Zap } from "lucide-react";
 import { EngineIcon } from "@/components/icons/EngineIcon";
 
 interface SettingCategory {
@@ -47,6 +47,13 @@ const settingCategories: SettingCategory[] = [
     description: "View and customize the display of calculated process outputs including conversion rates, heat duties, mass balances, and equipment performance metrics.",
     icon: Table2,
     path: "/settings/output-variables"
+  },
+  {
+    id: "turbo-generator",
+    title: "Turbo-Generator Signal Exchange",
+    description: "Configure and monitor the signal exchange interface between the acid plant control system and the turbo-generator power recovery unit, including trip signals, load sharing, and synchronization parameters.",
+    icon: Zap,
+    path: "/settings/turbo-generator"
   }
 ];
 

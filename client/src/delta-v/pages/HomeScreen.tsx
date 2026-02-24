@@ -23,7 +23,7 @@ import sh4aImg from "@assets/delta-v/process-diagrams/sh4a.png";
 import ec3bImg from "@assets/delta-v/process-diagrams/ec3b.png";
 import sh1bImg from "@assets/delta-v/process-diagrams/sh1b.png";
 import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-filter.png";
-import converter4L4Img from "@assets/image_1769028207381.png";
+import converter4L4Img from "@assets/image_1769565285813.png";
 import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
 import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
@@ -44,6 +44,9 @@ import cyanThinLine2Img from "@assets/image_1769467426528.png";
 import cyanVertLine1Img from "@assets/image_1769467433951.png";
 import cyanVertLine2Img from "@assets/image_1769467436693.png";
 import blackVertLineImg from "@assets/image_1769482798195.png";
+import acidBoilerImg from "@assets/image_1769495696418.png";
+import acidTower1Img from "@assets/l2-1520-acid-tower-1.png";
+import acidTower2Img from "@assets/l2-1520-acid-tower-2.png";
 import {
   Menubar,
   MenubarContent,
@@ -70,7 +73,6 @@ import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta
 import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
-import { PFDNavigation } from "@/delta-v/components/PFDNavigation";
 import { pfdConfigs } from "@/delta-v/config/pfdConfig";
 import { VerticalLine } from "@/delta-v/components/VerticalLine";
 import {
@@ -144,9 +146,9 @@ const toolbarItems = [
 
 const homescreenOptions = [
   { id: "L1", label: "L1 – System Overview" },
-  { id: "L2", label: "L2 – Furnace Area" },
+  { id: "L2", label: "L2 – Furnace Area", isReady: true },
   { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4-Converter" },
+  { id: "L4", label: "L4-Converter", isReady: true },
   // L2_1500 SULFUR UTILITY
   { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
   { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
@@ -160,7 +162,7 @@ const homescreenOptions = [
   { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
   { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
   // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
+  { id: "L2_1520_ACID", label: "L2_1520 ACID", isReady: true },
   { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
   { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
   { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
@@ -739,6 +741,17 @@ const HomeScreen = () => {
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
 
+  // L2_1520 ACID: Acid Boiler position and size
+  const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
+  const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
+  // L2_1520 ACID: Acid Tower 1 position and size
+  const [acidTower1Position, setAcidTower1Position] = useState({ x: 1200, y: 50 });
+  const [acidTower1Size, setAcidTower1Size] = useState({ width: 800, height: 400 });
+  // L2_1520 ACID: Acid Tower 2 position and size
+  const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
+  const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
+  const [isLockedL21520, setIsLockedL21520] = useState(true);
+
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
   const [selectedPVCase, setSelectedPVCase] = useState<string | null>(null);
@@ -863,6 +876,11 @@ const HomeScreen = () => {
   const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
   // 6.1 L3_1540 Converter: Secondary faceplate dialog visibility
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
+  // L4 Converter 4: Secondary faceplate dialog visibility when clicking on converter image
+  const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] = useState(false);
+  // L4-Converter: Jug Valve Hand Controller 1540-H-4282 position/size
+  const [jugValveHandControllerL4Position, setJugValveHandControllerL4Position] = useState({ x: 1100, y: 400 });
+  const [jugValveHandControllerL4Size, setJugValveHandControllerL4Size] = useState({ width: 220, height: 200 });
 
   // New states for dynamic sizing support
   const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
@@ -1097,7 +1115,6 @@ const HomeScreen = () => {
     if (selectedMode !== 'Static' || loadedCaseValueSulfurFlow === null) return;
 
     // Check if sulfur flow has changed significantly (more than 0.5 gpm difference)
-    const currentFlow = loadedCaseValueSulfurFlow;
     const lastFlow = lastCalculatedSulfurFlowRef.current;
 
     if (lastFlow !== null && Math.abs(currentFlow - lastFlow) < 0.5) {
@@ -1939,6 +1956,12 @@ const HomeScreen = () => {
       setFaceplate4825L4Size({ width: faceplate4825L4.width, height: faceplate4825L4.height });
     }
 
+    const jugValveHcL4 = positionMap.get('jug_valve_hc_l4');
+    if (jugValveHcL4) {
+      setJugValveHandControllerL4Position({ x: jugValveHcL4.x, y: jugValveHcL4.y });
+      setJugValveHandControllerL4Size({ width: jugValveHcL4.width, height: jugValveHcL4.height });
+    }
+
     // Restore vertical arrows for L4-Converter
     const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
     layoutDataL4.layouts.forEach((item) => {
@@ -2514,6 +2537,7 @@ const HomeScreen = () => {
       const layouts = [
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
         { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
+        { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -3008,7 +3032,7 @@ const HomeScreen = () => {
                 <DropdownMenuItem
                   key={option.id}
                   onClick={() => setSelectedScreen(option.label)}
-                  className={`text-gray-800 ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
+                  className={`${option.isReady ? "bg-teal-100 text-teal-800 border-l-2 border-teal-500" : "text-gray-800 bg-white"} ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-view-option-${option.id}`}
                 >
                   {option.label}
@@ -3276,8 +3300,8 @@ const HomeScreen = () => {
               bounds="parent"
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
-              className={isLockedL4 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 10 }}
+              className={isLockedL4 ? "cursor-pointer" : "cursor-move"}
+              style={{ zIndex: 1 }}
             >
               <img
                 src={converter4L4Img}
@@ -3312,7 +3336,11 @@ const HomeScreen = () => {
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div className="flex flex-col items-center gap-1 w-full h-full" data-testid="faceplate-4825-l4-container">
+              <div 
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
+                data-testid="faceplate-4825-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
+              >
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
                 <TempSensorPrimaryFaceplate
                   data={{
@@ -3326,6 +3354,49 @@ const HomeScreen = () => {
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  isTransparent={tempSensor4825Config.TRANSPARENT_BG ?? false}
+                />
+              </div>
+            </Rnd>
+
+            {/* Jug Valve Hand Controller 1540-H-4282 for L4-Converter */}
+            <Rnd
+              key="jug-valve-hc-l4"
+              position={jugValveHandControllerL4Position}
+              size={jugValveHandControllerL4Size}
+              onDragStop={(e, d) => {
+                setJugValveHandControllerL4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setJugValveHandControllerL4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setJugValveHandControllerL4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+              data-testid="jug-valve-hc-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handleJugValveHandControllerClick}
+                style={{
+                  transform: `scale(${Math.min(jugValveHandControllerL4Size.width / 220, jugValveHandControllerL4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={jugValveHandControllerData}
+                  isTransparent={true}
+                  controllerId="1540-H-4282"
                 />
               </div>
             </Rnd>
@@ -3458,6 +3529,21 @@ const HomeScreen = () => {
                 </div>
               </Rnd>
             ))}
+
+            {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
+            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4825 Pass 1 Catalyst Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4825SecondaryData}
+                  config={tempSensor4825SecondaryConfig}
+                  sensorId="1540-TI-4825"
+                  onClose={() => setShowSecondaryConverter4L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
@@ -4782,6 +4868,7 @@ const HomeScreen = () => {
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  isTransparent={tempSensor4825Config.TRANSPARENT_BG ?? false}
                 />
               </div>
             </Rnd>
@@ -4800,6 +4887,7 @@ const HomeScreen = () => {
                 />
               </DialogContent>
             </Dialog>
+
           </div>
         )}
 
@@ -6008,6 +6096,130 @@ const HomeScreen = () => {
               </div>
             </Rnd>
 
+          </div>
+        )}
+
+        {/* L2_1520 ACID View */}
+        {selectedScreen === "L2_1520 ACID" && (
+          <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+            {/* Lock/Unlock Button for L2_1520 */}
+            <div className="absolute top-4 right-4 z-50 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsLockedL21520(!isLockedL21520)}
+                className={`${isLockedL21520 ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-green-500/20 border-green-500 text-green-400'}`}
+                data-testid="button-lock-toggle-l2-1520"
+              >
+                {isLockedL21520 ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <LockOpen className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Acid Boiler Equipment Image */}
+            <Rnd
+              key="acid-boiler-l2-1520"
+              data-testid="rnd-acid-boiler-l2-1520"
+              position={acidBoilerPosition}
+              size={acidBoilerSize}
+              onDragStop={(e, d) => {
+                setAcidBoilerPosition({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidBoilerSize({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidBoilerPosition(position);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidBoilerImg} 
+                alt="Acid Boiler Heat Exchanger" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-boiler-l2-1520"
+              />
+            </Rnd>
+
+            {/* Acid Tower 1 Equipment Image */}
+            <Rnd
+              key="acid-tower-1-l2-1520"
+              data-testid="rnd-acid-tower-1-l2-1520"
+              position={acidTower1Position}
+              size={acidTower1Size}
+              onDragStop={(e, d) => {
+                setAcidTower1Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidTower1Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidTower1Position(position);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidTower1Img} 
+                alt="Acid Tower 1" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-tower-1-l2-1520"
+              />
+            </Rnd>
+
+            {/* Acid Tower 2 Equipment Image */}
+            <Rnd
+              key="acid-tower-2-l2-1520"
+              data-testid="rnd-acid-tower-2-l2-1520"
+              position={acidTower2Position}
+              size={acidTower2Size}
+              onDragStop={(e, d) => {
+                setAcidTower2Position({ x: d.x, y: d.y });
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidTower2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidTower2Position(position);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidTower2Img} 
+                alt="Acid Tower 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-tower-2-l2-1520"
+              />
+            </Rnd>
           </div>
         )}
       </div>
