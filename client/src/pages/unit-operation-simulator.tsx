@@ -110,8 +110,8 @@ const unitOperations = [
     icon: Wind
   },
   {
-    id: "economizer",
-    title: "Economizer",
+    id: "economizer 3B",
+    title: "Economizer 3B",
     description: "Preheat boiler feedwater using waste heat to improve overall efficiency.",
     path: "/unit-operation/economizer",
     icon: Gauge
