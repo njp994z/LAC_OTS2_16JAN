@@ -50,7 +50,7 @@ export enum Mode {
 }
 
 const L1SystemOverview = ({
-    defaultMode = Mode.View
+    defaultMode = Mode.Static
 }: {
     defaultMode?: Mode;
 }) => {
