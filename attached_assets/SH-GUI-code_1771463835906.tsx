@@ -180,7 +180,7 @@ export default function JugValveWHB() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <h1 className="text-xl font-bold" data-testid="text-page-title">
-                Jug Valve, Superheater Hot-side, Valve 4822B
+                Superheater 1B Hot-side, Superheater Jug, and Valve 4822B
               </h1>
             </div>
             <Link href="/settings/controller-outputs/faceplates/valve-blocks/hand-control/1540-hcv-4282/3e">
