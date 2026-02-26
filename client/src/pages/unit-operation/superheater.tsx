@@ -105,7 +105,7 @@ export default function Superheater() {
     setIsCalculating(true);
 
     try {
-      const response = await fetch("/api/jug-valve-simulation", {
+      const response = await fetch("/api/superheater-simulation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,12 +121,14 @@ export default function Superheater() {
           cv_max: 40000,
           u_value: 7.8,
           sh_area: 32679,
+          sh_steam_psig: 900,
           baro_psia: 14.3,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Simulation failed");
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Simulation request failed");
       }
 
       const data = await response.json();
@@ -134,12 +136,12 @@ export default function Superheater() {
 
       toast({
         title: "Calculation Complete",
-        description: "Jug valve simulation results updated.",
+        description: "Superheater simulation results updated.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Calculation Error",
-        description: "Failed to run simulation. Please try again.",
+        description: error.message || "Failed to run simulation. Please try again.",
         variant: "destructive",
       });
     } finally {

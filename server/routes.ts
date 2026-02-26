@@ -2986,6 +2986,95 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  // Superheater Simulation endpoint
+  app.post('/api/superheater-simulation', async (req: Request, res: Response) => {
+    try {
+      const {
+        furnace_outlet_scfm_dry,
+        furnace_outlet_so2,
+        furnace_outlet_so3,
+        furnace_outlet_o2,
+        furnace_outlet_n2,
+        furnace_outlet_temp_f,
+        furnace_outlet_press_inwc,
+        jug_open_pct,
+        valve_4822b_open_pct,
+        cv_max,
+        u_value,
+        sh_area,
+        sh_steam_psig,
+        baro_psia
+      } = req.body;
+
+      if (jug_open_pct === undefined || valve_4822b_open_pct === undefined) {
+        return res.status(400).json({ error: "Missing required valve opening percentages" });
+      }
+
+      const jugOpenVal = parseFloat(jug_open_pct);
+      const valveOpenVal = parseFloat(valve_4822b_open_pct);
+
+      if (isNaN(jugOpenVal) || isNaN(valveOpenVal)) {
+        return res.status(400).json({ error: "Valve opening percentages must be valid numbers" });
+      }
+
+      if (jugOpenVal < 0 || jugOpenVal > 100 || valveOpenVal < 0 || valveOpenVal > 100) {
+        return res.status(400).json({ error: "Valve opening percentages must be between 0 and 100" });
+      }
+
+      const pythonInput = {
+        furnace_outlet_scfm_dry: parseFloat(furnace_outlet_scfm_dry) || 109697,
+        furnace_outlet_so2: parseFloat(furnace_outlet_so2) || 12401,
+        furnace_outlet_so3: parseFloat(furnace_outlet_so3) || 227,
+        furnace_outlet_o2: parseFloat(furnace_outlet_o2) || 10261,
+        furnace_outlet_n2: parseFloat(furnace_outlet_n2) || 86808,
+        furnace_outlet_temp_f: parseFloat(furnace_outlet_temp_f) || 2080,
+        furnace_outlet_press_inwc: parseFloat(furnace_outlet_press_inwc) || 196,
+        jug_open_pct: jugOpenVal,
+        valve_4822b_open_pct: valveOpenVal,
+        cv_max: parseFloat(cv_max) || 40000,
+        u_value: parseFloat(u_value) || 7.8,
+        sh_area: parseFloat(sh_area) || 32679,
+        sh_steam_psig: parseFloat(sh_steam_psig) || 900,
+        baro_psia: parseFloat(baro_psia) || 14.3
+      };
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'superheater_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => { stdout += data.toString(); });
+      pythonProcess.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('Superheater Python error:', stderr);
+          return res.status(500).json({ error: 'Calculation failed', details: stderr });
+        }
+
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          res.status(500).json({ error: 'Failed to parse simulation results' });
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('Python process error:', error);
+        res.status(500).json({ error: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('Superheater simulation error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Inlet Air Filter Simulation endpoint
   app.post('/api/inlet-air-filter-simulation', async (req: Request, res: Response) => {
     try {
