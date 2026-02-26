@@ -17,12 +17,12 @@ import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FlowEdge, DrawingEdge } from "@/rtkServices/layoutManagerServices/type";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogHeader,
-  DialogDescription,
-  DialogFooter,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogHeader,
+    DialogDescription,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -50,7 +50,7 @@ export enum Mode {
 }
 
 const L1SystemOverview = ({
-    defaultMode = Mode.Static
+    defaultMode = Mode.View
 }: {
     defaultMode?: Mode;
 }) => {
@@ -80,7 +80,7 @@ const L1SystemOverview = ({
     const [drawingEdge, setDrawingEdge] = useState<DrawingEdge | null>(null);
     const [selectedEdge, setSelectedEdge] = useState<number | null>(null);
 
-    
+
     // Instead of global edgeCounter which can reset on HMR, use a ref
     const edgeCounterRef = useRef<number>(1);
 
@@ -135,11 +135,20 @@ const L1SystemOverview = ({
         setDrawingEdge({ x1: x, y1: y, x2: x, y2: y });
     };
 
-    const orthogonalPath = (x1: number, y1: number, x2: number, y2: number) => {
-        const midX = (x1 + x2) / 2;
-        return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
-    };
+    // const orthogonalPath = (x1: number, y1: number, x2: number, y2: number) => {
+    //     const midX = (x1 + x2) / 2;
+    //     return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+    // };
 
+    const orthogonalPath = (x1: number, y1: number, x2: number, y2: number) => {
+        if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
+            const midX = (x1 + x2) / 2;
+            return `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+        } else {
+            const midY = (y1 + y2) / 2;
+            return `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+        }
+    };
     const getEdgeMidpoint = (edge: FlowEdge | DrawingEdge) => ({
         x: (edge.x1 + edge.x2) / 2,
         y: (edge.y1 + edge.y2) / 2,
@@ -198,7 +207,7 @@ const L1SystemOverview = ({
 
     useEffect(() => {
         handleLoad();
-        if(!layoutData && !isLoading && !isUninitialized){
+        if (!layoutData && !isLoading && !isUninitialized) {
             updateLayout({ id: "L1", layout: defaultPositionL1 }).unwrap()
         }
     }, [layoutData, isLoading, isUninitialized]);
@@ -228,7 +237,7 @@ const L1SystemOverview = ({
             return (
                 <ContextMenu key={edge.id}>
                     <ContextMenuTrigger asChild>
-                        <g>
+                        <g style={{ zIndex: edge?.z ?? 10 }}>
                             <path
                                 d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
                                 fill="none"
@@ -247,9 +256,6 @@ const L1SystemOverview = ({
                                 filter={edge.style === 'dashed' ? undefined : "url(#black-outline)"}
                                 markerEnd={edge.hasPointer !== false ? `url(#arrow-${edge.color})` : undefined}
                                 className="pointer-events-none transition-all duration-300 ease-in-out"
-                                style={{
-                                    zIndex: edge?.z ?? 10
-                                }}
                             />
                             <circle
                                 cx={mid.x}
@@ -277,17 +283,15 @@ const L1SystemOverview = ({
                                 ))}
                             </ContextMenuSubContent>
                         </ContextMenuSub>
-                        <ContextMenuSub>
-                            <ContextMenuSubTrigger>Edge Z</ContextMenuSubTrigger>
-                            <ContextMenuSubContent>
-                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) + 1))}>
-                                    Increase Z
-                                </ContextMenuItem>
-                                <ContextMenuItem onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) - 1))}>
-                                    Decrease Z
-                                </ContextMenuItem>
-                            </ContextMenuSubContent>
-                        </ContextMenuSub>
+                        <ContextMenuItem>
+                            <div className="flex items-center gap-2">
+                                <p>Edge Z</p>
+                                <div className="flex items-center gap-2">
+                                    <button className="p-2 rounded-full bg-blue-500 text-white" onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) + 1))}>+</button>
+                                    <button className="p-2 rounded-full bg-blue-500 text-white" onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) - 1))}>-</button>
+                                </div>
+                            </div>
+                        </ContextMenuItem>
                         <ContextMenuSub>
                             <ContextMenuSubTrigger>Edge Style</ContextMenuSubTrigger>
                             <ContextMenuSubContent>
@@ -330,145 +334,145 @@ const L1SystemOverview = ({
 
     return (
         <>
-        <div className="w-full h-screen flex flex-col pt-10">
-            {mode !== Mode.Static && <div className="w-full flex justify-between items-center h-fit max-h-[70px] px-4 py-2 border-b bg-white z-10 shadow-sm">
-                {mode === Mode.Edit ? (
-                    <div className="flex gap-4 items-center">
-                        <span className="text-sm font-semibold text-gray-700">Editing:</span>
-                        <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
-                            <button 
-                                className={`px-4 py-1.5 text-sm transition-colors ${editMode === 'components' ? 'bg-blue-600 text-white font-medium' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-                                onClick={() => setEditMode('components')}
-                            >
-                                Components
-                            </button>
-                            <button 
-                                className={`px-4 py-1.5 text-sm transition-colors ${editMode === 'edges' ? 'bg-blue-600 text-white font-medium' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-                                onClick={() => setEditMode('edges')}
-                            >
-                                Edges
-                            </button>
-                        </div>
-                    </div>
-                ) : <div />}
-                <button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
-                    onClick={mode === Mode.Edit ? handleSave : handleEdit}
-                >
-                    {isLoading ? 'Saving...' : mode === Mode.Edit ? 'Save Layout' : 'Edit Layout'}
-                </button>
-            </div>}
-            <div className="flex-1 overflow-auto bg-gray-50">
-                <div 
-                    ref={canvasRef}
-                    className="relative"
-                    style={{ width: '5200px', height: '3000px', minWidth: '5200px', minHeight: '3000px' }}
-                    onMouseMove={onMouseMove}
-                    onMouseDown={handleCanvasMouseDown}
-                >
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
-                    <defs>
-                        <linearGradient id="gray-gradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="rgb(133,132,130)" />
-                            <stop offset="100%" stopColor="rgb(193,193,193)" />
-                        </linearGradient>
-                        <filter id="black-outline" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                            <feMorphology in="SourceAlpha" operator="dilate" radius="1.5" result="dilated" />
-                            <feFlood floodColor="black" result="blackColor" />
-                            <feComposite in="blackColor" in2="dilated" operator="in" result="blackOutline" />
-                            <feMerge>
-                                <feMergeNode in="blackOutline" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                        {customColors.map((color) => (
-                            <marker
-                                key={color.id}
-                                id={`arrow-${color.id}`}
-                                markerWidth="32"
-                                markerHeight="32"
-                                refX="10"
-                                refY="16"
-                                orient="auto-start-reverse"
-                                markerUnits="userSpaceOnUse"
-                            >
-                                <path d="M 4 4 L 28 16 L 4 28 Z" fill={color.fill} stroke="black" strokeWidth="2.5" strokeLinejoin="miter" />
-                            </marker>
-                        ))}
-                    </defs>
-                    <g className="pointer-events-auto group">{renderEdges()}</g>
-
-                    {drawingEdge && (
-                        <path
-                            d={orthogonalPath(drawingEdge.x1, drawingEdge.y1, drawingEdge.x2, drawingEdge.y2)}
-                            stroke="gray"
-                            strokeDasharray="5 5"
-                            fill="none"
-                        />
-                    )}
-                </svg>
-
-                {
-                    L1SystemElements.map((element, index) => {
-                        const elData = L1Elements[element];
-                        if (!elData) return null;
-                        
-                        const pos = positions?.[element] || { x: (index % 5) * 200, y: Math.floor(index / 5) * 200 };
-                        return (
-                            <div 
-                                key={`${elData.tag}-${index}`}
-                                className="absolute pointer-events-auto z-10"
-                                style={{
-                                    left: pos.x,
-                                    top: pos.y,
-                                    zIndex: pos.z || 10,
-                                }}
-                                onMouseDown={(e) => {
-                                    if (mode === Mode.Edit && editMode === 'components') {
-                                        e.stopPropagation();
-                                        setDraggingId(element);
-                                    }
-                                }}
-                            >
-                                <div className="bg-transparent p-2 rounded flex flex-col items-center" style={{ cursor: mode === Mode.Edit ? 'move' : 'pointer' }}>
-                                    <div className={mode === Mode.Edit ? "pointer-events-none" : "cursor-pointer"}
-                                    onClick={(e) => {
-                                        console.log(elData);
-                                        if (elData?.type === ElementType.TemperatureController) {
-                                            setTempSensor({
-                                                id: element,
-                                                data: (elData as any)?.data,
-                                                config: (elData as any)?.config,
-                                            });
-                                        }
-                                        else if (elData?.type === ElementType.TurboGenerator) {
-                                            setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
-                                        }
-                                    }}
-                                    >
-                                        {elData.component}
-                                    </div>
-                                </div>
+            <div className="w-full h-screen flex flex-col pt-10">
+                {mode !== Mode.Static && <div className="w-full flex justify-between items-center h-fit max-h-[70px] px-4 py-2 border-b bg-white shadow-sm">
+                    {mode === Mode.Edit ? (
+                        <div className="flex gap-4 items-center">
+                            <span className="text-sm font-semibold text-gray-700">Editing:</span>
+                            <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
+                                <button
+                                    className={`px-4 py-1.5 text-sm transition-colors ${editMode === 'components' ? 'bg-blue-600 text-white font-medium' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                    onClick={() => setEditMode('components')}
+                                >
+                                    Components
+                                </button>
+                                <button
+                                    className={`px-4 py-1.5 text-sm transition-colors ${editMode === 'edges' ? 'bg-blue-600 text-white font-medium' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                    onClick={() => setEditMode('edges')}
+                                >
+                                    Edges
+                                </button>
                             </div>
-                        )
-                    })
-                }
+                        </div>
+                    ) : <div />}
+                    <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
+                        onClick={mode === Mode.Edit ? handleSave : handleEdit}
+                    >
+                        {isLoading ? 'Saving...' : mode === Mode.Edit ? 'Save Layout' : 'Edit Layout'}
+                    </button>
+                </div>}
+                <div className="flex-1 overflow-auto bg-gray-50">
+                    <div
+                        ref={canvasRef}
+                        className="relative"
+                        style={{ width: '5200px', height: '3000px', minWidth: '5200px', minHeight: '3000px' }}
+                        onMouseMove={onMouseMove}
+                        onMouseDown={handleCanvasMouseDown}
+                    >
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                            <defs>
+                                <linearGradient id="gray-gradient" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="rgb(133,132,130)" />
+                                    <stop offset="100%" stopColor="rgb(193,193,193)" />
+                                </linearGradient>
+                                <filter id="black-outline" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feMorphology in="SourceAlpha" operator="dilate" radius="1.5" result="dilated" />
+                                    <feFlood floodColor="black" result="blackColor" />
+                                    <feComposite in="blackColor" in2="dilated" operator="in" result="blackOutline" />
+                                    <feMerge>
+                                        <feMergeNode in="blackOutline" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                                {customColors.map((color) => (
+                                    <marker
+                                        key={color.id}
+                                        id={`arrow-${color.id}`}
+                                        markerWidth="32"
+                                        markerHeight="32"
+                                        refX="10"
+                                        refY="16"
+                                        orient="auto-start-reverse"
+                                        markerUnits="userSpaceOnUse"
+                                    >
+                                        <path d="M 4 4 L 28 16 L 4 28 Z" fill={color.fill} stroke="black" strokeWidth="2.5" strokeLinejoin="miter" />
+                                    </marker>
+                                ))}
+                            </defs>
+                            <g className="pointer-events-auto group">{renderEdges()}</g>
+
+                            {drawingEdge && (
+                                <path
+                                    d={orthogonalPath(drawingEdge.x1, drawingEdge.y1, drawingEdge.x2, drawingEdge.y2)}
+                                    stroke="gray"
+                                    strokeDasharray="5 5"
+                                    fill="none"
+                                />
+                            )}
+                        </svg>
+
+                        {
+                            L1SystemElements.map((element, index) => {
+                                const elData = L1Elements[element];
+                                if (!elData) return null;
+
+                                const pos = positions?.[element] || { x: (index % 5) * 200, y: Math.floor(index / 5) * 200 };
+                                return (
+                                    <div
+                                        key={`${elData.tag}-${index}`}
+                                        className="absolute pointer-events-auto"
+                                        style={{
+                                            left: pos.x,
+                                            top: pos.y,
+                                            zIndex: pos.z || 1,
+                                        }}
+                                        onMouseDown={(e) => {
+                                            if (mode === Mode.Edit && editMode === 'components') {
+                                                e.stopPropagation();
+                                                setDraggingId(element);
+                                            }
+                                        }}
+                                    >
+                                        <div className="bg-transparent p-2 rounded flex flex-col items-center" style={{ cursor: mode === Mode.Edit ? 'move' : 'pointer' }}>
+                                            <div className={mode === Mode.Edit ? "pointer-events-none" : "cursor-pointer"}
+                                                onClick={(e) => {
+                                                    console.log(elData);
+                                                    if (elData?.type === ElementType.TemperatureController) {
+                                                        setTempSensor({
+                                                            id: element,
+                                                            data: (elData as any)?.data,
+                                                            config: (elData as any)?.config,
+                                                        });
+                                                    }
+                                                    else if (elData?.type === ElementType.TurboGenerator) {
+                                                        setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
+                                                    }
+                                                }}
+                                            >
+                                                {elData.component}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        }
+                    </div>
                 </div>
             </div>
-        </div>
-        <Dialog open={!!tempSensor} onOpenChange={(open) => setTempSensor(open ? tempSensor : null)}>
+            <Dialog open={!!tempSensor} onOpenChange={(open) => setTempSensor(open ? tempSensor : null)}>
                 <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-                  <VisuallyHidden>
-                    <DialogTitle>Temperature Sensor 1540-TI-4200B</DialogTitle>
-                  </VisuallyHidden>
-                  {tempSensor && <TempSensorSecondaryFaceplate
-                    data={tempSensor?.data}
-                    config={tempSensor?.config}
-                    sensorId={tempSensor?.id!}
-                    onClose={() => setTempSensor(null)}
-                  />}
+                    <VisuallyHidden>
+                        <DialogTitle>Temperature Sensor {tempSensor?.id}</DialogTitle>
+                    </VisuallyHidden>
+                    {tempSensor && <TempSensorSecondaryFaceplate
+                        data={tempSensor?.data}
+                        config={tempSensor?.config}
+                        sensorId={tempSensor?.id!}
+                        onClose={() => setTempSensor(null)}
+                    />}
                 </DialogContent>
-              </Dialog>
+            </Dialog>
         </>
     );
 };
@@ -501,9 +505,9 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={furnaceWhbImg} 
-//             alt="Furnace WHB" 
+//           <img
+//             src={furnaceWhbImg}
+//             alt="Furnace WHB"
 //             className="w-full h-full object-contain"
 //             draggable={false}
 //           />
@@ -528,12 +532,12 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleCompressorClick}
 //           >
-//             <PrimaryCompressorFaceplate 
-//               data={compressorData} 
+//             <PrimaryCompressorFaceplate
+//               data={compressorData}
 //               transparentBackground={vfdConfig?.transparentBackground ?? true}
 //               configTagName={vfdConfig?.tagName}
 //               configDescription={vfdConfig?.description}
@@ -563,12 +567,12 @@ export default L1SystemOverview;
 //             resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //             className={isLocked ? "cursor-default" : "cursor-move"}
 //           >
-//             <div 
+//             <div
 //               className={`w-full h-full flex items-center justify-center ${isLocked ? 'cursor-pointer' : ''}`}
 //               onClick={handleTurboGeneratorClick}
 //             >
-//               <PrimaryTurboGeneratorFaceplate 
-//                 data={compressorData} 
+//               <PrimaryTurboGeneratorFaceplate
+//                 data={compressorData}
 //                 transparentBackground={true}
 //               />
 //             </div>
@@ -595,7 +599,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleSulfurFlowClick}
 //             style={{
@@ -603,7 +607,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ControllerFaceplate 
+//             <ControllerFaceplate
 //               data={sulfurFlowData}
 //               isTransparent={true}
 //               controllerId="1530-F-2602"
@@ -632,7 +636,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleSulfurValveClick}
 //             style={{
@@ -640,7 +644,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ValveFaceplate 
+//             <ValveFaceplate
 //               data={sulfurValveData}
 //               isTransparent={true}
 //             />
@@ -668,7 +672,7 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 10 }}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleJugValveClick}
 //             style={{
@@ -676,7 +680,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ValveFaceplate 
+//             <ValveFaceplate
 //               data={jugValveData}
 //               isTransparent={true}
 //               valveImageSrc={jugValveImage}
@@ -704,7 +708,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleJugValvePositionerClick}
 //             style={{
@@ -712,7 +716,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ValveFaceplate 
+//             <ValveFaceplate
 //               data={jugValvePositionerData}
 //               isTransparent={true}
 //               valveImageSrc={jugValvePositionerImage}
@@ -740,7 +744,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleHandControllerClick}
 //             style={{
@@ -748,7 +752,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ControllerFaceplate 
+//             <ControllerFaceplate
 //               data={handControllerData}
 //               isTransparent={true}
 //               controllerId="1540-H-4030"
@@ -776,7 +780,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleWhbHandControllerClick}
 //             style={{
@@ -784,7 +788,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ControllerFaceplate 
+//             <ControllerFaceplate
 //               data={whbHandControllerData}
 //               isTransparent={true}
 //               controllerId="1540-H-4283"
@@ -812,7 +816,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleJugValveHandControllerClick}
 //             style={{
@@ -820,7 +824,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <ControllerFaceplate 
+//             <ControllerFaceplate
 //               data={jugValveHandControllerData}
 //               isTransparent={true}
 //               controllerId="1540-H-4282"
@@ -847,7 +851,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleTempSensorClick}
 //             style={{
@@ -855,7 +859,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <TempSensorPrimaryFaceplate 
+//             <TempSensorPrimaryFaceplate
 //               data={tempSensorData}
 //               isTransparent={true}
 //             />
@@ -882,7 +886,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleTempSensor4200AClick}
 //             style={{
@@ -890,7 +894,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <TempSensorPrimaryFaceplate 
+//             <TempSensorPrimaryFaceplate
 //               data={tempSensor4200AData}
 //               isTransparent={true}
 //             />
@@ -917,7 +921,7 @@ export default L1SystemOverview;
 //           resizeHandleStyles={!isLocked ? resizeHandleStyles : undefined}
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleTempSensor4200BClick}
 //             style={{
@@ -925,7 +929,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <TempSensorPrimaryFaceplate 
+//             <TempSensorPrimaryFaceplate
 //               data={tempSensor4200BData}
 //               isTransparent={true}
 //             />
@@ -953,7 +957,7 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <div 
+//           <div
 //             className={`w-full h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
 //             onClick={handleTempSensor4200CClick}
 //             style={{
@@ -961,7 +965,7 @@ export default L1SystemOverview;
 //               transformOrigin: 'center center'
 //             }}
 //           >
-//             <TempSensorPrimaryFaceplate 
+//             <TempSensorPrimaryFaceplate
 //               data={tempSensor4200CData}
 //               isTransparent={true}
 //             />
@@ -989,8 +993,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 1 }}
 //         >
-//           <img 
-//             src={converter4Img} 
+//           <img
+//             src={converter4Img}
 //             alt="Converter 4"
 //             className="w-full h-full object-fill"
 //             draggable={false}
@@ -1020,8 +1024,8 @@ export default L1SystemOverview;
 //         >
 //           <div className="flex flex-col items-center justify-center relative ">
 
-//           <img 
-//             src={dt2Img} 
+//           <img
+//             src={dt2Img}
 //             alt="Drying Tower (DT)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1053,8 +1057,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={fat1Img} 
+//           <img
+//             src={fat1Img}
 //             alt="Final Absorbing Tower (FAT)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1082,8 +1086,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={ipat1Img} 
+//           <img
+//             src={ipat1Img}
 //             alt="IPAT Tower"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1111,8 +1115,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={hip1Img} 
+//           <img
+//             src={hip1Img}
 //             alt="Hot Interpass Absorber (HIP)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1140,8 +1144,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={cipImg} 
+//           <img
+//             src={cipImg}
 //             alt="Cold Interpass Absorber (CIP)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1169,8 +1173,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={sh4aImg} 
+//           <img
+//             src={sh4aImg}
 //             alt="Superheater 4A (SH4A)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1198,8 +1202,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={ec3bImg} 
+//           <img
+//             src={ec3bImg}
 //             alt="Economizer 3B (EC3B)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1227,8 +1231,8 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //           style={{ zIndex: 20 }}
 //         >
-//           <img 
-//             src={sh1bImg} 
+//           <img
+//             src={sh1bImg}
 //             alt="Superheater 1B (SH1B)"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1260,8 +1264,8 @@ export default L1SystemOverview;
 //             <p className="text-xs text-black">INLET AIR FILTER
 //             <br />
 // 1520-FL-001</p>
-//           <img 
-//             src={industrialFilterImg} 
+//           <img
+//             src={industrialFilterImg}
 //             alt="Industrial Filter"
 //             className="w-full h-full object-contain"
 //             draggable={false}
@@ -1276,13 +1280,13 @@ export default L1SystemOverview;
 //             position={{ x: arrow.x, y: arrow.y }}
 //             size={{ width: arrow.width, height: arrow.height }}
 //             onDragStop={(e, d) => {
-//               setArrows(prev => prev.map(a => 
+//               setArrows(prev => prev.map(a =>
 //                 a.id === arrow.id ? { ...a, x: d.x, y: d.y } : a
 //               ));
 //             }}
 //             onResizeStop={(e, dir, ref, delta, position) => {
-//               setArrows(prev => prev.map(a => 
-//                 a.id === arrow.id 
+//               setArrows(prev => prev.map(a =>
+//                 a.id === arrow.id
 //                   ? { ...a, width: parseInt(ref.style.width), height: parseInt(ref.style.height), x: position.x, y: position.y }
 //                   : a
 //               ));
@@ -1299,17 +1303,17 @@ export default L1SystemOverview;
 //           >
 //             <div className="relative w-full h-full group">
 //               {/* Rotated image layer */}
-//               <div 
+//               <div
 //                 className="w-full h-full"
 //                 style={{ transform: `rotate(${arrow.rotation}deg)`, transformOrigin: 'center' }}
 //               >
-//                 <img 
-//                   src={blueArrowImg} 
+//                 <img
+//                   src={blueArrowImg}
 //                   alt={`${arrow.color} Arrow`}
 //                   className="w-full h-full object-fill"
 //                   style={
-//                     arrow.color === 'yellow' ? { filter: 'hue-rotate(60deg) saturate(1.5)' } : 
-//                     arrow.color === 'purple' ? { filter: 'hue-rotate(270deg) saturate(1.2)' } : 
+//                     arrow.color === 'yellow' ? { filter: 'hue-rotate(60deg) saturate(1.5)' } :
+//                     arrow.color === 'purple' ? { filter: 'hue-rotate(270deg) saturate(1.2)' } :
 //                     arrow.color === 'black' ? { filter: 'hue-rotate(0deg) saturate(1.2)' } :
 //                     arrow.color === 'red' ? { filter: 'hue-rotate(0deg) saturate(1.2)' } :
 //                     arrow.color === 'green' ? { filter: 'hue-rotate(0deg) saturate(1.2)' } :
@@ -1321,9 +1325,9 @@ export default L1SystemOverview;
 //               {/* Rotation Button Overlay - not rotated */}
 //               {!isLocked && (
 //                 <button
-//                   className="rotate-btn absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-//                              w-8 h-8 rounded-full bg-blue-500/80 hover:bg-blue-600 
-//                              flex items-center justify-center shadow-lg 
+//                   className="rotate-btn absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+//                              w-8 h-8 rounded-full bg-blue-500/80 hover:bg-blue-600
+//                              flex items-center justify-center shadow-lg
 //                              transition-all duration-200 z-10
 //                              opacity-0 group-hover:opacity-100"
 //                   onMouseDown={(e) => {
@@ -1351,19 +1355,19 @@ export default L1SystemOverview;
 //             position={{ x: vArrow.x, y: vArrow.y }}
 //             size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
 //             onDragStop={(e, d) => {
-//               setVerticalArrows(prev => prev.map(va => 
+//               setVerticalArrows(prev => prev.map(va =>
 //                 va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
 //               ));
 //             }}
 //             onResizeStop={(e, dir, ref, delta, position) => {
 //               const isHorizontal = vArrow.rotation % 180 !== 0;
-//               setVerticalArrows(prev => prev.map(va => 
-//                 va.id === vArrow.id 
-//                   ? { 
-//                       ...va, 
-//                       height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
-//                       x: position.x, 
-//                       y: position.y 
+//               setVerticalArrows(prev => prev.map(va =>
+//                 va.id === vArrow.id
+//                   ? {
+//                       ...va,
+//                       height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
+//                       x: position.x,
+//                       y: position.y
 //                     }
 //                   : va
 //               ));
@@ -1374,10 +1378,10 @@ export default L1SystemOverview;
 //             maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
 //             bounds="window"
 //             disableDragging={isLocked}
-//             enableResizing={!isLocked ? { 
-//               top: vArrow.rotation % 180 === 0, 
-//               bottom: vArrow.rotation % 180 === 0, 
-//               left: vArrow.rotation % 180 !== 0, 
+//             enableResizing={!isLocked ? {
+//               top: vArrow.rotation % 180 === 0,
+//               bottom: vArrow.rotation % 180 === 0,
+//               left: vArrow.rotation % 180 !== 0,
 //               right: vArrow.rotation % 180 !== 0,
 //               topLeft: false,
 //               topRight: false,
@@ -1388,8 +1392,8 @@ export default L1SystemOverview;
 //             style={{ zIndex: 35 }}
 //           >
 //             <div className="relative w-full h-full">
-//               <div 
-//                 style={{ 
+//               <div
+//                 style={{
 //                   position: 'absolute',
 //                   top: '50%',
 //                   left: '50%',
@@ -1398,17 +1402,17 @@ export default L1SystemOverview;
 //                   height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
 //                 }}
 //               >
-//                 <VerticalArrow 
-//                   width={vArrow.width} 
-//                   height={vArrow.height} 
+//                 <VerticalArrow
+//                   width={vArrow.width}
+//                   height={vArrow.height}
 //                   color="#53B1D8"
 //                 />
 //               </div>
 //               {!isLocked && (
-//                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+//                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
 //                                 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
 //                   <button
-//                     className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+//                     className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600
 //                                flex items-center justify-center shadow-lg"
 //                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
 //                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
@@ -1417,7 +1421,7 @@ export default L1SystemOverview;
 //                     <RotateCw className="w-3 h-3 text-white" />
 //                   </button>
 //                   <button
-//                     className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+//                     className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600
 //                                flex items-center justify-center shadow-lg"
 //                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
 //                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
@@ -1438,13 +1442,13 @@ export default L1SystemOverview;
 //             position={{ x: vLine.x, y: vLine.y }}
 //             size={{ width: vLine.width, height: vLine.height }}
 //             onDragStop={(e, d) => {
-//               setVerticalLines(prev => prev.map(vl => 
+//               setVerticalLines(prev => prev.map(vl =>
 //                 vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
 //               ));
 //             }}
 //             onResizeStop={(e, dir, ref, delta, position) => {
-//               setVerticalLines(prev => prev.map(vl => 
-//                 vl.id === vLine.id 
+//               setVerticalLines(prev => prev.map(vl =>
+//                 vl.id === vLine.id
 //                   ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
 //                   : vl
 //               ));
@@ -1454,10 +1458,10 @@ export default L1SystemOverview;
 //             maxWidth={24}
 //             bounds="window"
 //             disableDragging={isLocked}
-//             enableResizing={!isLocked ? { 
-//               top: true, 
-//               bottom: true, 
-//               left: false, 
+//             enableResizing={!isLocked ? {
+//               top: true,
+//               bottom: true,
+//               left: false,
 //               right: false,
 //               topLeft: false,
 //               topRight: false,
@@ -1468,16 +1472,16 @@ export default L1SystemOverview;
 //             style={{ zIndex: 35 }}
 //           >
 //             <div className="relative w-full h-full">
-//               <VerticalLine 
-//                 width={vLine.width} 
-//                 height={vLine.height} 
+//               <VerticalLine
+//                 width={vLine.width}
+//                 height={vLine.height}
 //                 color="#53B1D8"
 //               />
 //               {!isLocked && (
 //                 <button
-//                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-//                              w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
-//                              flex items-center justify-center shadow-lg 
+//                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+//                              w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600
+//                              flex items-center justify-center shadow-lg
 //                              opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
 //                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
 //                   onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
@@ -1510,9 +1514,9 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
 //           <div className="relative w-full h-full group">
-//             <div 
+//             <div
 //               className="w-full h-full flex items-center"
-//               style={{ 
+//               style={{
 //                 borderTop: '3px dashed black',
 //                 transform: `rotate(${dashedLine1Rotation}deg)`,
 //                 transformOrigin: 'center'
@@ -1520,9 +1524,9 @@ export default L1SystemOverview;
 //             />
 //             {!isLocked && (
 //               <button
-//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800 
-//                            flex items-center justify-center shadow-lg 
+//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800
+//                            flex items-center justify-center shadow-lg
 //                            transition-all duration-200 z-10
 //                            opacity-0 group-hover:opacity-100"
 //                 onMouseDown={(e) => {
@@ -1562,9 +1566,9 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
 //           <div className="relative w-full h-full group">
-//             <div 
+//             <div
 //               className="w-full h-full flex items-center"
-//               style={{ 
+//               style={{
 //                 borderTop: '3px dashed black',
 //                 transform: `rotate(${dashedLine2Rotation}deg)`,
 //                 transformOrigin: 'center'
@@ -1572,9 +1576,9 @@ export default L1SystemOverview;
 //             />
 //             {!isLocked && (
 //               <button
-//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800 
-//                            flex items-center justify-center shadow-lg 
+//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800
+//                            flex items-center justify-center shadow-lg
 //                            transition-all duration-200 z-10
 //                            opacity-0 group-hover:opacity-100"
 //                 onMouseDown={(e) => {
@@ -1614,9 +1618,9 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
 //           <div className="relative w-full h-full group">
-//             <div 
+//             <div
 //               className="w-full h-full flex items-center"
-//               style={{ 
+//               style={{
 //                 borderTop: '3px dashed black',
 //                 transform: `rotate(${dashedLine3Rotation}deg)`,
 //                 transformOrigin: 'center'
@@ -1624,9 +1628,9 @@ export default L1SystemOverview;
 //             />
 //             {!isLocked && (
 //               <button
-//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800 
-//                            flex items-center justify-center shadow-lg 
+//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800
+//                            flex items-center justify-center shadow-lg
 //                            transition-all duration-200 z-10
 //                            opacity-0 group-hover:opacity-100"
 //                 onMouseDown={(e) => {
@@ -1666,9 +1670,9 @@ export default L1SystemOverview;
 //           className={isLocked ? "cursor-default" : "cursor-move"}
 //         >
 //           <div className="relative w-full h-full group">
-//             <div 
+//             <div
 //               className="w-full h-full flex items-center"
-//               style={{ 
+//               style={{
 //                 borderTop: '3px dashed black',
 //                 transform: `rotate(${dashedLine4Rotation}deg)`,
 //                 transformOrigin: 'center'
@@ -1676,9 +1680,9 @@ export default L1SystemOverview;
 //             />
 //             {!isLocked && (
 //               <button
-//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800 
-//                            flex items-center justify-center shadow-lg 
+//                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+//                            w-6 h-6 rounded-full bg-gray-700/80 hover:bg-gray-800
+//                            flex items-center justify-center shadow-lg
 //                            transition-all duration-200 z-10
 //                            opacity-0 group-hover:opacity-100"
 //                 onMouseDown={(e) => {
