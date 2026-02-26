@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Play, RotateCcw, Settings } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import processFlowDiagram from "@assets/image_1771460875737.png";
+import processFlowDiagram from "@assets/image_1772127802979.png";
 
 interface SimulationResults {
   [key: string]: number;
