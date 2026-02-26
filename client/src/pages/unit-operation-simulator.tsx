@@ -117,6 +117,13 @@ const unitOperations = [
     icon: Gauge
   },
   {
+    id: "superheater-4a-economizer",
+    title: "Superheater 4A, Economizer 4C, Economizer 4A",
+    description: "Model heat recovery across Superheater 4A, Economizer 4C, and Economizer 4A for feedwater and steam circuit optimization.",
+    path: "/unit-operation/superheater-4a-economizer",
+    icon: Thermometer
+  },
+  {
     id: "tail-gas-scrubber",
     title: "Tail Gas Scrubber",
     description: "Remove residual SO₂ from exhaust gases to meet environmental emission standards.",

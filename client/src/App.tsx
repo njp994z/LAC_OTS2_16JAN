@@ -235,6 +235,7 @@ import WasteHeatBoiler from "@/pages/unit-operation/waste-heat-boiler";
 import Superheater from "@/pages/unit-operation/superheater";
 import AcidCooler from "@/pages/unit-operation/acid-cooler";
 import Economizer from "@/pages/unit-operation/economizer";
+import Superheater4AEconomizer from "@/pages/unit-operation/superheater-4a-economizer";
 import TailGasScrubber from "@/pages/unit-operation/tail-gas-scrubber";
 import SulfurFurnace from "@/pages/unit-operation/sulfur-furnace";
 import Deaerator from "@/pages/unit-operation/deaerator";
@@ -357,6 +358,7 @@ function Router() {
       <Route path="/unit-operation/superheater" component={Superheater} />
       <Route path="/unit-operation/acid-cooler" component={AcidCooler} />
       <Route path="/unit-operation/economizer" component={Economizer} />
+      <Route path="/unit-operation/superheater-4a-economizer" component={Superheater4AEconomizer} />
       <Route path="/unit-operation/tail-gas-scrubber" component={TailGasScrubber} />
       <Route path="/unit-operation/sulfur-furnace" component={SulfurFurnace} />
       <Route path="/unit-operation/deaerator" component={Deaerator} />
