@@ -86,7 +86,8 @@ export default function InterpassAbsorptionTower() {
   const [mode, setMode] = useState<"Static" | "Dynamic">("Static");
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [isRunningDynamic, setIsRunningDynamic] = useState(false);
-  const dynamicIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isRunningDynamicRef = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const currentFlowRef = useRef<number>(0);
 
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
@@ -191,9 +192,9 @@ export default function InterpassAbsorptionTower() {
         PRESSURE_GI0: parseFloat(gasInputs.PRESSURE_GI0) || 0,
         TEMPERATURE_GI0: parseFloat(gasInputs.TEMPERATURE_GI0) || 0,
       });
-      
+
       const data = await response.json();
-      
+
       if (data.error) {
         toast({
           title: "Calculation Error",
@@ -258,38 +259,49 @@ export default function InterpassAbsorptionTower() {
   }, [acidInputs, gasInputs, systemParams, toast, isRunningDynamic]);
 
   const startDynamic = () => {
-    if (isRunningDynamic) return;
-    
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    if (isRunningDynamicRef.current) return;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-    
+
     setIsRunningDynamic(true);
+    isRunningDynamicRef.current = true;
     currentFlowRef.current = parseFloat(acidInputs.Flow_AI0) || 0;
-    
-    const updateDynamic = () => {
+
+    const updateDynamic = async () => {
+      if (!isRunningDynamicRef.current) return;
+
       const target = 1500.0;
       const tau = parseFloat(dynamicParams.tau) || 6.0;
       const dt = parseFloat(dynamicParams.dt) || 0.5;
-      
+
       currentFlowRef.current += (target - currentFlowRef.current) * (1 - Math.exp(-dt / tau));
-      
+
       setAcidInputs(prev => ({
         ...prev,
         Flow_AI0: currentFlowRef.current.toFixed(1)
       }));
+
+      // In dynamic mode, we run calculation immediately after updating values
+      // This ensures requests are sequential
+      await runCalculation();
+
+      if (isRunningDynamicRef.current) {
+        timerRef.current = setTimeout(updateDynamic, Math.max(dt * 1000, 100));
+      }
     };
-    
+
     updateDynamic();
-    dynamicIntervalRef.current = setInterval(updateDynamic, (parseFloat(dynamicParams.dt) || 0.5) * 1000);
   };
 
   const pauseDynamic = () => {
     setIsRunningDynamic(false);
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    isRunningDynamicRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
 
@@ -300,11 +312,14 @@ export default function InterpassAbsorptionTower() {
     runCalculation();
   };
 
+  // No longer needed: sequential update handled in startDynamic
+  /*
   useEffect(() => {
     if (isRunningDynamic) {
-      runCalculation();
+        runCalculation();
     }
   }, [acidInputs.Flow_AI0, isRunningDynamic, runCalculation]);
+  */
 
   useEffect(() => {
     if (mode === "Static" && isRunningDynamic) {
@@ -314,8 +329,8 @@ export default function InterpassAbsorptionTower() {
 
   useEffect(() => {
     return () => {
-      if (dynamicIntervalRef.current) {
-        clearInterval(dynamicIntervalRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, []);
@@ -390,8 +405,8 @@ export default function InterpassAbsorptionTower() {
                 <CardTitle className="text-lg">Simulation Mode</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
-                  value={mode} 
+                <RadioGroup
+                  value={mode}
                   onValueChange={(value) => setMode(value as "Static" | "Dynamic")}
                   className="flex gap-8"
                 >

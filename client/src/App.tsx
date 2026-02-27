@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +10,7 @@ import { CompressorProvider } from "@/delta-v/contexts/CompressorContext";
 import Landing from "@/pages/landing";
 
 import HomeScreen from "@/delta-v/pages/HomeScreen";
+import KPIPage from "@/pages/settings/controller-outputs/kpi";
 import EquipmentFaceplates from "@/delta-v/pages/EquipmentFaceplates";
 import ControllerFaceplates from "@/delta-v/pages/ControllerFaceplates";
 import SensorFaceplate from "@/delta-v/pages/SensorFaceplate";
@@ -127,14 +128,68 @@ import TempSensor4200CFaceplate3D from "@/delta-v/pages/TempSensor4200CFaceplate
 import TempSensor4200CFaceplate3F from "@/delta-v/pages/TempSensor4200CFaceplate3F";
 import TempSensor4820Landing from "@/delta-v/pages/TempSensor4820Landing";
 import TempSensor4820Main from "@/delta-v/pages/TempSensor4820Main";
+import TempSensor4820Faceplate3A from "@/delta-v/pages/TempSensor4820Faceplate3A";
+import TempSensor4820Faceplate3B from "@/delta-v/pages/TempSensor4820Faceplate3B";
 import TempSensor4820Faceplate3C from "@/delta-v/pages/TempSensor4820Faceplate3C";
 import TempSensor4820Faceplate3D from "@/delta-v/pages/TempSensor4820Faceplate3D";
+import TempSensor4820Faceplate3E from "@/delta-v/pages/TempSensor4820Faceplate3E";
 import TempSensor4820Faceplate3F from "@/delta-v/pages/TempSensor4820Faceplate3F";
+import TempSensor4821Landing from "@/delta-v/pages/TempSensor4821Landing";
+import TempSensor4821Main from "@/delta-v/pages/TempSensor4821Main";
+import TempSensor4821Faceplate3A from "@/delta-v/pages/TempSensor4821Faceplate3A";
+import TempSensor4821Faceplate3B from "@/delta-v/pages/TempSensor4821Faceplate3B";
+import TempSensor4821Faceplate3C from "@/delta-v/pages/TempSensor4821Faceplate3C";
+import TempSensor4821Faceplate3D from "@/delta-v/pages/TempSensor4821Faceplate3D";
+import TempSensor4821Faceplate3E from "@/delta-v/pages/TempSensor4821Faceplate3E";
+import TempSensor4821Faceplate3F from "@/delta-v/pages/TempSensor4821Faceplate3F";
+import TempSensor4826Landing from "@/delta-v/pages/TempSensor4826Landing";
+import TempSensor4826Main from "@/delta-v/pages/TempSensor4826Main";
+import TempSensor4826Faceplate3A from "@/delta-v/pages/TempSensor4826Faceplate3A";
+import TempSensor4826Faceplate3B from "@/delta-v/pages/TempSensor4826Faceplate3B";
+import TempSensor4826Faceplate3C from "@/delta-v/pages/TempSensor4826Faceplate3C";
+import TempSensor4826Faceplate3D from "@/delta-v/pages/TempSensor4826Faceplate3D";
+import TempSensor4826Faceplate3E from "@/delta-v/pages/TempSensor4826Faceplate3E";
+import TempSensor4826Faceplate3F from "@/delta-v/pages/TempSensor4826Faceplate3F";
 import TempSensor4827Landing from "@/delta-v/pages/TempSensor4827Landing";
 import TempSensor4827Main from "@/delta-v/pages/TempSensor4827Main";
+import TempSensor4827Faceplate3A from "@/delta-v/pages/TempSensor4827Faceplate3A";
+import TempSensor4827Faceplate3B from "@/delta-v/pages/TempSensor4827Faceplate3B";
 import TempSensor4827Faceplate3C from "@/delta-v/pages/TempSensor4827Faceplate3C";
 import TempSensor4827Faceplate3D from "@/delta-v/pages/TempSensor4827Faceplate3D";
+import TempSensor4827Faceplate3E from "@/delta-v/pages/TempSensor4827Faceplate3E";
 import TempSensor4827Faceplate3F from "@/delta-v/pages/TempSensor4827Faceplate3F";
+import TempSensor4828Landing from "@/delta-v/pages/TempSensor4828Landing";
+import TempSensor4828Main from "@/delta-v/pages/TempSensor4828Main";
+import TempSensor4828Faceplate3A from "@/delta-v/pages/TempSensor4828Faceplate3A";
+import TempSensor4828Faceplate3B from "@/delta-v/pages/TempSensor4828Faceplate3B";
+import TempSensor4828Faceplate3C from "@/delta-v/pages/TempSensor4828Faceplate3C";
+import TempSensor4828Faceplate3D from "@/delta-v/pages/TempSensor4828Faceplate3D";
+import TempSensor4828Faceplate3E from "@/delta-v/pages/TempSensor4828Faceplate3E";
+import TempSensor4828Faceplate3F from "@/delta-v/pages/TempSensor4828Faceplate3F";
+import TempSensor7823Landing from "@/delta-v/pages/TempSensor7823Landing";
+import TempSensor7823Main from "@/delta-v/pages/TempSensor7823Main";
+import TempSensor7823Faceplate3A from "@/delta-v/pages/TempSensor7823Faceplate3A";
+import TempSensor7823Faceplate3B from "@/delta-v/pages/TempSensor7823Faceplate3B";
+import TempSensor7823Faceplate3C from "@/delta-v/pages/TempSensor7823Faceplate3C";
+import TempSensor7823Faceplate3D from "@/delta-v/pages/TempSensor7823Faceplate3D";
+import TempSensor7823Faceplate3E from "@/delta-v/pages/TempSensor7823Faceplate3E";
+import TempSensor7823Faceplate3F from "@/delta-v/pages/TempSensor7823Faceplate3F";
+import TempSensor4840Landing from "@/delta-v/pages/TempSensor4840Landing";
+import TempSensor4840Main from "@/delta-v/pages/TempSensor4840Main";
+import TempSensor4840Faceplate3A from "@/delta-v/pages/TempSensor4840Faceplate3A";
+import TempSensor4840Faceplate3B from "@/delta-v/pages/TempSensor4840Faceplate3B";
+import TempSensor4840Faceplate3C from "@/delta-v/pages/TempSensor4840Faceplate3C";
+import TempSensor4840Faceplate3D from "@/delta-v/pages/TempSensor4840Faceplate3D";
+import TempSensor4840Faceplate3E from "@/delta-v/pages/TempSensor4840Faceplate3E";
+import TempSensor4840Faceplate3F from "@/delta-v/pages/TempSensor4840Faceplate3F";
+import TempSensor4841Landing from "@/delta-v/pages/TempSensor4841Landing";
+import TempSensor4841Main from "@/delta-v/pages/TempSensor4841Main";
+import TempSensor4841Faceplate3A from "@/delta-v/pages/TempSensor4841Faceplate3A";
+import TempSensor4841Faceplate3B from "@/delta-v/pages/TempSensor4841Faceplate3B";
+import TempSensor4841Faceplate3C from "@/delta-v/pages/TempSensor4841Faceplate3C";
+import TempSensor4841Faceplate3D from "@/delta-v/pages/TempSensor4841Faceplate3D";
+import TempSensor4841Faceplate3E from "@/delta-v/pages/TempSensor4841Faceplate3E";
+import TempSensor4841Faceplate3F from "@/delta-v/pages/TempSensor4841Faceplate3F";
 import {
   PFD5001ProcessGas,
   PFD5002StrongAcid,
@@ -171,6 +226,7 @@ import ConverterPass2 from "@/pages/unit-operation/converter-pass-2";
 import ConverterPass3 from "@/pages/unit-operation/converter-pass-3";
 import ConverterPass4 from "@/pages/unit-operation/converter-pass-4";
 import GasGasHeatExchanger from "@/pages/unit-operation/gas-gas-heat-exchanger";
+import KeyPerformanceParameters from "@/pages/unit-operation/key-performance-parameters";
 import SulfuricAcidTower from "@/pages/unit-operation/sulfuric-acid-tower";
 import WasteHeatBoiler from "@/pages/unit-operation/waste-heat-boiler";
 import Superheater from "@/pages/unit-operation/superheater";
@@ -242,6 +298,7 @@ import SpreadsheetLogic from "@/pages/settings/interlock-logic/spreadsheet-logic
 import ControllerTuning from "@/pages/settings/controller-tuning";
 import UnitOperationsSettings from "@/pages/settings/unit-operations";
 import RunHistorian from "@/pages/settings/run-historian";
+import TurboGeneratorSignalExchange from "@/pages/settings/turbo-generator-signal-exchange";
 import ControllerOutputs from "@/pages/settings/controller-outputs";
 import PvOutputMessages from "@/pages/settings/controller-outputs/pv-output-messages";
 import ValveStatus from "@/pages/settings/controller-outputs/valve-status";
@@ -293,6 +350,7 @@ function Router() {
       <Route path="/dynamic-simulation" component={DynamicSimulation} />
       <Route path="/unit-operation-simulator" component={UnitOperationSimulator} />
       <Route path="/unit-operation/catalytic-reactor/python-code" component={CatalyticReactorPythonCode} />
+      <Route path="/unit-operation/key-performance-parameters" component={KeyPerformanceParameters} />
       <Route path="/unit-operation/converter-simulations" component={ConverterSimulations} />
       <Route path="/unit-operation/converter-pass-1" component={ConverterPass1} />
       <Route path="/unit-operation/converter-pass-2" component={ConverterPass2} />
@@ -346,6 +404,7 @@ function Router() {
       <Route path="/sulfuric-acid-technology-deep-dive" component={SulfuricAcidTechnologyDeepDive} />
       <Route path="/ots-instructions-videos" component={OTSInstructionsVideos} />
       <Route path="/simulation-settings" component={SimulationSettings} />
+      <Route path="/settings/turbo-generator" component={TurboGeneratorSignalExchange} />
       <Route path="/settings/economics-costs" component={EconomicsCosts} />
       <Route path="/settings/input-variables" component={InputVariables} />
       <Route path="/settings/chemical-properties/pure-component" component={PureComponent} />
@@ -392,6 +451,7 @@ function Router() {
       <Route path="/delta-v/pfd/5030-sulfur-vapor-scrubber" component={PFD5030SulfurVaporScrubber} />
       <Route path="/delta-v/pfd/5032-propane" component={PFD5032Propane} />
       <Route path="/settings/controller-outputs/faceplates/home-screen" component={HomeScreen} />
+      <Route path="/settings/controller-outputs/faceplates/kpi" component={KPIPage} />
       <Route path="/settings/controller-outputs/faceplates/rotating-equipment" component={EquipmentFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/controller-blocks" component={ControllerFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/sensor-blocks" component={SensorFaceplate} />
@@ -456,7 +516,17 @@ function Router() {
       {/* Specific Temperature Sensor Detail Pages - MUST come BEFORE generic :sensorId route */}
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/1520-TI-5821" component={TempSensor5821Landing} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200B" component={TempSensor4200BLanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200C" component={TempSensor4200CLanding} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4820" component={TempSensor4820Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4821" component={TempSensor4821Landing} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4825" component={TempSensor4825Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4826" component={TempSensor4826Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827" component={TempSensor4827Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4828" component={TempSensor4828Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-7823" component={TempSensor7823Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4840" component={TempSensor4840Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4841" component={TempSensor4841Landing} />
       
 
     {/* Common Temperature Sensor Faceplates */}
@@ -516,14 +586,68 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4200c-faceplate-3f" component={TempSensor4200CFaceplate3F} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-landing" component={TempSensor4820Landing} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-main" component={TempSensor4820Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3a" component={TempSensor4820Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3b" component={TempSensor4820Faceplate3B} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3c" component={TempSensor4820Faceplate3C} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3d" component={TempSensor4820Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3e" component={TempSensor4820Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4820-faceplate-3f" component={TempSensor4820Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-landing" component={TempSensor4821Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-main" component={TempSensor4821Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3a" component={TempSensor4821Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3b" component={TempSensor4821Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3c" component={TempSensor4821Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3d" component={TempSensor4821Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3e" component={TempSensor4821Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4821-faceplate-3f" component={TempSensor4821Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-landing" component={TempSensor4826Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-main" component={TempSensor4826Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-faceplate-3a" component={TempSensor4826Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-faceplate-3b" component={TempSensor4826Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-faceplate-3c" component={TempSensor4826Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-faceplate-3d" component={TempSensor4826Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-faceplate-3e" component={TempSensor4826Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4826-faceplate-3f" component={TempSensor4826Faceplate3F} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-landing" component={TempSensor4827Landing} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-main" component={TempSensor4827Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3a" component={TempSensor4827Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3b" component={TempSensor4827Faceplate3B} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3c" component={TempSensor4827Faceplate3C} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3d" component={TempSensor4827Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3e" component={TempSensor4827Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4827-faceplate-3f" component={TempSensor4827Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-landing" component={TempSensor4828Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-main" component={TempSensor4828Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-faceplate-3a" component={TempSensor4828Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-faceplate-3b" component={TempSensor4828Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-faceplate-3c" component={TempSensor4828Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-faceplate-3d" component={TempSensor4828Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-faceplate-3e" component={TempSensor4828Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4828-faceplate-3f" component={TempSensor4828Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-landing" component={TempSensor7823Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-main" component={TempSensor7823Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-faceplate-3a" component={TempSensor7823Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-faceplate-3b" component={TempSensor7823Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-faceplate-3c" component={TempSensor7823Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-faceplate-3d" component={TempSensor7823Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-faceplate-3e" component={TempSensor7823Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7823-faceplate-3f" component={TempSensor7823Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-landing" component={TempSensor4840Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-main" component={TempSensor4840Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-faceplate-3a" component={TempSensor4840Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-faceplate-3b" component={TempSensor4840Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-faceplate-3c" component={TempSensor4840Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-faceplate-3d" component={TempSensor4840Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-faceplate-3e" component={TempSensor4840Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4840-faceplate-3f" component={TempSensor4840Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-landing" component={TempSensor4841Landing} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-main" component={TempSensor4841Main} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3a" component={TempSensor4841Faceplate3A} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3b" component={TempSensor4841Faceplate3B} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3c" component={TempSensor4841Faceplate3C} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3d" component={TempSensor4841Faceplate3D} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3e" component={TempSensor4841Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3f" component={TempSensor4841Faceplate3F} />
       
       {/* Delta-V Valve Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/valve/:valveType" component={ValveTypeDetail} />
@@ -546,6 +670,8 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/faceplate-3e/:controllerId?" component={Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/faceplate-3f/:controllerId?" component={Faceplate3F} />
       
+      <Route path="/unit-operation">{() => <Redirect to="/unit-operation-simulator" />}</Route>
+
       {/* Short Path Redirects for Convenience */}
       <Route path="/delta-v/faceplate/3A" component={Faceplate3A} />
       <Route path="/delta-v/faceplate/3B" component={Faceplate3B} />

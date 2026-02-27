@@ -13,14 +13,20 @@ const temperatureSensors = [
   { tag: '1520-TI-5821', description: 'DT Gas Out' },
   { tag: '1520-TI-5820', description: 'DT Acid Temp Out' },
   { tag: '1540-TI-4820', description: 'Pass 1 Inlet Duct' },
-  { tag: '1540-TI-4825', description: 'Pass 1 Catalyst In' },
-  { tag: '1540-TI-4827', description: 'Pass 1 Catalyst Out' },
+  { tag: '1540-TI-4825', description: 'Pass 1 Catalyst In A' },
+  { tag: '1540-TI-4827', description: 'Pass 1 Catalyst Out A' },
+  { tag: '1540-TI-4826', description: 'Pass 1 Catalyst Temp. Top B' },
+  { tag: '1540-TI-4828', description: 'Pass 1 Catalyst Temp. Bottom B' },
+  { tag: '1540-TI-7821', description: 'SH 1B Inlet Temp' },
+  { tag: '1540-TI-7823', description: 'SH 1B Outlet Temp.' },
   { tag: '1540-TI-4840', description: 'Pass 2 Catalyst In' },
   { tag: '1540-TI-4841', description: 'Pass 2 Catalyst Out' },
   { tag: '1540-TI-4842', description: 'Pass 3 Catalyst In' },
   { tag: '1540-TI-4843', description: 'Pass 3 Catalyst Out' },
+  { tag: '1540-TI-5231', description: 'Pass 3 Duct Outlet Temp.' },
   { tag: '1540-TI-4844', description: 'Pass 4 Catalyst In' },
   { tag: '1540-TI-4845', description: 'Pass 4 Catalyst Out' },
+  { tag: '1540-TI-7225', description: 'Pass 4 Outlet Temp.' },
 ];
 
 const TempSensorDetail = () => {
@@ -41,12 +47,13 @@ const TempSensorDetail = () => {
 
       <div className="relative max-w-4xl mx-auto">
         <Link
-          to="/temperature-sensors"
+          href="/settings/controller-outputs/faceplates/temperature-sensors"
           className={cn(
             "inline-flex items-center gap-2 mb-6 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
             "text-muted-foreground hover:text-foreground",
             "hover:bg-card/50 active:scale-95"
           )}
+          data-testid="link-back-to-temp-sensors"
         >
           <ArrowLeft size={18} />
           Back to Temperature Sensors

@@ -357,7 +357,7 @@ export const VFDFaceplate = ({
 
         {/* Bottom Toolbar - 6 Icons matching reference */}
         <div className="flex items-center justify-center gap-2 pt-2 border-t border-border/50 bg-slate-800 rounded-b px-2 pb-2">
-          <ToolbarButton icon={Settings} to="/settings/controller-outputs/faceplates/vfd-settings" />
+          <ToolbarButton icon={Settings} to={`/unit-operation/main-compressor?rpmPercent=${data.speedPV ?? 88}&autorun=true`} />
           <ToolbarButton icon={History} to="/settings/controller-outputs/faceplates/vfd-history" />
           <ToolbarButton icon={TrendingUp} to="/settings/controller-outputs/faceplates/vfd-trends" />
           <ToolbarButton icon={Link2} to="/settings/controller-outputs/faceplates/vfd-links" />

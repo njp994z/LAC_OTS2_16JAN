@@ -20,6 +20,7 @@ Preferred communication style: Simple, everyday language.
     - **Catalytic Converter**: Stand-alone simulation with comprehensive input/output interface, 4 catalyst pass cards, and a backend API calling a Python RK4 solver for SO2 oxidation kinetics. Features Arrhenius kinetics, Eklund equilibrium, pass chaining, and energy balance calculations.
     - **Main Compressor**: Compressor performance calculator with static/dynamic modes, input parameters like Speed and Plant Condition, and a backend API calling a Python calculator for system curve intersection and affinity law models.
   - **AI Assistant**: Right sidebar on Demo page featuring an AI Assistant chat interface using OpenAI via Replit AI Integrations, leveraging both confidential internal knowledge and public domain information.
+  - **Turbo-Generator Signal Exchange**: Filterable/searchable table displaying 2,121 STG signals from Excel data with search, sub-system/signal-type/DCS-type filters, sortable columns, pagination, color-coded badges, and CSV export.
 
 ### Backend Architecture
 - **Server Framework**: Express.js with TypeScript for API endpoints, including middleware for logging, JSON parsing, and error handling.

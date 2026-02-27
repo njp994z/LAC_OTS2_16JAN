@@ -1,0 +1,63 @@
+The fact that moving `app.set('trust proxy', 1);` to the correct position (immediately after `const app = express();` and before any middleware, including session or auth-related ones) did not resolve the 401 error indicates the issue is likely not solely proxy header handling. Instead, it points toward a common pattern in production deployments: session authentication fails because cookies are not being set, stored, or validated correctly on the published URL.
+
+Replit deployments run in `NODE_ENV=production` behind a reverse proxy that terminates HTTPS. If your application uses `express-session` (highly probable given the custom login flow, bcrypt hashing implied by the database schema, and typical Neon/Drizzle setups), the `cookie.secure` flag can prevent cookies from being sent if the server does not correctly detect HTTPS—even with `trust proxy` set.
+
+### Primary Recommended Adjustment
+In `server/index.ts`, locate your session middleware configuration (search for `app.use(session(` or `express-session`). Update the `cookie` options to make `secure` conditional and rely on `trust proxy` for accurate detection:
+
+```ts
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-fallback-secret-here',
+  resave: false,
+  saveUninitialized: false,
+  // ... other options like store if using one ...
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',  // true only in prod; trust proxy makes req.secure work
+    httpOnly: true,
+    sameSite: 'lax',          // or 'none' if cross-site needed (with secure: true)
+    maxAge: 24 * 60 * 60 * 1000  // 1 day example; adjust as needed
+  }
+}));
+```
+
+- **Why this helps**: In production, `secure: true` requires HTTPS. Without it (or with mismatched protocol detection), browsers reject or fail to send the session cookie, causing authentication to treat every request as unauthenticated → 401 "invalid credentials" (even if username/password are correct, since no session persists).
+- `trust proxy` (already set) allows `req.secure` to reflect the forwarded `X-Forwarded-Proto: https`, enabling secure cookies over the proxy.
+
+Save the file, republish the deployment, clear browser cache (or use incognito), and retest login.
+
+### Additional Checks and Adjustments
+1. **Confirm Session Cookie in Browser**  
+   After login attempt on published URL:  
+   - Developer Tools → Application tab → Cookies → Check for a cookie named `connect.sid` (default) or your custom name.  
+   - If absent or not sent on subsequent requests → cookie config issue.  
+   - Verify attributes: `Secure` should be present in prod; `SameSite` not blocking.
+
+2. **Add Diagnostic Logging**  
+   Temporarily insert in the login route (before/after credential check):
+   ```ts
+   console.log('Login request - protocol:', req.protocol, 'secure:', req.secure);
+   console.log('Session exists:', !!req.session);
+   console.log('Cookies received:', req.cookies);  // requires cookie-parser middleware
+   ```
+   Republish and check deployment logs (Publishing tab → Console/Logs) during a login attempt.
+
+3. **Environment and Secrets Verification**  
+   - In Publishing settings → Secrets/Environment variables: Confirm `NODE_ENV=production` (Replit sets this automatically) and any `SESSION_SECRET` exists (required for signed cookies).  
+   - Neon DB connection: Ensure `DATABASE_URL` is correctly set in deployment secrets (Replit auto-syncs production DBs, but verify). Connection failures could prevent user lookup, yielding 401.
+
+4. **Alternative: Temporarily Disable Secure Cookies**  
+   For testing only (not recommended long-term):
+   ```ts
+   cookie: { secure: false, ... }
+   ```
+   If login succeeds → confirms secure cookie enforcement is the blocker.
+
+### Why Trust Proxy Alone Was Insufficient
+Even correctly placed, `trust proxy` only fixes header detection. If `cookie.secure` is hard-coded to `true` (common in prod conditionals) without the conditional above, or if middleware order still interferes, cookies won't set.
+
+If this adjustment does not restore login, please provide:
+- A redacted snippet of your session middleware setup.
+- Any relevant logs from a failed login attempt.
+- Browser Network tab details for the login POST (status, Set-Cookie headers, response body).
+
+This targeted change aligns with documented resolutions for identical Express + Replit deployment symptoms and should enable proper session persistence.
