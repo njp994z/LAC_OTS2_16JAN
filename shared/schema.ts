@@ -432,3 +432,19 @@ export const insertControllerConfigSchema = createInsertSchema(controllerConfigs
 
 export type InsertControllerConfig = z.infer<typeof insertControllerConfigSchema>;
 export type ControllerConfig = typeof controllerConfigs.$inferSelect;
+
+// Screen Layouts table - stores the entire flow canvas layout as JSON
+export const screenLayouts = pgTable("screen_layouts", {
+  id: varchar("id").primaryKey(), // The screen ID (e.g. "L1", "L2", etc.)
+  data: jsonb("data").notNull(), // Stores { nodes, edges, nodeMap }
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertScreenLayoutSchema = createInsertSchema(screenLayouts).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertScreenLayout = z.infer<typeof insertScreenLayoutSchema>;
+export type ScreenLayout = typeof screenLayouts.$inferSelect;

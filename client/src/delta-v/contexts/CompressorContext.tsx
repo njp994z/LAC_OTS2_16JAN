@@ -20,7 +20,7 @@ const DEFAULT_VFD_CONFIG: VFDConfig = {
   transparentBackground: false,
 };
 
-interface CompressorContextType {
+export interface CompressorContextType {
   compressorData: CompressorData;
   handleStart: () => void;
   handleStop: () => void;

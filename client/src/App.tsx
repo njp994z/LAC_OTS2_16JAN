@@ -262,6 +262,18 @@ import AdminUsers from "@/pages/admin-users";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
+import CommonControllerFaceplatePage from "./delta-v/pages/commonControllerFaceplate";
+import TempSensorLandingPage from "./delta-v/pages/TempSensor/landingPage";
+import TempSensorMain from "./delta-v/pages/TempSensor/faceplate-main";
+import TempSensorFaceplate3A from "./delta-v/pages/TempSensor/faceplate-3a";
+import TempSensorFaceplate3B from "./delta-v/pages/TempSensor/faceplate-3b";
+import TempSensorFaceplate3C from "./delta-v/pages/TempSensor/faceplate-3c";
+import TempSensorFaceplate3D from "./delta-v/pages/TempSensor/faceplate-3d";
+import TempSensorFaceplate3E from "./delta-v/pages/TempSensor/faceplate-3e";
+import TempSensorFaceplate3F from "./delta-v/pages/TempSensor/faceplate-3f";
+
+import { Provider } from 'react-redux'
+import { store } from "./store";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -398,6 +410,7 @@ function Router() {
       {/* Delta-V Controller Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/temperature-controller" component={TemperatureControllerFaceplates} />
       <Route path="/settings/controller-outputs/faceplates/controller-6622" component={ControllerFaceplate} />
+      <Route path="/settings/controller-outputs/faceplates/controller/:id" component={CommonControllerFaceplatePage} />
       <Route path="/settings/controller-outputs/faceplates/level-controller" component={LevelControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/concentration-controller" component={ConcentrationControllerFaceplate} />
       <Route path="/settings/controller-outputs/faceplates/flow-controller" component={FlowControllerFaceplate} />
@@ -445,8 +458,19 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4200A" component={TempSensor4200ALanding} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4825" component={TempSensor4825Landing} />
       
+
+    {/* Common Temperature Sensor Faceplates */}
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId" component={TempSensorLandingPage} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/main" component={TempSensorMain} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/faceplate-3a" component={TempSensorFaceplate3A} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/faceplate-3b" component={TempSensorFaceplate3B} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/faceplate-3c" component={TempSensorFaceplate3C} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/faceplate-3d" component={TempSensorFaceplate3D} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/faceplate-3e" component={TempSensorFaceplate3E} />
+    <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:temperatureSensorId/faceplate-3f" component={TempSensorFaceplate3F} />
+
       {/* Generic sensor routes - catch-all for sensors without specific landing pages */}
-      <Route path="/settings/controller-outputs/faceplates/temp-sensor/:sensorId" component={TempSensorDetail} />
+      <Route path="/settings/controller-outputs/faceplates/temperature-sensor/:sensorId" component={TempSensorDetail} />
       <Route path="/settings/controller-outputs/faceplates/pressure-sensors" component={PressureSensorsPage} />
       <Route path="/settings/controller-outputs/faceplates/pressure-sensor/:sensorId" component={PressureSensorDetail} />
       <Route path="/settings/controller-outputs/faceplates/level-sensors" component={LevelSensorsPage} />
@@ -583,6 +607,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
       <TooltipProvider>
         <SessionProvider>
           <ControllerSyncProvider>
@@ -595,6 +620,7 @@ function App() {
           </ControllerSyncProvider>
         </SessionProvider>
       </TooltipProvider>
+      </Provider>
     </QueryClientProvider>
   );
 }

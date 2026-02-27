@@ -3,11 +3,30 @@ import HeroSection from "@/components/HeroSection";
 import FeaturesGrid from "@/components/FeaturesGrid";
 import CompetitiveAdvantages from "@/components/CompetitiveAdvantages";
 import { Button } from "@/components/ui/button";
-import { Activity, LogIn } from "lucide-react";
+import { Activity, LogIn, LogOut } from "lucide-react";
 import expLogo from "@/assets/exp-logo.png";
+import { useSession } from "@/contexts/SessionContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const session = useSession();
+  const { isAuthenticated } = useAuth()
+  console.log({session})
+    const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
   
   return (
     <div className="min-h-screen bg-background">
@@ -17,14 +36,22 @@ export default function Landing() {
             <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <span className="font-semibold text-lg text-foreground">Lithium Americas</span>
           </div>
-          <Button 
+          {isAuthenticated ? <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+            : <Button 
             onClick={() => setLocation("/login")}
             data-testid="button-login-header"
             className="gap-2"
           >
             <LogIn className="w-4 h-4" />
             Login
-          </Button>
+          </Button>}
         </div>
       </header>
       
