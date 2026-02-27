@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Thermometer, Construction } from "lucide-react";
 import { Link } from "wouter";
 import expLogo from "@/assets/exp-logo.png";
+import controlLoopDiagram from "@assets/image_1772155236627.png";
 
 export default function Superheater4AEconomizer() {
   const [, setLocation] = useLocation();
@@ -61,6 +62,17 @@ export default function Superheater4AEconomizer() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Unit Operations
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <img
+                src={controlLoopDiagram}
+                alt="Control Loop - Economizer 4A FAT Inlet Temperature"
+                className="w-full rounded"
+                data-testid="img-control-loop-diagram"
+              />
             </CardContent>
           </Card>
         </div>

@@ -1,5 +1,7 @@
 import { Link } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
 import expLogo from "@/assets/exp-logo.png";
+import controlLoopDiagram from "@assets/image_1772155236627.png";
 
 export default function Economizer() {
   return (
@@ -16,9 +18,20 @@ export default function Economizer() {
       </header>
 
       <main className="pt-24 pb-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-semibold text-foreground mb-4">Economizer Simulator</h1>
-          <p className="text-muted-foreground">Coming Soon</p>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <h1 className="text-3xl font-semibold text-foreground mb-4" data-testid="text-page-title">Economizer Simulator</h1>
+          <p className="text-muted-foreground" data-testid="text-coming-soon">Coming Soon</p>
+
+          <Card>
+            <CardContent className="p-4">
+              <img
+                src={controlLoopDiagram}
+                alt="Control Loop - Economizer 4A FAT Inlet Temperature"
+                className="w-full rounded"
+                data-testid="img-control-loop-diagram"
+              />
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
