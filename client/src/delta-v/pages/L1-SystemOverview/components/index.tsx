@@ -271,7 +271,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: compressorInletPressure4072Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -348,7 +348,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: mainCompressor001Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -360,7 +360,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     configTagName={compressor.vfdConfig?.tagName}
                     configDescription={compressor.vfdConfig?.description}
                     configUnit={compressor.vfdConfig?.unit}
-            />
+                />
             </div>
         },
         "1540-PI-4002": {
@@ -371,7 +371,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: compressorOutletPressure4002Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -380,23 +380,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: compressorOutletPressure4002Config?.TAGNAME,
+                        description: compressorOutletPressure4002Config?.DESC || 'DT Gas Out Temperature',
+                        pv: compressorOutletPressure4002Data?.state?.syncedPV ?? 0,
+                        sp: compressorOutletPressure4002Data?.state?.syncedSP ?? 0,
+                        out: compressorOutletPressure4002Data?.state?.syncedOUT ?? 0,
+                        mode: compressorOutletPressure4002Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: compressorOutletPressure4002Config?.EU || '°C',
+                        pvRangeMin: compressorOutletPressure4002Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: compressorOutletPressure4002Config?.SP_LIM_HI ?? 500,
+                        alarmActive: compressorOutletPressure4002Data?.state?.alarmStates?.HH || compressorOutletPressure4002Data?.state?.alarmStates?.H ||
+                            compressorOutletPressure4002Data?.state?.alarmStates?.L || compressorOutletPressure4002Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (compressorOutletPressure4002Data?.state?.alarmStates?.HH || compressorOutletPressure4002Data?.state?.alarmStates?.LL) ? 'red' :
+                            (compressorOutletPressure4002Data?.state?.alarmStates?.H || compressorOutletPressure4002Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: compressorOutletPressure4002Config?.ALM_LL_LIM,
+                        alarmL: compressorOutletPressure4002Config?.ALM_L_LIM,
+                        alarmH: compressorOutletPressure4002Config?.ALM_H_LIM,
+                        alarmHH: compressorOutletPressure4002Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -410,7 +410,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: sulfurControllerValve2602Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -450,7 +450,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: sulphuricFlowController2602Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -459,23 +459,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: sulphuricFlowController2602Config?.TAGNAME,
+                        description: sulphuricFlowController2602Config?.DESC || 'DT Gas Out Temperature',
+                        pv: sulphuricFlowController2602Data?.state?.syncedPV ?? 0,
+                        sp: sulphuricFlowController2602Data?.state?.syncedSP ?? 0,
+                        out: sulphuricFlowController2602Data?.state?.syncedOUT ?? 0,
+                        mode: sulphuricFlowController2602Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: sulphuricFlowController2602Config?.EU || '°C',
+                        pvRangeMin: sulphuricFlowController2602Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: sulphuricFlowController2602Config?.SP_LIM_HI ?? 500,
+                        alarmActive: sulphuricFlowController2602Data?.state?.alarmStates?.HH || sulphuricFlowController2602Data?.state?.alarmStates?.H ||
+                            sulphuricFlowController2602Data?.state?.alarmStates?.L || sulphuricFlowController2602Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (sulphuricFlowController2602Data?.state?.alarmStates?.HH || sulphuricFlowController2602Data?.state?.alarmStates?.LL) ? 'red' :
+                            (sulphuricFlowController2602Data?.state?.alarmStates?.H || sulphuricFlowController2602Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: sulphuricFlowController2602Config?.ALM_LL_LIM,
+                        alarmL: sulphuricFlowController2602Config?.ALM_L_LIM,
+                        alarmH: sulphuricFlowController2602Config?.ALM_H_LIM,
+                        alarmHH: sulphuricFlowController2602Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -489,7 +489,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: furnaceSulfurInletPressure2604Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -498,23 +498,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: furnaceSulfurInletPressure2604Config?.TAGNAME,
+                        description: furnaceSulfurInletPressure2604Config?.DESC || 'DT Gas Out Temperature',
+                        pv: furnaceSulfurInletPressure2604Data?.state?.syncedPV ?? 0,
+                        sp: furnaceSulfurInletPressure2604Data?.state?.syncedSP ?? 0,
+                        out: furnaceSulfurInletPressure2604Data?.state?.syncedOUT ?? 0,
+                        mode: furnaceSulfurInletPressure2604Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: furnaceSulfurInletPressure2604Config?.EU || '°C',
+                        pvRangeMin: furnaceSulfurInletPressure2604Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: furnaceSulfurInletPressure2604Config?.SP_LIM_HI ?? 500,
+                        alarmActive: furnaceSulfurInletPressure2604Data?.state?.alarmStates?.HH || furnaceSulfurInletPressure2604Data?.state?.alarmStates?.H ||
+                            furnaceSulfurInletPressure2604Data?.state?.alarmStates?.L || furnaceSulfurInletPressure2604Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (furnaceSulfurInletPressure2604Data?.state?.alarmStates?.HH || furnaceSulfurInletPressure2604Data?.state?.alarmStates?.LL) ? 'red' :
+                            (furnaceSulfurInletPressure2604Data?.state?.alarmStates?.H || furnaceSulfurInletPressure2604Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: furnaceSulfurInletPressure2604Config?.ALM_LL_LIM,
+                        alarmL: furnaceSulfurInletPressure2604Config?.ALM_L_LIM,
+                        alarmH: furnaceSulfurInletPressure2604Config?.ALM_H_LIM,
+                        alarmHH: furnaceSulfurInletPressure2604Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -528,7 +528,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: furnaceInletTemperature4020Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -537,23 +537,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: furnaceInletTemperature4020Config?.TAGNAME,
+                        description: furnaceInletTemperature4020Config?.DESC || 'DT Gas Out Temperature',
+                        pv: furnaceInletTemperature4020Data?.state?.syncedPV ?? 0,
+                        sp: furnaceInletTemperature4020Data?.state?.syncedSP ?? 0,
+                        out: furnaceInletTemperature4020Data?.state?.syncedOUT ?? 0,
+                        mode: furnaceInletTemperature4020Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: furnaceInletTemperature4020Config?.EU || '°C',
+                        pvRangeMin: furnaceInletTemperature4020Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: furnaceInletTemperature4020Config?.SP_LIM_HI ?? 500,
+                        alarmActive: furnaceInletTemperature4020Data?.state?.alarmStates?.HH || furnaceInletTemperature4020Data?.state?.alarmStates?.H ||
+                            furnaceInletTemperature4020Data?.state?.alarmStates?.L || furnaceInletTemperature4020Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (furnaceInletTemperature4020Data?.state?.alarmStates?.HH || furnaceInletTemperature4020Data?.state?.alarmStates?.LL) ? 'red' :
+                            (furnaceInletTemperature4020Data?.state?.alarmStates?.H || furnaceInletTemperature4020Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: furnaceInletTemperature4020Config?.ALM_LL_LIM,
+                        alarmL: furnaceInletTemperature4020Config?.ALM_L_LIM,
+                        alarmH: furnaceInletTemperature4020Config?.ALM_H_LIM,
+                        alarmHH: furnaceInletTemperature4020Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -567,7 +567,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: jugControllerValve4282Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -607,7 +607,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass2InletTemperature4822Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -616,23 +616,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass2InletTemperature4822Config?.TAGNAME,
+                        description: pass2InletTemperature4822Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass2InletTemperature4822Data?.state?.syncedPV ?? 0,
+                        sp: pass2InletTemperature4822Data?.state?.syncedSP ?? 0,
+                        out: pass2InletTemperature4822Data?.state?.syncedOUT ?? 0,
+                        mode: pass2InletTemperature4822Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass2InletTemperature4822Config?.EU || '°C',
+                        pvRangeMin: pass2InletTemperature4822Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass2InletTemperature4822Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass2InletTemperature4822Data?.state?.alarmStates?.HH || pass2InletTemperature4822Data?.state?.alarmStates?.H ||
+                            pass2InletTemperature4822Data?.state?.alarmStates?.L || pass2InletTemperature4822Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass2InletTemperature4822Data?.state?.alarmStates?.HH || pass2InletTemperature4822Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass2InletTemperature4822Data?.state?.alarmStates?.H || pass2InletTemperature4822Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass2InletTemperature4822Config?.ALM_LL_LIM,
+                        alarmL: pass2InletTemperature4822Config?.ALM_L_LIM,
+                        alarmH: pass2InletTemperature4822Config?.ALM_H_LIM,
+                        alarmHH: pass2InletTemperature4822Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -646,7 +646,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass1OutletTemperature8721Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -655,23 +655,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass1OutletTemperature8721Config?.TAGNAME,
+                        description: pass1OutletTemperature8721Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass1OutletTemperature8721Data?.state?.syncedPV ?? 0,
+                        sp: pass1OutletTemperature8721Data?.state?.syncedSP ?? 0,
+                        out: pass1OutletTemperature8721Data?.state?.syncedOUT ?? 0,
+                        mode: pass1OutletTemperature8721Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass1OutletTemperature8721Config?.EU || '°C',
+                        pvRangeMin: pass1OutletTemperature8721Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass1OutletTemperature8721Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass1OutletTemperature8721Data?.state?.alarmStates?.HH || pass1OutletTemperature8721Data?.state?.alarmStates?.H ||
+                            pass1OutletTemperature8721Data?.state?.alarmStates?.L || pass1OutletTemperature8721Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass1OutletTemperature8721Data?.state?.alarmStates?.HH || pass1OutletTemperature8721Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass1OutletTemperature8721Data?.state?.alarmStates?.H || pass1OutletTemperature8721Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass1OutletTemperature8721Config?.ALM_LL_LIM,
+                        alarmL: pass1OutletTemperature8721Config?.ALM_L_LIM,
+                        alarmH: pass1OutletTemperature8721Config?.ALM_H_LIM,
+                        alarmHH: pass1OutletTemperature8721Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -685,7 +685,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass2TurboGeneratorSet001Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -707,7 +707,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass4InletTemperature5224Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -716,23 +716,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass4InletTemperature5224Config?.TAGNAME,
+                        description: pass4InletTemperature5224Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass4InletTemperature5224Data?.state?.syncedPV ?? 0,
+                        sp: pass4InletTemperature5224Data?.state?.syncedSP ?? 0,
+                        out: pass4InletTemperature5224Data?.state?.syncedOUT ?? 0,
+                        mode: pass4InletTemperature5224Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass4InletTemperature5224Config?.EU || '°C',
+                        pvRangeMin: pass4InletTemperature5224Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass4InletTemperature5224Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass4InletTemperature5224Data?.state?.alarmStates?.HH || pass4InletTemperature5224Data?.state?.alarmStates?.H ||
+                            pass4InletTemperature5224Data?.state?.alarmStates?.L || pass4InletTemperature5224Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass4InletTemperature5224Data?.state?.alarmStates?.HH || pass4InletTemperature5224Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass4InletTemperature5224Data?.state?.alarmStates?.H || pass4InletTemperature5224Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass4InletTemperature5224Config?.ALM_LL_LIM,
+                        alarmL: pass4InletTemperature5224Config?.ALM_L_LIM,
+                        alarmH: pass4InletTemperature5224Config?.ALM_H_LIM,
+                        alarmHH: pass4InletTemperature5224Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -746,7 +746,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass4OutletTemperature7225Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -755,23 +755,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass4OutletTemperature7225Config?.TAGNAME,
+                        description: pass4OutletTemperature7225Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass4OutletTemperature7225Data?.state?.syncedPV ?? 0,
+                        sp: pass4OutletTemperature7225Data?.state?.syncedSP ?? 0,
+                        out: pass4OutletTemperature7225Data?.state?.syncedOUT ?? 0,
+                        mode: pass4OutletTemperature7225Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass4OutletTemperature7225Config?.EU || '°C',
+                        pvRangeMin: pass4OutletTemperature7225Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass4OutletTemperature7225Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass4OutletTemperature7225Data?.state?.alarmStates?.HH || pass4OutletTemperature7225Data?.state?.alarmStates?.H ||
+                            pass4OutletTemperature7225Data?.state?.alarmStates?.L || pass4OutletTemperature7225Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass4OutletTemperature7225Data?.state?.alarmStates?.HH || pass4OutletTemperature7225Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass4OutletTemperature7225Data?.state?.alarmStates?.H || pass4OutletTemperature7225Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass4OutletTemperature7225Config?.ALM_LL_LIM,
+                        alarmL: pass4OutletTemperature7225Config?.ALM_L_LIM,
+                        alarmH: pass4OutletTemperature7225Config?.ALM_H_LIM,
+                        alarmHH: pass4OutletTemperature7225Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -785,7 +785,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass2InletTemperature5220Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -794,23 +794,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass2InletTemperature5220Config?.TAGNAME,
+                        description: pass2InletTemperature5220Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass2InletTemperature5220Data?.state?.syncedPV ?? 0,
+                        sp: pass2InletTemperature5220Data?.state?.syncedSP ?? 0,
+                        out: pass2InletTemperature5220Data?.state?.syncedOUT ?? 0,
+                        mode: pass2InletTemperature5220Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass2InletTemperature5220Config?.EU || '°C',
+                        pvRangeMin: pass2InletTemperature5220Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass2InletTemperature5220Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass2InletTemperature5220Data?.state?.alarmStates?.HH || pass2InletTemperature5220Data?.state?.alarmStates?.H ||
+                            pass2InletTemperature5220Data?.state?.alarmStates?.L || pass2InletTemperature5220Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass2InletTemperature5220Data?.state?.alarmStates?.HH || pass2InletTemperature5220Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass2InletTemperature5220Data?.state?.alarmStates?.H || pass2InletTemperature5220Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass2InletTemperature5220Config?.ALM_LL_LIM,
+                        alarmL: pass2InletTemperature5220Config?.ALM_L_LIM,
+                        alarmH: pass2InletTemperature5220Config?.ALM_H_LIM,
+                        alarmHH: pass2InletTemperature5220Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -824,7 +824,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass2OutletTemperature5232Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -833,23 +833,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass2OutletTemperature5232Config?.TAGNAME,
+                        description: pass2OutletTemperature5232Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass2OutletTemperature5232Data?.state?.syncedPV ?? 0,
+                        sp: pass2OutletTemperature5232Data?.state?.syncedSP ?? 0,
+                        out: pass2OutletTemperature5232Data?.state?.syncedOUT ?? 0,
+                        mode: pass2OutletTemperature5232Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass2OutletTemperature5232Config?.EU || '°C',
+                        pvRangeMin: pass2OutletTemperature5232Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass2OutletTemperature5232Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass2OutletTemperature5232Data?.state?.alarmStates?.HH || pass2OutletTemperature5232Data?.state?.alarmStates?.H ||
+                            pass2OutletTemperature5232Data?.state?.alarmStates?.L || pass2OutletTemperature5232Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass2OutletTemperature5232Data?.state?.alarmStates?.HH || pass2OutletTemperature5232Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass2OutletTemperature5232Data?.state?.alarmStates?.H || pass2OutletTemperature5232Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass2OutletTemperature5232Config?.ALM_LL_LIM,
+                        alarmL: pass2OutletTemperature5232Config?.ALM_L_LIM,
+                        alarmH: pass2OutletTemperature5232Config?.ALM_H_LIM,
+                        alarmHH: pass2OutletTemperature5232Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -863,7 +863,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: economizer4AOutletTemp7221Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -872,23 +872,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: economizer4AOutletTemp7221Config?.TAGNAME,
+                        description: economizer4AOutletTemp7221Config?.DESC || 'DT Gas Out Temperature',
+                        pv: economizer4AOutletTemp7221Data?.state?.syncedPV ?? 0,
+                        sp: economizer4AOutletTemp7221Data?.state?.syncedSP ?? 0,
+                        out: economizer4AOutletTemp7221Data?.state?.syncedOUT ?? 0,
+                        mode: economizer4AOutletTemp7221Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: economizer4AOutletTemp7221Config?.EU || '°C',
+                        pvRangeMin: economizer4AOutletTemp7221Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: economizer4AOutletTemp7221Config?.SP_LIM_HI ?? 500,
+                        alarmActive: economizer4AOutletTemp7221Data?.state?.alarmStates?.HH || economizer4AOutletTemp7221Data?.state?.alarmStates?.H ||
+                            economizer4AOutletTemp7221Data?.state?.alarmStates?.L || economizer4AOutletTemp7221Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (economizer4AOutletTemp7221Data?.state?.alarmStates?.HH || economizer4AOutletTemp7221Data?.state?.alarmStates?.LL) ? 'red' :
+                            (economizer4AOutletTemp7221Data?.state?.alarmStates?.H || economizer4AOutletTemp7221Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: economizer4AOutletTemp7221Config?.ALM_LL_LIM,
+                        alarmL: economizer4AOutletTemp7221Config?.ALM_L_LIM,
+                        alarmH: economizer4AOutletTemp7221Config?.ALM_H_LIM,
+                        alarmHH: economizer4AOutletTemp7221Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -902,7 +902,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: pass3OutletTemperature5231Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -911,23 +911,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: pass3OutletTemperature5231Config?.TAGNAME,
+                        description: pass3OutletTemperature5231Config?.DESC || 'DT Gas Out Temperature',
+                        pv: pass3OutletTemperature5231Data?.state?.syncedPV ?? 0,
+                        sp: pass3OutletTemperature5231Data?.state?.syncedSP ?? 0,
+                        out: pass3OutletTemperature5231Data?.state?.syncedOUT ?? 0,
+                        mode: pass3OutletTemperature5231Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: pass3OutletTemperature5231Config?.EU || '°C',
+                        pvRangeMin: pass3OutletTemperature5231Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: pass3OutletTemperature5231Config?.SP_LIM_HI ?? 500,
+                        alarmActive: pass3OutletTemperature5231Data?.state?.alarmStates?.HH || pass3OutletTemperature5231Data?.state?.alarmStates?.H ||
+                            pass3OutletTemperature5231Data?.state?.alarmStates?.L || pass3OutletTemperature5231Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (pass3OutletTemperature5231Data?.state?.alarmStates?.HH || pass3OutletTemperature5231Data?.state?.alarmStates?.LL) ? 'red' :
+                            (pass3OutletTemperature5231Data?.state?.alarmStates?.H || pass3OutletTemperature5231Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: pass3OutletTemperature5231Config?.ALM_LL_LIM,
+                        alarmL: pass3OutletTemperature5231Config?.ALM_L_LIM,
+                        alarmH: pass3OutletTemperature5231Config?.ALM_H_LIM,
+                        alarmHH: pass3OutletTemperature5231Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -941,7 +941,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: cipInletTemperature8421Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -950,21 +950,21 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
+                        instrumentTag: cipInletTemperature8421Config?.TAGNAME,
+                        description: cipInletTemperature8421Config?.DESC || 'DT Gas Out Temperature',
+                        pv: cipInletTemperature8421Data?.state?.syncedPV ?? 0,
+                        sp: cipInletTemperature8421Data?.state?.syncedSP ?? 0,
+                        out: cipInletTemperature8421Data?.state?.syncedOUT ?? 0,
+                        mode: cipInletTemperature8421Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: cipInletTemperature8421Config?.EU || '°C',
+                        pvRangeMin: cipInletTemperature8421Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: cipInletTemperature8421Config?.SP_LIM_HI ?? 500,
+                        alarmActive: cipInletTemperature8421Data?.state?.alarmStates?.HH || cipInletTemperature8421Data?.state?.alarmStates?.H ||
+                            cipInletTemperature8421Data?.state?.alarmStates?.L || cipInletTemperature8421Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (cipInletTemperature8421Data?.state?.alarmStates?.HH || cipInletTemperature8421Data?.state?.alarmStates?.LL) ? 'red' :
+                            (cipInletTemperature8421Data?.state?.alarmStates?.H || cipInletTemperature8421Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: cipInletTemperature8421Config?.ALM_LL_LIM,
+                        alarmL: cipInletTemperature8421Config?.ALM_L_LIM,
                         alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
                         alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
                     } as ControllerData}
@@ -980,7 +980,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: economizer3BOutletTemp7224Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -989,23 +989,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: economizer3BOutletTemp7224Config?.TAGNAME,
+                        description: economizer3BOutletTemp7224Config?.DESC || 'Economizer 3B Outlet Temp',
+                        pv: economizer3BOutletTemp7224Data?.state?.syncedPV ?? 0,
+                        sp: economizer3BOutletTemp7224Data?.state?.syncedSP ?? 0,
+                        out: economizer3BOutletTemp7224Data?.state?.syncedOUT ?? 0,
+                        mode: economizer3BOutletTemp7224Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: economizer3BOutletTemp7224Config?.EU || '°C',
+                        pvRangeMin: economizer3BOutletTemp7224Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: economizer3BOutletTemp7224Config?.SP_LIM_HI ?? 500,
+                        alarmActive: economizer3BOutletTemp7224Data?.state?.alarmStates?.HH || economizer3BOutletTemp7224Data?.state?.alarmStates?.H ||
+                            economizer3BOutletTemp7224Data?.state?.alarmStates?.L || economizer3BOutletTemp7224Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (economizer3BOutletTemp7224Data?.state?.alarmStates?.HH || economizer3BOutletTemp7224Data?.state?.alarmStates?.LL) ? 'red' :
+                            (economizer3BOutletTemp7224Data?.state?.alarmStates?.H || economizer3BOutletTemp7224Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: economizer3BOutletTemp7224Config?.ALM_LL_LIM,
+                        alarmL: economizer3BOutletTemp7224Config?.ALM_L_LIM,
+                        alarmH: economizer3BOutletTemp7224Config?.ALM_H_LIM,
+                        alarmHH: economizer3BOutletTemp7224Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -1019,7 +1019,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: fatOutletTemperature6624Data,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -1028,23 +1028,23 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: furnaceOutletTemperature4200AConfig?.TAGNAME,
-                        description: furnaceOutletTemperature4200AConfig?.DESC || 'DT Gas Out Temperature',
-                        pv: furnaceOutletTemperature4200AData?.state?.syncedPV ?? 0,
-                        sp: furnaceOutletTemperature4200AData?.state?.syncedSP ?? 0,
-                        out: furnaceOutletTemperature4200AData?.state?.syncedOUT ?? 0,
-                        mode: furnaceOutletTemperature4200AData?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: furnaceOutletTemperature4200AConfig?.EU || '°C',
-                        pvRangeMin: furnaceOutletTemperature4200AConfig?.SP_LIM_LO ?? 0,
-                        pvRangeMax: furnaceOutletTemperature4200AConfig?.SP_LIM_HI ?? 500,
-                        alarmActive: furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.H ||
-                            furnaceOutletTemperature4200AData?.state?.alarmStates?.L || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL || false,
-                        alarmColor: (furnaceOutletTemperature4200AData?.state?.alarmStates?.HH || furnaceOutletTemperature4200AData?.state?.alarmStates?.LL) ? 'red' :
-                            (furnaceOutletTemperature4200AData?.state?.alarmStates?.H || furnaceOutletTemperature4200AData?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: furnaceOutletTemperature4200AConfig?.ALM_LL_LIM,
-                        alarmL: furnaceOutletTemperature4200AConfig?.ALM_L_LIM,
-                        alarmH: furnaceOutletTemperature4200AConfig?.ALM_H_LIM,
-                        alarmHH: furnaceOutletTemperature4200AConfig?.ALM_HH_LIM,
+                        instrumentTag: fatOutletTemperature6624Config?.TAGNAME,
+                        description: fatOutletTemperature6624Config?.DESC || 'FAT Outlet Temperature',
+                        pv: fatOutletTemperature6624Data?.state?.syncedPV ?? 0,
+                        sp: fatOutletTemperature6624Data?.state?.syncedSP ?? 0,
+                        out: fatOutletTemperature6624Data?.state?.syncedOUT ?? 0,
+                        mode: fatOutletTemperature6624Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: fatOutletTemperature6624Config?.EU || '°C',
+                        pvRangeMin: fatOutletTemperature6624Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: fatOutletTemperature6624Config?.SP_LIM_HI ?? 500,
+                        alarmActive: fatOutletTemperature6624Data?.state?.alarmStates?.HH || fatOutletTemperature6624Data?.state?.alarmStates?.H ||
+                            fatOutletTemperature6624Data?.state?.alarmStates?.L || fatOutletTemperature6624Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (fatOutletTemperature6624Data?.state?.alarmStates?.HH || fatOutletTemperature6624Data?.state?.alarmStates?.LL) ? 'red' :
+                            (fatOutletTemperature6624Data?.state?.alarmStates?.H || fatOutletTemperature6624Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: fatOutletTemperature6624Config?.ALM_LL_LIM,
+                        alarmL: fatOutletTemperature6624Config?.ALM_L_LIM,
+                        alarmH: fatOutletTemperature6624Config?.ALM_H_LIM,
+                        alarmHH: fatOutletTemperature6624Config?.ALM_HH_LIM,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -1058,7 +1058,7 @@ const L1SystemElementsMap = (getControllerConfig: (
             data: furnaceOutletTemperature4200AData,
             component: <div
                 className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
-                
+
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
                     transformOrigin: 'center center'
@@ -1089,44 +1089,66 @@ const L1SystemElementsMap = (getControllerConfig: (
                 />
             </div>
         },
-        "DT": { tag: L1SystemElement["DT"],
+        "DT": {
+            tag: L1SystemElement["DT"],
             type: ElementType.Image,
-             description: "Drying Tower", component: <DryingTower /> },
-        "IPAT": { tag: L1SystemElement["IPAT"],
+            description: "Drying Tower", component: <DryingTower />
+        },
+        "IPAT": {
+            tag: L1SystemElement["IPAT"],
             type: ElementType.Image,
-             description: "IPAT Tower", component: <IPAT /> },
-        "FAT": { tag: L1SystemElement["FAT"],
+            description: "IPAT Tower", component: <IPAT />
+        },
+        "FAT": {
+            tag: L1SystemElement["FAT"],
             type: ElementType.Image,
-             description: "Final Absorbing Tower", component: <FAT /> },
-        "CIP": { tag: L1SystemElement["CIP"],
+            description: "Final Absorbing Tower", component: <FAT />
+        },
+        "CIP": {
+            tag: L1SystemElement["CIP"],
             type: ElementType.Image,
-             description: "Cold Interpass Absorber", component: <CIP /> },
-        "SH42EC4cEC4a": { tag: L1SystemElement["SH42EC4cEC4a"],
+            description: "Cold Interpass Absorber", component: <CIP />
+        },
+        "SH42EC4cEC4a": {
+            tag: L1SystemElement["SH42EC4cEC4a"],
             type: ElementType.Image,
-             description: "SH42EC4cEC4a", component: <SH42EC4cEC4a /> },
-        "HIP": { tag: L1SystemElement["HIP"],
+            description: "SH42EC4cEC4a", component: <SH42EC4cEC4a />
+        },
+        "HIP": {
+            tag: L1SystemElement["HIP"],
             type: ElementType.Image,
-             description: "Hot Interpass Absorber", component: <HIP /> },
-        "EC3B": { tag: L1SystemElement["EC3B"],
+            description: "Hot Interpass Absorber", component: <HIP />
+        },
+        "EC3B": {
+            tag: L1SystemElement["EC3B"],
             type: ElementType.Image,
-             description: "Economizer 3B", component: <EC3B /> },
-        "SH1B": { tag: L1SystemElement["SH1B"],
+            description: "Economizer 3B", component: <EC3B />
+        },
+        "SH1B": {
+            tag: L1SystemElement["SH1B"],
             type: ElementType.Image,
-             description: "Superheater 1B", component: <SH1B /> },
-        "Converter4": { tag: L1SystemElement["Converter4"],
+            description: "Superheater 1B", component: <SH1B />
+        },
+        "Converter4": {
+            tag: L1SystemElement["Converter4"],
             type: ElementType.Image,
-             description: "Converter 4", component: <Converter4 /> },
-        "IndustrialFilter": { tag: L1SystemElement["IndustrialFilter"],
+            description: "Converter 4", component: <Converter4 />
+        },
+        "IndustrialFilter": {
+            tag: L1SystemElement["IndustrialFilter"],
             type: ElementType.Image,
-             description: "Industrial Filter", component: <IndustrialFilter /> },
-        "FurnaceWhbt": { tag: L1SystemElement["FurnaceWhbt"],
+            description: "Industrial Filter", component: <IndustrialFilter />
+        },
+        "FurnaceWhbt": {
+            tag: L1SystemElement["FurnaceWhbt"],
             type: ElementType.Image,
-             description: "Furnace Whbt", component: <FurnaceWhbt /> },
+            description: "Furnace Whbt", component: <FurnaceWhbt />
+        },
 
         "To Acid Pump Tank": {
             tag: L1SystemElement["To Acid Pump Tank"],
             type: ElementType.Text,
-             description: "To Acid Pump Tank",
+            description: "To Acid Pump Tank",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     To Acid
@@ -1138,7 +1160,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "From Acid System": {
             tag: L1SystemElement["From Acid System"],
             type: ElementType.Text,
-             description: "From Acid System",
+            description: "From Acid System",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>From Acid
                     <br />
@@ -1148,7 +1170,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "Ambient Air": {
             tag: L1SystemElement["Ambient Air"],
             type: ElementType.Text,
-             description: "Ambient Air",
+            description: "Ambient Air",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>Ambient
                     <br />
@@ -1158,7 +1180,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "To SO2 Scrubber": {
             tag: L1SystemElement["To SO2 Scrubber"],
             type: ElementType.Text,
-             description: "To SO2 Scrubber",
+            description: "To SO2 Scrubber",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     To SO2
@@ -1170,7 +1192,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "From SO2 Scrubber": {
             tag: L1SystemElement["From SO2 Scrubber"],
             type: ElementType.Text,
-             description: "From SO2 Scrubber",
+            description: "From SO2 Scrubber",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     From SO2
@@ -1183,7 +1205,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "SUPERHEATER 1B 1540-HX-003": {
             tag: L1SystemElement["SUPERHEATER 1B 1540-HX-003"],
             type: ElementType.Text,
-             description: "SUPERHEATER 1B 1540-HX-003",
+            description: "SUPERHEATER 1B 1540-HX-003",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     SUPERHEATER 1B
@@ -1195,7 +1217,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "HOT INTERPASS HX 1540-HX-009": {
             tag: L1SystemElement["HOT INTERPASS HX 1540-HX-009"],
             type: ElementType.Text,
-             description: "HOT INTERPASS HX 1540-HX-009",
+            description: "HOT INTERPASS HX 1540-HX-009",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     HOT INTERPASS HX
@@ -1207,7 +1229,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "COLD INTERPASS HX 1540-HX-008": {
             tag: L1SystemElement["COLD INTERPASS HX 1540-HX-008"],
             type: ElementType.Text,
-             description: "COLD INTERPASS HX 1540-HX-008",
+            description: "COLD INTERPASS HX 1540-HX-008",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     COLD INTERPASS HX
@@ -1219,7 +1241,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007": {
             tag: L1SystemElement["HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007"],
             type: ElementType.Text,
-             description: "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
+            description: "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     HP SUPERHEATER 4A
@@ -1233,7 +1255,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "ECONOMIZER 3B 1540-HX-002": {
             tag: L1SystemElement["ECONOMIZER 3B 1540-HX-002"],
             type: ElementType.Text,
-             description: "ECONOMIZER 3B 1540-HX-002",
+            description: "ECONOMIZER 3B 1540-HX-002",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     ECONOMIZER 3B
@@ -1245,7 +1267,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "To Condenser": {
             tag: L1SystemElement["To Condenser"],
             type: ElementType.Text,
-             description: "To Condenser",
+            description: "To Condenser",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     To Condenser
@@ -1255,7 +1277,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "SULFUR FURNACE 1540-ZM-001": {
             tag: L1SystemElement["SULFUR FURNACE 1540-ZM-001"],
             type: ElementType.Text,
-             description: "SULFUR FURNACE 1540-ZM-001",
+            description: "SULFUR FURNACE 1540-ZM-001",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     SULFUR FURNACE
@@ -1267,7 +1289,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "WASTE HEAT BOILER (WHB) 1540-HX-001": {
             tag: L1SystemElement["WASTE HEAT BOILER (WHB) 1540-HX-001"],
             type: ElementType.Text,
-             description: "WASTE HEAT BOILER (WHB) 1540-HX-001",
+            description: "WASTE HEAT BOILER (WHB) 1540-HX-001",
             component: <div className=" text-black text-lg font-semibold text-center">
                 <p>
                     WASTE HEAT BOILER
