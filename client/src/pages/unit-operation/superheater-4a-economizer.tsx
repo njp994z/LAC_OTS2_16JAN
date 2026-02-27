@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Thermometer, Construction } from "lucide-react";
 import { Link } from "wouter";
 import expLogo from "@/assets/exp-logo.png";
-import controlLoopDiagram from "@assets/image_1772155236627.png";
+import controlLoopDiagram from "@assets/image_1772155398688.png";
 
 export default function Superheater4AEconomizer() {
   const [, setLocation] = useLocation();
