@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, LogIn, Send, Bot, Info, Settings } from "lucide-react";
+import { Activity, LogIn, Send, Bot, Info, Settings, LogOut } from "lucide-react";
 import { demoExperiences } from "@/config/demoExperiences";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { SessionHeader } from "@/components/SessionHeader";
 import expLogo from "@/assets/exp-logo.png";
+import { useSession } from "@/contexts/SessionContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -20,6 +22,21 @@ export default function Demo() {
   const [, setLocation] = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const { isAuthenticated } = useAuth();
+    const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -71,14 +88,23 @@ export default function Demo() {
             >
               <Settings className="w-5 h-5" />
             </Button>
-            <Button 
+            {isAuthenticated ?
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+            : <Button 
               onClick={() => setLocation("/login")}
               data-testid="button-login-header"
               className="gap-2"
             >
               <LogIn className="w-4 h-4" />
               Login
-            </Button>
+            </Button>}
           </div>
         </div>
       </header>

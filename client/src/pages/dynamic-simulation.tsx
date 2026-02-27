@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, LogIn, Play, Pause, RotateCcw } from "lucide-react";
+import { ArrowLeft, LogIn, Play, Pause, RotateCcw, LogOut } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import {
   createInitialState,
@@ -17,6 +17,8 @@ import {
 } from "@/lib/pidController";
 import { calculateGlobalOutputs } from "@/lib/globalOutputs";
 import expLogo from "@/assets/exp-logo.png";
+import { useSession } from "@/contexts/SessionContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ControllerParams {
   setpoint: number;
@@ -37,6 +39,22 @@ interface DualDataPoint {
 
 export default function DynamicSimulation() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
+
+    const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   // Shared global controls
   const [running, setRunning] = useState(false);
@@ -276,14 +294,23 @@ export default function DynamicSimulation() {
               </span>
             </Link>
           </div>
-          <Button
-            onClick={() => setLocation("/login")}
-            data-testid="button-login-header"
-            className="gap-2"
-          >
-            <LogIn className="w-4 h-4" />
-            Login
-          </Button>
+          {isAuthenticated ?
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+            : <Button
+              onClick={() => setLocation("/login")}
+              data-testid="button-login-header"
+              className="gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
+            </Button>}
         </div>
       </header>
 
