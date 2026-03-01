@@ -129,6 +129,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import L1SystemOverview from "./L1-SystemOverview";
+import { PFDNavigation } from "../components/PFDNavigation";
 
 interface Arrow {
   id: string;
@@ -1125,13 +1126,13 @@ const HomeScreen = () => {
     // Check if sulfur flow has changed significantly (more than 0.5 gpm difference)
     const lastFlow = lastCalculatedSulfurFlowRef.current;
 
-    if (lastFlow !== null && Math.abs(currentFlow - lastFlow) < 0.5) {
+    if (lastFlow !== null && Math.abs(loadedCaseValueSulfurFlow - lastFlow) < 0.5) {
       return; // Skip if change is too small
     }
 
     // Update ref and trigger calculation
-    lastCalculatedSulfurFlowRef.current = currentFlow;
-    calculateFurnaceTemperature(currentFlow);
+    lastCalculatedSulfurFlowRef.current = loadedCaseValueSulfurFlow;
+    calculateFurnaceTemperature(loadedCaseValueSulfurFlow);
   }, [selectedMode, loadedCaseValueSulfurFlow, calculateFurnaceTemperature]);
 
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
