@@ -148,8 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   sessionWS.initialize(httpServer);
   
   // Health check endpoint - basic status only (protected details require auth)
-  app.get('
-          ', async (req: Request, res: Response) => {
+  app.get('/api/health', async (req: Request, res: Response) => {
     const health: Record<string, any> = {
       status: 'ok',
       timestamp: new Date().toISOString(),
