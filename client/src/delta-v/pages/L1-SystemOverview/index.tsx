@@ -264,7 +264,18 @@ const L1SystemOverview = ({
     useEffect(() => {
         handleLoad();
         if (!layoutData && !isLoading && !isUninitialized) {
-            updateLayout({ id: "L1", layout: defaultPositionL1 }).unwrap()
+            // updateLayout({ id: "L1", layout: defaultPositionL1 }).unwrap()
+            setPositions(defaultPositionL1.positions);
+            setEdges(defaultPositionL1.edges);
+            // Fix 1: Seed edge counter from max existing ID to avoid duplicate IDs on next save/load
+            if (defaultPositionL1.edges && defaultPositionL1.edges.length > 0) {
+                const maxId = Math.max(...defaultPositionL1.edges.map((e) => e.id));
+                edgeCounterRef.current = maxId + 1;
+            }
+            setMode(Mode.Edit);
+        }
+        else {
+            handleLoad();
         }
     }, [layoutData, isLoading, isUninitialized]);
 
