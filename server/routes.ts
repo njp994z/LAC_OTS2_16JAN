@@ -3075,6 +3075,51 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  app.post('/api/sh4a-ec4c-ec4a-calc', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sh4a_ec4c_ec4a_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code: number | null) => {
+        if (code !== 0) {
+          console.error('SH4A/EC4C/EC4A calc stderr:', stderr);
+          return res.status(500).json({ error: stderr || 'Calculation failed' });
+        }
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('SH4A/EC4C/EC4A calc parse error:', stdout);
+          res.status(500).json({ error: 'Failed to parse calculation results' });
+        }
+      });
+
+      pythonProcess.on('error', (err: Error) => {
+        console.error('SH4A/EC4C/EC4A calc process error:', err);
+        res.status(500).json({ error: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('SH4A/EC4C/EC4A calc error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Inlet Air Filter Simulation endpoint
   app.post('/api/inlet-air-filter-simulation', async (req: Request, res: Response) => {
     try {

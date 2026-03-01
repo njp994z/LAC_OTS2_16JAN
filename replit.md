@@ -19,6 +19,7 @@ Preferred communication style: Simple, everyday language.
   - **Unit Operation Simulator**: Hub page linking to individual unit operation simulators, including:
     - **Catalytic Converter**: Stand-alone simulation with comprehensive input/output interface, 4 catalyst pass cards, and a backend API calling a Python RK4 solver for SO2 oxidation kinetics. Features Arrhenius kinetics, Eklund equilibrium, pass chaining, and energy balance calculations.
     - **Main Compressor**: Compressor performance calculator with static/dynamic modes, input parameters like Speed and Plant Condition, and a backend API calling a Python calculator for system curve intersection and affinity law models.
+    - **SH4A / EC4C / EC4A**: HP Superheater 4A, Economizer 4C, Economizer 4A simulator (1540-HX-004/006/007) with 3-tab interface (Equipment Parameters, Stream Inputs, Results/Outputs). Backend Python calculator (`server/python/sh4a_ec4c_ec4a_calc.py`) via `/api/sh4a-ec4c-ec4a-calc`. Features NTU-effectiveness HX solver, control valve models (equal-percentage/linear), rated U and dP correlations, and hydraulic summary.
   - **AI Assistant**: Right sidebar on Demo page featuring an AI Assistant chat interface using OpenAI via Replit AI Integrations, leveraging both confidential internal knowledge and public domain information.
   - **Turbo-Generator Signal Exchange**: Filterable/searchable table displaying 2,121 STG signals from Excel data with search, sub-system/signal-type/DCS-type filters, sortable columns, pagination, color-coded badges, and CSV export.
 
