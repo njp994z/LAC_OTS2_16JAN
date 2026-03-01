@@ -20,7 +20,7 @@ import { getLayout, getLayouts, setLayout } from "./services/layoutServices";
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   message: { message: "Too many requests from this IP, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -143,13 +143,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  
+
   // Initialize WebSocket server for real-time session broadcasting
   sessionWS.initialize(httpServer);
   
+  // Health check endpoint - basic status only (protected details require auth)
+  app.get('
+          ', async (req: Request, res: Response) => {
+    const health: Record<string, any> = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+
+    // Test database connection
+    try {
+      await storage.getUserByEmail('test-health-check@nonexistent.com');
+      health.database = 'connected';
+    } catch (dbError: any) {
+      health.database = 'error';
+      health.status = 'degraded';
+    }
+
+    res.json(health);
+  });
+  
+  // Detailed health check for debugging (protected)
+  app.get('/api/health/debug', isAuthenticated, async (req: Request, res: Response) => {
+    const health: Record<string, any> = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      protocol: req.protocol,
+      secure: req.secure,
+      hostname: req.hostname,
+      forwardedProto: req.get('x-forwarded-proto'),
+      sessionConfigured: !!req.session,
+      envVars: {
+        DATABASE_URL: !!process.env.DATABASE_URL,
+        SESSION_SECRET: !!process.env.SESSION_SECRET,
+        REPLIT_DOMAINS: !!process.env.REPLIT_DOMAINS,
+      }
+    };
+
+    try {
+      await storage.getUserByEmail('test-health-check@nonexistent.com');
+      health.database = { connected: true, status: 'ok' };
+    } catch (dbError: any) {
+      health.database = { 
+        connected: false, 
+        status: 'error', 
+        message: dbError.message?.substring(0, 100) 
+      };
+      health.status = 'degraded';
+    }
+
+    res.json(health);
+  });
+  
   app.use('/api/login', authLimiter);
   app.use('/api/register', authLimiter);
-  
+
   app.use('/api/', apiLimiter);
 
   app.post('/api/register', async (req: Request, res: Response) => {
@@ -212,41 +265,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      
+      // Enhanced diagnostic logging for production debugging
+      const isProduction = process.env.NODE_ENV === 'production';
+      console.log('[LOGIN] Environment:', isProduction ? 'production' : 'development');
+      console.log('[LOGIN] Request - protocol:', req.protocol, 'secure:', req.secure, 'host:', req.hostname);
+      console.log('[LOGIN] Headers - x-forwarded-proto:', req.get('x-forwarded-proto'), 'x-forwarded-host:', req.get('x-forwarded-host'));
+      console.log('[LOGIN] Session exists:', !!req.session, 'sessionID:', req.sessionID?.substring(0, 8) + '...');
+      console.log('[LOGIN] Database URL configured:', !!process.env.DATABASE_URL);
 
       if (!email || !password) {
+        console.log('[LOGIN] Missing credentials');
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      const user = await storage.getUserByEmail(email);
+      let user;
+      try {
+        user = await storage.getUserByEmail(email);
+        console.log('[LOGIN] User lookup:', user ? 'found' : 'not found', 'for email:', email);
+      } catch (dbError) {
+        console.error('[LOGIN] Database error during user lookup:', dbError);
+        return res.status(500).json({ message: "Database connection error" });
+      }
+      
       if (!user) {
+        console.log('[LOGIN] User not found in database');
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      if (!user.hashedPassword) {
+        console.error('[LOGIN] User found but hashedPassword is missing/null');
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       const isValid = await comparePassword(password, user.hashedPassword);
+      console.log('[LOGIN] Password validation result:', isValid ? 'valid' : 'invalid');
       if (!isValid) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       req.session.regenerate((err) => {
         if (err) {
-          console.error("Session regeneration error:", err);
+          console.error("[LOGIN] Session regeneration error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
 
         req.session.userId = user.id;
+        console.log('[LOGIN] Session userId set to:', user.id);
 
         req.session.save((saveErr) => {
           if (saveErr) {
-            console.error("Session save error:", saveErr);
+            console.error("[LOGIN] Session save error:", saveErr);
             return res.status(500).json({ message: "Failed to save session" });
           }
 
+          console.log('[LOGIN] Login successful for user:', user.id);
           const { hashedPassword: _, ...userWithoutPassword } = user;
           res.json(userWithoutPassword);
         });
       });
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("[LOGIN] Unexpected error:", error);
       res.status(500).json({ message: "Failed to login" });
     }
   });
@@ -266,11 +345,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       const { hashedPassword: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
@@ -733,12 +812,12 @@ Be professional, concise, and helpful. If asked about features not yet implement
           return res.status(400).json({ message: `Invalid commodity price range for ${commodity.name}` });
         }
       }
-      
+
       // Helper function to generate random value with distribution
       const generateRandom = (min: number, max: number, distribution: string): number => {
         const random = Math.random();
         const range = max - min;
-        
+
         if (distribution === "Left-Skew") {
           // Left skew: more values toward lower end
           return min + range * Math.pow(random, 2);
@@ -760,20 +839,20 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const profits: number[] = [];
       const acidProductions: number[] = [];
       const powerGenerations: number[] = [];
-      
+
       for (let i = 0; i < samples; i++) {
         // Sample process inputs
         const sulfurFlowSample = generateRandom(parseFloat(sulfurFlow.min), parseFloat(sulfurFlow.max), "Normal");
         const blowerRPMSample = generateRandom(parseFloat(blowerRPM.min), parseFloat(blowerRPM.max), "Normal");
-        
+
         // Calculate acid production (simplified model based on sulfur flow)
         const acidProduction = sulfurFlowSample * 2.5; // STPD
         acidProductions.push(acidProduction);
-        
+
         // Calculate power generation (simplified model based on blower RPM)
         const powerGen = (blowerRPMSample / 1000) * 1.2; // MWh/Day
         powerGenerations.push(powerGen);
-        
+
         // Calculate revenues
         const sulfuricPrice = generateRandom(
           parseFloat(commodities[0].rangeMin),
@@ -785,10 +864,10 @@ Be professional, concise, and helpful. If asked about features not yet implement
           parseFloat(commodities[2].rangeMax),
           commodities[2].distribution
         );
-        
+
         const acidRevenue = acidProduction * sulfuricPrice;
         const powerRevenue = powerGen * powerPrice;
-        
+
         // Calculate costs
         const sulfurPrice = generateRandom(
           parseFloat(commodities[1].rangeMin),
@@ -800,19 +879,19 @@ Be professional, concise, and helpful. If asked about features not yet implement
           parseFloat(commodities[3].rangeMax),
           commodities[3].distribution
         );
-        
+
         const sulfurCost = sulfurFlowSample * 0.95 * sulfurPrice;
         const parasiticPowerCost = powerGen * 0.15 * powerPrice;
         const causticCost = acidProduction * 0.02 * causticPrice;
         const lpSteamCost = 50;
         const makeupWaterCost = 20;
         const effluentCost = 15;
-        
+
         const totalCosts = sulfurCost + parasiticPowerCost + causticCost + lpSteamCost + makeupWaterCost + effluentCost;
         const profit = acidRevenue + powerRevenue - totalCosts;
         profits.push(profit);
       }
-      
+
       // Calculate statistics
       const calculateStats = (data: number[]) => {
         const sorted = [...data].sort((a, b) => a - b);
@@ -821,7 +900,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         const stdDev = Math.sqrt(variance);
         const conf5Index = Math.floor(data.length * 0.05);
         const conf95Index = Math.floor(data.length * 0.95);
-        
+
         return {
           mean,
           stdDev,
@@ -829,28 +908,28 @@ Be professional, concise, and helpful. If asked about features not yet implement
           conf95: sorted[conf95Index],
         };
       };
-      
+
       const profitStats = calculateStats(profits);
       const acidProdStats = calculateStats(acidProductions);
       const powerGenStats = calculateStats(powerGenerations);
-      
+
       // Generate profit distribution histogram data
       const bins = 50;
       const minProfit = Math.min(...profits);
       const maxProfit = Math.max(...profits);
       const binWidth = (maxProfit - minProfit) / bins;
-      
+
       let distributionData: { x: number; y: number }[] = [];
-      
+
       // Guard against zero-width ranges
       if (binWidth > 0) {
         const histogram = Array(bins).fill(0);
-        
+
         profits.forEach(profit => {
           const binIndex = Math.min(Math.floor((profit - minProfit) / binWidth), bins - 1);
           histogram[binIndex]++;
         });
-        
+
         distributionData = histogram.map((count, index) => ({
           x: minProfit + (index + 0.5) * binWidth,
           y: count
@@ -895,28 +974,28 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonProcess = spawn('python3', [pythonScriptPath], {
         cwd: path.join(process.cwd(), 'server', 'python'),
       });
-      
+
       let stdout = '';
       let stderr = '';
-      
+
       pythonProcess.stdin.write(JSON.stringify(inputData));
       pythonProcess.stdin.end();
-      
+
       pythonProcess.stdout.on('data', (data) => {
         stdout += data.toString();
       });
-      
+
       pythonProcess.stderr.on('data', (data) => {
         stderr += data.toString();
       });
-      
+
       pythonProcess.on('close', (code) => {
         if (code !== 0) {
           console.error('Python RK4 solver error:', stderr);
           reject(new Error(`Python process exited with code ${code}: ${stderr}`));
           return;
         }
-        
+
         try {
           const result = JSON.parse(stdout);
           resolve(result);
@@ -925,7 +1004,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
           reject(new Error('Failed to parse simulation results'));
         }
       });
-      
+
       pythonProcess.on('error', (err) => {
         console.error('Failed to start Python process:', err);
         reject(err);
@@ -1076,7 +1155,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         X_pct: number[];
         Xeq_pct: number[];
       }
-      
+
       // Build pass results from segment results
       const getPassResults = (segmentResults: SegmentResult[]) => {
         // Pass 1: segments 0 (L1) + 1 (L2)
@@ -1086,7 +1165,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         const pass3 = segmentResults.find(s => s.name === 'Pass3');
         const pass4L1 = segmentResults.find(s => s.name === 'Pass4-L1');
         const pass4L2 = segmentResults.find(s => s.name === 'Pass4-L2');
-        
+
         return {
           pass1: {
             inletTemp: pass1L1?.Tin_C || pass1InletTemp,
@@ -1123,7 +1202,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         };
       };
 
-      const passResults = pythonResults?.segmentResults 
+      const passResults = pythonResults?.segmentResults
         ? getPassResults(pythonResults.segmentResults)
         : null;
 
@@ -1138,7 +1217,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       // Use Python RK4 results for pass conversions if available
       const passConversions: any = {};
       let overallConversion = 0;
-      
+
       if (passResults) {
         // Use accurate Python RK4 results
         const passKeys = ['pass1', 'pass2', 'pass3', 'pass4'] as const;
@@ -1162,11 +1241,11 @@ Be professional, concise, and helpful. If asked about features not yet implement
           const baseConversion = equilibrium * (pass.activity / 100) * 0.85;
           const passFactors = [1.0, 0.92, 0.88, 0.75];
           const conversion = Math.min(equilibrium, baseConversion * passFactors[passNumber - 1]);
-          
+
           const so2Converted = currentSO2 * (conversion / 100);
           currentSO2 -= so2Converted;
           overallConversion = ((so2Percent - currentSO2) / so2Percent) * 100;
-          
+
           passConversions[`pass${passNumber}`] = {
             conversion: conversion.toFixed(2),
             overall: overallConversion.toFixed(2),
@@ -1178,7 +1257,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       // Calculate converter diameter using proper flow calculations
       // First, calculate gas flow in Nm³/h from plant rate
       const gasFlowNm3h = calculateGasFlowFromPlantRate(plantRate, so2Percent);
-      
+
       // Calculate reactor flow and diameter
       const reactorFlowResult = calculateReactorFlow({
         gasFlowNm3h,
@@ -1187,7 +1266,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         pBarometricAtm: pBarr,
         targetVelocityFPM: pass1InletVelocity
       });
-      
+
       const converterDiameterFt = reactorFlowResult.reactorDiameterFt || 0;
       const converterDiameterM = reactorFlowResult.reactorDiameterM || 0;
 
@@ -1222,7 +1301,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const bedDepthPercentages = [0, 25, 50, 75, 100];
       const passInletTemps = [pass1InletTemp, pass2InletTemp, pass3InletTemp, pass4InletTemp];
       const passInletPresArr = [pass1InletPres, pass2InletPres, pass3InletPres, pass4InletPres];
-      
+
       // Calculate bed depth using proper geometry: Depth = Volume / (π/4 × Diameter²)
       // Volume in liters, diameter in feet. 1 liter = 0.0353147 cubic feet
       const estimateBedDepthFt = (volumeLiters: number, diameterFt: number): number => {
@@ -1230,21 +1309,21 @@ Be professional, concise, and helpful. If asked about features not yet implement
         const crossSectionFt2 = (Math.PI / 4) * diameterFt * diameterFt;  // π/4 × D²
         return volumeFt3 / crossSectionFt2;  // Depth = Volume / Cross-sectional Area
       };
-      
+
       // Extract inlet compositions from Python RK4 results (which now include IPAT SO3 removal)
       interface ExtendedSegmentResult extends SegmentResult {
         y_inlet?: { SO2: number; SO3: number; O2: number; N2: number; CO2: number };
         ipat_data?: { applied_after_pass: number; so3_removal_pct: number; y_before: any; y_after: any };
       }
-      
+
       const getPassInletComposition = (passNumber: number, segmentResults: ExtendedSegmentResult[] | null): { so2: number; o2: number } | null => {
         if (!segmentResults) return null;
-        
+
         // Map pass number to first segment of that pass
         const segmentNames: Record<number, string> = { 1: 'Pass1-L1', 2: 'Pass2', 3: 'Pass3', 4: 'Pass4-L1' };
         const segName = segmentNames[passNumber];
         const seg = segmentResults.find(s => s.name === segName);
-        
+
         if (seg?.y_inlet) {
           // Convert from mole fraction to percent
           return {
@@ -1254,14 +1333,14 @@ Be professional, concise, and helpful. If asked about features not yet implement
         }
         return null;
       };
-      
+
       // Calculate profiles for each pass using Python RK4 results when available
       const passProfiles: any = {};
       let passInletSO2 = so2Percent;
       let passInletO2 = o2Percent || 11.0;
-      
+
       const passKeys = ['pass1', 'pass2', 'pass3', 'pass4'] as const;
-      
+
       // Get actual catalyst volumes in liters from the loading matrix (not the L/STPD ratios)
       const passVolumesLiters = [
         catalystLoadingResult.matrix[0][2],  // Pass 1 total liters
@@ -1269,7 +1348,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         catalystLoadingResult.matrix[2][2],  // Pass 3 total liters
         catalystLoadingResult.matrix[3][2],  // Pass 4 total liters
       ];
-      
+
       passes.forEach((pass, index) => {
         const passNumber = index + 1;
         const passKey = passKeys[index];
@@ -1279,14 +1358,14 @@ Be professional, concise, and helpful. If asked about features not yet implement
         // Use actual catalyst volume in liters from matrix, not L/STPD ratio
         const passVolumeLiters = passVolumesLiters[index];
         const bedTotalDepthFt = estimateBedDepthFt(passVolumeLiters, converterDiameter);
-        
+
         // Get temperature and conversion data from Python RK4 results if available
         const pythonPass = passResults ? passResults[passKey] : null;
         const hasRK4Data = pythonPass && pythonPass.T_profile && pythonPass.T_profile.length > 0;
-        
+
         // Get pass-level conversion from passConversions
         const passConv = parseFloat(passConversions[`pass${passNumber}`]?.conversion || "50");
-        
+
         // Get inlet composition from Python RK4 results (includes IPAT SO3 removal)
         const rk4InletComp = getPassInletComposition(passNumber, pythonResults?.segmentResults as ExtendedSegmentResult[] || null);
         if (rk4InletComp) {
@@ -1294,26 +1373,26 @@ Be professional, concise, and helpful. If asked about features not yet implement
           passInletSO2 = rk4InletComp.so2;
           passInletO2 = rk4InletComp.o2;
         }
-        
+
         const profileData: any[] = [];
-        
+
         bedDepthPercentages.forEach((depthPercent, depthIdx) => {
           const fraction = depthPercent / 100;
-          
+
           let temperature: number;
           let overallConvAtPoint: number;
           let bedConversion: number;
-          
+
           if (hasRK4Data) {
             // Use Python RK4 profile data - interpolate at the depth percentage
             const profileLen = pythonPass.T_profile.length;
             const profileIdx = Math.min(Math.floor(fraction * (profileLen - 1)), profileLen - 1);
-            
+
             temperature = pythonPass.T_profile[profileIdx];
-            
+
             // X_profile is already in percentage (overall conversion)
             overallConvAtPoint = pythonPass.X_profile[profileIdx];
-            
+
             // Per-pass bed conversion = what fraction of SO2 entering this pass was converted
             // Formula: (overall_at_point - inlet_overall) / (1 - inlet_overall/100) * 100
             const inletConv = pythonPass.inletConversion;
@@ -1328,31 +1407,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
             // Fallback: sigmoidal profile with simplified temp rise
             const conversionFraction = fraction === 0 ? 0 : (1 - Math.exp(-3 * fraction)) / (1 - Math.exp(-3));
             bedConversion = passConv * conversionFraction;
-            
+
             // Use proper adiabatic temperature rise formula: ~200-230°C for ~70% conversion in Pass 1
             // ΔT = (−ΔHrxn × ySO2_inlet × ΔX) / Cp_mix
             // Approximate: ~3°C per 1% conversion for typical converter gas
             const tempRisePerPercent = 3.0;
             const tempRise = bedConversion * tempRisePerPercent;
             temperature = inletTemp + tempRise;
-            
+
             // Overall conversion at this point
             const so2ConvertedInBed = passInletSO2 * (bedConversion / 100);
             const so2AtPoint = passInletSO2 - so2ConvertedInBed;
             overallConvAtPoint = ((so2Percent - so2AtPoint) / so2Percent) * 100;
           }
-          
+
           // Calculate other properties using the correct inlet values (with IPAT adjustment)
           const so2ConvertedInBed = passInletSO2 * (bedConversion / 100);
           const so2AtPoint = passInletSO2 - so2ConvertedInBed;
           const o2Consumed = so2ConvertedInBed * 0.5;
           const o2AtPoint = Math.max(0, passInletO2 - o2Consumed);
-          
+
           const pressureDropTotal = pressureDrops[`pass${passNumber}`]?.inWC || 1.0;
           const pressureAtPoint = inletPres - (pressureDropTotal * fraction);
           const bedDepthFt = bedTotalDepthFt * fraction;
           const velocityAtPoint = baseVelocity * (1 + fraction * 0.02);
-          
+
           profileData.push({
             depthPercent,
             temperature: parseFloat(temperature.toFixed(1)),
@@ -1365,9 +1444,9 @@ Be professional, concise, and helpful. If asked about features not yet implement
             velocity: parseFloat(velocityAtPoint.toFixed(1))
           });
         });
-        
+
         passProfiles[`pass${passNumber}`] = profileData;
-        
+
         // Update inlet values for next pass (only if not using RK4 data)
         if (!rk4InletComp) {
           const so2ConvertedThisPass = passInletSO2 * (passConv / 100);
@@ -1382,51 +1461,51 @@ Be professional, concise, and helpful. If asked about features not yet implement
       // ========================================
       // Constants
       const MW_SO2 = 64.066; // lb/lbmol (molecular weight of SO2)
-      
+
       // Input mole fractions (convert from percent to fraction)
       const y_SO2 = so2Percent / 100;   // e.g., 0.113
       const y_SO3 = so3Percent / 100;   // e.g., 0.002
       const y_O2 = o2Percent / 100;     // e.g., 0.095
-      
+
       // Overall conversion (fraction)
       const X_Overall = overallConversion / 100; // e.g., 0.9985
-      
+
       // Calculate initial total flow F_FT_o (lbmol/hr) from plant rate
       // 1 STPD H2SO4 = 2000 lb/day / 98 lb/lbmol = 20.408 lbmol H2SO4/day
       // Each lbmol SO2 produces 1 lbmol H2SO4, so we need 20.408 lbmol SO2/day per STPD
       // Per hour: 20.408 / 24 = 0.8503 lbmol SO2/hr per STPD
       const SO2_lbmol_hr_per_STPD = (2000 / 98) / 24; // ~0.8503
       const F_SO2_o = plantRate * SO2_lbmol_hr_per_STPD; // lbmol/hr SO2 in
-      
+
       // Total flow calculated from SO2 flow and inlet mole fraction
       const F_FT_o = y_SO2 > 0 ? F_SO2_o / y_SO2 : 0; // lbmol/hr total
-      
+
       // Component flows at inlet (lbmol/hr)
       const F_SO3_o = y_SO3 * F_FT_o;
       const F_O2_o = y_O2 * F_FT_o;
-      
+
       // Flows removed via reaction (lbmol/hr)
       const F_SO2_rem = F_SO2_o * X_Overall; // SO2 converted
       const F_SO3_rem = F_SO3_o;              // SO3 at inlet (passes through or gets absorbed)
       const F_O2_rem = F_SO2_o * X_Overall * 0.5; // O2 consumed (stoichiometry: SO2 + 0.5 O2 -> SO3)
-      
+
       // Final flows (lbmol/hr) - clamped to zero to prevent negative values if X_Overall rounds above 1.0
       const F_FT_f = Math.max(0, F_FT_o - F_SO2_rem - F_SO3_rem - F_O2_rem); // Total exit flow
       const F_SO2_f = Math.max(0, F_SO2_o - F_SO2_rem); // Unreacted SO2 exit flow
-      
+
       // Mass flow of SO2 in exit (lb/day)
       const m_SO2_f_lb_day = F_SO2_f * MW_SO2 * 24; // lbmol/hr * lb/lbmol * hr/day
-      
+
       // OUTPUT 1: Emissions (lb SO2 / ST Acid) = m_SO2_f / Plant Rate
       const emissionsLbSO2ST = plantRate > 0 ? (m_SO2_f_lb_day / plantRate).toFixed(2) : "0.00";
-      
+
       // OUTPUT 2: Emissions (Kg SO2 / MT Acid) = (m_SO2_f / 2.2046) / (Plant Rate * 1.1023)
       // This is the industry-standard formula as specified by the user
       // - m_SO2_f / 2.2046 converts lb to kg (1 lb = 0.4536 kg, 1 kg = 2.2046 lb)
       // - The factor 1.1023 is the formula constant from the user's specification
       const m_SO2_f_kg_day = m_SO2_f_lb_day / 2.2046;
       const emissionsKgSO2MT = plantRate > 0 ? (m_SO2_f_kg_day / (plantRate * 1.1023)).toFixed(2) : "0.00";
-      
+
       // OUTPUT 3: Emissions (ppmv SO2) = (F_SO2_f / F_FT_f) * 1,000,000
       const emissionsPpmv = F_FT_f > 0 ? Math.round((F_SO2_f / F_FT_f) * 1000000).toString() : "0";
 
@@ -1477,67 +1556,67 @@ Be professional, concise, and helpful. If asked about features not yet implement
   });
 
   // ===== X-T DIAGRAM ENDPOINT (Python RK4 Solver) =====
-  
+
   app.post('/api/catalytic-reactor-xt-diagram', async (req: Request, res: Response) => {
     try {
       const inputData = req.body;
-      
+
       // Spawn Python process to run the simulation
       const pythonScriptPath = path.join(process.cwd(), 'server', 'python', 'main.py');
       const pythonProcess = spawn('python3', [pythonScriptPath], {
         cwd: path.join(process.cwd(), 'server', 'python'),
       });
-      
+
       let stdout = '';
       let stderr = '';
-      
+
       // Send input data as JSON to stdin
       pythonProcess.stdin.write(JSON.stringify(inputData));
       pythonProcess.stdin.end();
-      
+
       pythonProcess.stdout.on('data', (data) => {
         stdout += data.toString();
       });
-      
+
       pythonProcess.stderr.on('data', (data) => {
         stderr += data.toString();
       });
-      
+
       pythonProcess.on('close', (code) => {
         if (code !== 0) {
           console.error('Python process error:', stderr);
-          return res.status(500).json({ 
-            success: false, 
+          return res.status(500).json({
+            success: false,
             error: 'Python simulation failed',
-            details: stderr 
+            details: stderr
           });
         }
-        
+
         try {
           const result = JSON.parse(stdout);
           res.json(result);
         } catch (parseError) {
           console.error('Failed to parse Python output:', stdout, parseError);
-          res.status(500).json({ 
-            success: false, 
-            error: 'Failed to parse simulation results' 
+          res.status(500).json({
+            success: false,
+            error: 'Failed to parse simulation results'
           });
         }
       });
-      
+
       pythonProcess.on('error', (err) => {
         console.error('Failed to start Python process:', err);
-        res.status(500).json({ 
-          success: false, 
-          error: 'Failed to start simulation process' 
+        res.status(500).json({
+          success: false,
+          error: 'Failed to start simulation process'
         });
       });
-      
+
     } catch (error) {
       console.error('X-T diagram simulation error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Failed to run X-T diagram simulation' 
+        error: 'Failed to run X-T diagram simulation'
       });
     }
   });
@@ -1548,18 +1627,18 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.post('/api/catalyst-parameters', async (req: Request, res: Response) => {
     try {
       const catalysts = req.body;
-      
+
       if (!catalysts || typeof catalysts !== 'object') {
         return res.status(400).json({ message: "Invalid catalyst data" });
       }
 
       const paramsToSave = [];
       const errors: string[] = [];
-      
+
       for (const [name, data] of Object.entries(catalysts)) {
         // Validate using shared Zod schema
         const validation = catalystParameterApiSchema.safeParse(data);
-        
+
         if (!validation.success) {
           // Collect all errors for this catalyst
           for (const issue of validation.error.issues) {
@@ -1584,18 +1663,18 @@ Be professional, concise, and helpful. If asked about features not yet implement
       }
 
       if (errors.length > 0) {
-        return res.status(400).json({ 
-          message: "Validation failed", 
-          errors 
+        return res.status(400).json({
+          message: "Validation failed",
+          errors
         });
       }
 
       const savedParams = await storage.upsertManyCatalystParameters(paramsToSave);
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: "Catalyst parameters saved successfully",
-        count: savedParams.length 
+        count: savedParams.length
       });
     } catch (error) {
       console.error("Catalyst parameters save error:", error);
@@ -1710,7 +1789,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
     try {
       const vars = await storage.getAllProcessVariables();
       const cases = await storage.getAllProcessVariableCaseColumns();
-      
+
       // Default case columns if none exist
       const defaultCases = [
         { caseId: "case1", name: "Case 1", description: "PV_2480 STPD - Clean", sortOrder: 0 },
@@ -1718,14 +1797,14 @@ Be professional, concise, and helpful. If asked about features not yet implement
         { caseId: "case3", name: "Case 3", description: "1240 STPD – Summer – Clean – 50% Turndown", sortOrder: 2 },
         { caseId: "case4", name: "Case 4", description: "Start-Up: Summer – Clean", sortOrder: 3 },
       ];
-      
+
       // Transform cases for frontend format
       const casesForFrontend = (cases.length > 0 ? cases : defaultCases).map(c => ({
         id: c.caseId,
         name: c.name,
         description: c.description,
       }));
-      
+
       // Transform variables - ensure cases is a proper object
       const varsForFrontend = vars.map(v => ({
         count: v.count,
@@ -1733,7 +1812,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         description: v.description,
         cases: typeof v.cases === 'object' && v.cases !== null ? v.cases : {},
       }));
-      
+
       res.json({ variables: varsForFrontend, cases: casesForFrontend });
     } catch (error) {
       console.error("Process variables fetch error:", error);
@@ -1745,11 +1824,11 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.post('/api/process-variables', async (req: Request, res: Response) => {
     try {
       const { variables, cases } = req.body;
-      
+
       if (!Array.isArray(variables)) {
         return res.status(400).json({ message: "Variables must be an array" });
       }
-      
+
       // Sanitize and save variables with dynamic cases
       const sanitizedVars = variables.map((v: any) => ({
         count: String(v.count || ''),
@@ -1758,7 +1837,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         cases: typeof v.cases === 'object' && v.cases !== null ? v.cases : {},
       }));
       const savedVars = await storage.upsertProcessVariables(sanitizedVars);
-      
+
       // Save case columns if provided
       if (Array.isArray(cases) && cases.length > 0) {
         const sanitizedCases = cases.map((c: any, index: number) => ({
@@ -1769,7 +1848,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         }));
         await storage.upsertProcessVariableCaseColumns(sanitizedCases);
       }
-      
+
       res.json({ success: true, count: savedVars.length });
     } catch (error) {
       console.error("Process variables save error:", error);
@@ -1782,7 +1861,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
     try {
       const vars = await storage.getAllSetpointVariables();
       const cases = await storage.getAllSetpointCaseColumns();
-      
+
       // Default case columns if none exist
       const defaultCases = [
         { caseId: "case1", name: "Case 1", description: "SP_2480 STPD - Clean", sortOrder: 0 },
@@ -1790,14 +1869,14 @@ Be professional, concise, and helpful. If asked about features not yet implement
         { caseId: "case3", name: "Case 3", description: "1240 STPD – Summer – Clean – 50% Turndown", sortOrder: 2 },
         { caseId: "case4", name: "Case 4", description: "Start-Up: Summer – Clean", sortOrder: 3 },
       ];
-      
+
       // Transform cases for frontend format
       const casesForFrontend = (cases.length > 0 ? cases : defaultCases).map(c => ({
         id: c.caseId,
         name: c.name,
         description: c.description,
       }));
-      
+
       // Transform variables - ensure cases is a proper object
       const varsForFrontend = vars.map(v => ({
         count: v.count,
@@ -1805,7 +1884,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         description: v.description,
         cases: typeof v.cases === 'object' && v.cases !== null ? v.cases : {},
       }));
-      
+
       res.json({ variables: varsForFrontend, cases: casesForFrontend });
     } catch (error) {
       console.error("Setpoint variables fetch error:", error);
@@ -1817,11 +1896,11 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.post('/api/setpoint-variables', async (req: Request, res: Response) => {
     try {
       const { variables, cases } = req.body;
-      
+
       if (!Array.isArray(variables)) {
         return res.status(400).json({ message: "Variables must be an array" });
       }
-      
+
       // Sanitize and save variables with dynamic cases
       const sanitizedVars = variables.map((v: any) => ({
         count: String(v.count || ''),
@@ -1830,7 +1909,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         cases: typeof v.cases === 'object' && v.cases !== null ? v.cases : {},
       }));
       const savedVars = await storage.upsertSetpointVariables(sanitizedVars);
-      
+
       // Save case columns if provided
       if (Array.isArray(cases) && cases.length > 0) {
         const sanitizedCases = cases.map((c: any, index: number) => ({
@@ -1841,7 +1920,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         }));
         await storage.upsertSetpointCaseColumns(sanitizedCases);
       }
-      
+
       res.json({ success: true, count: savedVars.length });
     } catch (error) {
       console.error("Setpoint variables save error:", error);
@@ -1855,8 +1934,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.get('/api/psychrometrics/status', async (req: Request, res: Response) => {
     res.json({
       configured: isWeatherServiceConfigured(),
-      message: isWeatherServiceConfigured() 
-        ? 'Weather service is ready' 
+      message: isWeatherServiceConfigured()
+        ? 'Weather service is ready'
         : 'OpenWeather API key not configured. Please set OPENWEATHER_API_KEY environment variable.'
     });
   });
@@ -1865,7 +1944,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.get('/api/psychrometrics/current', async (req: Request, res: Response) => {
     try {
       const { zipCode, countryCode } = req.query;
-      
+
       // Validate request
       const validation = weatherRequestSchema.safeParse({
         zipCode: zipCode as string,
@@ -1887,15 +1966,15 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(data);
     } catch (error) {
       console.error('Psychrometrics API error:', error);
-      
+
       if (error instanceof WeatherServiceError) {
-        return res.status(error.statusCode).json({ 
-          message: error.message 
+        return res.status(error.statusCode).json({
+          message: error.message
         });
       }
 
-      res.status(500).json({ 
-        message: 'Failed to fetch psychrometric data' 
+      res.status(500).json({
+        message: 'Failed to fetch psychrometric data'
       });
     }
   });
@@ -1904,7 +1983,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.get('/api/psychrometrics/history', async (req: Request, res: Response) => {
     try {
       const { zipCode, countryCode, daysBack } = req.query;
-      
+
       const validation = weatherHistoryRequestSchema.safeParse({
         zipCode: zipCode as string,
         countryCode: (countryCode as string) || 'US',
@@ -1927,15 +2006,15 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(data);
     } catch (error) {
       console.error('Historical psychrometrics API error:', error);
-      
+
       if (error instanceof WeatherServiceError) {
-        return res.status(error.statusCode).json({ 
-          message: error.message 
+        return res.status(error.statusCode).json({
+          message: error.message
         });
       }
 
-      res.status(500).json({ 
-        message: 'Failed to fetch historical data' 
+      res.status(500).json({
+        message: 'Failed to fetch historical data'
       });
     }
   });
@@ -1949,7 +2028,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         return res.status(400).json({ message: 'Invalid case number. Must be 1, 2, 3, or 4.' });
       }
       const whichCase = parsedCase as 1 | 2 | 3 | 4;
-      
+
       // Load process variables from database and transform to PvRow format
       const rawProcessVariables = await storage.getAllProcessVariables();
       const processVariables = rawProcessVariables.map(pv => ({
@@ -1958,7 +2037,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         description: pv.description,
         cases: (typeof pv.cases === 'object' && pv.cases !== null ? pv.cases : {}) as Record<string, string>,
       }));
-      
+
       // Check if we need realtime data by looking for "Realtime" in the selected case
       let psychroData = null;
       const caseKey = `case${whichCase}`;
@@ -1966,7 +2045,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
         const cellValue = (pv.cases[caseKey] || '').toLowerCase();
         return cellValue.includes('realtime');
       });
-      
+
       if (needsRealtime) {
         try {
           psychroData = await getCurrentPsychrometrics(zipCode as string, countryCode as string);
@@ -1974,7 +2053,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
           console.warn('Failed to fetch realtime psychrometrics, using defaults:', err);
         }
       }
-      
+
       // Resolve realtime values in process variables
       const { resolveRealtimePV, extractPvValues } = await import('./realtime/resolveProcessVariables');
       const resolvedPVs = await resolveRealtimePV({
@@ -1982,13 +2061,13 @@ Be professional, concise, and helpful. If asked about features not yet implement
         whichCase,
         psychroData,
       });
-      
+
       // Extract the values we need for stream calculations
       const pvValues = extractPvValues(resolvedPVs, whichCase);
-      
+
       // Determine plant condition from case description
       const plantCondition = whichCase === 2 || whichCase === 4 ? 'dirty' : 'clean';
-      
+
       // Call Python calculator
       const pythonInput = {
         ambient_pressure_atm: pvValues.ambientPressure_atm,
@@ -1998,23 +2077,23 @@ Be professional, concise, and helpful. If asked about features not yet implement
         filter_dp_inwc: pvValues.filterDp_inwc,
         plant_condition: plantCondition,
       };
-      
+
       const pythonScriptPath = path.join(process.cwd(), 'server', 'python', 'streams_1_to_4.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath, JSON.stringify(pythonInput)]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdout.on('data', (data: Buffer) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data: Buffer) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code: number) => {
           if (code !== 0) {
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
@@ -2027,13 +2106,13 @@ Be professional, concise, and helpful. If asked about features not yet implement
           }
         });
       });
-      
+
       res.json({
         streams: result,
         inputs: pythonInput,
         resolvedPVs: resolvedPVs.slice(0, 4), // Return first 4 PVs for debugging
       });
-      
+
     } catch (error) {
       console.error('Material balance streams 1-4 error:', error);
       res.status(500).json({
@@ -2078,31 +2157,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Run Python compressor calculator
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'compressor_calculator.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python compressor calculator error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2111,7 +2190,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse compressor simulation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2125,8 +2204,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Compressor simulation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Compressor simulation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Compressor simulation failed"
       });
     }
   });
@@ -2168,31 +2247,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Run Python sulfur furnace calculator
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_furnace_calc.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python sulfur furnace calculator error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2201,7 +2280,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse sulfur furnace simulation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2215,8 +2294,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Sulfur furnace simulation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Sulfur furnace simulation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Sulfur furnace simulation failed"
       });
     }
   });
@@ -2226,20 +2305,20 @@ Be professional, concise, and helpful. If asked about features not yet implement
     try {
       const pythonPath = path.join(import.meta.dirname, 'python', 'compressor_calculator.py');
       const tsxPath = path.join(import.meta.dirname, '..', 'client', 'src', 'pages', 'unit-operation', 'main-compressor.tsx');
-      
+
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', 'attachment; filename=compressor-codes.zip');
-      
+
       const archive = archiver('zip', { zlib: { level: 9 } });
       archive.pipe(res);
-      
+
       if (fs.existsSync(pythonPath)) {
         archive.file(pythonPath, { name: 'compressor_calculator.py' });
       }
       if (fs.existsSync(tsxPath)) {
         archive.file(tsxPath, { name: 'main-compressor.tsx' });
       }
-      
+
       await archive.finalize();
     } catch (error) {
       console.error('Download error:', error);
@@ -2251,14 +2330,14 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.post('/api/drying-tower-simulation', async (req: Request, res: Response) => {
     try {
       const { fcv_pos, tcv_pos, acid_flow_final, cooler_k, pump_a, pump_b, pump_c,
-              elevation_diff, pipe_dp, cv_fcv_max, cv_tcv_max, fluid_sg, pump_inlet_head,
-              fcv_profile, bypass_profile, fcv_params, bypass_params } = req.body;
+        elevation_diff, pipe_dp, cv_fcv_max, cv_tcv_max, fluid_sg, pump_inlet_head,
+        fcv_profile, bypass_profile, fcv_params, bypass_params } = req.body;
 
       // Validate required fields
       if (fcv_pos === undefined || tcv_pos === undefined || acid_flow_final === undefined ||
-          cooler_k === undefined || pump_a === undefined || pump_b === undefined ||
-          pump_c === undefined || elevation_diff === undefined || pipe_dp === undefined ||
-          cv_fcv_max === undefined || cv_tcv_max === undefined || fluid_sg === undefined) {
+        cooler_k === undefined || pump_a === undefined || pump_b === undefined ||
+        pump_c === undefined || elevation_diff === undefined || pipe_dp === undefined ||
+        cv_fcv_max === undefined || cv_tcv_max === undefined || fluid_sg === undefined) {
         return res.status(400).json({ message: "Missing required hydraulic input parameters" });
       }
 
@@ -2284,9 +2363,9 @@ Be professional, concise, and helpful. If asked about features not yet implement
       };
 
       // Validate numeric inputs (skip string fields)
-      const numericFields = ['fcv_pos', 'tcv_pos', 'acid_flow_final', 'cooler_k', 'pump_a', 
-                            'pump_b', 'pump_c', 'elevation_diff', 'pipe_dp', 'cv_fcv_max', 
-                            'cv_tcv_max', 'fluid_sg', 'pump_inlet_head'];
+      const numericFields = ['fcv_pos', 'tcv_pos', 'acid_flow_final', 'cooler_k', 'pump_a',
+        'pump_b', 'pump_c', 'elevation_diff', 'pipe_dp', 'cv_fcv_max',
+        'cv_tcv_max', 'fluid_sg', 'pump_inlet_head'];
       for (const key of numericFields) {
         const val = (pythonInput as Record<string, any>)[key];
         if (typeof val === 'number' && isNaN(val)) {
@@ -2296,31 +2375,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Run Python drying tower solver
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'drying_tower_solver.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python drying tower solver error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2329,7 +2408,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse drying tower simulation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2343,8 +2422,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Drying tower simulation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Drying tower simulation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Drying tower simulation failed"
       });
     }
   });
@@ -2361,31 +2440,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Run Python drying tower calculator
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'drying_tower_calc.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python drying tower calculator error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2394,7 +2473,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse drying tower calculation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2408,8 +2487,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Drying tower calculation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Drying tower calculation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Drying tower calculation failed"
       });
     }
   });
@@ -2426,31 +2505,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Run Python IPAT calculator
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'ipat_calc.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python IPAT calculator error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2459,7 +2538,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse IPAT calculation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2473,8 +2552,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('IPAT calculation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "IPAT calculation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "IPAT calculation failed"
       });
     }
   });
@@ -2491,31 +2570,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Run Python FAT calculator
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'fat_calc.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python FAT calculator error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2524,7 +2603,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse FAT calculation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2538,8 +2617,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('FAT calculation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "FAT calculation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "FAT calculation failed"
       });
     }
   });
@@ -2555,32 +2634,32 @@ Be professional, concise, and helpful. If asked about features not yet implement
       }
 
       // Run Python pass solver
-      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'pass_solver.py');
-      
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'rk_solver.py');
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python pass solver error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2589,7 +2668,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse converter pass simulation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2603,8 +2682,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Converter pass simulation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Converter pass simulation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Converter pass simulation failed"
       });
     }
   });
@@ -2626,31 +2705,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
       };
 
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_static_solver.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python sulfur static solver error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2659,7 +2738,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse sulfur static simulation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2673,8 +2752,8 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Sulfur static simulation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Sulfur static simulation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Sulfur static simulation failed"
       });
     }
   });
@@ -2700,31 +2779,31 @@ Be professional, concise, and helpful. If asked about features not yet implement
       }
 
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_dynamic_solver.py');
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const pythonProcess = spawn('python3', [pythonScriptPath]);
-        
+
         let stdout = '';
         let stderr = '';
-        
+
         pythonProcess.stdin.write(JSON.stringify(pythonInput));
         pythonProcess.stdin.end();
-        
+
         pythonProcess.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         pythonProcess.stderr.on('data', (data) => {
           stderr += data.toString();
         });
-        
+
         pythonProcess.on('close', (code) => {
           if (code !== 0) {
             console.error('Python sulfur dynamic solver error:', stderr);
             reject(new Error(`Python process exited with code ${code}: ${stderr}`));
             return;
           }
-          
+
           try {
             const result = JSON.parse(stdout);
             resolve(result);
@@ -2733,7 +2812,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
             reject(new Error('Failed to parse sulfur dynamic simulation results'));
           }
         });
-        
+
         pythonProcess.on('error', (err) => {
           console.error('Failed to start Python process:', err);
           reject(err);
@@ -2747,14 +2826,14 @@ Be professional, concise, and helpful. If asked about features not yet implement
       res.json(result);
     } catch (error) {
       console.error('Sulfur dynamic simulation error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Sulfur dynamic simulation failed" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Sulfur dynamic simulation failed"
       });
     }
   });
 
   // ===== SULFUR PROCESS NODES ENDPOINTS =====
-  
+
   // Get sulfur process nodes by simulation type
   app.get('/api/sulfur-process-nodes/:simulationType', async (req: Request, res: Response) => {
     try {
@@ -2802,7 +2881,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   });
 
   // ===== HOMESCREEN LAYOUT ENDPOINTS =====
-  
+
   // Get homescreen layout positions for a screen
   app.get('/api/homescreen-layout/:screenId', async (req: Request, res: Response) => {
     try {
@@ -2832,7 +2911,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   });
 
   // ===== Controller Config Endpoints =====
-  
+
   // Get all controller configs
   app.get('/api/controller-configs', async (req: Request, res: Response) => {
     try {
@@ -2864,20 +2943,20 @@ Be professional, concise, and helpful. If asked about features not yet implement
     try {
       const { controllerId } = req.params;
       const { config, data } = req.body;
-      
+
       if (!controllerId || typeof controllerId !== 'string') {
         return res.status(400).json({ message: "Valid controllerId is required" });
       }
-      
+
       if (!config || typeof config !== 'object') {
         return res.status(400).json({ message: "Config object is required" });
       }
-      
+
       // Basic validation of config structure
       if (config.TAGNAME !== undefined && typeof config.TAGNAME !== 'string') {
         return res.status(400).json({ message: "Invalid config: TAGNAME must be a string" });
       }
-      
+
       const saved = await storage.upsertControllerConfig(controllerId, config, data);
       res.json(saved);
     } catch (error) {
@@ -2977,7 +3056,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.post('/api/inlet-air-filter-simulation', async (req: Request, res: Response) => {
     try {
       const { dryAirFlow, humidity, inletTemp, filterDp, barometric } = req.body;
-      
+
       const pythonInput = {
         dryAirFlow: parseFloat(dryAirFlow) || 87000,
         humidity: parseFloat(humidity) || 11.1,
@@ -3024,7 +3103,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.get('/api/gui-code/:module', (req: Request, res: Response) => {
     const { module } = req.params;
     const { action = 'view' } = req.query;
-    
+
     // Map module names to TSX GUI files
     const moduleFileMap: Record<string, string> = {
       'process-gas': 'client/src/delta-v/pages/pfd/PFD5001ProcessGas.tsx',
@@ -3033,19 +3112,19 @@ Be professional, concise, and helpful. If asked about features not yet implement
       'inlet-air-filter': 'client/src/delta-v/pages/unit-operations/inlet-air-filter.tsx',
       'catalyst': 'client/src/delta-v/pages/unit-operations/catalytic-converter.tsx',
     };
-    
+
     const relativePath = moduleFileMap[module];
     if (!relativePath) {
       return res.status(404).json({ message: 'Module not found' });
     }
-    
+
     const filePath = path.join(process.cwd(), relativePath);
     const filename = path.basename(relativePath);
-    
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     if (action === 'download') {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'text/plain');
@@ -3061,7 +3140,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.get('/api/python-code/:module', (req: Request, res: Response) => {
     const { module } = req.params;
     const { action = 'view' } = req.query;
-    
+
     // Map module names to Python files
     const moduleFileMap: Record<string, string> = {
       'process-gas': 'static_simulator.py',
@@ -3071,18 +3150,18 @@ Be professional, concise, and helpful. If asked about features not yet implement
       'inlet-air-filter': 'inlet_air_filter_calc.py',
       'catalyst': 'pass_solver.py',
     };
-    
+
     const filename = moduleFileMap[module];
     if (!filename) {
       return res.status(404).json({ message: 'Module not found' });
     }
-    
+
     const filePath = path.join(process.cwd(), 'server', 'python', filename);
-    
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     if (action === 'download') {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'text/x-python');
@@ -3097,7 +3176,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   // Python file download endpoint
   app.get('/api/download-python/:filename', (req: Request, res: Response) => {
     const { filename } = req.params;
-    
+
     // Whitelist of allowed Python files for security
     const allowedFiles = [
       'drying_tower_calc.py',
@@ -3117,17 +3196,17 @@ Be professional, concise, and helpful. If asked about features not yet implement
       'inlet_air_filter_gui.py',
       'static_simulator.py'
     ];
-    
+
     if (!allowedFiles.includes(filename)) {
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     const filePath = path.join(process.cwd(), 'server', 'python', filename);
-    
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'text/x-python');
     res.sendFile(filePath);

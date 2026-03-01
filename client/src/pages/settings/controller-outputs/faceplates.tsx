@@ -1,7 +1,7 @@
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, LayoutGrid, Gauge, Radio, GitBranch, Bell, Monitor, Fan } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, Gauge, Radio, GitBranch, Bell, Monitor, Fan, BarChart3 } from 'lucide-react';
 
 interface FaceplateCategory {
   id: string;
@@ -18,6 +18,13 @@ const faceplateCategories: FaceplateCategory[] = [
     description: 'Main operator interface overview displaying plant-wide status, key process variables, and navigation to all process areas. Provides at-a-glance monitoring of critical parameters.',
     path: '/settings/controller-outputs/faceplates/home-screen',
     icon: Monitor,
+  },
+  {
+    id: 'kpi',
+    title: 'Key Performance Indicators',
+    description: 'Track and monitor critical plant performance metrics including conversion efficiency, production rates, energy consumption, and environmental compliance in real time.',
+    path: '/settings/controller-outputs/faceplates/kpi',
+    icon: BarChart3,
   },
   {
     id: 'rotating-equipment',

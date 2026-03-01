@@ -82,13 +82,21 @@ const TempSensor4827Faceplate3F = () => {
     }, 3000);
   };
 
-  const formatTime = (date: Date) => date.toLocaleTimeString('en-US', { hour12: false });
-  const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour12: false });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 deltav-grid-pattern">
       <div className="container mx-auto py-8 px-4">
-        <Link href="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827" className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6">
+        <Link
+          to="/settings/controller-outputs/faceplates/temp-sensor/1540-TI-4827"
+          className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-6"
+        >
           <ArrowLeft size={18} />
           <span>Back to 1540-TI-4827 Temperature Sensor</span>
         </Link>
@@ -139,11 +147,22 @@ const TempSensor4827Faceplate3F = () => {
                 <tbody className="font-mono">
                   {state.alarmLog.length === 0 ? (
                     <tr className="border-b border-border/30">
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No alarm history</td>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                        No alarm history
+                      </td>
                     </tr>
                   ) : (
                     state.alarmLog.map((alarm) => (
-                      <tr key={alarm.id} className={`border-b border-border/30 ${!alarm.acknowledged ? (alarm.priority === 'critical' ? 'bg-red-500/10' : 'bg-yellow-500/10') : ''}`}>
+                      <tr
+                        key={alarm.id}
+                        className={`border-b border-border/30 ${
+                          !alarm.acknowledged
+                            ? alarm.priority === 'critical'
+                              ? 'bg-red-500/10'
+                              : 'bg-yellow-500/10'
+                            : ''
+                        }`}
+                      >
                         <td className="px-4 py-2 text-muted-foreground">
                           <div>{formatTime(alarm.timestamp)}</div>
                           <div className="text-xs opacity-60">{formatDate(alarm.timestamp)}</div>
@@ -151,8 +170,15 @@ const TempSensor4827Faceplate3F = () => {
                         <td className="px-4 py-2 text-cyan-400">{alarm.tag}</td>
                         <td className="px-4 py-2">
                           <div className="flex items-center gap-2">
-                            {!alarm.acknowledged && <AlertTriangle size={14} className={alarm.priority === 'critical' ? 'text-red-400 animate-pulse' : 'text-yellow-400 animate-pulse'} />}
-                            <span className={alarm.priority === 'critical' ? 'text-red-400' : 'text-yellow-400'}>{alarm.alarmType}</span>
+                            {!alarm.acknowledged && (
+                              <AlertTriangle
+                                size={14}
+                                className={alarm.priority === 'critical' ? 'text-red-400 animate-pulse' : 'text-yellow-400 animate-pulse'}
+                              />
+                            )}
+                            <span className={alarm.priority === 'critical' ? 'text-red-400' : 'text-yellow-400'}>
+                              {alarm.alarmType}
+                            </span>
                             <span className="text-muted-foreground">- {alarm.alarmName}</span>
                           </div>
                         </td>
@@ -161,15 +187,29 @@ const TempSensor4827Faceplate3F = () => {
                           <span className="text-muted-foreground text-xs ml-1">(lim: {alarm.limit})</span>
                         </td>
                         <td className="px-4 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${alarm.priority === 'critical' ? 'bg-red-500/30 text-red-400' : 'bg-yellow-500/30 text-yellow-400'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              alarm.priority === 'critical'
+                                ? 'bg-red-500/30 text-red-400'
+                                : 'bg-yellow-500/30 text-yellow-400'
+                            }`}
+                          >
                             {alarm.priority.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
                           {alarm.acknowledged ? (
-                            <span className="text-emerald-400 flex items-center justify-center gap-1"><CheckCircle size={14} /><span className="text-xs">ACK</span></span>
+                            <span className="text-emerald-400 flex items-center justify-center gap-1">
+                              <CheckCircle size={14} />
+                              <span className="text-xs">ACK</span>
+                            </span>
                           ) : (
-                            <button onClick={() => handleAcknowledge(alarm.id)} className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs rounded transition-colors">ACK</button>
+                            <button
+                              onClick={() => handleAcknowledge(alarm.id)}
+                              className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-xs rounded transition-colors"
+                            >
+                              ACK
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -180,7 +220,11 @@ const TempSensor4827Faceplate3F = () => {
             </div>
 
             <div className="flex justify-center gap-4">
-              <button onClick={handleAcknowledgeAll} disabled={criticalCount + warningCount === 0} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/30 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+              <button
+                onClick={handleAcknowledgeAll}
+                disabled={criticalCount + warningCount === 0}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
                 <CheckCircle size={18} />
                 Acknowledge All
               </button>

@@ -1,0 +1,65 @@
+The screenshot shows two primary issues in your Replit workspace:
+
+1. **The Production Database is in read-only mode** by default, preventing execution of INSERT, UPDATE, or DELETE statements via the Playground/SQL editor.
+2. **Syntax error** reported when attempting to run the partial INSERT query.
+
+The login page at https://lac-ots.app/login loads successfully (a standard login form appears with no certificate warnings, security errors, or connection refusals visible), indicating the custom domain and SSL certificate are functioning correctly at present. The persistent 401 "Invalid email or password" during sign-in attempts therefore relates to application logic or data (e.g., missing/mismatched user records or password hashes in the production `users` table), not an HTTPS provisioning problem.
+
+### Fixing Read-Only Mode in the Production Database
+Replit intentionally restricts modifications to production databases to protect live data. The Agent and automatic schema changes do not apply directly to production; manual edits require explicit enabling.
+
+To enable editing (INSERT/UPDATE/DELETE) on the production database:
+
+1. In the Database panel, ensure you are viewing the **Production Database** (not the development one).
+2. Switch to the **My Data** tab (or **Data** view).
+3. Look for the **Edit** toggle/switch (often near the top-right, next to "Overview" / "Settings", or labeled as an "Enable Editing" button).
+4. Turn the **Edit** toggle **ON**. This unlocks write operations for the current session.
+5. The Playground/SQL editor should now allow running INSERT, UPDATE, and similar statements without read-only blocks.
+
+After enabling, re-run your SQL. Note that any changes are live and affect the published application immediately—exercise caution with production data.
+
+### Correcting the Syntax Error in Your INSERT Query
+The provided query fragment has multiple issues causing the "syntax error at end of input":
+
+- Missing or mismatched parentheses.
+- Trailing comma after the last VALUES row.
+- Incomplete comment placement.
+- The `hashed_password` value appears truncated/obscured with many `x` characters (ensure the actual bcrypt hash is complete and properly quoted).
+
+A corrected, complete version for 8 users (following the pattern you described) would resemble:
+
+```sql
+INSERT INTO users (username, email, first_name, last_name, hashed_password, created_at, updated_at)
+VALUES
+  ('admin', 'admin@lithiumamericas.com', 'Admin', 'User', '$2a$10$...your-full-bcrypt-hash-here...', NOW(), NOW()),
+  ('kevin', 'kevin.bryan@lithiumamericas.com', 'Kevin', 'Bryan', '$2a$10$...matching-hash...', NOW(), NOW()),
+  ('brent', 'brent.cosgrove@exp.com', 'Brent', 'Cosgrove', '$2a$10$...matching-hash...', NOW(), NOW()),
+  ('mickey', 'mickey.jones@lithiumamericas.com', 'Mickey', 'Jones', '$2a$10$...matching-hash...', NOW(), NOW()),
+  ('nathan', 'nathan.porter@exp.com', 'Nathan', 'Porter', '$2a$10$...matching-hash...', NOW(), NOW()),
+  -- Add the remaining 3 users here with the exact same pattern
+  ('user6', 'user6@example.com', 'First6', 'Last6', '$2a$10$...hash...', NOW(), NOW()),
+  ('user7', 'user7@example.com', 'First7', 'Last7', '$2a$10$...hash...', NOW(), NOW()),
+  ('user8', 'user8@example.com', 'First8', 'Last8', '$2a$10$...hash...', NOW(), NOW());
+```
+
+Key fixes applied:
+- All rows properly comma-separated.
+- No trailing comma after the final row.
+- `NOW()` used consistently for timestamps (PostgreSQL-compatible).
+- Hashes must be valid bcrypt strings (generated via your app's registration flow or a bcrypt tool; do not use placeholder text).
+
+Before running:
+- Replace placeholder hashes with real ones (all users can share the same hash for `TempPassword$1` if desired during testing).
+- Run in small batches (e.g., 1–2 rows first) to verify.
+- After insertion, confirm rows appear in the **users** table data view.
+
+### Next Steps for Login Failure
+Once records are inserted:
+1. Republish the deployment.
+2. Clear browser cache / use incognito mode.
+3. Attempt login with one of the inserted credentials (e.g., `nathan.porter@exp.com` / `TempPassword$1`).
+4. If 401 persists, check deployment logs (Publishing tab → Console) during the attempt for errors (e.g., DB query failures, bcrypt comparison issues, or session problems).
+
+If the **Edit** toggle is missing or does not enable writes, or if you encounter permission errors, consult Replit support via ask.replit.com (include screenshots of the Database panel and any error messages).
+
+This procedure should allow you to populate the production `users` table and test authentication successfully.

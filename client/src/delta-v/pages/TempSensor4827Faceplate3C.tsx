@@ -20,15 +20,15 @@ interface TrendDataPoint {
 const chartConfig = {
   pv: {
     label: 'PV',
-    color: 'hsl(45, 93%, 58%)', // amber
+    color: 'hsl(45, 93%, 58%)',
   },
   sp: {
     label: 'SP',
-    color: 'hsl(0, 0%, 100%)', // white
+    color: 'hsl(0, 0%, 100%)',
   },
   out: {
     label: 'OUT',
-    color: 'hsl(195, 80%, 50%)', // cyan
+    color: 'hsl(195, 80%, 50%)',
   },
 };
 
@@ -48,7 +48,6 @@ const TempSensor4827Faceplate3C = () => {
     });
   }, []);
 
-  // Add new data point every 2 seconds
   useEffect(() => {
     const addDataPoint = () => {
       const now = Date.now();
@@ -93,7 +92,6 @@ const TempSensor4827Faceplate3C = () => {
           <p className="text-muted-foreground mb-8">Faceplate 3C - Real-time process data trending (1 hour window)</p>
 
           <div className="space-y-6">
-            {/* Legend */}
             <div className="flex gap-6 mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-amber-400 rounded" />
@@ -109,7 +107,6 @@ const TempSensor4827Faceplate3C = () => {
               </div>
             </div>
 
-            {/* Chart */}
             <div className="h-80 bg-slate-950 rounded-lg border border-border/50 p-4">
               <ChartContainer config={chartConfig} className="h-full w-full">
                 <LineChart data={trendData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
@@ -157,7 +154,6 @@ const TempSensor4827Faceplate3C = () => {
               </ChartContainer>
             </div>
 
-            {/* Time scale labels */}
             <div className="grid grid-cols-5 gap-2 text-center text-sm text-muted-foreground">
               <span>-60 min</span>
               <span>-45 min</span>

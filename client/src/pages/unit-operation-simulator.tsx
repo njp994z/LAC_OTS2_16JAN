@@ -1,9 +1,16 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, FlaskConical, ArrowLeftRight, Droplets, Flame, Thermometer, Wind, Gauge, Waves, Zap, Fan, Snowflake, Fuel, Settings2, PipetteIcon, Layers, Factory } from "lucide-react";
+import { ArrowLeft, FlaskConical, ArrowLeftRight, Droplets, Flame, Thermometer, Wind, Gauge, Waves, Zap, Fan, Snowflake, Fuel, Settings2, PipetteIcon, Layers, Factory, BarChart3 } from "lucide-react";
 
 const unitOperations = [
+  {
+    id: "key-performance-parameters",
+    title: "Key Performance Parameters",
+    description: "Monitor and evaluate critical plant performance indicators including conversion efficiency, energy recovery, emission rates, and overall equipment effectiveness.",
+    path: "/unit-operation/key-performance-parameters",
+    icon: BarChart3
+  },
   {
     id: "converter-simulations",
     title: "Converter Simulations: Stand Alone, Static, and Dynamic",

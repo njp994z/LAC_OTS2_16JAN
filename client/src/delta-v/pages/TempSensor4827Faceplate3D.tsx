@@ -3,14 +3,13 @@ import { ArrowLeft, Settings2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PIDHxBypassConfig, defaultPIDHxBypassConfig } from '@/delta-v/types/pidHxBypassConfig';
 
-// Independent localStorage key for this controller
 const TEMP_SENSOR_4827_PID_CONFIG_KEY = 'temp_sensor_4827_pid_config';
 
 const TempSensor4827Faceplate3D = () => {
   const [config, setConfig] = useState<PIDHxBypassConfig>({
     ...defaultPIDHxBypassConfig,
     loop_tag: '1540-TI-4827',
-    service_desc: 'Pass 1 Catalyst Out',
+    service_desc: 'Pass 1 Catalyst Out A',
     eng_units: 'F',
   });
 
@@ -23,7 +22,7 @@ const TempSensor4827Faceplate3D = () => {
         setConfig({
           ...defaultPIDHxBypassConfig,
           loop_tag: '1540-TI-4827',
-          service_desc: 'Pass 1 Catalyst Out',
+          service_desc: 'Pass 1 Catalyst Out A',
           eng_units: 'F',
         });
       }
@@ -68,10 +67,8 @@ const TempSensor4827Faceplate3D = () => {
           </h1>
           <p className="text-muted-foreground mb-6">Faceplate 3D - Complete configuration overview from Faceplate 3A</p>
 
-          {/* Configuration Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             
-            {/* Loop Information */}
             <Section title="Loop Information" color="border-cyan-500/30">
               <ParamRow label="Loop Tag" value={config.loop_tag} />
               <ParamRow label="Service" value={config.service_desc} />
@@ -80,7 +77,6 @@ const TempSensor4827Faceplate3D = () => {
               <ParamRow label="Sample Time" value={config.sample_time_dt_s} unit="s" />
             </Section>
 
-            {/* Operating Point */}
             <Section title="Operating Point" color="border-amber-500/30">
               <ParamRow label="T_in0 (Inlet)" value={config.Tin0} unit="°F" />
               <ParamRow label="T_hx0 (HX Outlet)" value={config.Thx0} unit="°F" />
@@ -89,7 +85,6 @@ const TempSensor4827Faceplate3D = () => {
               <ParamRow label="u₀ (Output)" value={config.u0} unit="%" />
             </Section>
 
-            {/* PID Controller */}
             <Section title="PID Controller" color="border-cyan-500/30">
               <ParamRow label="Mode" value={config.mode} />
               <ParamRow label="Acting Direction" value={config.acting} />
@@ -98,7 +93,6 @@ const TempSensor4827Faceplate3D = () => {
               <ParamRow label="τD (Derivative)" value={config.tauD_s} unit="s" />
             </Section>
 
-            {/* Output Handling */}
             <Section title="Output Handling" color="border-cyan-500/30">
               <ParamRow label="Bias" value={config.u_bias} unit="%" />
               <ParamRow label="Output Min" value={config.u_min} unit="%" />
@@ -108,7 +102,6 @@ const TempSensor4827Faceplate3D = () => {
               <ParamRow label="Tracking" value={formatBool(config.tracking)} />
             </Section>
 
-            {/* Final Element */}
             <Section title="Final Element" color="border-green-500/30">
               <ParamRow label="Kpos (Positioner)" value={config.Kpos} />
               <ParamRow label="τ_pos (Positioner)" value={config.tau_pos_s} unit="s" />
@@ -117,7 +110,6 @@ const TempSensor4827Faceplate3D = () => {
               <ParamRow label="Characteristic" value={config.valve_characteristic} />
             </Section>
 
-            {/* Sensor */}
             <Section title="Sensor" color="border-blue-500/30">
               <ParamRow label="Ksens (Gain)" value={config.Ksens} />
               <ParamRow label="τ_sens (Time Const)" value={config.tau_sens_s} unit="s" />
@@ -127,7 +119,6 @@ const TempSensor4827Faceplate3D = () => {
 
           </div>
 
-          {/* Block Diagram Summary */}
           <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
             <h3 className="text-sm font-semibold text-slate-300 mb-2">Control Loop Structure</h3>
             <div className="font-mono text-xs text-cyan-400 overflow-x-auto">

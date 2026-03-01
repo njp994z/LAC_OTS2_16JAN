@@ -1,11 +1,10 @@
-# rk_solver.py
-# Plug-flow SO2->SO3 adiabatic bed + X–T diagram (equilibrium, operating line, max-rate curve)
-
-from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, List, Tuple
 import math
 import numpy as np
+import sys
+import json
+
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 
 # =============================================================================
@@ -62,6 +61,78 @@ CATALYST_DATABASE: Dict[str, CatalystProperties] = {
         diameter_mm=11.0,
         sphericity=0.70,
         bulk_density_kg_m3=865.0
+    ),
+    "MECS CS-120": CatalystProperties(
+        name="MECS CS-120",
+        cesium_promoted=True,
+        shape="Ring",
+        void_fraction=0.45,
+        activity_fresh=1.05,
+        ignition_temp_c=385.0,
+        operating_temp_c=400.0,
+        diameter_mm=12.0,
+        sphericity=0.75,
+        bulk_density_kg_m3=460.0
+    ),
+    "MECS LP-120": CatalystProperties(
+        name="MECS LP-120",
+        cesium_promoted=True,
+        shape="Ring",
+        void_fraction=0.48,
+        activity_fresh=1.15,
+        ignition_temp_c=360.0,
+        operating_temp_c=380.0,
+        diameter_mm=12.0,
+        sphericity=0.75,
+        bulk_density_kg_m3=420.0
+    ),
+    "Topsoe VK38": CatalystProperties(
+        name="Topsoe VK38",
+        cesium_promoted=False,
+        shape="Daisy",
+        void_fraction=0.44,
+        activity_fresh=1.08,
+        ignition_temp_c=380.0,
+        operating_temp_c=420.0,
+        diameter_mm=10.0,
+        sphericity=0.80,
+        bulk_density_kg_m3=470.0
+    ),
+    "Topsoe VK59": CatalystProperties(
+        name="Topsoe VK59",
+        cesium_promoted=True,
+        shape="Daisy",
+        void_fraction=0.46,
+        activity_fresh=1.12,
+        ignition_temp_c=365.0,
+        operating_temp_c=390.0,
+        diameter_mm=9.0,
+        sphericity=0.80,
+        bulk_density_kg_m3=450.0
+    ),
+    "BASF O4-115": CatalystProperties(
+        name="BASF O4-115",
+        cesium_promoted=False,
+        shape="Ring",
+        void_fraction=0.43,
+        activity_fresh=1.06,
+        ignition_temp_c=382.0,
+        operating_temp_c=410.0,
+        diameter_mm=11.5,
+        sphericity=0.75,
+        bulk_density_kg_m3=465.0
+    ),
+    "BASF O4-116": CatalystProperties(
+        name="BASF O4-116",
+        cesium_promoted=True,
+        shape="Ring",
+        void_fraction=0.45,
+        activity_fresh=1.14,
+        ignition_temp_c=362.0,
+        operating_temp_c=385.0,
+        diameter_mm=10.0,
+        sphericity=0.75,
+        bulk_density_kg_m3=455.0
     ),
 }
 
@@ -645,3 +716,176 @@ def xt_diagram_data(
         "X_rmax_pct": X_grid * 100.0,
         "rmax": np.array(rmax),
     }
+
+
+# =============================================================================
+# Main entry point for CLI usage (API calls)
+# =============================================================================
+
+def main():
+    """
+    Entry point for API calls from the UI.
+    Reads JSON from stdin, runs a pass simulation, and prints JSON results.
+    """
+    try:
+        # Read JSON input from stdin
+        input_data = json.loads(sys.stdin.read())
+        
+        # Extract parameters (matching pass_solver.py API)
+        inlet_T_C = float(input_data.get("inlet_T_C", 390.0))
+        inlet_P_inwc = float(input_data.get("inlet_P_inwc", 150.0))
+        inlet_so2_pct = float(input_data.get("inlet_so2_pct", 11.3))
+        inlet_o2_pct = float(input_data.get("inlet_o2_pct", 9.5))
+        inlet_so3_pct = float(input_data.get("inlet_so3_pct", 0.0))
+        inlet_total_scfm = float(input_data.get("inlet_total_scfm", 150000.0))
+        diameter_ft = float(input_data.get("diameter_ft", 42.0))
+        catalyst_volume_liters = float(input_data.get("catalyst_volume_liters", 89200.0))
+        catalyst_name = input_data.get("catalyst_name", "MECS GR330")
+        barometric_psia = float(input_data.get("barometric_psia", 14.3))
+        activity_percent = float(input_data.get("activity_percent", 100.0))
+
+        # 1. Catalyst lookup
+        cat = get_catalyst(catalyst_name)
+
+        # 2. Gas composition
+        y0 = {
+            "SO2": inlet_so2_pct / 100.0,
+            "O2" : inlet_o2_pct  / 100.0,
+            "SO3": inlet_so3_pct / 100.0,
+            "N2" : (100.0 - inlet_so2_pct - inlet_o2_pct - inlet_so3_pct) / 100.0
+        }
+        # Normalize
+        s = sum(y0.values())
+        y0 = {k: v/s for k,v in y0.items()}
+
+        # 3. Flow conversion: SCFM -> lbmol/hr
+        # Standard basis: 379.48 scf/lbmol at 60F, 14.696 psia
+        FT0 = (inlet_total_scfm * 60.0) / 379.48
+
+        # 4. Pressure: Barr (psia) + Gauge (inwc) -> Abs (atm)
+        P_abs_psia = barometric_psia + (inlet_P_inwc / INWC_PER_PSI)
+        P_abs_atm = P_abs_psia / ATM_TO_PSIA
+
+        # 5. Build Bed Segment
+        seg = BedSegment(
+            name="Pass 1",
+            catalyst=cat,
+            liters=catalyst_volume_liters,
+            activity_percent=activity_percent,
+            Tin_C=inlet_T_C,
+            Pin_abs_atm=P_abs_atm,
+            FT0_lbmol_hr=FT0,
+            y0=y0,
+            n_steps=100
+        )
+
+        # 6. Run RK4 Solver
+        res = rk4_solve_segment(seg)
+
+        # 7. Post-process results for the UI (Bed Profile Table)
+        # We need 5 points (0, 25, 50, 75, 100%)
+        indices = [0, 25, 50, 75, 100]
+        
+        bed_depth_total_ft = (catalyst_volume_liters * L_TO_M3 * 35.3147) / (math.pi * (diameter_ft/2)**2)
+        
+        # Results to return
+        temps_C = [float(res.T_C[i]) for i in indices]
+        overall_conv_pct = [float(res.X[i] * 100.0) for i in indices]
+        
+        # Pressure drop (linear placeholder - can be improved with Ergun)
+        pressures_inwc = [inlet_P_inwc - (6.4 * i / 100.0) for i in indices]
+        
+        # Composition at each point
+        so2_pct_points = []
+        o2_pct_points = []
+        for X in res.X:
+            y = y_at_conversion(y0, X)
+            so2_pct_points.append(float(y["SO2"] * 100.0))
+            o2_pct_points.append(float(y["O2"] * 100.0))
+            
+        so2_pct = [so2_pct_points[i] for i in indices]
+        o2_pct = [o2_pct_points[i] for i in indices]
+
+        # Velocity (superficial ft/s)
+        # v = Q_actual / A
+        # Q_actual = n_total * R * T / P
+        # R = 10.731 psia-ft3/(lbmol-R)
+        velocities_fts = []
+        for i in indices:
+            Ti_C = res.T_C[i]
+            Xi = res.X[i]
+            # Adjust P for linear drop
+            Pi_abs_psia = P_abs_psia - (6.4 * i / 100.0) / INWC_PER_PSI
+            
+            # moles adjust due to reaction
+            ni_total = FT0 * (1.0 - 0.5 * y0["SO2"] * Xi) / 60.0 # lbmol/min
+            TR = (Ti_C + 273.15) * 9.0 / 5.0
+            ACFM = ni_total * 10.73 * TR / max(Pi_abs_psia, 1e-3)
+            vel = ACFM / (math.pi * (diameter_ft/2)**2) / 60.0
+            velocities_fts.append(float(vel))
+
+        # 8. Outlet Flows (Simulation Outputs Table)
+        X_final = res.X[-1]
+        y_final = y_at_conversion(y0, X_final)
+        total_final_lbmol_hr = FT0 * (1.0 - 0.5 * y0["SO2"] * X_final)
+        total_final_scfm = total_final_lbmol_hr * 379.48 / 60.0
+        
+        results = {
+            "bed_depths_ft": [float(bed_depth_total_ft * i / 100.0) for i in indices],
+            "temps_C": temps_C,
+            "temps_F": [float(t * 9/5 + 32) for t in temps_C],
+            "overall_conv_pct": overall_conv_pct,
+            "bed_conv_pct": [overall_conv_pct[i] - (overall_conv_pct[i-1] if i > 0 else 0) for i in range(len(indices))],
+            "pressures_inwc": pressures_inwc,
+            "velocities_fts": velocities_fts,
+            "so2_pct": so2_pct,
+            "o2_pct": o2_pct,
+            "bed_depth_total_ft": float(bed_depth_total_ft),
+            "catalyst_mass_kg": float(catalyst_volume_liters * L_TO_M3 * cat.bulk_density_kg_m3),
+            
+            "inlet": {
+                "SO2": round(inlet_total_scfm * y0["SO2"], 0),
+                "SO3": round(inlet_total_scfm * y0["SO3"], 0),
+                "O2" : round(inlet_total_scfm * y0["O2"], 0),
+                "N2" : round(inlet_total_scfm * y0["N2"], 0),
+                "H2O": 0,
+                "H2SO4": 0,
+                "TOTAL": round(inlet_total_scfm, 0),
+                "PRESSURE": round(inlet_P_inwc, 1),
+                "TEMPERATURE_F": round(inlet_T_C * 9/5 + 32, 0)
+            },
+            "outlet": {
+                "SO2": round(total_final_scfm * y_final["SO2"], 0),
+                "SO3": round(total_final_scfm * y_final["SO3"], 0),
+                "O2" : round(total_final_scfm * y_final["O2"], 0),
+                "N2" : round(total_final_scfm * y_final["N2"], 0),
+                "H2O": 0,
+                "H2SO4": 0,
+                "TOTAL": round(total_final_scfm, 0),
+                "PRESSURE": round(pressures_inwc[-1], 1),
+                "TEMPERATURE_F": round(res.T_C[-1] * 9/5 + 32, 0)
+            },
+            "catalyst_info": {
+                "name": cat.name,
+                "manufacturer": "N/A",
+                "activity": float(cat.activity_fresh),
+                "bulk_density_kg_m3": float(cat.bulk_density_kg_m3)
+            }
+        }
+
+        # 9. JSON Output
+        print(json.dumps({
+            "success": True,
+            "results": results
+        }))
+
+    except Exception as e:
+        print(json.dumps({
+            "success": False,
+            "error": str(e)
+        }))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

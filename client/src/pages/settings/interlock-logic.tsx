@@ -188,7 +188,7 @@ export default function InterlockLogic() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation('/simulation-settings')}
+                onClick={() => window.history.back()}
                 className="h-10 w-10 text-white/70 hover:text-white hover:bg-white/10"
                 data-testid="button-back"
               >

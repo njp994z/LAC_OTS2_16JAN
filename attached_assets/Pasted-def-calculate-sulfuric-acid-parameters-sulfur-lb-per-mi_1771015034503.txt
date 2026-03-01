@@ -1,0 +1,75 @@
+def calculate_sulfuric_acid_parameters(
+    sulfur_lb_per_min: float,          # lb S / min
+    mol_so2_tail_hr: float,            # lb-mol SO₂ / hr in final tail gas (stack)
+    mol_so3_tail_hr: float = 0.0,      # lb-mol SO₃ / hr in tail gas
+    mol_n2_tail_hr: float              # lb-mol N₂ / hr in tail gas (used for Pass 1)
+) -> dict:
+    """
+    Calculates key sulfuric acid plant parameters using hourly tail-gas flows.
+    Emissions = (mol_SO2_tail_hr × MW_SO2 × 24) / plant_rate_stpd
+    Comp Pass 1 uses N₂-based dry air back-calculation.
+    """
+    # Molecular weights (lb/lb-mol)
+    MW_S     = 32.065
+    MW_SO2   = 64.064
+    MW_H2SO4 = 98.079
+
+    # Constants
+    HR_PER_DAY   = 24
+    MIN_PER_HR   = 60
+    LB_PER_ST    = 2000
+    STEAM_T_ST   = 1.3                     # short ton steam per short ton acid
+    KW_PER_STPH  = 243.0
+
+    # Sulfur input
+    mol_s_min = sulfur_lb_per_min / MW_S
+    mol_s_hr  = mol_s_min * MIN_PER_HR
+
+    # Acid production (subtract tail losses - SO3 typically negligible)
+    mol_acid_hr = mol_s_hr - mol_so2_tail_hr - mol_so3_tail_hr
+    lb_acid_day = mol_acid_hr * MW_H2SO4 * HR_PER_DAY
+    plant_rate_stpd = lb_acid_day / LB_PER_ST
+
+    # Overall conversion (%)
+    conversion_pct = (mol_acid_hr / mol_s_hr) * 100 if mol_s_hr > 0 else 0.0
+
+    # Comp Pass 1 inlet SO₂ (vol %)
+    dry_air_mol_hr = mol_n2_tail_hr / 0.7905
+    pass1_pct = (mol_s_hr / dry_air_mol_hr) * 100 if dry_air_mol_hr > 0 else 0.0
+
+    # Emissions: lb SO₂ per short ton acid
+    lb_so2_day = mol_so2_tail_hr * MW_SO2 * HR_PER_DAY
+    emissions_lb_per_st = lb_so2_day / plant_rate_stpd if plant_rate_stpd > 0 else 0.0
+
+    # Stack SO₂ ppmv (dry) - requires total tail mol/hr; here using N2 + known components
+    # Note: O2 is not passed; approximation possible if assuming air-like ratio, but omitted for now
+
+    # Steam & Power
+    steam_stpd = STEAM_T_ST * plant_rate_stpd
+    acid_stph  = plant_rate_stpd / 24
+    steam_stph = STEAM_T_ST * acid_stph
+    power_kw   = KW_PER_STPH * steam_stph
+    power_mw   = power_kw / 1000.0
+
+    return {
+        "Plant Rate (STPD)":                 round(plant_rate_stpd),
+        "Comp Pass 1 (%)":                   round(pass1_pct, 2),
+        "Conversion (%)":                    round(conversion_pct, 4),
+        "Emissions (lb/ST)":                 round(emissions_lb_per_st, 1),
+        # "Scrubber Emissions (ppmv)":       # add if total tail mol/hr passed in
+        "Steam Gen. (STPD)":                 round(steam_stpd),
+        "Gross Power Gen. (MW)":             round(power_mw, 2),
+        "Power Factor (kW/STPH)":            KW_PER_STPH
+    }
+
+
+# Example with your latest table values (assuming tail SO2 is final stack)
+if __name__ == "__main__":
+    result = calculate_sulfuric_acid_parameters(
+        sulfur_lb_per_min = 1128.0,
+        mol_so2_tail_hr   = 3.01,          # final tail / stack SO₂
+        mol_so3_tail_hr   = 0.0,
+        mol_n2_tail_hr    = 14506.68
+    )
+    for key, value in result.items():
+        print(f"{key}: {value}")

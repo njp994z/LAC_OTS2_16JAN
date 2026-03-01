@@ -23,7 +23,7 @@ import sh4aImg from "@assets/delta-v/process-diagrams/sh4a.png";
 import ec3bImg from "@assets/delta-v/process-diagrams/ec3b.png";
 import sh1bImg from "@assets/delta-v/process-diagrams/sh1b.png";
 import industrialFilterImg from "@assets/delta-v/process-diagrams/industrial-filter.png";
-import converter4L4Img from "@assets/image_1769028207381.png";
+import converter4L4Img from "@assets/image_1769565285813.png";
 import converter4PassImg from "@assets/image_1769036205978.png";
 import menuIconImg from "@assets/image_1767651932939.png";
 import wasteHeatBoilerImg from "@assets/image_1769462283790.png";
@@ -44,6 +44,9 @@ import cyanThinLine2Img from "@assets/image_1769467426528.png";
 import cyanVertLine1Img from "@assets/image_1769467433951.png";
 import cyanVertLine2Img from "@assets/image_1769467436693.png";
 import blackVertLineImg from "@assets/image_1769482798195.png";
+import acidBoilerImg from "@assets/image_1769495696418.png";
+import acidTower1Img from "@assets/l2-1520-acid-tower-1.png";
+import acidTower2Img from "@assets/l2-1520-acid-tower-2.png";
 import {
   Menubar,
   MenubarContent,
@@ -68,7 +71,6 @@ import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta
 import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
-import { PFDNavigation } from "@/delta-v/components/PFDNavigation";
 import { pfdConfigs } from "@/delta-v/config/pfdConfig";
 import { VerticalLine } from "@/delta-v/components/VerticalLine";
 import {
@@ -152,9 +154,9 @@ const toolbarItems = [
 
 const homescreenOptions = [
   { id: "L1", label: "L1 – System Overview" },
-  { id: "L2", label: "L2 – Furnace Area" },
+  { id: "L2", label: "L2 – Furnace Area", isReady: true },
   { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4-Converter" },
+  { id: "L4", label: "L4-Converter", isReady: true },
   // L2_1500 SULFUR UTILITY
   { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
   { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
@@ -168,7 +170,7 @@ const homescreenOptions = [
   { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
   { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
   // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
+  { id: "L2_1520_ACID", label: "L2_1520 ACID", isReady: true },
   { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
   { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
   { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
@@ -254,7 +256,7 @@ const HomeScreen = () => {
     { id: 'arrow_34', x: 2340, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
     { id: 'arrow_35', x: 2610, y: 280, width: 250, height: 60, rotation: 0, color: 'purple' as const },
   ]);
-  
+
   // Vertical arrows - narrow width, variable height, positioned near edges
   // Each arrow has a 'screen' property to track which view it belongs to
   // Rotation is stored in degrees (0, 90, 180, 270)
@@ -269,7 +271,7 @@ const HomeScreen = () => {
   }>>([
     { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150, screen: 'L1 – System Overview', rotation: 0 },
   ]);
-  
+
   // Vertical lines (without arrowheads) - narrow width, variable height
   // Each line has a 'screen' property to track which view it belongs to
   const [verticalLines, setVerticalLines] = useState<Array<{
@@ -280,7 +282,7 @@ const HomeScreen = () => {
     height: number;
     screen: string;
   }>>([]);
-  
+
   const [isLocked, setIsLocked] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedScreen, setSelectedScreen] = useState(() => {
@@ -288,19 +290,22 @@ const HomeScreen = () => {
     return saved || "L1 – System Overview";
   });
   const [selectedMode, setSelectedMode] = useState("Static");
-  
+  const [handControllerModelockOverride, setHandControllerModelockOverride] = useState(false);
+  const [jugValveHandControllerModelockOverride, setJugValveHandControllerModelockOverride] = useState(false);
+  const [whbHandControllerModelockOverride, setWhbHandControllerModelockOverride] = useState(false);
+
   // Save selected screen to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('deltaV_selectedScreen', selectedScreen);
   }, [selectedScreen]);
   const [location] = useLocation();
-  
+
   // Dynamic simulation state
   const [dynamicRunning, setDynamicRunning] = useState(false);
   const [dynamicSpeed, setDynamicSpeed] = useState(1.0);
   const [dynamicDt, setDynamicDt] = useState(0.12);
   const [dynamicElapsed, setDynamicElapsed] = useState(0);
-  
+
   // Dynamic simulation elapsed time tracker
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -313,7 +318,7 @@ const HomeScreen = () => {
       if (interval) clearInterval(interval);
     };
   }, [dynamicRunning, dynamicDt, dynamicSpeed]);
-  
+
   // Reset dynamic simulation
   const handleDynamicReset = () => {
     setDynamicRunning(false);
@@ -321,25 +326,25 @@ const HomeScreen = () => {
     setDynamicSpeed(1.0);
     setDynamicDt(0.12);
   };
-  
+
   // Static simulation state
   const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
   const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
-  
+
   // Run static simulation when Start button is clicked in Static mode
   const runStaticSimulation = async () => {
     if (staticSimulationRunning) return;
-    
+
     setStaticSimulationRunning(true);
     try {
       // 1. Fetch PV case data
       const pvResponse = await fetch('/api/process-variables');
       const pvData = await pvResponse.json();
-      
+
       // 2. Fetch SP case data (for setpoint values)
       const spResponse = await fetch('/api/setpoint-variables');
       const spData = await spResponse.json();
-      
+
       // 3. Extract compressor inputs from selected case or defaults
       // Use activePVCaseId if available, otherwise use default values
       let rpmPercent = 87; // Default
@@ -347,14 +352,14 @@ const HomeScreen = () => {
       let barometricPressure = 0.85; // Default in atm
       let plantCondition = "clean"; // Default
       let inletPressureInwc = -3.0; // Default in wc
-      
+
       // Helper function to extract numeric value from case data
       const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
         if (!variables || !caseId) return null;
         for (const pattern of tagPatterns) {
-          const variable = variables.find((v: any) => 
-            v.tag === pattern || 
-            v.tagNumber === pattern || 
+          const variable = variables.find((v: any) =>
+            v.tag === pattern ||
+            v.tagNumber === pattern ||
             v.tag?.includes(pattern) ||
             v.description?.toLowerCase().includes(pattern.toLowerCase())
           );
@@ -365,27 +370,27 @@ const HomeScreen = () => {
         }
         return null;
       };
-      
+
       // Extract values from PV case data
       if (pvData?.variables && activePVCaseId) {
         // Main compressor RPM (1540-H-4030)
         const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor'], activePVCaseId);
         if (rpmVal !== null) rpmPercent = rpmVal;
-        
+
         // DT inlet temperature
         const tempVal = extractCaseValue(pvData.variables, ['dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
         if (tempVal !== null) inletTemp = tempVal;
-        
+
         // Barometric pressure (ambient_pressure)
         const baroVal = extractCaseValue(pvData.variables, ['ambient_pressure', 'barometric'], activePVCaseId);
         if (baroVal !== null) barometricPressure = baroVal;
-        
+
         // Inlet pressure (pass_1_ash_dp or similar)
         const pressVal = extractCaseValue(pvData.variables, ['pass_1_ash_dp', 'inlet_pressure', 'inlet press'], activePVCaseId);
         if (pressVal !== null) inletPressureInwc = pressVal;
-        
+
         // Plant condition (if stored in PV data)
-        const plantVar = pvData.variables.find((v: any) => 
+        const plantVar = pvData.variables.find((v: any) =>
           v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
         );
         if (plantVar?.cases?.[activePVCaseId]) {
@@ -393,20 +398,20 @@ const HomeScreen = () => {
           if (val === 'dirty' || val === 'clean') plantCondition = val;
         }
       }
-      
+
       // Also check SP data for setpoint overrides
       if (spData?.variables && activePVCaseId) {
         // Main compressor SP
         const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
         if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal; // Use SP if PV not found
-        
+
         // DT inlet temp SP
         const tempSpVal = extractCaseValue(spData.variables, ['dt_inlet_temp_sp'], activePVCaseId);
         if (tempSpVal !== null && inletTemp === 150) inletTemp = tempSpVal; // Use SP if PV not found
       }
-      
+
       console.log('Static simulation inputs:', { rpmPercent, inletTemp, barometricPressure, plantCondition, inletPressureInwc });
-      
+
       // 4. Call compressor simulation API
       const simResponse = await fetch('/api/compressor-simulation', {
         method: 'POST',
@@ -419,18 +424,18 @@ const HomeScreen = () => {
           inlet_pressure_inwc: inletPressureInwc
         })
       });
-      
+
       if (!simResponse.ok) {
         throw new Error('Compressor simulation failed');
       }
-      
+
       const simResponseData = await simResponse.json();
       console.log('Static simulation results:', simResponseData);
-      
+
       // Extract the results from the nested structure
       const simResults = simResponseData.results || simResponseData;
       setStaticSimulationResults(simResults);
-      
+
       // 5. Update faceplate displays with results
       // Update the loaded case value to show the compressor speed % in the controller
       // In Static mode: PV = SP = OUT = same value
@@ -439,12 +444,12 @@ const HomeScreen = () => {
         console.log('Setting static case value for 1540-H-4030:', speedPercent);
         setLoadedCaseValue1540H4030(speedPercent);
       }
-      
+
       toast({
         title: "Static Simulation Complete",
         description: `Compressor: ${simResults.compressor_speed?.toFixed(0) || 'N/A'} RPM, Outlet: ${simResults.outlet_temp_F?.toFixed(1) || 'N/A'}°F, Power: ${simResults.brake_power_hp?.toFixed(1) || 'N/A'} HP`,
       });
-      
+
     } catch (error) {
       console.error('Static simulation error:', error);
       toast({
@@ -456,7 +461,7 @@ const HomeScreen = () => {
       setStaticSimulationRunning(false);
     }
   };
-  
+
   // Toggle fullscreen mode
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -467,7 +472,7 @@ const HomeScreen = () => {
       document.exitFullscreen();
     }
   }, []);
-  
+
   // Sync fullscreen state with browser
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -478,7 +483,7 @@ const HomeScreen = () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
-  
+
   // Mode options for the Mode dropdown
   const modeOptions = [
     { id: "static", label: "Static" },
@@ -486,10 +491,10 @@ const HomeScreen = () => {
     { id: "startup", label: "Start-Up" },
     { id: "emergency", label: "Emergency Scenarios" },
   ];
-  
+
   // Track current search params to detect changes
   const [currentSearch, setCurrentSearch] = useState(window.location.search);
-  
+
   // Helper function to read mode from URL
   const readModeFromUrl = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -501,11 +506,11 @@ const HomeScreen = () => {
       }
     }
   }, []);
-  
+
   // Read mode on mount and when location/search changes
   useEffect(() => {
     readModeFromUrl();
-    
+
     // Listen for popstate events (browser back/forward)
     const handlePopState = () => {
       setCurrentSearch(window.location.search);
@@ -514,7 +519,7 @@ const HomeScreen = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [readModeFromUrl]);
-  
+
   // Check for search param changes on every location change
   useEffect(() => {
     if (window.location.search !== currentSearch) {
@@ -528,96 +533,96 @@ const HomeScreen = () => {
   const [sulfurFlowRoutRcas, setSulfurFlowRoutRcas] = useState<'DA' | 'ROUT' | 'RCAS'>('DA');
   const [sulfurFlowBypass, setSulfurFlowBypass] = useState(false);
   const [isTempSensorModalOpen, setIsTempSensorModalOpen] = useState(false);
-const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false);
+  const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false);
   const [isJugValveHandControllerModalOpen, setIsJugValveHandControllerModalOpen] = useState(false);
   const [isWhbHandControllerModalOpen, setIsWhbHandControllerModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Sulfur Flow Controller position/size
   const [sulfurFlowPosition, setSulfurFlowPosition] = useState({ x: 720, y: 100 });
   const [sulfurFlowSize, setSulfurFlowSize] = useState({ width: 220, height: 200 });
-  
+
   // Sulfur Flow Control Valve position/size
   const [sulfurValvePosition, setSulfurValvePosition] = useState({ x: 950, y: 100 });
   const [sulfurValveSize, setSulfurValveSize] = useState({ width: 120, height: 160 });
-  
+
   // Jug Valve position/size
   const [jugValvePosition, setJugValvePosition] = useState({ x: 1080, y: 100 });
   const [jugValveSize, setJugValveSize] = useState({ width: 120, height: 160 });
-  
+
   // Jug Valve Positioner position/size
   const [jugValvePositionerPosition, setJugValvePositionerPosition] = useState({ x: 1210, y: 100 });
   const [jugValvePositionerSize, setJugValvePositionerSize] = useState({ width: 120, height: 160 });
-  
+
   // Hand Controller 1540-H-4030 position/size
   const [handControllerPosition, setHandControllerPosition] = useState({ x: 1340, y: 100 });
   const [handControllerSize, setHandControllerSize] = useState({ width: 220, height: 200 });
-  
+
   // WHB Outlet dP Hand Controller 1540-H-4283 position/size
   const [whbHandControllerPosition, setWhbHandControllerPosition] = useState({ x: 850, y: 400 });
   const [whbHandControllerSize, setWhbHandControllerSize] = useState({ width: 220, height: 200 });
-  
+
   // Jug Valve Hand Controller 1540-H-4282 position/size
   const [jugValveHandControllerPosition, setJugValveHandControllerPosition] = useState({ x: 1100, y: 400 });
   const [jugValveHandControllerSize, setJugValveHandControllerSize] = useState({ width: 220, height: 200 });
-  
+
   // Temperature Sensor 1520-TI-5821 position/size
   const [tempSensorPosition, setTempSensorPosition] = useState({ x: 50, y: 400 });
   const [tempSensorSize, setTempSensorSize] = useState({ width: 180, height: 120 });
-  
+
   // Temperature Sensor 1540-TI-4200A position/size
   const [tempSensor4200APosition, setTempSensor4200APosition] = useState({ x: 250, y: 400 });
   const [tempSensor4200ASize, setTempSensor4200ASize] = useState({ width: 180, height: 120 });
   const [isTempSensor4200AModalOpen, setIsTempSensor4200AModalOpen] = useState(false);
-  
+
   // Temperature Sensor 1540-TI-4200B position/size
   const [tempSensor4200BPosition, setTempSensor4200BPosition] = useState({ x: 450, y: 400 });
   const [tempSensor4200BSize, setTempSensor4200BSize] = useState({ width: 180, height: 120 });
   const [isTempSensor4200BModalOpen, setIsTempSensor4200BModalOpen] = useState(false);
-  
+
   // Temperature Sensor 1540-TI-4200C position/size
   const [tempSensor4200CPosition, setTempSensor4200CPosition] = useState({ x: 650, y: 400 });
   const [tempSensor4200CSize, setTempSensor4200CSize] = useState({ width: 180, height: 120 });
   const [isTempSensor4200CModalOpen, setIsTempSensor4200CModalOpen] = useState(false);
-  
+
   // Dashed Line 1 position/size
   const [dashedLine1Position, setDashedLine1Position] = useState({ x: 100, y: 300 });
   const [dashedLine1Size, setDashedLine1Size] = useState({ width: 200, height: 4 });
-  
+
   // Dashed Line 2 position/size
   const [dashedLine2Position, setDashedLine2Position] = useState({ x: 100, y: 450 });
   const [dashedLine2Size, setDashedLine2Size] = useState({ width: 200, height: 4 });
-  
+
   // Dashed Line 3 position/size
   const [dashedLine3Position, setDashedLine3Position] = useState({ x: 100, y: 600 });
   const [dashedLine3Size, setDashedLine3Size] = useState({ width: 200, height: 4 });
-  
+
   // Dashed Line 4 position/size
   const [dashedLine4Position, setDashedLine4Position] = useState({ x: 100, y: 750 });
   const [dashedLine4Size, setDashedLine4Size] = useState({ width: 200, height: 4 });
-  
+
   // Dashed Line Rotations
   const [dashedLine1Rotation, setDashedLine1Rotation] = useState(0);
   const [dashedLine2Rotation, setDashedLine2Rotation] = useState(0);
   const [dashedLine3Rotation, setDashedLine3Rotation] = useState(0);
   const [dashedLine4Rotation, setDashedLine4Rotation] = useState(0);
-  
+
   // Converter 4 position/size
   const [converter4Position, setConverter4Position] = useState({ x: 1400, y: 300 });
   const [converter4Size, setConverter4Size] = useState({ width: 150, height: 400 });
-  
+
   // DT2 (Drying Tower) position/size
   const [dt2Position, setDt2Position] = useState({ x: 1200, y: 300 });
   const [dt2Size, setDt2Size] = useState({ width: 100, height: 280 });
-  
+
   // FAT1 (Final Absorbing Tower) position/size
   const [fat1Position, setFat1Position] = useState({ x: 1050, y: 300 });
   const [fat1Size, setFat1Size] = useState({ width: 100, height: 280 });
-  
+
   // IPAT1 position/size
   const [ipat1Position, setIpat1Position] = useState({ x: 900, y: 300 });
   const [ipat1Size, setIpat1Size] = useState({ width: 100, height: 250 });
-  
+
   // HIP1 (Hot Interpass Absorber) position/size
   const [hip1Position, setHip1Position] = useState({ x: 750, y: 300 });
   const [hip1Size, setHip1Size] = useState({ width: 80, height: 200 });
@@ -625,27 +630,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // CIP (Cold Interpass Absorber) position/size
   const [cipPosition, setCipPosition] = useState({ x: 600, y: 300 });
   const [cipSize, setCipSize] = useState({ width: 80, height: 220 });
-  
+
   // SH4A (Superheater 4A) position/size
   const [sh4aPosition, setSh4aPosition] = useState({ x: 450, y: 300 });
   const [sh4aSize, setSh4aSize] = useState({ width: 70, height: 180 });
-  
+
   // EC3B (Economizer 3B) position/size
   const [ec3bPosition, setEc3bPosition] = useState({ x: 350, y: 300 });
   const [ec3bSize, setEc3bSize] = useState({ width: 60, height: 160 });
-  
+
   // SH1B (Superheater 1B) position/size
   const [sh1bPosition, setSh1bPosition] = useState({ x: 250, y: 300 });
   const [sh1bSize, setSh1bSize] = useState({ width: 60, height: 160 });
-  
+
   // Industrial Filter position/size
   const [filterPosition, setFilterPosition] = useState({ x: 1550, y: 300 });
   const [filterSize, setFilterSize] = useState({ width: 80, height: 120 });
-  
+
   // Turbo Generator position/size
   const [turboGeneratorPosition, setTurboGeneratorPosition] = useState({ x: 1700, y: 100 });
   const [turboGeneratorSize, setTurboGeneratorSize] = useState({ width: 220, height: 180 });
-  
+
   // L4-Converter: Converter 4 position/size
   const [converter4L4Position, setConverter4L4Position] = useState({ x: 200, y: 100 });
   const [converter4L4Size, setConverter4L4Size] = useState({ width: 300, height: 800 });
@@ -655,7 +660,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
-  
+
   // L2 Hand Controller 1540-H-4030 position and size
   const [handControllerL2Position, setHandControllerL2Position] = useState({ x: 800, y: 200 });
   const [handControllerL2Size, setHandControllerL2Size] = useState({ width: 220, height: 200 });
@@ -744,6 +749,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
 
+  // L2_1520 ACID: Acid Boiler position and size
+  const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
+  const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
+  // L2_1520 ACID: Acid Tower 1 position and size
+  const [acidTower1Position, setAcidTower1Position] = useState({ x: 1200, y: 50 });
+  const [acidTower1Size, setAcidTower1Size] = useState({ width: 800, height: 400 });
+  // L2_1520 ACID: Acid Tower 2 position and size
+  const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
+  const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
+  const [isLockedL21520, setIsLockedL21520] = useState(true);
+
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
   const [selectedPVCase, setSelectedPVCase] = useState<string | null>(null);
@@ -756,12 +772,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Loaded PV case value for 1540-H-4283 WHB dP controller (used in Static mode)
   const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<number | null>(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
-  
+
   // Furnace outlet temperature from sulfur furnace simulation (linked to 1540-TI-4200A)
   const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(null);
   // Track last calculated sulfur flow to prevent duplicate API calls
   const lastCalculatedSulfurFlowRef = useRef<number | null>(null);
-  
+
   // Auto-load static values when PV case is selected in Static mode
   useEffect(() => {
     // Default to case1 if no case is selected when entering Static mode
@@ -769,7 +785,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setActivePVCaseId('case1');
       return;
     }
-    
+
     if (selectedMode === "Static" && activePVCaseId) {
       // Fetch PV data and set the static values for controllers
       fetch('/api/process-variables')
@@ -778,9 +794,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           if (pvData?.variables) {
             // Look for main compressor value in the selected case
             const compressorVar = pvData.variables.find(
-              (v: any) => v.tag === '1540-H-4030' || v.tagNumber === '1540-H-4030' || 
-                          v.description?.toLowerCase().includes('main_comp') ||
-                          v.description?.toLowerCase().includes('compressor')
+              (v: any) => v.tag === '1540-H-4030' || v.tagNumber === '1540-H-4030' ||
+                v.description?.toLowerCase().includes('main_comp') ||
+                v.description?.toLowerCase().includes('compressor')
             );
             if (compressorVar?.cases?.[activePVCaseId]) {
               const val = parseFloat(String(compressorVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
@@ -793,12 +809,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               console.log('No case value found for 1540-H-4030, using default 75%');
               setLoadedCaseValue1540H4030(75);
             }
-            
+
             // Look for sulfur flow value in the selected case
             const sulfurFlowVar = pvData.variables.find(
-              (v: any) => v.tag === '1530-F-2602' || v.tagNumber === '1530-F-2602' || 
-                          v.description?.toLowerCase().includes('sulfur_flow') ||
-                          v.description?.toLowerCase().includes('sulfur flow')
+              (v: any) => v.tag === '1530-F-2602' || v.tagNumber === '1530-F-2602' ||
+                v.description?.toLowerCase().includes('sulfur_flow') ||
+                v.description?.toLowerCase().includes('sulfur flow')
             );
             if (sulfurFlowVar?.cases?.[activePVCaseId]) {
               const val = parseFloat(String(sulfurFlowVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
@@ -811,12 +827,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               console.log('No case value found for 1530-F-2602, using default 79 gpm');
               setLoadedCaseValueSulfurFlow(79);
             }
-            
+
             // Look for jug valve value in the selected case
             const jugValveVar = pvData.variables.find(
-              (v: any) => v.tag === '1540-H-4282' || v.tagNumber === '1540-H-4282' || 
-                          v.description?.toLowerCase().includes('jug_valve') ||
-                          v.description?.toLowerCase().includes('jug valve')
+              (v: any) => v.tag === '1540-H-4282' || v.tagNumber === '1540-H-4282' ||
+                v.description?.toLowerCase().includes('jug_valve') ||
+                v.description?.toLowerCase().includes('jug valve')
             );
             if (jugValveVar?.cases?.[activePVCaseId]) {
               const val = parseFloat(String(jugValveVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
@@ -829,12 +845,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               console.log('No case value found for 1540-H-4282, using default 50%');
               setLoadedCaseValueJugValve(50);
             }
-            
+
             // Look for WHB dP value in the selected case
             const whbVar = pvData.variables.find(
-              (v: any) => v.tag === '1540-H-4283' || v.tagNumber === '1540-H-4283' || 
-                          v.description?.toLowerCase().includes('whb') ||
-                          v.description?.toLowerCase().includes('outlet dp')
+              (v: any) => v.tag === '1540-H-4283' || v.tagNumber === '1540-H-4283' ||
+                v.description?.toLowerCase().includes('whb') ||
+                v.description?.toLowerCase().includes('outlet dp')
             );
             if (whbVar?.cases?.[activePVCaseId]) {
               const val = parseFloat(String(whbVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
@@ -858,7 +874,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setLoadedCaseValueWHBdP(null);
     }
   }, [selectedMode, activePVCaseId]);
-  
+
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
   const [converter61Size, setConverter61Size] = useState({ width: 400, height: 600 });
@@ -868,6 +884,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
   // 6.1 L3_1540 Converter: Secondary faceplate dialog visibility
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
+  // L4 Converter 4: Secondary faceplate dialog visibility when clicking on converter image
+  const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] = useState(false);
+  // L4-Converter: Jug Valve Hand Controller 1540-H-4282 position/size
+  const [jugValveHandControllerL4Position, setJugValveHandControllerL4Position] = useState({ x: 1100, y: 400 });
+  const [jugValveHandControllerL4Size, setJugValveHandControllerL4Size] = useState({ width: 220, height: 200 });
 
   // New states for dynamic sizing support
   const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
@@ -879,37 +900,37 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const { getControllerConfig } = useControllerConfig();
 
   // Get real-time synced state for Sulfur Flow Controller
-  const { 
-    state: sulfurSyncState, 
+  const {
+    state: sulfurSyncState,
     updateSyncedSP: updateSulfurSP,
     updateSyncedOUT: updateSulfurOUT,
-    updateSyncedMode: updateSulfurMode 
+    updateSyncedMode: updateSulfurMode
   } = useControllerSync('1530-F-2602');
   const sulfurFlowConfig = getControllerConfig('1530-F-2602');
-  
+
   // Get real-time synced state for Sulfur Flow Control Valve
   const { state: valveSyncState } = useControllerSync('1540-FCV-2602');
   const valveConfig = getControllerConfig('1540-FCV-2602');
-  
+
   // Get real-time synced state for Jug Valve
   const { state: jugValveSyncState } = useControllerSync('1540-HCV-4282');
   const jugValveConfig = getControllerConfig('1540-HCV-4282');
-  
+
   // Get real-time synced state for Jug Valve Positioner
   const { state: jugValvePositionerSyncState } = useControllerSync('1540-HCV-4281');
   const jugValvePositionerConfig = getControllerConfig('1540-HCV-4281');
-  
+
   // Get real-time synced state for Hand Controller 1540-H-4030
-  const { 
+  const {
     state: handControllerSyncState,
     updateSyncedSP: updateHandControllerSP,
     updateSyncedOUT: updateHandControllerOUT,
-    updateSyncedMode: updateHandControllerMode 
+    updateSyncedMode: updateHandControllerMode
   } = useControllerSync('1540-H-4030');
   const handControllerConfig = getControllerConfig('1540-H-4030');
-  
+
   // Get real-time synced state for WHB Outlet dP Hand Controller 1540-H-4283
-  const { 
+  const {
     state: whbHandControllerSyncState,
     initializeController: initWhbHandController,
     updateAlarmLimits: updateWhbHandControllerAlarmLimits,
@@ -918,9 +939,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     updateSyncedMode: updateWhbHandControllerMode
   } = useControllerSync('1540-H-4283');
   const whbHandControllerConfig = getControllerConfig('1540-H-4283');
-  
+
   // Get real-time synced state for Jug Valve Hand Controller 1540-H-4282
-  const { 
+  const {
     state: jugValveHandControllerSyncState,
     initializeController: initJugValveHandController,
     updateAlarmLimits: updateJugValveHandControllerAlarmLimits,
@@ -929,27 +950,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     updateSyncedMode: updateJugValveHandControllerMode
   } = useControllerSync('1540-H-4282');
   const jugValveHandControllerConfig = getControllerConfig('1540-H-4282');
-  
+
   // Get real-time synced state for Temperature Sensor 1520-TI-5821
   const { state: tempSensorSyncState, initializeController: initTempSensor } = useControllerSync('1520-TI-5821');
   const tempSensorConfig = getControllerConfig('1520-TI-5821');
-  
+
   // Get real-time synced state for Temperature Sensor 1540-TI-4200A
   const { state: tempSensor4200ASyncState, initializeController: initTempSensor4200A, updateAlarmLimits: updateTempSensor4200AAlarmLimits, updateSyncedPV: updateTempSensor4200APV } = useControllerSync('1540-TI-4200A');
   const tempSensor4200AConfig = getControllerConfig('1540-TI-4200A');
-  
+
   // Get real-time synced state for Temperature Sensor 1540-TI-4200B
   const { state: tempSensor4200BSyncState, initializeController: initTempSensor4200B, updateAlarmLimits: updateTempSensor4200BAlarmLimits } = useControllerSync('1540-TI-4200B');
   const tempSensor4200BConfig = getControllerConfig('1540-TI-4200B');
-  
+
   // Get real-time synced state for Temperature Sensor 1540-TI-4200C
   const { state: tempSensor4200CSyncState, initializeController: initTempSensor4200C, updateAlarmLimits: updateTempSensor4200CAlarmLimits } = useControllerSync('1540-TI-4200C');
   const tempSensor4200CConfig = getControllerConfig('1540-TI-4200C');
-  
+
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
   const tempSensor4825Config = getControllerConfig('1540-TI-4825');
-  
+
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
     if (tempSensorConfig.TYPICAL_PV !== undefined) {
@@ -961,7 +982,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       );
     }
   }, [tempSensorConfig.TYPICAL_PV, tempSensorConfig.SP_LIM_LO, tempSensorConfig.SP_LIM_HI, initTempSensor]);
-  
+
   // Initialize temperature sensor 1540-TI-4200A with configured Typical PV and alarm limits
   useEffect(() => {
     if (tempSensor4200AConfig.TYPICAL_PV !== undefined && tempSensor4200AConfig.TYPICAL_PV > 0) {
@@ -971,7 +992,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         tempSensor4200AConfig.SP_LIM_LO ?? 0,
         tempSensor4200AConfig.SP_LIM_HI ?? 2500
       );
-      
+
       // Sync alarm limits for automatic alarm state updates
       updateTempSensor4200AAlarmLimits({
         LL: tempSensor4200AConfig.ALM_LL_LIM ?? 0,
@@ -981,7 +1002,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       });
     }
   }, [tempSensor4200AConfig.TYPICAL_PV, tempSensor4200AConfig.SP_LIM_LO, tempSensor4200AConfig.SP_LIM_HI, tempSensor4200AConfig.ALM_LL_LIM, tempSensor4200AConfig.ALM_L_LIM, tempSensor4200AConfig.ALM_H_LIM, tempSensor4200AConfig.ALM_HH_LIM, initTempSensor4200A, updateTempSensor4200AAlarmLimits]);
-  
+
   // Initialize temperature sensor 1540-TI-4200B with configured Typical PV and alarm limits
   useEffect(() => {
     if (tempSensor4200BConfig.TYPICAL_PV !== undefined && tempSensor4200BConfig.TYPICAL_PV > 0) {
@@ -991,7 +1012,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         tempSensor4200BConfig.SP_LIM_LO ?? 0,
         tempSensor4200BConfig.SP_LIM_HI ?? 2500
       );
-      
+
       // Sync alarm limits for automatic alarm state updates
       updateTempSensor4200BAlarmLimits({
         LL: tempSensor4200BConfig.ALM_LL_LIM ?? 0,
@@ -1001,28 +1022,28 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       });
     }
   }, [tempSensor4200BConfig.TYPICAL_PV, tempSensor4200BConfig.SP_LIM_LO, tempSensor4200BConfig.SP_LIM_HI, tempSensor4200BConfig.ALM_LL_LIM, tempSensor4200BConfig.ALM_L_LIM, tempSensor4200BConfig.ALM_H_LIM, tempSensor4200BConfig.ALM_HH_LIM, initTempSensor4200B, updateTempSensor4200BAlarmLimits]);
-  
-  
+
+
   // Initialize temperature sensor 1540-TI-4200C with proper furnace temperature range (1800-2300°F)
   useEffect(() => {
     // Force correct furnace temperature range - these sensors operate at 1800-2300°F
     const FURNACE_C_SCALE_LO = 1800;
     const FURNACE_C_SCALE_HI = 2300;
     const FURNACE_C_TYPICAL_PV = 2050;
-    
+
     // Use config values if they're in the correct range, otherwise use furnace defaults
     const configPV = tempSensor4200CConfig.TYPICAL_PV;
-    const typicalPV = (configPV && configPV >= FURNACE_C_SCALE_LO && configPV <= FURNACE_C_SCALE_HI) 
-      ? configPV 
+    const typicalPV = (configPV && configPV >= FURNACE_C_SCALE_LO && configPV <= FURNACE_C_SCALE_HI)
+      ? configPV
       : FURNACE_C_TYPICAL_PV;
-    
+
     initTempSensor4200C(
       typicalPV,
       typicalPV,
       FURNACE_C_SCALE_LO,
       FURNACE_C_SCALE_HI
     );
-    
+
     // Sync alarm limits for automatic alarm state updates
     updateTempSensor4200CAlarmLimits({
       LL: tempSensor4200CConfig.ALM_LL_LIM ?? 1850,
@@ -1031,22 +1052,22 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor4200CConfig.ALM_HH_LIM ?? 2250,
     });
   }, [tempSensor4200CConfig.TYPICAL_PV, tempSensor4200CConfig.ALM_LL_LIM, tempSensor4200CConfig.ALM_L_LIM, tempSensor4200CConfig.ALM_H_LIM, tempSensor4200CConfig.ALM_HH_LIM, initTempSensor4200C, updateTempSensor4200CAlarmLimits]);
-  
+
   // Initialize temperature sensor 1540-TI-4825 (Pass 1 Catalyst In) with configured Typical PV and alarm limits
   useEffect(() => {
     // Use configured TYPICAL_PV if available and valid
     const configPV = tempSensor4825Config.TYPICAL_PV;
-    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) 
-      ? configPV 
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000)
+      ? configPV
       : 750; // Default typical value for Pass 1 Catalyst In
-    
+
     initTempSensor4825(
       typicalPV,
       typicalPV,
       tempSensor4825Config.SP_LIM_LO ?? 0,
       tempSensor4825Config.SP_LIM_HI ?? 2000
     );
-    
+
     // Sync alarm limits for automatic alarm state updates
     updateTempSensor4825AlarmLimits({
       LL: tempSensor4825Config.ALM_LL_LIM ?? 600,
@@ -1055,17 +1076,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
     });
   }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
-  
+
   // Function to call sulfur furnace API and update furnace outlet temperature (4200A)
   const calculateFurnaceTemperature = useCallback(async (sulfurFlowGpm: number) => {
     if (!sulfurFlowGpm || sulfurFlowGpm <= 0) return;
-    
+
     try {
       // Convert gpm to klb/hr: gpm * 1.8 sg * 60 min/hr * 8.33 lb/gal / 1000 = klb/hr
       const sulfurKlbHr = sulfurFlowGpm * 1.8 * 60 * 8.33 / 1000;
       // Calculate air flow based on sulfur flow: klb/hr * 1624 SCFM per klb/hr
       const airScfm = sulfurKlbHr * 1624;
-      
+
       const response = await fetch('/api/sulfur-furnace-simulation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1076,12 +1097,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           mode: 'static'
         }),
       });
-      
+
       if (!response.ok) {
         console.error('Sulfur furnace API error:', response.statusText);
         return;
       }
-      
+
       const result = await response.json();
       // The furnace outlet temperature is in stream5.temperature_f
       if (result.stream5?.temperature_f) {
@@ -1094,26 +1115,25 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       console.error('Failed to calculate furnace temperature:', error);
     }
   }, [updateTempSensor4200APV]);
-  
+
   // Auto-recalculate furnace temperature when sulfur flow static value changes
   // Only triggers on loadedCaseValueSulfurFlow changes to avoid spamming API on every synced PV update
   useEffect(() => {
     // Only recalculate when in Static mode with a loaded case value
     if (selectedMode !== 'Static' || loadedCaseValueSulfurFlow === null) return;
-    
+
     // Check if sulfur flow has changed significantly (more than 0.5 gpm difference)
-    const currentFlow = loadedCaseValueSulfurFlow;
     const lastFlow = lastCalculatedSulfurFlowRef.current;
-    
+
     if (lastFlow !== null && Math.abs(currentFlow - lastFlow) < 0.5) {
       return; // Skip if change is too small
     }
-    
+
     // Update ref and trigger calculation
     lastCalculatedSulfurFlowRef.current = currentFlow;
     calculateFurnaceTemperature(currentFlow);
   }, [selectedMode, loadedCaseValueSulfurFlow, calculateFurnaceTemperature]);
-  
+
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
   useEffect(() => {
     const typicalPV = whbHandControllerConfig.TYPICAL_PV ?? whbHandControllerConfig.PV_INIT_VAL ?? 50;
@@ -1124,7 +1144,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         whbHandControllerConfig.SP_LIM_LO ?? 0,
         whbHandControllerConfig.SP_LIM_HI ?? 100
       );
-      
+
       updateWhbHandControllerAlarmLimits({
         LL: whbHandControllerConfig.ALM_LL_LIM ?? 0,
         L: whbHandControllerConfig.ALM_L_LIM ?? 0,
@@ -1133,7 +1153,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       });
     }
   }, [whbHandControllerConfig, initWhbHandController, updateWhbHandControllerAlarmLimits]);
-  
+
   // Initialize Jug Valve Hand Controller 1540-H-4282 with configured values
   useEffect(() => {
     const typicalPV = jugValveHandControllerConfig.TYPICAL_PV ?? jugValveHandControllerConfig.PV_INIT_VAL ?? 50;
@@ -1144,7 +1164,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         jugValveHandControllerConfig.SP_LIM_LO ?? 0,
         jugValveHandControllerConfig.SP_LIM_HI ?? 100
       );
-      
+
       updateJugValveHandControllerAlarmLimits({
         LL: jugValveHandControllerConfig.ALM_LL_LIM ?? 0,
         L: jugValveHandControllerConfig.ALM_L_LIM ?? 0,
@@ -1153,7 +1173,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       });
     }
   }, [jugValveHandControllerConfig, initJugValveHandController, updateJugValveHandControllerAlarmLimits]);
-  
+
   // Build controller data from synced state
   // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
   const useStaticSulfurFlow = selectedMode === "Static" && loadedCaseValueSulfurFlow !== null;
@@ -1168,16 +1188,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: sulfurFlowConfig.EU || 'gpm',
     pvRangeMin: sulfurFlowConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: sulfurFlowConfig.PV_SCALE_HI ?? 100,
-    alarmActive: sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.H || 
-                 sulfurSyncState.alarmStates.L || sulfurSyncState.alarmStates.LL,
-    alarmColor: (sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL) ? 'red' : 
-                (sulfurSyncState.alarmStates.H || sulfurSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: sulfurFlowConfig.ALM_LL_LIM ?? 0,
-    alarmL: sulfurFlowConfig.ALM_L_LIM ?? 0,
-    alarmH: sulfurFlowConfig.ALM_H_LIM ?? 0,
-    alarmHH: sulfurFlowConfig.ALM_HH_LIM ?? 0,
+    alarmActive: sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.H ||
+      sulfurSyncState.alarmStates.L || sulfurSyncState.alarmStates.LL,
+    alarmColor: (sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL) ? 'red' :
+      (sulfurSyncState.alarmStates.H || sulfurSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: sulfurFlowConfig.ALM_LL_LIM || 5,
+    alarmL: sulfurFlowConfig.ALM_L_LIM || 10,
+    alarmH: sulfurFlowConfig.ALM_H_LIM || 400,
+    alarmHH: sulfurFlowConfig.ALM_HH_LIM || 450,
   };
-  
+
   // Build valve faceplate data from synced state
   const sulfurValveData: ControllerData = {
     ...defaultControllerData,
@@ -1190,10 +1210,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: valveConfig.EU || '%',
     pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
-    alarmActive: valveSyncState.alarmStates.HH || valveSyncState.alarmStates.H || 
-                 valveSyncState.alarmStates.L || valveSyncState.alarmStates.LL,
-    alarmColor: (valveSyncState.alarmStates.HH || valveSyncState.alarmStates.LL) ? 'red' : 
-                (valveSyncState.alarmStates.H || valveSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: valveSyncState.alarmStates.HH || valveSyncState.alarmStates.H ||
+      valveSyncState.alarmStates.L || valveSyncState.alarmStates.LL,
+    alarmColor: (valveSyncState.alarmStates.HH || valveSyncState.alarmStates.LL) ? 'red' :
+      (valveSyncState.alarmStates.H || valveSyncState.alarmStates.L) ? 'yellow' : undefined,
     valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
     showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
     showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
@@ -1205,7 +1225,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     showLockIndicator: valveConfig.SHOW_LOCK_INDICATOR,
     showOutputPathIndicator: valveConfig.SHOW_OUTPUT_PATH_INDICATOR,
   };
-  
+
   // Build Jug Valve faceplate data from synced state
   const jugValveData: ControllerData = {
     ...defaultControllerData,
@@ -1218,10 +1238,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: jugValveConfig.EU || '%',
     pvRangeMin: jugValveConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: jugValveConfig.PV_SCALE_HI ?? 100,
-    alarmActive: jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.H || 
-                 jugValveSyncState.alarmStates.L || jugValveSyncState.alarmStates.LL,
-    alarmColor: (jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.LL) ? 'red' : 
-                (jugValveSyncState.alarmStates.H || jugValveSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.H ||
+      jugValveSyncState.alarmStates.L || jugValveSyncState.alarmStates.LL,
+    alarmColor: (jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.LL) ? 'red' :
+      (jugValveSyncState.alarmStates.H || jugValveSyncState.alarmStates.L) ? 'yellow' : undefined,
     valveTypeAction: jugValveConfig.VALVE_TYPE_ACTION || 'DA',
     showAlarmCircle: jugValveConfig.SHOW_ALARM_CIRCLE,
     showNoSymbol: jugValveConfig.SHOW_NO_SYMBOL,
@@ -1233,7 +1253,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     showLockIndicator: jugValveConfig.SHOW_LOCK_INDICATOR,
     showOutputPathIndicator: jugValveConfig.SHOW_OUTPUT_PATH_INDICATOR,
   };
-  
+
   // Build Jug Valve Positioner faceplate data from synced state
   const jugValvePositionerData: ControllerData = {
     ...defaultControllerData,
@@ -1246,10 +1266,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: jugValvePositionerConfig.EU || '%',
     pvRangeMin: jugValvePositionerConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: jugValvePositionerConfig.PV_SCALE_HI ?? 100,
-    alarmActive: jugValvePositionerSyncState.alarmStates.HH || jugValvePositionerSyncState.alarmStates.H || 
-                 jugValvePositionerSyncState.alarmStates.L || jugValvePositionerSyncState.alarmStates.LL,
-    alarmColor: (jugValvePositionerSyncState.alarmStates.HH || jugValvePositionerSyncState.alarmStates.LL) ? 'red' : 
-                (jugValvePositionerSyncState.alarmStates.H || jugValvePositionerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: jugValvePositionerSyncState.alarmStates.HH || jugValvePositionerSyncState.alarmStates.H ||
+      jugValvePositionerSyncState.alarmStates.L || jugValvePositionerSyncState.alarmStates.LL,
+    alarmColor: (jugValvePositionerSyncState.alarmStates.HH || jugValvePositionerSyncState.alarmStates.LL) ? 'red' :
+      (jugValvePositionerSyncState.alarmStates.H || jugValvePositionerSyncState.alarmStates.L) ? 'yellow' : undefined,
     valveTypeAction: jugValvePositionerConfig.VALVE_TYPE_ACTION || 'DA',
     showAlarmCircle: jugValvePositionerConfig.SHOW_ALARM_CIRCLE,
     showNoSymbol: jugValvePositionerConfig.SHOW_NO_SYMBOL,
@@ -1276,10 +1296,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: handControllerConfig.EU || '%',
     pvRangeMin: handControllerConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: handControllerConfig.PV_SCALE_HI ?? 100,
-    alarmActive: handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.H || 
-                 handControllerSyncState.alarmStates.L || handControllerSyncState.alarmStates.LL,
-    alarmColor: (handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.LL) ? 'red' : 
-                (handControllerSyncState.alarmStates.H || handControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.H ||
+      handControllerSyncState.alarmStates.L || handControllerSyncState.alarmStates.LL,
+    alarmColor: (handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.LL) ? 'red' :
+      (handControllerSyncState.alarmStates.H || handControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: handControllerConfig.ALM_LL_LIM ?? 0,
     alarmL: handControllerConfig.ALM_L_LIM ?? 0,
     alarmH: handControllerConfig.ALM_H_LIM ?? 0,
@@ -1300,10 +1320,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: whbHandControllerConfig.EU || '%',
     pvRangeMin: whbHandControllerConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: whbHandControllerConfig.PV_SCALE_HI ?? 100,
-    alarmActive: whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.H || 
-                 whbHandControllerSyncState.alarmStates.L || whbHandControllerSyncState.alarmStates.LL,
-    alarmColor: (whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.LL) ? 'red' : 
-                (whbHandControllerSyncState.alarmStates.H || whbHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.H ||
+      whbHandControllerSyncState.alarmStates.L || whbHandControllerSyncState.alarmStates.LL,
+    alarmColor: (whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.LL) ? 'red' :
+      (whbHandControllerSyncState.alarmStates.H || whbHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: whbHandControllerConfig.ALM_LL_LIM ?? 0,
     alarmL: whbHandControllerConfig.ALM_L_LIM ?? 0,
     alarmH: whbHandControllerConfig.ALM_H_LIM ?? 0,
@@ -1325,10 +1345,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: jugValveHandControllerConfig.EU || '%',
     pvRangeMin: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
     pvRangeMax: jugValveHandControllerConfig.SP_LIM_HI ?? 30,
-    alarmActive: jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.H || 
-                 jugValveHandControllerSyncState.alarmStates.L || jugValveHandControllerSyncState.alarmStates.LL,
-    alarmColor: (jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.LL) ? 'red' : 
-                (jugValveHandControllerSyncState.alarmStates.H || jugValveHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.H ||
+      jugValveHandControllerSyncState.alarmStates.L || jugValveHandControllerSyncState.alarmStates.LL,
+    alarmColor: (jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.LL) ? 'red' :
+      (jugValveHandControllerSyncState.alarmStates.H || jugValveHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: jugValveHandControllerConfig.ALM_LL_LIM ?? 0,
     alarmL: jugValveHandControllerConfig.ALM_L_LIM ?? 0,
     alarmH: jugValveHandControllerConfig.ALM_H_LIM ?? 0,
@@ -1347,10 +1367,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: tempSensorConfig.EU || '°C',
     pvRangeMin: tempSensorConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensorConfig.SP_LIM_HI ?? 500,
-    alarmActive: tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.H || 
-                 tempSensorSyncState.alarmStates.L || tempSensorSyncState.alarmStates.LL,
-    alarmColor: (tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.LL) ? 'red' : 
-                (tempSensorSyncState.alarmStates.H || tempSensorSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.H ||
+      tempSensorSyncState.alarmStates.L || tempSensorSyncState.alarmStates.LL,
+    alarmColor: (tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.LL) ? 'red' :
+      (tempSensorSyncState.alarmStates.H || tempSensorSyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: tempSensorConfig.ALM_LL_LIM,
     alarmL: tempSensorConfig.ALM_L_LIM,
     alarmH: tempSensorConfig.ALM_H_LIM,
@@ -1359,10 +1379,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Build Temperature Sensor 1540-TI-4200A data from synced state
   // Use furnace outlet temperature from simulation when available (Static mode), otherwise use synced PV
-  const tempSensor4200APV = selectedMode === 'Static' && furnaceOutletTemp !== null 
-    ? furnaceOutletTemp 
+  const tempSensor4200APV = selectedMode === 'Static' && furnaceOutletTemp !== null
+    ? furnaceOutletTemp
     : tempSensor4200ASyncState.syncedPV;
-  
+
   const tempSensor4200AData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: tempSensor4200AConfig.TAGNAME || '1540-TI-4200A',
@@ -1374,10 +1394,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: tempSensor4200AConfig.EU || '°F',
     pvRangeMin: tempSensor4200AConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200AConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.H || 
-                 tempSensor4200ASyncState.alarmStates.L || tempSensor4200ASyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.LL) ? 'red' : 
-                (tempSensor4200ASyncState.alarmStates.H || tempSensor4200ASyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.H ||
+      tempSensor4200ASyncState.alarmStates.L || tempSensor4200ASyncState.alarmStates.LL,
+    alarmColor: (tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.LL) ? 'red' :
+      (tempSensor4200ASyncState.alarmStates.H || tempSensor4200ASyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: tempSensor4200AConfig.ALM_LL_LIM,
     alarmL: tempSensor4200AConfig.ALM_L_LIM,
     alarmH: tempSensor4200AConfig.ALM_H_LIM,
@@ -1396,10 +1416,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: tempSensor4200BConfig.EU || '°F',
     pvRangeMin: tempSensor4200BConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200BConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.H || 
-                 tempSensor4200BSyncState.alarmStates.L || tempSensor4200BSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.LL) ? 'red' : 
-                (tempSensor4200BSyncState.alarmStates.H || tempSensor4200BSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.H ||
+      tempSensor4200BSyncState.alarmStates.L || tempSensor4200BSyncState.alarmStates.LL,
+    alarmColor: (tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.LL) ? 'red' :
+      (tempSensor4200BSyncState.alarmStates.H || tempSensor4200BSyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: tempSensor4200BConfig.ALM_LL_LIM,
     alarmL: tempSensor4200BConfig.ALM_L_LIM,
     alarmH: tempSensor4200BConfig.ALM_H_LIM,
@@ -1418,10 +1438,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: '°F',
     pvRangeMin: 1800,
     pvRangeMax: 2300,
-    alarmActive: tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.H || 
-                 tempSensor4200CSyncState.alarmStates.L || tempSensor4200CSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.LL) ? 'red' : 
-                (tempSensor4200CSyncState.alarmStates.H || tempSensor4200CSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive: tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.H ||
+      tempSensor4200CSyncState.alarmStates.L || tempSensor4200CSyncState.alarmStates.LL,
+    alarmColor: (tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.LL) ? 'red' :
+      (tempSensor4200CSyncState.alarmStates.H || tempSensor4200CSyncState.alarmStates.L) ? 'yellow' : undefined,
     alarmLL: 1850,
     alarmL: 1900,
     alarmH: 2200,
@@ -1445,10 +1465,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (selectedMode === "Static") {
       // Use simulation results if available, otherwise use loaded case value
       if (staticSimulationResults) {
-        const speedPercent = staticSimulationResults.compressor_speed 
-          ? (staticSimulationResults.compressor_speed / 4505) * 100 
+        const speedPercent = staticSimulationResults.compressor_speed
+          ? (staticSimulationResults.compressor_speed / 4505) * 100
           : 75;
-        
+
         setStaticValues({
           speedPV: speedPercent,
           speedSP: speedPercent,
@@ -1462,15 +1482,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       } else if (loadedCaseValue1540H4030 !== null) {
         // Use the auto-loaded case value for VFD display
         const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
-        // Calculate estimated VFD current based on speed percentage (rough estimate)
-        const estimatedCurrent = (loadedCaseValue1540H4030 / 100) * 50;
+
         setStaticValues({
           speedPV: loadedCaseValue1540H4030,
           speedSP: loadedCaseValue1540H4030,
           motorSpeedRPM: speedRPM,
           compressorSpeedRPM: speedRPM,
-          motorPowerHP: 0,
-          currentPV: estimatedCurrent,
+          motorPowerHP: Math.round(((loadedCaseValue1540H4030 / 100) * 150) * 10) / 10, // Match dynamic mode calculation
+          currentPV: Math.round((20 + (loadedCaseValue1540H4030 / 100) * 50) * 10) / 10, // Match dynamic mode calculation
           state: "RUNNING",
           deviceState: "Static Mode",
         });
@@ -1575,18 +1594,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Build secondary faceplate data from synced state
   // In Static mode, use the loaded case value for PV, SP, and OUT to match the primary faceplate
-  const staticSulfurValue = useStaticSulfurFlow && loadedCaseValueSulfurFlow !== null 
-    ? loadedCaseValueSulfurFlow 
+  const staticSulfurValue = useStaticSulfurFlow && loadedCaseValueSulfurFlow !== null
+    ? loadedCaseValueSulfurFlow
     : null;
-  
+
   const sulfurFlowSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
     PV: staticSulfurValue ?? sulfurSyncState.syncedPV,
     SP: staticSulfurValue ?? sulfurSyncState.syncedSP,
     TSP: staticSulfurValue ?? sulfurSyncState.syncedSP,
     OUT_PCT: staticSulfurValue ?? sulfurSyncState.syncedOUT,
-    MODE_AUTOMAN: sulfurSyncState.syncedMode === 'AUTO' || sulfurSyncState.syncedMode === 'MAN' 
-      ? sulfurSyncState.syncedMode 
+    MODE_AUTOMAN: sulfurSyncState.syncedMode === 'AUTO' || sulfurSyncState.syncedMode === 'MAN'
+      ? sulfurSyncState.syncedMode
       : 'AUTO',
     MODE_ROUTRCAS: sulfurFlowRoutRcas,
     BYPASS_ACTIVE: sulfurFlowBypass,
@@ -1622,8 +1641,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: tempSensorSyncState.syncedSP,
     TSP: tempSensorSyncState.syncedSP,
     OUT_PCT: tempSensorSyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensorSyncState.syncedMode === 'AUTO' || tempSensorSyncState.syncedMode === 'MAN' 
-      ? tempSensorSyncState.syncedMode 
+    MODE_AUTOMAN: tempSensorSyncState.syncedMode === 'AUTO' || tempSensorSyncState.syncedMode === 'MAN'
+      ? tempSensorSyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: tempSensorSyncState.alarmStates.HH,
     ALM_H_ACT: tempSensorSyncState.alarmStates.H,
@@ -1654,8 +1673,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: tempSensor4200ASyncState.syncedSP,
     TSP: tempSensor4200ASyncState.syncedSP,
     OUT_PCT: tempSensor4200ASyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4200ASyncState.syncedMode === 'AUTO' || tempSensor4200ASyncState.syncedMode === 'MAN' 
-      ? tempSensor4200ASyncState.syncedMode 
+    MODE_AUTOMAN: tempSensor4200ASyncState.syncedMode === 'AUTO' || tempSensor4200ASyncState.syncedMode === 'MAN'
+      ? tempSensor4200ASyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: tempSensor4200ASyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4200ASyncState.alarmStates.H,
@@ -1686,8 +1705,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: tempSensor4200BSyncState.syncedSP,
     TSP: tempSensor4200BSyncState.syncedSP,
     OUT_PCT: tempSensor4200BSyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4200BSyncState.syncedMode === 'AUTO' || tempSensor4200BSyncState.syncedMode === 'MAN' 
-      ? tempSensor4200BSyncState.syncedMode 
+    MODE_AUTOMAN: tempSensor4200BSyncState.syncedMode === 'AUTO' || tempSensor4200BSyncState.syncedMode === 'MAN'
+      ? tempSensor4200BSyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: tempSensor4200BSyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4200BSyncState.alarmStates.H,
@@ -1718,8 +1737,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: tempSensor4200CSyncState.syncedSP,
     TSP: tempSensor4200CSyncState.syncedSP,
     OUT_PCT: tempSensor4200CSyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4200CSyncState.syncedMode === 'AUTO' || tempSensor4200CSyncState.syncedMode === 'MAN' 
-      ? tempSensor4200CSyncState.syncedMode 
+    MODE_AUTOMAN: tempSensor4200CSyncState.syncedMode === 'AUTO' || tempSensor4200CSyncState.syncedMode === 'MAN'
+      ? tempSensor4200CSyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: tempSensor4200CSyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4200CSyncState.alarmStates.H,
@@ -1750,8 +1769,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: tempSensor4825SyncState.syncedSP,
     TSP: tempSensor4825SyncState.syncedSP,
     OUT_PCT: tempSensor4825SyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4825SyncState.syncedMode === 'AUTO' || tempSensor4825SyncState.syncedMode === 'MAN' 
-      ? tempSensor4825SyncState.syncedMode 
+    MODE_AUTOMAN: tempSensor4825SyncState.syncedMode === 'AUTO' || tempSensor4825SyncState.syncedMode === 'MAN'
+      ? tempSensor4825SyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: tempSensor4825SyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4825SyncState.alarmStates.H,
@@ -1782,13 +1801,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: handControllerSyncState.syncedSP,
     TSP: handControllerSyncState.syncedSP,
     OUT_PCT: handControllerSyncState.syncedOUT,
-    MODE_AUTOMAN: handControllerSyncState.syncedMode === 'AUTO' || handControllerSyncState.syncedMode === 'MAN' 
-      ? handControllerSyncState.syncedMode 
+    MODE_AUTOMAN: handControllerSyncState.syncedMode === 'AUTO' || handControllerSyncState.syncedMode === 'MAN'
+      ? handControllerSyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: handControllerSyncState.alarmStates.HH,
     ALM_H_ACT: handControllerSyncState.alarmStates.H,
     ALM_L_ACT: handControllerSyncState.alarmStates.L,
     ALM_LL_ACT: handControllerSyncState.alarmStates.LL,
+    MODELOCK_OVERRIDE: handControllerModelockOverride,
   };
 
   const handControllerSecondaryConfig: SecondaryControllerConfig = {
@@ -1814,13 +1834,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: jugValveHandControllerSyncState.syncedSP,
     TSP: jugValveHandControllerSyncState.syncedSP,
     OUT_PCT: jugValveHandControllerSyncState.syncedOUT,
-    MODE_AUTOMAN: jugValveHandControllerSyncState.syncedMode === 'AUTO' || jugValveHandControllerSyncState.syncedMode === 'MAN' 
-      ? jugValveHandControllerSyncState.syncedMode 
+    MODE_AUTOMAN: jugValveHandControllerSyncState.syncedMode === 'AUTO' || jugValveHandControllerSyncState.syncedMode === 'MAN'
+      ? jugValveHandControllerSyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: jugValveHandControllerSyncState.alarmStates.HH,
     ALM_H_ACT: jugValveHandControllerSyncState.alarmStates.H,
     ALM_L_ACT: jugValveHandControllerSyncState.alarmStates.L,
     ALM_LL_ACT: jugValveHandControllerSyncState.alarmStates.LL,
+    MODELOCK_OVERRIDE: jugValveHandControllerModelockOverride,
   };
 
   const jugValveHandControllerSecondaryConfig: SecondaryControllerConfig = {
@@ -1848,13 +1869,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     SP: whbHandControllerSyncState.syncedSP,
     TSP: whbHandControllerSyncState.syncedSP,
     OUT_PCT: whbHandControllerSyncState.syncedOUT,
-    MODE_AUTOMAN: whbHandControllerSyncState.syncedMode === 'AUTO' || whbHandControllerSyncState.syncedMode === 'MAN' 
-      ? whbHandControllerSyncState.syncedMode 
+    MODE_AUTOMAN: whbHandControllerSyncState.syncedMode === 'AUTO' || whbHandControllerSyncState.syncedMode === 'MAN'
+      ? whbHandControllerSyncState.syncedMode
       : 'AUTO',
     ALM_HH_ACT: whbHandControllerSyncState.alarmStates.HH,
     ALM_H_ACT: whbHandControllerSyncState.alarmStates.H,
     ALM_L_ACT: whbHandControllerSyncState.alarmStates.L,
     ALM_LL_ACT: whbHandControllerSyncState.alarmStates.LL,
+    MODELOCK_OVERRIDE: whbHandControllerModelockOverride,
   };
 
   const whbHandControllerSecondaryConfig: SecondaryControllerConfig = {
@@ -1876,34 +1898,38 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Fetch saved layout positions from database
-  const { data: layoutData, isLoading: isLoadingLayout } = useQuery<{ layouts: Array<{
-    elementId: string;
-    positionX: number;
-    positionY: number;
-    width: number;
-    height: number;
-    rotation: number;
-  }> }>({
+  const { data: layoutData, isLoading: isLoadingLayout } = useQuery<{
+    layouts: Array<{
+      elementId: string;
+      positionX: number;
+      positionY: number;
+      width: number;
+      height: number;
+      rotation: number;
+    }>
+  }>({
     queryKey: ['/api/homescreen-layout/L1'],
   });
 
   // Fetch saved L4 layout positions from database
-  const { data: layoutDataL4 } = useQuery<{ layouts: Array<{
-    elementId: string;
-    positionX: number;
-    positionY: number;
-    width: number;
-    height: number;
-    rotation: number;
-    viewScreen?: string;
-  }> }>({
+  const { data: layoutDataL4 } = useQuery<{
+    layouts: Array<{
+      elementId: string;
+      positionX: number;
+      positionY: number;
+      width: number;
+      height: number;
+      rotation: number;
+      viewScreen?: string;
+    }>
+  }>({
     queryKey: ['/api/homescreen-layout/L4'],
   });
 
   // Fetch PV case columns for the Open dialog
-  const { data: pvCaseData } = useQuery<{ 
-    variables: Array<any>; 
-    cases: Array<{ id: string; name: string; description: string }> 
+  const { data: pvCaseData } = useQuery<{
+    variables: Array<any>;
+    cases: Array<{ id: string; name: string; description: string }>
   }>({
     queryKey: ['/api/process-variables'],
   });
@@ -1913,7 +1939,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (!layoutDataL4?.layouts || layoutDataL4.layouts.length === 0) return;
     // Only apply saved layout if user hasn't made local modifications
     if (isL4Dirty) return;
-    
+
     const positionMap = new Map<string, { x: number; y: number; width: number; height: number; rotation: number; viewScreen?: string }>();
     layoutDataL4.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
@@ -1936,6 +1962,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (faceplate4825L4) {
       setFaceplate4825L4Position({ x: faceplate4825L4.x, y: faceplate4825L4.y });
       setFaceplate4825L4Size({ width: faceplate4825L4.width, height: faceplate4825L4.height });
+    }
+
+    const jugValveHcL4 = positionMap.get('jug_valve_hc_l4');
+    if (jugValveHcL4) {
+      setJugValveHandControllerL4Position({ x: jugValveHcL4.x, y: jugValveHcL4.y });
+      setJugValveHandControllerL4Size({ width: jugValveHcL4.width, height: jugValveHcL4.height });
     }
 
     // Restore vertical arrows for L4-Converter
@@ -1985,15 +2017,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   }, [layoutDataL4, isL4Dirty]);
 
   // Query for L2-Furnace Area layout
-  const { data: layoutDataL2 } = useQuery<{ layouts: Array<{
-    elementId: string;
-    positionX: number;
-    positionY: number;
-    width: number;
-    height: number;
-    rotation: number;
-    viewScreen?: string;
-  }> }>({
+  const { data: layoutDataL2 } = useQuery<{
+    layouts: Array<{
+      elementId: string;
+      positionX: number;
+      positionY: number;
+      width: number;
+      height: number;
+      rotation: number;
+      viewScreen?: string;
+    }>
+  }>({
     queryKey: ['/api/homescreen-layout/L2'],
   });
 
@@ -2001,7 +2035,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   useEffect(() => {
     if (!layoutDataL2?.layouts || layoutDataL2.layouts.length === 0) return;
     if (isL2Dirty) return;
-    
+
     const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
     layoutDataL2.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
@@ -2184,7 +2218,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Apply loaded positions to state when data arrives
   useEffect(() => {
     if (!layoutData?.layouts || layoutData.layouts.length === 0) return;
-    
+
     const positionMap = new Map<string, { x: number; y: number; width: number; height: number; rotation: number }>();
     layoutData.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
@@ -2202,147 +2236,147 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setFurnacePosition({ x: furnace.x, y: furnace.y });
       setFurnaceSize({ width: furnace.width, height: furnace.height });
     }
-    
+
     const compressor = positionMap.get('compressor');
     if (compressor) {
       setCompressorPosition({ x: compressor.x, y: compressor.y });
       setCompressorSize({ width: compressor.width, height: compressor.height });
     }
-    
+
     const turboGenerator = positionMap.get('turbo_generator');
     if (turboGenerator) {
       setTurboGeneratorPosition({ x: turboGenerator.x, y: turboGenerator.y });
       setTurboGeneratorSize({ width: turboGenerator.width, height: turboGenerator.height });
     }
-    
+
     const sulfurFlow = positionMap.get('sulfur_flow');
     if (sulfurFlow) {
       setSulfurFlowPosition({ x: sulfurFlow.x, y: sulfurFlow.y });
       setSulfurFlowSize({ width: sulfurFlow.width, height: sulfurFlow.height });
     }
-    
+
     const sulfurValve = positionMap.get('sulfur_valve');
     if (sulfurValve) {
       setSulfurValvePosition({ x: sulfurValve.x, y: sulfurValve.y });
       setSulfurValveSize({ width: sulfurValve.width, height: sulfurValve.height });
     }
-    
+
     const jugValve = positionMap.get('jug_valve');
     if (jugValve) {
       setJugValvePosition({ x: jugValve.x, y: jugValve.y });
       setJugValveSize({ width: jugValve.width, height: jugValve.height });
     }
-    
+
     const jugValvePositioner = positionMap.get('jug_valve_positioner');
     if (jugValvePositioner) {
       setJugValvePositionerPosition({ x: jugValvePositioner.x, y: jugValvePositioner.y });
       setJugValvePositionerSize({ width: jugValvePositioner.width, height: jugValvePositioner.height });
     }
-    
+
     const handController = positionMap.get('hand_controller');
     if (handController) {
       setHandControllerPosition({ x: handController.x, y: handController.y });
       setHandControllerSize({ width: handController.width, height: handController.height });
     }
-    
+
     const whbHandController = positionMap.get('whb_hand_controller');
     if (whbHandController) {
       setWhbHandControllerPosition({ x: whbHandController.x, y: whbHandController.y });
       setWhbHandControllerSize({ width: whbHandController.width, height: whbHandController.height });
     }
-    
+
     const jugValveHandController = positionMap.get('jug_valve_hand_controller');
     if (jugValveHandController) {
       setJugValveHandControllerPosition({ x: jugValveHandController.x, y: jugValveHandController.y });
       setJugValveHandControllerSize({ width: jugValveHandController.width, height: jugValveHandController.height });
     }
-    
+
     const tempSensor5821 = positionMap.get('temp_sensor_5821');
     if (tempSensor5821) {
       setTempSensorPosition({ x: tempSensor5821.x, y: tempSensor5821.y });
       setTempSensorSize({ width: tempSensor5821.width, height: tempSensor5821.height });
     }
-    
+
     const tempSensor4200a = positionMap.get('temp_sensor_4200a');
     if (tempSensor4200a) {
       setTempSensor4200APosition({ x: tempSensor4200a.x, y: tempSensor4200a.y });
       setTempSensor4200ASize({ width: tempSensor4200a.width, height: tempSensor4200a.height });
     }
-    
+
     const tempSensor4200b = positionMap.get('temp_sensor_4200b');
     if (tempSensor4200b) {
       setTempSensor4200BPosition({ x: tempSensor4200b.x, y: tempSensor4200b.y });
       setTempSensor4200BSize({ width: tempSensor4200b.width, height: tempSensor4200b.height });
     }
-    
+
     const tempSensor4200c = positionMap.get('temp_sensor_4200c');
     if (tempSensor4200c) {
       setTempSensor4200CPosition({ x: tempSensor4200c.x, y: tempSensor4200c.y });
       setTempSensor4200CSize({ width: tempSensor4200c.width, height: tempSensor4200c.height });
     }
-    
+
     // Converter and process equipment
     const converter4 = positionMap.get('converter4');
     if (converter4) {
       setConverter4Position({ x: converter4.x, y: converter4.y });
       setConverter4Size({ width: converter4.width, height: converter4.height });
     }
-    
+
     const dt2 = positionMap.get('dt2');
     if (dt2) {
       setDt2Position({ x: dt2.x, y: dt2.y });
       setDt2Size({ width: dt2.width, height: dt2.height });
     }
-    
+
     const fat1 = positionMap.get('fat1');
     if (fat1) {
       setFat1Position({ x: fat1.x, y: fat1.y });
       setFat1Size({ width: fat1.width, height: fat1.height });
     }
-    
+
     const ipat1 = positionMap.get('ipat1');
     if (ipat1) {
       setIpat1Position({ x: ipat1.x, y: ipat1.y });
       setIpat1Size({ width: ipat1.width, height: ipat1.height });
     }
-    
+
     const hip1 = positionMap.get('hip1');
     if (hip1) {
       setHip1Position({ x: hip1.x, y: hip1.y });
       setHip1Size({ width: hip1.width, height: hip1.height });
     }
-    
+
     const cip = positionMap.get('cip');
     if (cip) {
       setCipPosition({ x: cip.x, y: cip.y });
       setCipSize({ width: cip.width, height: cip.height });
     }
-    
+
     const sh4a = positionMap.get('sh4a');
     if (sh4a) {
       setSh4aPosition({ x: sh4a.x, y: sh4a.y });
       setSh4aSize({ width: sh4a.width, height: sh4a.height });
     }
-    
+
     const ec3b = positionMap.get('ec3b');
     if (ec3b) {
       setEc3bPosition({ x: ec3b.x, y: ec3b.y });
       setEc3bSize({ width: ec3b.width, height: ec3b.height });
     }
-    
+
     const sh1b = positionMap.get('sh1b');
     if (sh1b) {
       setSh1bPosition({ x: sh1b.x, y: sh1b.y });
       setSh1bSize({ width: sh1b.width, height: sh1b.height });
     }
-    
+
     // Industrial Filter
     const industrialFilter = positionMap.get('industrial_filter');
     if (industrialFilter) {
       setFilterPosition({ x: industrialFilter.x, y: industrialFilter.y });
       setFilterSize({ width: industrialFilter.width, height: industrialFilter.height });
     }
-    
+
     // Dashed lines
     const dashedLine1 = positionMap.get('dashed_line_1');
     if (dashedLine1) {
@@ -2350,28 +2384,28 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setDashedLine1Size({ width: dashedLine1.width, height: dashedLine1.height });
       setDashedLine1Rotation(dashedLine1.rotation || 0);
     }
-    
+
     const dashedLine2 = positionMap.get('dashed_line_2');
     if (dashedLine2) {
       setDashedLine2Position({ x: dashedLine2.x, y: dashedLine2.y });
       setDashedLine2Size({ width: dashedLine2.width, height: dashedLine2.height });
       setDashedLine2Rotation(dashedLine2.rotation || 0);
     }
-    
+
     const dashedLine3 = positionMap.get('dashed_line_3');
     if (dashedLine3) {
       setDashedLine3Position({ x: dashedLine3.x, y: dashedLine3.y });
       setDashedLine3Size({ width: dashedLine3.width, height: dashedLine3.height });
       setDashedLine3Rotation(dashedLine3.rotation || 0);
     }
-    
+
     const dashedLine4 = positionMap.get('dashed_line_4');
     if (dashedLine4) {
       setDashedLine4Position({ x: dashedLine4.x, y: dashedLine4.y });
       setDashedLine4Size({ width: dashedLine4.width, height: dashedLine4.height });
       setDashedLine4Rotation(dashedLine4.rotation || 0);
     }
-    
+
     // Arrows - update from database
     setArrows(prev => prev.map(arrow => {
       const saved = positionMap.get(arrow.id);
@@ -2387,7 +2421,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       }
       return arrow;
     }));
-    
+
     // Vertical arrows - load from database (dynamically created elements)
     // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
     const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
@@ -2407,7 +2441,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (savedVerticalArrows.length > 0) {
       setVerticalArrows(savedVerticalArrows);
     }
-    
+
     // Vertical lines - load from database (dynamically created elements)
     // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
     const savedVerticalLines: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
@@ -2425,7 +2459,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     });
     // Always set vertical lines from saved layout (including empty array to clear removed lines)
     setVerticalLines(savedVerticalLines);
-    
+
   }, [layoutData]);
 
   const handleSaveLayout = async () => {
@@ -2511,6 +2545,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       const layouts = [
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
         { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
+        { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -2641,13 +2676,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Rotate arrow by 90 degrees clockwise
   const handleRotateArrow = (arrowId: string) => {
     if (isLocked) return;
-    setArrows(prev => prev.map(arrow => 
-      arrow.id === arrowId 
+    setArrows(prev => prev.map(arrow =>
+      arrow.id === arrowId
         ? { ...arrow, rotation: (arrow.rotation + 90) % 360 }
         : arrow
     ));
   };
-  
+
   // Add a new vertical arrow to the current screen
   const handleAddVerticalArrow = () => {
     const newId = `v_arrow_${Date.now()}`;
@@ -2665,8 +2700,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Rotate a vertical arrow by 90 degrees clockwise
   const handleRotateVerticalArrow = (arrowId: string) => {
-    setVerticalArrows(prev => prev.map(va => 
-      va.id === arrowId 
+    setVerticalArrows(prev => prev.map(va =>
+      va.id === arrowId
         ? { ...va, rotation: (va.rotation + 90) % 360 }
         : va
     ));
@@ -2896,8 +2931,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
               <MenubarItem className="text-gray-800" data-testid="menu-file-new">New</MenubarItem>
-              <MenubarItem 
-                className="text-gray-800" 
+              <MenubarItem
+                className="text-gray-800"
                 data-testid="menu-file-open"
                 onClick={() => setIsOpenPVCaseDialogOpen(true)}
               >Open</MenubarItem>
@@ -3082,9 +3117,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? "Saving..." : "Save Layout"}</p>
               </TooltipContent>
             </Tooltip>
-            
+
           </TooltipProvider>
-          
+
           {/* Add Shapes Dropdown - combines arrow and line tools */}
           <DropdownMenu>
             <TooltipProvider delayDuration={300}>
@@ -3108,7 +3143,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               </Tooltip>
             </TooltipProvider>
             <DropdownMenuContent className="bg-white z-50">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleAddVerticalArrow}
                 className="flex items-center gap-2 cursor-pointer"
                 data-testid="dropdown-add-vertical-arrow"
@@ -3116,7 +3151,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <ArrowUp className="h-4 w-4 text-cyan-500" />
                 <span>Add Vertical Arrow</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleAddVerticalLine}
                 className="flex items-center gap-2 cursor-pointer"
                 data-testid="dropdown-add-vertical-line"
@@ -3127,7 +3162,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <span>Add Vertical Line</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleDeleteLastArrow}
                 className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-700"
                 data-testid="dropdown-delete-last-arrow"
@@ -3135,7 +3170,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <Trash2 className="h-4 w-4" />
                 <span>Delete Last Arrow</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleDeleteLastLine}
                 className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-700"
                 data-testid="dropdown-delete-last-line"
@@ -3149,8 +3184,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           {/* View Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="bg-gray-700 text-white hover:bg-gray-600 hover:text-white px-3 py-1 text-sm h-8"
                 data-testid="dropdown-view"
               >
@@ -3160,10 +3195,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white z-50">
               {homescreenOptions.map((option) => (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   key={option.id}
                   onClick={() => setSelectedScreen(option.label)}
-                  className={`text-gray-800 ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
+                  className={`${option.isReady ? "bg-teal-100 text-teal-800 border-l-2 border-teal-500" : "text-gray-800 bg-white"} ${selectedScreen === option.label ? "bg-gray-100" : ""}`}
                   data-testid={`dropdown-view-option-${option.id}`}
                 >
                   {option.label}
@@ -3175,8 +3210,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           {/* Mode Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="bg-gray-700 text-white hover:bg-gray-600 hover:text-white px-3 py-1 text-sm h-8"
                 data-testid="dropdown-mode"
               >
@@ -3186,7 +3221,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white z-50">
               {modeOptions.map((option) => (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   key={option.id}
                   onClick={() => setSelectedMode(option.label)}
                   className={`text-gray-800 ${selectedMode === option.label ? "bg-gray-100" : ""}`}
@@ -3431,12 +3466,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               bounds="parent"
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
-              className={isLockedL4 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 10 }}
+              className={isLockedL4 ? "cursor-pointer" : "cursor-move"}
+              style={{ zIndex: 1 }}
             >
-              <img 
-                src={converter4L4Img} 
-                alt="Converter 4" 
+              <img
+                src={converter4L4Img}
+                alt="Converter 4"
                 className="w-full h-full object-contain"
                 draggable={false}
               />
@@ -3467,9 +3502,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div className="flex flex-col items-center gap-1 w-full h-full" data-testid="faceplate-4825-l4-container">
+              <div 
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
+                data-testid="faceplate-4825-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
+              >
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
-                <TempSensorPrimaryFaceplate 
+                <TempSensorPrimaryFaceplate
                   data={{
                     ...defaultControllerData,
                     instrumentTag: tempSensor4825Config.TAGNAME || '1540-TI-4825',
@@ -3481,6 +3520,49 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  isTransparent={tempSensor4825Config.TRANSPARENT_BG ?? false}
+                />
+              </div>
+            </Rnd>
+
+            {/* Jug Valve Hand Controller 1540-H-4282 for L4-Converter */}
+            <Rnd
+              key="jug-valve-hc-l4"
+              position={jugValveHandControllerL4Position}
+              size={jugValveHandControllerL4Size}
+              onDragStop={(e, d) => {
+                setJugValveHandControllerL4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setJugValveHandControllerL4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setJugValveHandControllerL4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+              data-testid="jug-valve-hc-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handleJugValveHandControllerClick}
+                style={{
+                  transform: `scale(${Math.min(jugValveHandControllerL4Size.width / 220, jugValveHandControllerL4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={jugValveHandControllerData}
+                  isTransparent={true}
+                  controllerId="1540-H-4282"
                 />
               </div>
             </Rnd>
@@ -3492,20 +3574,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 position={{ x: vArrow.x, y: vArrow.y }}
                 size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
                 onDragStop={(e, d) => {
-                  setVerticalArrows(prev => prev.map(va => 
+                  setVerticalArrows(prev => prev.map(va =>
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
                   const isHorizontal = vArrow.rotation % 180 !== 0;
-                  setVerticalArrows(prev => prev.map(va => 
-                    va.id === vArrow.id 
-                      ? { 
-                          ...va, 
-                          height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
-                          x: position.x, 
-                          y: position.y 
-                        }
+                  setVerticalArrows(prev => prev.map(va =>
+                    va.id === vArrow.id
+                      ? {
+                        ...va,
+                        height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
+                        x: position.x,
+                        y: position.y
+                      }
                       : va
                   ));
                 }}
@@ -3515,10 +3597,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
                 disableDragging={isLockedL4}
-                enableResizing={!isLockedL4 ? { 
-                  top: vArrow.rotation % 180 === 0, 
-                  bottom: vArrow.rotation % 180 === 0, 
-                  left: vArrow.rotation % 180 !== 0, 
+                enableResizing={!isLockedL4 ? {
+                  top: vArrow.rotation % 180 === 0,
+                  bottom: vArrow.rotation % 180 === 0,
+                  left: vArrow.rotation % 180 !== 0,
                   right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
@@ -3526,8 +3608,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 style={{ zIndex: 35 }}
               >
                 <div className="relative w-full h-full">
-                  <div 
-                    style={{ 
+                  <div
+                    style={{
                       position: 'absolute',
                       top: '50%',
                       left: '50%',
@@ -3572,13 +3654,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 position={{ x: vLine.x, y: vLine.y }}
                 size={{ width: vLine.width, height: vLine.height }}
                 onDragStop={(e, d) => {
-                  setVerticalLines(prev => prev.map(vl => 
+                  setVerticalLines(prev => prev.map(vl =>
                     vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
-                  setVerticalLines(prev => prev.map(vl => 
-                    vl.id === vLine.id 
+                  setVerticalLines(prev => prev.map(vl =>
+                    vl.id === vLine.id
                       ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
                       : vl
                   ));
@@ -3588,7 +3670,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 maxWidth={24}
                 bounds="parent"
                 disableDragging={isLockedL4}
-                enableResizing={!isLockedL4 ? { 
+                enableResizing={!isLockedL4 ? {
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
@@ -3613,6 +3695,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </div>
               </Rnd>
             ))}
+
+            {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
+            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4825 Pass 1 Catalyst Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4825SecondaryData}
+                  config={tempSensor4825SecondaryConfig}
+                  sensorId="1540-TI-4825"
+                  onClose={() => setShowSecondaryConverter4L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
@@ -3627,21 +3724,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 position={{ x: vArrow.x, y: vArrow.y }}
                 size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
                 onDragStop={(e, d) => {
-                  setVerticalArrows(prev => prev.map(va => 
+                  setVerticalArrows(prev => prev.map(va =>
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
                   setIsL2Dirty(true);
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
                   const isHorizontal = vArrow.rotation % 180 !== 0;
-                  setVerticalArrows(prev => prev.map(va => 
-                    va.id === vArrow.id 
-                      ? { 
-                          ...va, 
-                          height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
-                          x: position.x, 
-                          y: position.y 
-                        }
+                  setVerticalArrows(prev => prev.map(va =>
+                    va.id === vArrow.id
+                      ? {
+                        ...va,
+                        height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
+                        x: position.x,
+                        y: position.y
+                      }
                       : va
                   ));
                   setIsL2Dirty(true);
@@ -3652,10 +3749,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
                 disableDragging={isLockedL2}
-                enableResizing={!isLockedL2 ? { 
-                  top: vArrow.rotation % 180 === 0, 
-                  bottom: vArrow.rotation % 180 === 0, 
-                  left: vArrow.rotation % 180 !== 0, 
+                enableResizing={!isLockedL2 ? {
+                  top: vArrow.rotation % 180 === 0,
+                  bottom: vArrow.rotation % 180 === 0,
+                  left: vArrow.rotation % 180 !== 0,
                   right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
@@ -3663,8 +3760,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 style={{ zIndex: 35 }}
               >
                 <div className="relative w-full h-full">
-                  <div 
-                    style={{ 
+                  <div
+                    style={{
                       position: 'absolute',
                       top: '50%',
                       left: '50%',
@@ -3709,14 +3806,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 position={{ x: vLine.x, y: vLine.y }}
                 size={{ width: vLine.width, height: vLine.height }}
                 onDragStop={(e, d) => {
-                  setVerticalLines(prev => prev.map(vl => 
+                  setVerticalLines(prev => prev.map(vl =>
                     vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
                   ));
                   setIsL2Dirty(true);
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
-                  setVerticalLines(prev => prev.map(vl => 
-                    vl.id === vLine.id 
+                  setVerticalLines(prev => prev.map(vl =>
+                    vl.id === vLine.id
                       ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
                       : vl
                   ));
@@ -3727,7 +3824,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 maxWidth={24}
                 bounds="parent"
                 disableDragging={isLockedL2}
-                enableResizing={!isLockedL2 ? { 
+                enableResizing={!isLockedL2 ? {
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
@@ -3778,7 +3875,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleHandControllerClick}
                 style={{
@@ -3786,7 +3883,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <ControllerFaceplate 
+                <ControllerFaceplate
                   data={handControllerData}
                   isTransparent={true}
                   controllerId="1540-H-4030"
@@ -3820,7 +3917,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleCompressorClick}
                 style={{
@@ -3828,8 +3925,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <PrimaryCompressorFaceplate 
-                  data={compressorData} 
+                <PrimaryCompressorFaceplate
+                  data={compressorData}
                   transparentBackground={vfdConfig?.transparentBackground ?? true}
                   configTagName={vfdConfig?.tagName}
                   configDescription={vfdConfig?.description}
@@ -3864,7 +3961,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleSulfurFlowClick}
                 style={{
@@ -3872,11 +3969,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <ControllerFaceplate 
+                <ControllerFaceplate
                   data={sulfurFlowData}
                   isTransparent={true}
                   controllerId="1530-F-2602"
-                  showAlarmLimits={false}
+                  showAlarmLimits={true}
                 />
               </div>
             </Rnd>
@@ -3907,7 +4004,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={isLockedL2 ? handleSulfurValveL2Click : undefined}
                 style={{
@@ -3915,7 +4012,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <ValveFaceplate 
+                <ValveFaceplate
                   data={sulfurValveData}
                   isTransparent={true}
                 />
@@ -3948,7 +4045,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleJugValveHandControllerClick}
                 style={{
@@ -3956,7 +4053,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <ControllerFaceplate 
+                <ControllerFaceplate
                   data={jugValveHandControllerData}
                   isTransparent={true}
                   controllerId="1540-H-4282"
@@ -3990,7 +4087,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={isLockedL2 ? handleJugValveClick : undefined}
                 style={{
@@ -3998,7 +4095,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <ValveFaceplate 
+                <ValveFaceplate
                   data={jugValveData}
                   isTransparent={true}
                   valveImageSrc={jugValveImage}
@@ -4033,9 +4130,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 30 }}
             >
-              <img 
-                src={wasteHeatBoilerImg} 
-                alt="Waste Heat Boiler 1540-HX-001" 
+              <img
+                src={wasteHeatBoilerImg}
+                alt="Waste Heat Boiler 1540-HX-001"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-waste-heat-boiler-l2"
@@ -4069,9 +4166,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={yellowHorizArrowImg} 
-                alt="Yellow Horizontal Arrow" 
+              <img
+                src={yellowHorizArrowImg}
+                alt="Yellow Horizontal Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-yellow-horiz-arrow-l2"
@@ -4105,9 +4202,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanLongArrowImg} 
-                alt="Cyan Long Arrow" 
+              <img
+                src={cyanLongArrowImg}
+                alt="Cyan Long Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-long-arrow-l2"
@@ -4141,9 +4238,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanUpArrowImg} 
-                alt="Cyan Up Arrow" 
+              <img
+                src={cyanUpArrowImg}
+                alt="Cyan Up Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-up-arrow-l2"
@@ -4177,9 +4274,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanLeftArrowImg} 
-                alt="Cyan Left Arrow" 
+              <img
+                src={cyanLeftArrowImg}
+                alt="Cyan Left Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-left-arrow-l2"
@@ -4213,9 +4310,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanLongLeftArrowImg} 
-                alt="Cyan Long Left Arrow" 
+              <img
+                src={cyanLongLeftArrowImg}
+                alt="Cyan Long Left Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-long-left-arrow-l2"
@@ -4249,9 +4346,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanUpArrow2Img} 
-                alt="Cyan Up Arrow 2" 
+              <img
+                src={cyanUpArrow2Img}
+                alt="Cyan Up Arrow 2"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-up-arrow-2-l2"
@@ -4285,9 +4382,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanUpArrow3Img} 
-                alt="Cyan Up Arrow 3" 
+              <img
+                src={cyanUpArrow3Img}
+                alt="Cyan Up Arrow 3"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-up-arrow-3-l2"
@@ -4321,9 +4418,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanDownArrowImg} 
-                alt="Cyan Down Arrow" 
+              <img
+                src={cyanDownArrowImg}
+                alt="Cyan Down Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-down-arrow-l2"
@@ -4357,13 +4454,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 30 }}
             >
-              <div 
+              <div
                 className={`w-full h-full ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleFurnaceClick}
               >
-                <img 
-                  src={metalTankImg} 
-                  alt="Metal Tank" 
+                <img
+                  src={metalTankImg}
+                  alt="Metal Tank"
                   className="w-full h-full object-contain"
                   draggable={false}
                   data-testid="img-metal-tank-l2"
@@ -4398,9 +4495,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={grayYellowArrowImg} 
-                alt="Gray Yellow Arrow" 
+              <img
+                src={grayYellowArrowImg}
+                alt="Gray Yellow Arrow"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-gray-yellow-arrow-l2"
@@ -4434,9 +4531,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanHorizArrow2Img} 
-                alt="Cyan Horizontal Arrow 2" 
+              <img
+                src={cyanHorizArrow2Img}
+                alt="Cyan Horizontal Arrow 2"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-horiz-arrow-2-l2"
@@ -4470,9 +4567,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={grayArrowCyanLineImg} 
-                alt="Gray Arrow with Cyan Line" 
+              <img
+                src={grayArrowCyanLineImg}
+                alt="Gray Arrow with Cyan Line"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-gray-arrow-cyan-line-l2"
@@ -4506,9 +4603,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanThinLine1Img} 
-                alt="Cyan Thin Line 1" 
+              <img
+                src={cyanThinLine1Img}
+                alt="Cyan Thin Line 1"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-thin-line-1-l2"
@@ -4542,9 +4639,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanThinLine2Img} 
-                alt="Cyan Thin Line 2" 
+              <img
+                src={cyanThinLine2Img}
+                alt="Cyan Thin Line 2"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-thin-line-2-l2"
@@ -4578,9 +4675,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanVertLine1Img} 
-                alt="Cyan Vertical Line 1" 
+              <img
+                src={cyanVertLine1Img}
+                alt="Cyan Vertical Line 1"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-vert-line-1-l2"
@@ -4614,9 +4711,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={cyanVertLine2Img} 
-                alt="Cyan Vertical Line 2" 
+              <img
+                src={cyanVertLine2Img}
+                alt="Cyan Vertical Line 2"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-cyan-vert-line-2-l2"
@@ -4650,9 +4747,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 35 }}
             >
-              <img 
-                src={blackVertLineImg} 
-                alt="Black Vertical Line" 
+              <img
+                src={blackVertLineImg}
+                alt="Black Vertical Line"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-black-vert-line-l2"
@@ -4686,7 +4783,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 40 }}
             >
-              <div 
+              <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleTempSensor4200AClick}
                 style={{
@@ -4694,7 +4791,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   transformOrigin: 'center center'
                 }}
               >
-                <TempSensorPrimaryFaceplate 
+                <TempSensorPrimaryFaceplate
                   data={tempSensor4200AData}
                   isTransparent={true}
                 />
@@ -4721,20 +4818,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 position={{ x: vArrow.x, y: vArrow.y }}
                 size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
                 onDragStop={(e, d) => {
-                  setVerticalArrows(prev => prev.map(va => 
+                  setVerticalArrows(prev => prev.map(va =>
                     va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
                   const isHorizontal = vArrow.rotation % 180 !== 0;
-                  setVerticalArrows(prev => prev.map(va => 
-                    va.id === vArrow.id 
-                      ? { 
-                          ...va, 
-                          height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height), 
-                          x: position.x, 
-                          y: position.y 
-                        }
+                  setVerticalArrows(prev => prev.map(va =>
+                    va.id === vArrow.id
+                      ? {
+                        ...va,
+                        height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
+                        x: position.x,
+                        y: position.y
+                      }
                       : va
                   ));
                 }}
@@ -4744,10 +4841,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
                 bounds="parent"
                 disableDragging={isLocked}
-                enableResizing={!isLocked ? { 
-                  top: vArrow.rotation % 180 === 0, 
-                  bottom: vArrow.rotation % 180 === 0, 
-                  left: vArrow.rotation % 180 !== 0, 
+                enableResizing={!isLocked ? {
+                  top: vArrow.rotation % 180 === 0,
+                  bottom: vArrow.rotation % 180 === 0,
+                  left: vArrow.rotation % 180 !== 0,
                   right: vArrow.rotation % 180 !== 0,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
@@ -4755,8 +4852,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 style={{ zIndex: 35 }}
               >
                 <div className="relative w-full h-full">
-                  <div 
-                    style={{ 
+                  <div
+                    style={{
                       position: 'absolute',
                       top: '50%',
                       left: '50%',
@@ -4801,13 +4898,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 position={{ x: vLine.x, y: vLine.y }}
                 size={{ width: vLine.width, height: vLine.height }}
                 onDragStop={(e, d) => {
-                  setVerticalLines(prev => prev.map(vl => 
+                  setVerticalLines(prev => prev.map(vl =>
                     vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
                   ));
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
-                  setVerticalLines(prev => prev.map(vl => 
-                    vl.id === vLine.id 
+                  setVerticalLines(prev => prev.map(vl =>
+                    vl.id === vLine.id
                       ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
                       : vl
                   ));
@@ -4817,7 +4914,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 maxWidth={24}
                 bounds="parent"
                 disableDragging={isLocked}
-                enableResizing={!isLocked ? { 
+                enableResizing={!isLocked ? {
                   top: true, bottom: true, left: false, right: false,
                   topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
                 } : false}
@@ -4886,9 +4983,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               style={{ zIndex: 10 }}
               data-testid="converter-61-rnd"
             >
-              <img 
-                src={converter4PassImg} 
-                alt="4-Pass Catalytic Converter" 
+              <img
+                src={converter4PassImg}
+                alt="4-Pass Catalytic Converter"
                 className="w-full h-full object-contain"
                 draggable={false}
                 data-testid="img-converter-61"
@@ -4919,13 +5016,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               style={{ zIndex: 20 }}
               data-testid="faceplate-4825-61-rnd"
             >
-              <div 
-                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
                 data-testid="button-faceplate-4825-61-open"
                 onClick={() => setShowSecondary4825_61(true)}
               >
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
-                <TempSensorPrimaryFaceplate 
+                <TempSensorPrimaryFaceplate
                   data={{
                     ...defaultControllerData,
                     instrumentTag: tempSensor4825Config.TAGNAME || '1540-TI-4825',
@@ -4937,6 +5034,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     sp: tempSensor4825SyncState.syncedSP,
                     out: tempSensor4825SyncState.syncedOUT,
                   }}
+                  isTransparent={tempSensor4825Config.TRANSPARENT_BG ?? false}
                 />
               </div>
             </Rnd>
@@ -4955,6 +5053,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 />
               </DialogContent>
             </Dialog>
+
           </div>
         )}
 
@@ -5112,6 +5211,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             fromSource="home-screen"
             selectedMode={selectedMode}
             loadedCaseValue={loadedCaseValue1540H4030}
+            onModelockOverrideChange={setHandControllerModelockOverride}
           />
         </DialogContent>
       </Dialog>
@@ -5132,7 +5232,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onOutChange={(value) => updateJugValveHandControllerOUT(value)}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={useStaticJugValve ? loadedCaseValueJugValve : null}
+            onModelockOverrideChange={setJugValveHandControllerModelockOverride}
           />
         </DialogContent>
       </Dialog>
@@ -5154,10 +5255,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             fromSource="home-screen"
             selectedMode={selectedMode}
             loadedCaseValue={null}
+            onModelockOverrideChange={setWhbHandControllerModelockOverride}
           />
         </DialogContent>
       </Dialog>
-      
+
       {/* PFD Navigation */}
       <PFDNavigation position="bottom-right" />
 
@@ -5171,14 +5273,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <RadioGroup 
-              value={selectedPVCase || ""} 
+            <RadioGroup
+              value={selectedPVCase || ""}
               onValueChange={(value) => setSelectedPVCase(value)}
               className="space-y-3"
             >
               {pvCaseData?.cases?.map((pvCase) => (
-                <div 
-                  key={pvCase.id} 
+                <div
+                  key={pvCase.id}
                   className="flex items-start space-x-3 p-3 rounded-md border hover:bg-gray-50 cursor-pointer"
                   onClick={() => setSelectedPVCase(pvCase.id)}
                 >
@@ -5197,14 +5299,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             )}
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsOpenPVCaseDialogOpen(false)}
               data-testid="button-cancel-pv-case"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (selectedPVCase && pvCaseData) {
                   // Find the 1540-H-4030 variable and extract the value for the selected case
@@ -5236,7 +5338,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           </DialogFooter>
         </DialogContent>
       </Dialog>
-  </div>
+    </div>
   );
 };
 
