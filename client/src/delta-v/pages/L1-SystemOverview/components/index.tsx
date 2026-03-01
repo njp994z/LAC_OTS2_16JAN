@@ -23,6 +23,7 @@ import { CompressorContextType } from "@/delta-v/contexts/CompressorContext";
 
 import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
 import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
+import KPICard from "@/pages/unit-operation/kpi-card";
 
 export enum L1SystemElement {
     '1540-PI-4072' = '1540-PI-4072',
@@ -35,6 +36,7 @@ export enum L1SystemElement {
     '1540-PI-2604' = '1540-PI-2604',
     '1540-TI-4020' = '1540-TI-4020',
     '1540-HCV-4282' = '1540-HCV-4282',
+    '1540-H-4282' = '1540-H-4282',
     '1540-TIC-4822' = '1540-TIC-4822',
     '1540-TI-8721' = '1540-TI-8721',
     '1560-TG-001' = '1560-TG-001',
@@ -47,6 +49,8 @@ export enum L1SystemElement {
     '1540-TI-8421' = '1540-TI-8421',
     '1540-TIC-7224' = '1540-TIC-7224',
     '1520-TI-6624' = '1520-TI-6624',
+    '1540-TI-7821' = '1540-TI-7821',
+    'KPICard' = 'KPICard',
 
     // Image Elements
     "IPAT" = "IPAT",
@@ -64,8 +68,6 @@ export enum L1SystemElement {
     //Text Elements
     "To Acid Pump Tank" = "To Acid Pump Tank",
     "From Acid System" = "From Acid System",
-    "To SO2 Scrubber" = "To SO2 Scrubber",
-    "From SO2 Scrubber" = "From SO2 Scrubber",
     "Ambient Air" = "Ambient Air",
     "SUPERHEATER 1B 1540-HX-003" = "SUPERHEATER 1B 1540-HX-003",
     "HOT INTERPASS HX 1540-HX-009" = "HOT INTERPASS HX 1540-HX-009",
@@ -77,6 +79,17 @@ export enum L1SystemElement {
     "WASTE HEAT BOILER (WHB) 1540-HX-001" = "WASTE HEAT BOILER (WHB) 1540-HX-001",
     "DRYING TOWER 1520-TW-001" = "DRYING TOWER 1520-TW-001",
     "INLET AIR FILTER 1520-FL-001" = "INLET AIR FILTER 1520-FL-001",
+    "FINAL TOWER 1520-TW-002" = "FINAL TOWER 1520-TW-002",
+    "INTERPASS TOWER 1520-TW-003" = "INTERPASS TOWER 1520-TW-003",
+
+    "To Acid Pump Tank 2" = "To Acid Pump Tank 2",
+    "From Acid System 2" = "From Acid System 2",
+
+    "To Acid Pump Tank 3" = "To Acid Pump Tank 3",
+    "From Acid System 3" = "From Acid System 3",
+
+    "From Sulfer Tank 1" = "From Sulfer Tank 1",
+    "To SO2 Scrubber" = "To SO2 Scrubber",
 }
 
 export const L1SystemElements = [
@@ -90,6 +103,7 @@ export const L1SystemElements = [
     L1SystemElement['1540-PI-2604'],
     L1SystemElement['1540-TI-4020'],
     L1SystemElement['1540-HCV-4282'],
+    L1SystemElement['1540-H-4282'],
     L1SystemElement['1540-TIC-4822'],
     L1SystemElement['1540-TI-8721'],
     L1SystemElement['1560-TG-001'],
@@ -102,6 +116,9 @@ export const L1SystemElements = [
     L1SystemElement['1540-TI-8421'],
     L1SystemElement['1540-TIC-7224'],
     L1SystemElement['1520-TI-6624'],
+    L1SystemElement['1540-TI-7821'],
+
+    L1SystemElement['KPICard'],
 
     // Image Elements
     L1SystemElement['IPAT'],
@@ -119,8 +136,6 @@ export const L1SystemElements = [
     //Text Elements
     L1SystemElement['To Acid Pump Tank'],
     L1SystemElement['From Acid System'],
-    L1SystemElement['To SO2 Scrubber'],
-    L1SystemElement['From SO2 Scrubber'],
     L1SystemElement['Ambient Air'],
     L1SystemElement['SUPERHEATER 1B 1540-HX-003'],
     L1SystemElement['HOT INTERPASS HX 1540-HX-009'],
@@ -132,6 +147,15 @@ export const L1SystemElements = [
     L1SystemElement['WASTE HEAT BOILER (WHB) 1540-HX-001'],
     L1SystemElement['DRYING TOWER 1520-TW-001'],
     L1SystemElement['INLET AIR FILTER 1520-FL-001'],
+    L1SystemElement['FINAL TOWER 1520-TW-002'],
+    L1SystemElement['INTERPASS TOWER 1520-TW-003'],
+
+    L1SystemElement['To Acid Pump Tank 2'],
+    L1SystemElement['From Acid System 2'],
+    L1SystemElement['To Acid Pump Tank 3'],
+    L1SystemElement['From Acid System 3'],
+    L1SystemElement['From Sulfer Tank 1'],  
+    L1SystemElement['To SO2 Scrubber'],
 ];
 
 export enum ElementType {
@@ -206,6 +230,11 @@ const L1SystemElementsMap = (getControllerConfig: (
     const jugControllerValve4282Config = getControllerConfig(L1SystemElement['1540-HCV-4282']);
     const jugControllerValve4282Data = useControllerSync(L1SystemElement['1540-HCV-4282']);
 
+    //1540-H-4282
+    //Jug Controller
+    const jugController4282Config = getControllerConfig(L1SystemElement['1540-H-4282']);
+    const jugController4282Data = useControllerSync(L1SystemElement['1540-H-4282']);
+
     //1540-TIC-4822
     // Pass 2 Inlet Temperature
     const pass2InletTemperature4822Config = getControllerConfig(L1SystemElement['1540-TIC-4822']);
@@ -266,7 +295,90 @@ const L1SystemElementsMap = (getControllerConfig: (
     const fatOutletTemperature6624Config = getControllerConfig(L1SystemElement['1520-TI-6624']);
     const fatOutletTemperature6624Data = useControllerSync(L1SystemElement['1520-TI-6624']);
 
+    //1540-TI-7821
+    //IPAT Outlet Temperature
+    const ipatOutletTemperature7821Config = getControllerConfig(L1SystemElement['1540-TI-7821']);
+    const ipatOutletTemperature7821Data = useControllerSync(L1SystemElement['1540-TI-7821']);
+
     return {
+        "1540-H-4282": {
+            tag: L1SystemElement["1540-H-4282"],
+            description: "Jug Valve Controller",
+            type: ElementType.TemperatureController,
+            config: jugController4282Config,
+            data: jugController4282Data,
+            component: <div
+                className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
+
+                style={{
+                    //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
+                    transformOrigin: 'center center'
+                }}
+            >
+                <TempSensorPrimaryFaceplate
+                    data={{
+                        ...defaultControllerData,
+                        instrumentTag: jugController4282Config?.TAGNAME,
+                        description: jugController4282Config?.DESC || 'Jug Valve Controller',
+                        pv: jugController4282Data?.state?.syncedPV ?? 0,
+                        sp: jugController4282Data?.state?.syncedSP ?? 0,
+                        out: jugController4282Data?.state?.syncedOUT ?? 0,
+                        mode: jugController4282Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: jugController4282Config?.EU || '°C',
+                        pvRangeMin: jugController4282Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: jugController4282Config?.SP_LIM_HI ?? 500,
+                        alarmActive: jugController4282Data?.state?.alarmStates?.HH || jugController4282Data?.state?.alarmStates?.H ||
+                            jugController4282Data?.state?.alarmStates?.L || jugController4282Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (jugController4282Data?.state?.alarmStates?.HH || jugController4282Data?.state?.alarmStates?.LL) ? 'red' :
+                            (jugController4282Data?.state?.alarmStates?.H || jugController4282Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: jugController4282Config?.ALM_LL_LIM,
+                        alarmL: jugController4282Config?.ALM_L_LIM,
+                        alarmH: jugController4282Config?.ALM_H_LIM,
+                        alarmHH: jugController4282Config?.ALM_HH_LIM,
+                    } as ControllerData}
+                    isTransparent={true}
+                />
+            </div>
+        },
+        "1540-TI-7821": {
+            tag: L1SystemElement["1540-TI-7821"],
+            description: "Pass 1 Outlet Temperature",
+            type: ElementType.TemperatureController,
+            config: ipatOutletTemperature7821Config,
+            data: ipatOutletTemperature7821Data,
+            component: <div
+                className={`w-full p-4 h-full flex items-center justify-center overflow-hidden ${isLocked ? 'cursor-pointer' : ''}`}
+
+                style={{
+                    //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
+                    transformOrigin: 'center center'
+                }}
+            >
+                <TempSensorPrimaryFaceplate
+                    data={{
+                        ...defaultControllerData,
+                        instrumentTag: ipatOutletTemperature7821Config?.TAGNAME,
+                        description: ipatOutletTemperature7821Config?.DESC || 'Pass 1 Outlet Temperature',
+                        pv: ipatOutletTemperature7821Data?.state?.syncedPV ?? 0,
+                        sp: ipatOutletTemperature7821Data?.state?.syncedSP ?? 0,
+                        out: ipatOutletTemperature7821Data?.state?.syncedOUT ?? 0,
+                        mode: ipatOutletTemperature7821Data?.state?.syncedMode ?? 'AUTO',
+                        pvUnits: ipatOutletTemperature7821Config?.EU || '°C',
+                        pvRangeMin: ipatOutletTemperature7821Config?.SP_LIM_LO ?? 0,
+                        pvRangeMax: ipatOutletTemperature7821Config?.SP_LIM_HI ?? 500,
+                        alarmActive: ipatOutletTemperature7821Data?.state?.alarmStates?.HH || ipatOutletTemperature7821Data?.state?.alarmStates?.H ||
+                            ipatOutletTemperature7821Data?.state?.alarmStates?.L || ipatOutletTemperature7821Data?.state?.alarmStates?.LL || false,
+                        alarmColor: (ipatOutletTemperature7821Data?.state?.alarmStates?.HH || ipatOutletTemperature7821Data?.state?.alarmStates?.LL) ? 'red' :
+                            (ipatOutletTemperature7821Data?.state?.alarmStates?.H || ipatOutletTemperature7821Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
+                        alarmLL: ipatOutletTemperature7821Config?.ALM_LL_LIM,
+                        alarmL: ipatOutletTemperature7821Config?.ALM_L_LIM,
+                        alarmH: ipatOutletTemperature7821Config?.ALM_H_LIM,
+                        alarmHH: ipatOutletTemperature7821Config?.ALM_HH_LIM,
+                    } as ControllerData}
+                    isTransparent={true}
+                />
+            </div>
+        },
         "1540-PI-4072": {
             tag: L1SystemElement["1540-PI-4072"],
             description: "Compressor Inlet Pressure",
@@ -535,14 +647,14 @@ const L1SystemElementsMap = (getControllerConfig: (
 
                 style={{
                     //   transform: `scale(${Math.min(tempSensor4200CSize.width / 180, tempSensor4200CSize.height / 120)})`,
-                    transformOrigin: 'center center'
+                    transformOrigin: 'center center',
                 }}
             >
                 <TempSensorPrimaryFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: furnaceInletTemperature4020Config?.TAGNAME,
-                        description: furnaceInletTemperature4020Config?.DESC || 'DT Gas Out Temperature',
+                        description: furnaceInletTemperature4020Config?.DESC || 'Furnace Inlet Temperature',
                         pv: furnaceInletTemperature4020Data?.state?.syncedPV ?? 0,
                         sp: furnaceInletTemperature4020Data?.state?.syncedSP ?? 0,
                         out: furnaceInletTemperature4020Data?.state?.syncedOUT ?? 0,
@@ -1093,6 +1205,11 @@ const L1SystemElementsMap = (getControllerConfig: (
                 />
             </div>
         },
+        "KPICard": {
+            tag: L1SystemElement["KPICard"],
+            type: ElementType.Image,
+            description: "KPI Card", component: <KPICard />
+        },
         "DT": {
             tag: L1SystemElement["DT"],
             type: ElementType.Image,
@@ -1179,30 +1296,6 @@ const L1SystemElementsMap = (getControllerConfig: (
                 <p>Ambient
                     <br />
                     Air</p>
-            </div>
-        },
-        "To SO2 Scrubber": {
-            tag: L1SystemElement["To SO2 Scrubber"],
-            type: ElementType.Text,
-            description: "To SO2 Scrubber",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    To SO2
-                    <br />
-                    Scrubber
-                </p>
-            </div>
-        },
-        "From SO2 Scrubber": {
-            tag: L1SystemElement["From SO2 Scrubber"],
-            type: ElementType.Text,
-            description: "From SO2 Scrubber",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    From SO2
-                    <br />
-                    Scrubber
-                </p>
             </div>
         },
 
@@ -1327,7 +1420,100 @@ const L1SystemElementsMap = (getControllerConfig: (
                     1520-FL-001
                 </p>
             </div>
-        }
+        },
+        "FINAL TOWER 1520-TW-002": {
+            tag: L1SystemElement["FINAL TOWER 1520-TW-002"],
+            type: ElementType.Text,
+            description: "FINAL TOWER 1520-TW-002",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p className=" text-center text-lg self-end font-bold">
+                    FINAL TOWER
+                    <br />
+                    1520-TW-002
+                </p>
+            </div>
+        },
+        "INTERPASS TOWER 1520-TW-003": {
+            tag: L1SystemElement["INTERPASS TOWER 1520-TW-003"],
+            type: ElementType.Text,
+            description: "INTERPASS TOWER 1520-TW-003",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p className=" text-center text-lg self-end font-bold">
+                    INTERPASS TOWER
+                    <br />
+                    1520-TW-003
+                </p>
+            </div>
+        },
+        "To Acid Pump Tank 2": {
+            tag: L1SystemElement["To Acid Pump Tank 2"],
+            type: ElementType.Text,
+            description: "To Acid Pump Tank",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    To Acid
+                    <br />
+                    Pump Tank
+                </p>
+            </div>
+        },
+        "From Acid System 2": {
+            tag: L1SystemElement["From Acid System 2"],
+            type: ElementType.Text,
+            description: "From Acid System",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>From Acid
+                    <br />
+                    System</p>
+            </div>
+        },
+
+        "To Acid Pump Tank 3": {
+            tag: L1SystemElement["To Acid Pump Tank 3"],
+            type: ElementType.Text,
+            description: "To Acid Pump Tank",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    To Acid
+                    <br />
+                    Pump Tank
+                </p>
+            </div>
+        },
+        "From Acid System 3": {
+            tag: L1SystemElement["From Acid System 3"],
+            type: ElementType.Text,
+            description: "From Acid System",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>From Acid
+                    <br />
+                    System</p>
+            </div>
+        },
+        "From Sulfer Tank 1": {
+            tag: L1SystemElement["From Sulfer Tank 1"],
+            type: ElementType.Text,
+            description: "From Sulfer Tank 1",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    From Sulfer
+                    <br />
+                    Tank
+                </p>
+            </div>
+        },
+        "To SO2 Scrubber": {
+            tag: L1SystemElement["To SO2 Scrubber"],
+            type: ElementType.Text,
+            description: "To SO2 Scrubber",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p>
+                    To SO2
+                    <br />
+                    Scrubber
+                </p>
+            </div>
+        },
     }
 
 }

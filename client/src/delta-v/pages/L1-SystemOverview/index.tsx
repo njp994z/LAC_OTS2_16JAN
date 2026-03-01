@@ -430,7 +430,7 @@ const L1SystemOverview = ({
                         onMouseMove={onMouseMove}
                         onMouseDown={handleCanvasMouseDown}
                     >
-                        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
                             <defs>
                                 <linearGradient id="gray-gradient" x1="0" y1="0" x2="1" y2="0">
                                     <stop offset="0%" stopColor="rgb(133,132,130)" />
