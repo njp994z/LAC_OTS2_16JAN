@@ -3120,6 +3120,51 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  app.post('/api/ec3b-calc', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'ec3b_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code: number | null) => {
+        if (code !== 0) {
+          console.error('EC3B calc stderr:', stderr);
+          return res.status(500).json({ error: stderr || 'Calculation failed' });
+        }
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('EC3B calc parse error:', stdout);
+          res.status(500).json({ error: 'Failed to parse calculation results' });
+        }
+      });
+
+      pythonProcess.on('error', (err: Error) => {
+        console.error('EC3B calc process error:', err);
+        res.status(500).json({ error: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('EC3B calc error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Inlet Air Filter Simulation endpoint
   app.post('/api/inlet-air-filter-simulation', async (req: Request, res: Response) => {
     try {
