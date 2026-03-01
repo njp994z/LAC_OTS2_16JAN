@@ -84,6 +84,12 @@ const L1SystemOverview = ({
     // Instead of global edgeCounter which can reset on HMR, use a ref
     const edgeCounterRef = useRef<number>(1);
 
+    // Track shift key state for straight-line drawing
+    const isShiftHeldRef = useRef<boolean>(false);
+
+    // Track resize state for components
+    const resizingRef = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number; handle: string } | null>(null);
+
     const onMouseMove = (e: React.MouseEvent) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
@@ -91,15 +97,52 @@ const L1SystemOverview = ({
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
+        // Track shift key
+        isShiftHeldRef.current = e.shiftKey;
+
         if (draggingId) {
             setPositions((prev) => ({
                 ...prev,
-                [draggingId]: { x: x - 60, y: y - 40 } // Approximated center for dragging
+                [draggingId]: {
+                    ...prev[draggingId],
+                    x: x - 60,
+                    y: y - 40
+                }
             }));
         }
 
+        // Handle resize
+        if (resizingRef.current) {
+            const { id, startX, startY, startW, startH, handle } = resizingRef.current;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            setPositions((prev) => {
+                const cur = prev[id] || { x: 0, y: 0 };
+                let newW = startW;
+                let newH = startH;
+                if (handle.includes('e')) newW = Math.max(40, startW + dx);
+                if (handle.includes('w')) newW = Math.max(40, startW - dx);
+                if (handle.includes('s')) newH = Math.max(40, startH + dy);
+                if (handle.includes('n')) newH = Math.max(40, startH - dy);
+                return { ...prev, [id]: { ...cur, w: newW, h: newH } };
+            });
+            return;
+        }
+
         if (drawingEdge) {
-            setDrawingEdge((prev) => (prev ? { ...prev, x2: x, y2: y } : null));
+            let x2 = x;
+            let y2 = y;
+            // Snap to straight line when shift held
+            if (e.shiftKey) {
+                const dx = Math.abs(x - drawingEdge.x1);
+                const dy = Math.abs(y - drawingEdge.y1);
+                if (dx >= dy) {
+                    y2 = drawingEdge.y1; // horizontal
+                } else {
+                    x2 = drawingEdge.x1; // vertical
+                }
+            }
+            setDrawingEdge((prev) => (prev ? { ...prev, x2, y2 } : null));
         }
     };
 
@@ -115,6 +158,7 @@ const L1SystemOverview = ({
             setDrawingEdge(null);
         }
         setDraggingId(null);
+        resizingRef.current = null;
     };
 
     useEffect(() => {
@@ -174,6 +218,13 @@ const L1SystemOverview = ({
         );
     };
 
+    const changeComponentZ = (id: string, z: number) => {
+        setPositions((prev) => ({
+            ...prev,
+            [id]: { ...prev[id], z }
+        }));
+    };
+
     const toggleEdgePointer = (id: number) => {
         setEdges((prev) =>
             prev.map((e) =>
@@ -192,9 +243,9 @@ const L1SystemOverview = ({
 
     const handleSave = () => {
         const layout = { positions, edges };
-        console.log("Saving layout:", layout);
         updateLayout({ id: "L1", layout }).unwrap().then(() => {
             toast({ title: "Success", description: "Layout saved successfully" });
+            setMode(Mode.View);
         });
     };
 
@@ -202,6 +253,11 @@ const L1SystemOverview = ({
         if (layoutData) {
             setPositions(layoutData.positions);
             setEdges(layoutData.edges);
+            // Fix 1: Seed edge counter from max existing ID to avoid duplicate IDs on next save/load
+            if (layoutData.edges && layoutData.edges.length > 0) {
+                const maxId = Math.max(...layoutData.edges.map((e) => e.id));
+                edgeCounterRef.current = maxId + 1;
+            }
         }
     };
 
@@ -230,14 +286,17 @@ const L1SystemOverview = ({
         callback();
     }
 
+    // Fix 3: SVG <g> ignores CSS zIndex — sort by z so higher-z edges paint last (on top)
+    const sortedEdges = [...edges].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+
     const renderEdges = () => (
-        edges.map((edge) => {
+        sortedEdges.map((edge, index) => {
             const mid = getEdgeMidpoint(edge);
 
             return (
                 <ContextMenu key={edge.id}>
                     <ContextMenuTrigger asChild>
-                        <g style={{ zIndex: edge?.z ?? 10 }}>
+                        <g style={{ zIndex: edge?.z ?? 10 }} id={`edge-${edge.id}-${index}`}>
                             <path
                                 d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
                                 fill="none"
@@ -287,8 +346,9 @@ const L1SystemOverview = ({
                             <div className="flex items-center gap-2">
                                 <p>Edge Z</p>
                                 <div className="flex items-center gap-2">
-                                    <button className="p-2 rounded-full bg-blue-500 text-white" onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) + 1))}>+</button>
-                                    <button className="p-2 rounded-full bg-blue-500 text-white" onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) - 1))}>-</button>
+                                    <button className="p-2 rounded-full aspect-square bg-blue-500 text-white active:bg-blue-600" onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) + 1))}>+</button>
+                                    <span className="min-w-[2rem] text-center font-mono font-bold text-sm border border-gray-300 rounded px-1 bg-gray-50 text-black">{edge?.z ?? 0}</span>
+                                    <button className="p-2 rounded-full aspect-square bg-blue-500 text-white active:bg-blue-600" onClick={(e) => handleStopPropagation(e, () => changeEdgeZ(edge.id, (edge?.z || 0) - 1))}>-</button>
                                 </div>
                             </div>
                         </ContextMenuItem>
@@ -404,7 +464,9 @@ const L1SystemOverview = ({
 
                             {drawingEdge && (
                                 <path
-                                    d={orthogonalPath(drawingEdge.x1, drawingEdge.y1, drawingEdge.x2, drawingEdge.y2)}
+                                    d={isShiftHeldRef.current
+                                        ? `M ${drawingEdge.x1} ${drawingEdge.y1} L ${drawingEdge.x2} ${drawingEdge.y2}`
+                                        : orthogonalPath(drawingEdge.x1, drawingEdge.y1, drawingEdge.x2, drawingEdge.y2)}
                                     stroke="gray"
                                     strokeDasharray="5 5"
                                     fill="none"
@@ -418,6 +480,47 @@ const L1SystemOverview = ({
                                 if (!elData) return null;
 
                                 const pos = positions?.[element] || { x: (index % 5) * 200, y: Math.floor(index / 5) * 200 };
+                                const inComponentEdit = mode === Mode.Edit && editMode === 'components';
+
+                                // Resize handle helper — renders a small grab square
+                                const ResizeHandle = ({ handle }: { handle: string }) => {
+                                    const styles: React.CSSProperties = {
+                                        position: 'absolute',
+                                        width: 10,
+                                        height: 10,
+                                        background: '#2563eb',
+                                        border: '1.5px solid white',
+                                        borderRadius: 2,
+                                        zIndex: 999,
+                                    };
+                                    if (handle.includes('n')) styles.top = -5; else if (handle.includes('s')) styles.bottom = -5; else styles.top = '50%';
+                                    if (handle.includes('w')) styles.left = -5; else if (handle.includes('e')) styles.right = -5; else styles.left = '50%';
+                                    if (!handle.includes('n') && !handle.includes('s')) styles.transform = 'translateY(-50%)';
+                                    if (!handle.includes('e') && !handle.includes('w')) styles.transform = (styles.transform ? styles.transform + ' ' : '') + 'translateX(-50%)';
+                                    const cursor: Record<string, string> = {
+                                        'n': 'n-resize', 's': 's-resize', 'e': 'e-resize', 'w': 'w-resize',
+                                        'ne': 'ne-resize', 'nw': 'nw-resize', 'se': 'se-resize', 'sw': 'sw-resize'
+                                    };
+                                    styles.cursor = cursor[handle] || 'default';
+                                    return (
+                                        <div
+                                            style={styles}
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                resizingRef.current = {
+                                                    id: element,
+                                                    startX: e.clientX,
+                                                    startY: e.clientY,
+                                                    startW: pos.w ?? 0,
+                                                    startH: pos.h ?? 0,
+                                                    handle
+                                                };
+                                            }}
+                                        />
+                                    );
+                                };
+
                                 return (
                                     <div
                                         key={`${elData.tag}-${index}`}
@@ -426,16 +529,34 @@ const L1SystemOverview = ({
                                             left: pos.x,
                                             top: pos.y,
                                             zIndex: pos.z || 1,
+                                            width: pos.w ? pos.w : undefined,
+                                            height: pos.h ? pos.h : undefined,
+                                            boxSizing: 'border-box',
+                                            outline: inComponentEdit ? '1.5px dashed #93c5fd' : undefined,
                                         }}
                                         onMouseDown={(e) => {
-                                            if (mode === Mode.Edit && editMode === 'components') {
+                                            if (inComponentEdit) {
                                                 e.stopPropagation();
                                                 setDraggingId(element);
                                             }
                                         }}
                                     >
-                                        <div className="bg-transparent p-2 rounded flex flex-col items-center" style={{ cursor: mode === Mode.Edit ? 'move' : 'pointer' }}>
-                                            <div className={mode === Mode.Edit ? "pointer-events-none" : "cursor-pointer"}
+                                        <div
+                                            className="bg-transparent rounded flex flex-col items-center w-full h-full"
+                                            style={{
+                                                cursor: inComponentEdit ? 'move' : 'pointer',
+                                                overflow: pos.w || pos.h ? 'hidden' : undefined
+                                            }}
+                                        >
+                                            <div
+                                                className={[
+                                                    inComponentEdit ? "pointer-events-none w-full h-full" : "cursor-pointer",
+                                                    // When a custom size is set, force all child images/SVGs to fill the container
+                                                    (pos.w || pos.h)
+                                                        ? "[&_img]:!w-full [&_img]:!h-full [&_img]:object-contain [&_img]:max-w-none [&_svg]:!w-full [&_svg]:!h-full [&_video]:!w-full [&_video]:!h-full w-full h-full"
+                                                        : ""
+                                                ].join(" ")}
+                                                style={{ width: '100%', height: '100%' }}
                                                 onClick={(e) => {
                                                     console.log(elData);
                                                     if (elData?.type === ElementType.TemperatureController) {
@@ -453,8 +574,37 @@ const L1SystemOverview = ({
                                                 {elData.component}
                                             </div>
                                         </div>
+                                        {/* Resize handles + Z-index badge — only in component edit mode */}
+                                        {inComponentEdit && (
+                                            <>
+                                                <ResizeHandle handle="nw" />
+                                                <ResizeHandle handle="n" />
+                                                <ResizeHandle handle="ne" />
+                                                <ResizeHandle handle="w" />
+                                                <ResizeHandle handle="e" />
+                                                <ResizeHandle handle="sw" />
+                                                <ResizeHandle handle="s" />
+                                                <ResizeHandle handle="se" />
+                                                {/* Z-index badge */}
+                                                <div
+                                                    style={{ position: 'absolute', top: -22, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, pointerEvents: 'auto' }}
+                                                    className="flex items-center gap-0.5 bg-gray-800 text-white text-xs rounded shadow px-1 py-0.5 select-none"
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                >
+                                                    <button
+                                                        className="w-4 h-4 flex items-center justify-center hover:bg-gray-600 rounded"
+                                                        onClick={(e) => { e.stopPropagation(); changeComponentZ(element, (pos.z ?? 1) + 1); }}
+                                                    >+</button>
+                                                    <span className="min-w-[1.5rem] text-center font-mono">{pos.z ?? 1}</span>
+                                                    <button
+                                                        className="w-4 h-4 flex items-center justify-center hover:bg-gray-600 rounded"
+                                                        onClick={(e) => { e.stopPropagation(); changeComponentZ(element, Math.max(1, (pos.z ?? 1) - 1)); }}
+                                                    >-</button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                )
+                                );
                             })
                         }
                     </div>

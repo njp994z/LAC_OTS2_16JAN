@@ -75,6 +75,8 @@ export enum L1SystemElement {
     "To Condenser" = "To Condenser",
     "SULFUR FURNACE 1540-ZM-001" = "SULFUR FURNACE 1540-ZM-001",
     "WASTE HEAT BOILER (WHB) 1540-HX-001" = "WASTE HEAT BOILER (WHB) 1540-HX-001",
+    "DRYING TOWER 1520-TW-001" = "DRYING TOWER 1520-TW-001",
+    "INLET AIR FILTER 1520-FL-001" = "INLET AIR FILTER 1520-FL-001",
 }
 
 export const L1SystemElements = [
@@ -128,6 +130,8 @@ export const L1SystemElements = [
     L1SystemElement['To Condenser'],
     L1SystemElement['SULFUR FURNACE 1540-ZM-001'],
     L1SystemElement['WASTE HEAT BOILER (WHB) 1540-HX-001'],
+    L1SystemElement['DRYING TOWER 1520-TW-001'],
+    L1SystemElement['INLET AIR FILTER 1520-FL-001'],
 ];
 
 export enum ElementType {
@@ -1297,6 +1301,30 @@ const L1SystemElementsMap = (getControllerConfig: (
                     {`(WHB)`}
                     <br />
                     1540-HX-001
+                </p>
+            </div>
+        },
+        "DRYING TOWER 1520-TW-001": {
+            tag: L1SystemElement["DRYING TOWER 1520-TW-001"],
+            type: ElementType.Text,
+            description: "DRYING TOWER 1520-TW-001",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p className=" text-center text-lg self-end font-bold">
+                    DRYING TOWER
+                    <br />
+                    1520-TW-001
+                </p>
+            </div>
+        },
+        "INLET AIR FILTER 1520-FL-001": {
+            tag: L1SystemElement["INLET AIR FILTER 1520-FL-001"],
+            type: ElementType.Text,
+            description: "INLET AIR FILTER 1520-FL-001",
+            component: <div className=" text-black text-lg font-semibold text-center">
+                <p className=" text-center text-lg self-end font-bold">
+                    INLET AIR FILTER
+                    <br />
+                    1520-FL-001
                 </p>
             </div>
         }
