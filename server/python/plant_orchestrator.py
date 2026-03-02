@@ -1332,8 +1332,8 @@ def check_alarms(streams: Dict[int, GasStream], inp: PlantInputs) -> List[Alarm]
 
     # Furnace temperature
     if s5.temperature_F > 2200:
-        alarms.append(Alarm("1540-TAH-4010", "Furnace outlet temperature HIGH",
-                            AlarmPriority.HIGH, s5.temperature_F, 2200, "°F", now))
+        alarms.append(Alarm("1540-TAH-4010", "Furnace outlet temperature HIGH-HIGH",
+                            AlarmPriority.CRITICAL, s5.temperature_F, 2200, "°F", now))
     if s5.temperature_F < 1800:
         alarms.append(Alarm("1540-TAL-4010", "Furnace outlet temperature LOW",
                             AlarmPriority.MEDIUM, s5.temperature_F, 1800, "°F", now))

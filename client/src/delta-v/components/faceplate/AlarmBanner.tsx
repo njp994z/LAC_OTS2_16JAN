@@ -12,10 +12,10 @@ export interface OrchestratorAlarm {
   timestamp: number;
 }
 
-type DisplayPriority = "CRITICAL" | "WARNING" | "ADVISORY";
+type DisplayPriority = "INTERLOCK" | "WARNING" | "ADVISORY";
 
 function toDisplayPriority(p: OrchestratorAlarm["priority"]): DisplayPriority {
-  if (p === "critical") return "CRITICAL";
+  if (p === "critical") return "INTERLOCK";
   if (p === "high") return "WARNING";
   return "ADVISORY";
 }
@@ -45,7 +45,7 @@ interface AlarmBannerProps {
 }
 
 const AlarmIcon = ({ priority }: { priority: DisplayPriority }) => {
-  if (priority === "CRITICAL") {
+  if (priority === "INTERLOCK") {
     return (
       <div className="w-6 h-6 rounded flex items-center justify-center bg-gradient-to-br from-red-500 to-red-700 shadow-lg shadow-red-500/30 animate-pulse">
         <XCircle className="w-4 h-4 text-white drop-shadow-md" />
@@ -67,7 +67,7 @@ const AlarmIcon = ({ priority }: { priority: DisplayPriority }) => {
 };
 
 const ModuleBox = ({ name, priority }: { name: string; priority: DisplayPriority }) => {
-  const bgClass = priority === "CRITICAL" 
+  const bgClass = priority === "INTERLOCK" 
     ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-red-500/20" 
     : priority === "WARNING"
     ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-amber-500/20"
