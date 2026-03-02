@@ -1625,12 +1625,25 @@ class PlantOrchestrator:
         # ── [16] FAT ─────────────────────────────────────────────────────
         s24 = FATower.calculate(streams[23], inp)
 
-        # ── Converter bypass leakage ───────────────────────────────────
+        # ── Converter bypass leakage (O2/SO2-ratio dependent) ──────────
         # Real packed beds have 0.1-0.2% gas bypass through wall channeling,
-        # seal gaps, and catalyst bed edge effects.  Dirty plants have more.
-        bypass = inp.converter_bypass_frac
+        # seal gaps, and catalyst bed edge effects.  When the gas is richer
+        # (higher SO2 %, lower O2/SO2 ratio), equilibrium approach degrades
+        # and effective bypass increases — matching real plant behaviour.
+        #
+        # Model: bypass = base × max(1, design_ratio / actual_ratio)^2
+        #   At design O2/SO2 ratio (79 gpm, 85.5% RPM): bypass = base → 99.85%
+        #   Above design SO2 %: bypass grows quadratically → conversion drops
+        #   Below design SO2 %: bypass stays at base (capped at 1.0)
+        DESIGN_O2_SO2_RATIO = 0.8598
+        base_bypass = inp.converter_bypass_frac
         if inp.plant_condition == "dirty":
-            bypass = max(bypass, 0.0020)
+            base_bypass = max(base_bypass, 0.0020)
+
+        actual_o2_so2 = s10.O2 / max(s10.SO2, 1.0)
+        ratio_factor = max(1.0, DESIGN_O2_SO2_RATIO / max(actual_o2_so2, 0.01)) ** 2.0
+        bypass = base_bypass * ratio_factor
+
         s24.SO2 += s5.SO2 * bypass
         s24.recalc_total()
 
