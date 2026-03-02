@@ -188,7 +188,7 @@ function KPPFaceplate({ results }: { results: Results | null }) {
           testId="faceplate-power"
         />
         <FaceplateRow
-          label="Power Ratio"
+          label="Specific Power Output"
           value={results ? results.powerFactor.toFixed(0) : "---"}
           unit="KW/STPH"
           testId="faceplate-power-ratio"
