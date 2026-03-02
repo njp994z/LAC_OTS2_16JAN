@@ -61,7 +61,7 @@ export const PrimaryCompressorFaceplate = ({
           <div className={cn("h-3 rounded border relative overflow-hidden", transparentBackground ? "bg-slate-200 border-slate-300" : "bg-slate-900 border-slate-700")}>
             <div 
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
-              style={{ width: `${Math.min((data.currentPV / 50) * 100, 100)}%` }}
+              style={{ width: `${Math.min((data.currentPV / 672) * 100, 100)}%` }}
             />
             <span className={cn("absolute inset-0 flex items-center justify-center text-[7px] font-mono z-10 font-bold", transparentBackground ? "text-slate-800" : "text-white")}>
               {data.currentPV.toFixed(1)}A
