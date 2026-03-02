@@ -240,8 +240,8 @@ export default function InterpassAbsorptionTower() {
         TOTAL_GI1: formatValue(data.TOTAL_GI1, 0),
         PRESSURE_GIX0: formatValue(packingGaugePressure, 1),
         PRESSURE_GI1: formatValue(outletGaugePressure, 1),
-        TEMPERATURE_GIX0: formatValue(data.TEMPERATURE_GIX0, 0),
-        TEMPERATURE_GI1: formatValue(data.TEMPERATURE_GI1, 0),
+        TEMPERATURE_GIX0: formatValue(parseFloat(acidInputs.Temp_AI0), 0),
+        TEMPERATURE_GI1: formatValue(parseFloat(acidInputs.Temp_AI0), 0),
       });
 
       if (!isRunningDynamic) {
