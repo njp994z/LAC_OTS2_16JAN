@@ -341,7 +341,7 @@ const HomeScreen = () => {
       let inletTemp = 150;
       let barometricPressure = 0.85;
       let plantCondition = "clean";
-      let sulfurFlowGpm = 79;
+      let sulfurFlowGpm = 75;
       let jugValvePct = 10;
       let damperOpenPct = 100;
       
@@ -816,7 +816,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               }
             } else {
               // Default to 79 gpm if no case value found (typical sulfur flow)
-              console.log('No case value found for 1530-F-2602, using default 79 gpm');
+              console.log('No case value found for 1530-F-2602, using default 75 gpm');
               setLoadedCaseValueSulfurFlow(79);
             }
             
