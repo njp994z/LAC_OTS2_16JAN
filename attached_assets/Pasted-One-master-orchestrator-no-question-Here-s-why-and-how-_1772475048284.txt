@@ -1,0 +1,144 @@
+One master orchestrator, no question. Here's why and how.
+
+## Why a Single Master
+
+The plant is one thermodynamic system. The compressor sets the flow for everything downstream. The furnace outlet composition IS the converter inlet. The HIP/CIP hot-side duties determine the cold-side reheat to Pass 4. PID controllers cross section boundaries — the jug valve controls Pass 1 inlet temp using WHB bypass gas that originated at the furnace outlet.
+
+If you split into separate orchestrators per section, you'd have to pass boundary conditions between them, synchronize timing, and handle race conditions where one section updates before its upstream neighbor. You'd essentially be reimplementing the master orchestrator — but worse, because now you have distributed state.
+
+The master orchestrator already solves the entire plant in one pass (~5 ms) and produces all 24 streams + 31 sensor tags. Each screen just subscribes to its slice.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│           MASTER ORCHESTRATOR  (runs @ 1 Hz)             │
+│                                                          │
+│  PlantInputs ──► solve() ──► { streams, sensor_tags,    │
+│                                 kpp, alarms }            │
+└────────────┬─────────────────────────────────────────────┘
+             │  Single JSON blob pushed via WebSocket
+             │
+     ┌───────┼───────┬───────────┬────────────┬──────────┐
+     ▼       ▼       ▼           ▼            ▼          ▼
+  [Home]  [Comp]  [Furnace]  [Converter]  [Absorb]  [Steam]
+  Screen  Screen   Screen     Screen       Screen    Screen
+```
+
+Each screen component just picks its tags out of the single state object:
+
+```jsx
+// ConverterScreen.jsx
+const tags = useOrchestratorState();  // single global state from WebSocket
+
+// This screen only renders these:
+const pass1_in  = tags["1540-TI-4110"];
+const pass1_out = tags["1540-TI-4111"];
+const pass2_in  = tags["1540-TI-4120"];
+// ... etc
+```
+
+## Screen → Stream/Tag Mapping
+
+Here's the concrete mapping I'd use for each screen. Each section gets a thin "view orchestrator" — not a solver, just a filter:
+
+```python
+SCREEN_MAP = {
+    "home": {
+        "streams": [1, 4, 5, 17, 24],
+        "tags": [
+            "1540-FI-4030",    # air flow
+            "1540-TI-4010",    # furnace T
+            "1540-AI-4010",    # stack SO2
+            "KPP_CONVERSION",
+            "KPP_PRODUCTION",
+            "KPP_SO2_STACK",
+        ],
+    },
+    "compressor": {
+        "streams": [1, 2, 3, 4],
+        "tags": [
+            "1540-TI-5800",    # ambient T
+            "1540-PI-5801",    # filter P
+            "1540-PDI-5801",   # filter dP
+            "1540-SIC-4030",   # speed %
+            "1540-TI-4031",    # outlet T
+            "1540-PI-4031",    # outlet P
+            "1540-FI-4030",    # flow
+        ],
+    },
+    "furnace_whb": {
+        "streams": [4, 5, 6, 7, 8, 9],
+        "tags": [
+            "1530-FIC-2602",   # sulfur flow SP
+            "1530-TI-2601",    # sulfur T
+            "1530-LI-2600",    # pit level
+            "1540-TI-4010",    # furnace T
+            "1540-PI-4010",    # furnace P
+            "1540-ZI-4020",    # jug valve %
+            "1540-TI-4021",    # WHB mixed T
+        ],
+    },
+    "converter": {
+        "streams": [10, 11, 12, 13, 14, 15, 18, 19],
+        "tags": [
+            "1540-TI-4110", "1540-TI-4111",  # Pass 1 in/out
+            "1540-TI-4120", "1540-TI-4121",  # Pass 2 in/out
+            "1540-TI-4130", "1540-TI-4131",  # Pass 3 in/out
+            "1540-TI-4140", "1540-TI-4141",  # Pass 4 in/out
+        ],
+    },
+    "absorption": {
+        "streams": [15, 16, 17, 18, 23, 24],
+        "tags": [
+            "1540-TI-4200", "1540-TI-4201",  # IPAT gas in/out
+            "1540-TI-4400",                    # stack T
+            "1540-AI-4010",                    # stack SO2
+        ],
+    },
+    "heat_recovery": {
+        "streams": [19, 20, 21, 22, 23],
+        "tags": [
+            "1540-TI-4300", "1540-TI-4301",  # SH4A in / EC4A out
+        ],
+    },
+}
+```
+
+## The View Filter
+
+Each screen calls one function — no separate solve:
+
+```python
+def get_screen_data(screen_name: str, full_result: dict) -> dict:
+    """Filter the master result to just what this screen needs."""
+    mapping = SCREEN_MAP[screen_name]
+    return {
+        "streams": {
+            str(sid): full_result["streams"][str(sid)]
+            for sid in mapping["streams"]
+            if str(sid) in full_result["streams"]
+        },
+        "tags": {
+            tag: full_result["sensor_tags"].get(tag)
+            for tag in mapping["tags"]
+        },
+        "alarms": [
+            a for a in full_result["alarms"]
+            if a["tag"] in mapping["tags"]  # only alarms relevant to this screen
+        ],
+        "kpp": full_result["kpp"],  # KPPs always available
+    }
+```
+
+## Why Not Per-Screen Orchestrators
+
+Three deal-breakers:
+
+**Consistency** — if the furnace screen and converter screen each solve independently and disagree on Stream 5 composition, you get impossible physics. One master solve guarantees every screen sees the same plant state.
+
+**Controller coupling** — the jug valve PID reads Pass 1 inlet temp (converter section) and adjusts WHB bypass (furnace section). A DCS-style cascade controller spans multiple "sections." With one orchestrator, this is trivial. With separate ones, you need inter-process communication.
+
+**Performance** — one solve of 24 streams takes ~5 ms. Running 6 separate partial solves with boundary synchronization would be slower and more fragile, not faster.
+
+Want me to add the `SCREEN_MAP` and `get_screen_data()` function into the orchestrator, or build the Flask route that serves screen-specific JSON?
