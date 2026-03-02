@@ -572,6 +572,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [tempSensor4200APosition, setTempSensor4200APosition] = useState({ x: 250, y: 400 });
   const [tempSensor4200ASize, setTempSensor4200ASize] = useState({ width: 180, height: 120 });
   const [isTempSensor4200AModalOpen, setIsTempSensor4200AModalOpen] = useState(false);
+  const [isTempSensor4820ModalOpen, setIsTempSensor4820ModalOpen] = useState(false);
   
   // Temperature Sensor 1540-TI-4200B position/size
   const [tempSensor4200BPosition, setTempSensor4200BPosition] = useState({ x: 450, y: 400 });
@@ -1716,6 +1717,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   };
 
+  const handleTempSensor4820Click = () => {
+    if (isLockedL2) {
+      setIsTempSensor4820ModalOpen(true);
+    }
+  };
+
   const handleTempSensor4200BClick = () => {
     if (isLocked) {
       setIsTempSensor4200BModalOpen(true);
@@ -1832,6 +1839,38 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ALM_H_LIM: tempSensor4200AConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: tempSensor4200AConfig.ALM_HH_LIM ?? 0,
     UNIT: tempSensor4200AConfig.UNIT || 'U-505',
+  };
+
+  // Build temperature sensor 1540-TI-4820 (Pass 1 Inlet Duct) secondary faceplate data
+  const tempSensor4820SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4820PV,
+    SP: tempSensor4820SyncState.syncedSP,
+    TSP: tempSensor4820SyncState.syncedSP,
+    OUT_PCT: tempSensor4820SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4820SyncState.syncedMode === 'AUTO' || tempSensor4820SyncState.syncedMode === 'MAN' 
+      ? tempSensor4820SyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: tempSensor4820SyncState.alarmStates.HH,
+    ALM_H_ACT: tempSensor4820SyncState.alarmStates.H,
+    ALM_L_ACT: tempSensor4820SyncState.alarmStates.L,
+    ALM_LL_ACT: tempSensor4820SyncState.alarmStates.LL,
+  };
+
+  const tempSensor4820SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4820Config.TAGNAME || '1540-TI-4820',
+    DESC: tempSensor4820Config.DESC || 'Pass 1 Inlet Duct',
+    EU: tempSensor4820Config.EU || 'F',
+    PV_SCALE_LO: tempSensor4820Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4820Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4820Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4820Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4820Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor4820Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor4820Config.ALM_H_LIM ?? 0,
+    ALM_HH_LIM: tempSensor4820Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor4820Config.UNIT || 'Acid',
   };
 
   // Build temperature sensor 1540-TI-4200B secondary faceplate data
@@ -4955,6 +4994,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleTempSensor4820Click}
                 data-testid="faceplate-4820-l2-container"
                 style={{
                   transform: `scale(${Math.min(tempSensor4820L2Size.width / 180, tempSensor4820L2Size.height / 120)})`,
@@ -6714,6 +6754,21 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             config={tempSensor4200ASecondaryConfig}
             sensorId="1540-TI-4200A"
             onClose={() => setIsTempSensor4200AModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) Secondary Faceplate Modal */}
+      <Dialog open={isTempSensor4820ModalOpen} onOpenChange={setIsTempSensor4820ModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Temperature Sensor 1540-TI-4820</DialogTitle>
+          </VisuallyHidden>
+          <TempSensorSecondaryFaceplate
+            data={tempSensor4820SecondaryData}
+            config={tempSensor4820SecondaryConfig}
+            sensorId="1540-TI-4820"
+            onClose={() => setIsTempSensor4820ModalOpen(false)}
           />
         </DialogContent>
       </Dialog>
