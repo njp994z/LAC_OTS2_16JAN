@@ -6846,8 +6846,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             controllerId="1540-H-4282"
             onClose={() => setIsJugValveHandControllerModalOpen(false)}
             onModeChange={(mode) => updateJugValveHandControllerMode(mode)}
-            onSpChange={(value) => updateJugValveHandControllerSP(value)}
-            onOutChange={(value) => updateJugValveHandControllerOUT(value)}
+            onSpChange={(value) => {
+              updateJugValveHandControllerSP(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueJugValve(value);
+              }
+            }}
+            onOutChange={(value) => {
+              updateJugValveHandControllerOUT(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueJugValve(value);
+              }
+            }}
             fromSource="home-screen"
             selectedMode={selectedMode}
             loadedCaseValue={loadedCaseValueJugValve}
