@@ -3572,7 +3572,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             ))}
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
-            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4} modal={false}>
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
                 <VisuallyHidden>
                   <DialogTitle>1540-TI-4825 Pass 1 Catalyst Temperature</DialogTitle>
@@ -5062,7 +5062,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </Rnd>
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 */}
-            <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61}>
+            <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61} modal={false}>
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
                 <VisuallyHidden>
                   <DialogTitle>1540-TI-4825 Secondary Faceplate</DialogTitle>
@@ -6484,7 +6484,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       </div>
 
       {/* VFD Faceplate Modal */}
-      <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen}>
+      <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>VFD Faceplate</DialogTitle>
@@ -6505,7 +6505,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       </Dialog>
 
       {/* Sulfur Flow Controller Secondary Faceplate Modal */}
-      <Dialog open={isSulfurFlowModalOpen} onOpenChange={setIsSulfurFlowModalOpen}>
+      <Dialog open={isSulfurFlowModalOpen} onOpenChange={setIsSulfurFlowModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Sulfur Flow Controller</DialogTitle>
@@ -6601,7 +6601,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       </Dialog>
 
       {/* Hand Controller 1540-H-4030 Secondary Faceplate Modal */}
-      <Dialog open={isHandControllerModalOpen} onOpenChange={setIsHandControllerModalOpen}>
+      <Dialog open={isHandControllerModalOpen} onOpenChange={setIsHandControllerModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Hand Controller 1540-H-4030</DialogTitle>
@@ -6632,7 +6632,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       </Dialog>
 
       {/* Jug Valve Hand Controller 1540-H-4282 Secondary Faceplate Modal */}
-      <Dialog open={isJugValveHandControllerModalOpen} onOpenChange={setIsJugValveHandControllerModalOpen}>
+      <Dialog open={isJugValveHandControllerModalOpen} onOpenChange={setIsJugValveHandControllerModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Jug Valve Hand Controller 1540-H-4282</DialogTitle>
@@ -6653,7 +6653,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       </Dialog>
 
       {/* WHB Hand Controller 1540-H-4283 Secondary Faceplate Modal */}
-      <Dialog open={isWhbHandControllerModalOpen} onOpenChange={setIsWhbHandControllerModalOpen}>
+      <Dialog open={isWhbHandControllerModalOpen} onOpenChange={setIsWhbHandControllerModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>WHB Outlet dP Hand Controller 1540-H-4283</DialogTitle>
