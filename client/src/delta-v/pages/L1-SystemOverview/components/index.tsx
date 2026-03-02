@@ -167,7 +167,12 @@ export enum ElementType {
     Compressor,
     ValveController,
     CompressorController,
-    TurboGenerator
+    TurboGenerator,
+    KPI,
+    SulfurFlowController,
+    HandController,
+    JugValveHandController,
+    WhbHandController,
 }
 
 const L1SystemElementsMap = (getControllerConfig: (
@@ -1207,7 +1212,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         },
         "KPICard": {
             tag: L1SystemElement["KPICard"],
-            type: ElementType.Image,
+            type: ElementType.KPI,
             description: "KPI Card", component: <KPICard />
         },
         "DT": {

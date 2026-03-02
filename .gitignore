@@ -9,3 +9,5 @@ download.zip
 ecosystem.config.cjs
 .env
 package-lock.json
+claude
+.claude

@@ -2,12 +2,15 @@ import { cn } from '@/lib/utils';
 import type { SecondaryControllerData, SecondaryControllerConfig } from '@/delta-v/types/secondaryController';
 import { X, History, Settings, Activity, Link2, Sliders, Bell } from 'lucide-react';
 import { Link } from 'wouter';
+import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
 
 // Base path for all faceplate routes
 const FACEPLATE_BASE = '/settings/controller-outputs/faceplates';
 
 // Helper function to route to independent pages for specific sensors
 const getRouteForSensor = (basePath: string, sensorId?: string): string => {
+  // Common Temperature Sensor Faceplates
+  return (`/settings/controller-outputs/faceplates/temperature-sensor/${sensorId}/${basePath}`)
   if (sensorId === '1520-TI-5821') {
     const routeMap: Record<string, string> = {
       'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-5821-faceplate-3a`,
@@ -99,16 +102,38 @@ export const TempSensorSecondaryFaceplate = ({
   onClose,
   isTransparent = false
 }: TempSensorSecondaryFaceplateProps) => {
+
+  const localData = useControllerSync(sensorId!);
+
+  const pvValue = data.PV ?? (data as any)?.state?.syncedPV;
   // Calculate percentage for bar display using SP_LIM_LO/HI as the range
   const rangeMin = config.SP_LIM_LO ?? config.PV_SCALE_LO;
   const rangeMax = config.SP_LIM_HI ?? config.PV_SCALE_HI;
-  const pvPercent = (data.PV - rangeMin) / (rangeMax - rangeMin) * 100;
+  const pvPercent = ((data.PV ?? localData?.state?.syncedPV ) - rangeMin) / (rangeMax - rangeMin) * 100;
   
   // Calculate alarm limit percentages for arrows
   const alarmLPercent = ((config.ALM_L_LIM - rangeMin) / (rangeMax - rangeMin)) * 100;
   const alarmHPercent = ((config.ALM_H_LIM - rangeMin) / (rangeMax - rangeMin)) * 100;
   const alarmLLPercent = ((config.ALM_LL_LIM - rangeMin) / (rangeMax - rangeMin)) * 100;
   const alarmHHPercent = ((config.ALM_HH_LIM - rangeMin) / (rangeMax - rangeMin)) * 100;
+
+  // Determine bar color based on PV vs alarm limits
+  const pv = data.PV ?? localData?.state?.syncedPV ?? 0;
+  const pvBarColor = (() => {
+    if (config.ALM_HH_LIM !== 0 && pv >= config.ALM_HH_LIM)
+      return 'linear-gradient(180deg, hsl(0 85% 55%) 0%, hsl(0 85% 45%) 100%)';
+    if (config.ALM_H_LIM !== 0 && pv >= config.ALM_H_LIM)
+      return 'linear-gradient(180deg, hsl(50 100% 60%) 0%, hsl(50 100% 48%) 100%)';
+    if (config.ALM_LL_LIM !== 0 && pv <= config.ALM_LL_LIM)
+      return 'linear-gradient(180deg, hsl(50 100% 60%) 0%, hsl(50 100% 48%) 100%)';
+    return 'linear-gradient(180deg, hsl(130 60% 50%) 0%, hsl(130 60% 38%) 100%)';
+  })();
+  const pvBarGlow = (() => {
+    if (config.ALM_HH_LIM !== 0 && pv >= config.ALM_HH_LIM) return '0 0 8px hsla(0, 85%, 50%, 0.5)';
+    if (config.ALM_H_LIM !== 0 && pv >= config.ALM_H_LIM) return '0 0 8px hsla(50, 100%, 55%, 0.5)';
+    if (config.ALM_LL_LIM !== 0 && pv <= config.ALM_LL_LIM) return '0 0 8px hsla(50, 100%, 55%, 0.5)';
+    return '0 0 8px hsla(130, 60%, 45%, 0.4)';
+  })();
 
   return (
     <div className={cn(
@@ -153,7 +178,7 @@ export const TempSensorSecondaryFaceplate = ({
             "bg-amber-400 text-black font-mono font-bold text-lg",
             "shadow-lg shadow-amber-400/30"
           )}>
-            {(data.PV ?? 0).toFixed(1)} {config.EU}
+            {(data.PV ?? localData?.state?.syncedPV ?? 0).toFixed(1)} {config.EU}
           </div>
         </div>
 
@@ -255,8 +280,8 @@ export const TempSensorSecondaryFaceplate = ({
                   className="absolute bottom-0 left-0 w-full" 
                   style={{
                     height: `${Math.max(0, Math.min(100, pvPercent))}%`,
-                    background: 'linear-gradient(180deg, hsl(45 100% 60%) 0%, hsl(45 100% 50%) 50%, hsl(45 90% 40%) 100%)',
-                    boxShadow: '0 0 8px hsla(45, 100%, 55%, 0.4)'
+                    background: pvBarColor,
+                    boxShadow: pvBarGlow
                   }} 
                 />
               </div>
@@ -268,10 +293,10 @@ export const TempSensorSecondaryFaceplate = ({
 
         {/* Alarm Indicators Row */}
         <div className="flex items-center justify-center gap-2 pt-2">
-          {config.ALM_LL_LIM !== 0 && <AlarmDot label="LL" active={data.ALM_LL_ACT} color="red" />}
-          {config.ALM_L_LIM !== 0 && <AlarmDot label="L" active={data.ALM_L_ACT} color="yellow" />}
-          {config.ALM_H_LIM !== 0 && <AlarmDot label="H" active={data.ALM_H_ACT} color="yellow" />}
-          {config.ALM_HH_LIM !== 0 && <AlarmDot label="HH" active={data.ALM_HH_ACT} color="red" />}
+          {config.ALM_LL_LIM !== 0 && <AlarmDot label="LL" active={data.ALM_LL_ACT ?? localData?.state?.alarmStates.LL} color="red" />}
+          {config.ALM_L_LIM !== 0 && <AlarmDot label="L" active={data.ALM_L_ACT ?? localData?.state?.alarmStates.L} color="yellow" />}
+          {config.ALM_H_LIM !== 0 && <AlarmDot label="H" active={data.ALM_H_ACT ?? localData?.state?.alarmStates.H} color="yellow" />}
+          {config.ALM_HH_LIM !== 0 && <AlarmDot label="HH" active={data.ALM_HH_ACT ?? localData?.state?.alarmStates.HH} color="red" />}
         </div>
 
         {/* Unit Input Row */}

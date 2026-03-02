@@ -332,12 +332,30 @@ const HomeScreen = () => {
   const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
   const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
 
+  // Ref that L1SystemOverview populates with its startStaticSimulation function
+  const l1SimTriggerRef = useRef<(() => void) | null>(null);
+
   // Run static simulation when Start button is clicked in Static mode
   const runStaticSimulation = async () => {
     if (staticSimulationRunning) return;
 
+    // ── L1 shortcut: delegate to the full-plant simulation hook inside L1SystemOverview
+    if (selectedScreen === "L1 – System Overview") {
+      if (l1SimTriggerRef.current) {
+        l1SimTriggerRef.current();
+      } else {
+        toast({
+          title: "Simulation not ready",
+          description: "The L1 System Overview simulation is not yet loaded.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
     setStaticSimulationRunning(true);
     try {
+      
       // 1. Fetch PV case data
       const pvResponse = await fetch('/api/process-variables');
       const pvData = await pvResponse.json();
@@ -5060,7 +5078,7 @@ const HomeScreen = () => {
 
         {/* L1 - System Overview - Fixed-size canvas for scrollable content */}
         
-        {selectedScreen === "L1 – System Overview" && <L1SystemOverview />}
+        {selectedScreen === "L1 – System Overview" && <L1SystemOverview simulationTriggerRef={l1SimTriggerRef} />}
       </div>
 
       {/* Alarm Banner - always visible at bottom */}

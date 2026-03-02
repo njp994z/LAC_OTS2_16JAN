@@ -565,3 +565,17 @@ export const useControllerSync = (controllerId: string) => {
 
 // Export types for external use
 export type { SyncedMode, AlarmStates, SingleControllerState, AlarmLimits };
+
+/**
+ * useControllerSyncContext
+ * Returns the raw context so callers can bulk-update any controller by ID.
+ * Use this when you need to push many tag values at once (e.g. after a plant simulation).
+ * For single-controller operations prefer useControllerSync(controllerId).
+ */
+export const useControllerSyncContext = (): ControllerSyncContextType => {
+  const context = useContext(ControllerSyncContext);
+  if (!context) {
+    throw new Error('useControllerSyncContext must be used within a ControllerSyncProvider');
+  }
+  return context;
+};

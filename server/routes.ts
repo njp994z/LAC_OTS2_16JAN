@@ -1011,6 +1011,68 @@ Be professional, concise, and helpful. If asked about features not yet implement
     });
   }
 
+  // ===== HELPER: Call Full-Plant Orchestrator (plant_orchestrator.py) =====
+  async function runPythonPlantSimulation(inputData: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const scriptPath = path.join(process.cwd(), 'server', 'python', 'plant_orchestrator.py');
+      const pythonProcess = spawn('python', [scriptPath], {
+        cwd: path.join(process.cwd(), 'server', 'python'),
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdin.write(JSON.stringify(inputData));
+      pythonProcess.stdin.end();
+
+      pythonProcess.stdout.on('data', (data) => { stdout += data.toString(); });
+      pythonProcess.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('[PlantSim] Python orchestrator error:', stderr);
+          reject(new Error(`Plant simulation failed (exit ${code}): ${stderr.slice(0, 500)}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(stdout));
+        } catch {
+          console.error('[PlantSim] Failed to parse output:', stdout.slice(0, 200));
+          reject(new Error('Failed to parse plant simulation results'));
+        }
+      });
+
+      pythonProcess.on('error', (err) => {
+        console.error('[PlantSim] Failed to start Python process:', err);
+        reject(err);
+      });
+    });
+  }
+
+  // Full-Plant Static Simulation (L1 Heat & Material Balance)
+  app.post('/api/plant-simulation', async (req: Request, res: Response) => {
+    try {
+      console.log('[PlantSim] Received request with inputs:', JSON.stringify(req.body).slice(0, 200));
+
+      // Pass operator inputs directly to plant_orchestrator.py; it supplies defaults for missing fields.
+      const result = await runPythonPlantSimulation(req.body || {});
+
+      if (!result.success) {
+        console.error('[PlantSim] Orchestrator returned failure:', result.error);
+        return res.status(500).json({
+          message: result.error || 'Plant simulation failed',
+          traceback: result.traceback,
+        });
+      }
+
+      res.json(result);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to run plant simulation';
+      console.error('[PlantSim] Error:', error);
+      res.status(500).json({ message: msg });
+    }
+  });
+
   // Catalytic Reactor Simulation endpoint
   app.post('/api/catalytic-reactor-simulation', async (req: Request, res: Response) => {
     try {
