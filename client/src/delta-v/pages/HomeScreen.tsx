@@ -111,8 +111,6 @@ import {
   Shapes,
   Trash2,
   FileText,
-  Play,
-  Pause,
   RotateCcw,
   Loader2,
 } from "lucide-react";
@@ -309,12 +307,24 @@ const HomeScreen = () => {
     };
   }, [dynamicRunning, dynamicDt, dynamicSpeed]);
   
-  // Reset dynamic simulation
+  // Auto-start simulation when entering Dynamic/Start-Up/Emergency modes
+  useEffect(() => {
+    const isDynamicMode = selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios";
+    if (isDynamicMode) {
+      setDynamicRunning(true);
+    } else {
+      setDynamicRunning(false);
+      setDynamicElapsed(0);
+    }
+  }, [selectedMode]);
+
+  // Reset dynamic simulation — resets state then auto-restarts
   const handleDynamicReset = () => {
     setDynamicRunning(false);
     setDynamicElapsed(0);
     setDynamicSpeed(1.0);
     setDynamicDt(0.12);
+    setTimeout(() => setDynamicRunning(true), 50);
   };
   
   // Static simulation state
@@ -3365,27 +3375,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       {/* Simulation Toolbar - visible in Dynamic, Start-Up, and Emergency modes */}
       {(selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios") && (
         <div className="flex-shrink-0 bg-gray-800 border-b border-gray-600 px-3 py-2 flex flex-wrap items-center gap-6">
-          {/* Start/Stop Button */}
-          <Button
-            onClick={() => setDynamicRunning(!dynamicRunning)}
-            variant={dynamicRunning ? "destructive" : "default"}
-            size="sm"
-            className={`gap-2 ${!dynamicRunning ? 'bg-green-600' : ''}`}
-            data-testid="button-dynamic-start-stop"
-          >
-            {dynamicRunning ? (
-              <>
-                <Pause className="h-4 w-4" />
-                Stop
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Start
-              </>
-            )}
-          </Button>
-
           {/* Reset Button */}
           <Button
             onClick={handleDynamicReset}
