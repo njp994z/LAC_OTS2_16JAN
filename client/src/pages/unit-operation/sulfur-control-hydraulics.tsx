@@ -12,6 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
+import sulfurControlDiagram from "@assets/image_1772416981735.png";
 
 interface ProcessNode {
   tagId: string;
@@ -1329,6 +1330,15 @@ export default function SulfurControlHydraulics() {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <div className="mt-6">
+                <img
+                  src={sulfurControlDiagram}
+                  alt="Sulfur Flow Control Loop Process Diagram"
+                  className="w-full rounded-lg border border-border"
+                  data-testid="img-sulfur-control-diagram"
+                />
               </div>
             </CardContent>
           </Card>
