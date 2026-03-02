@@ -22,6 +22,7 @@ const simulationPaths = [
   '/api/catalytic-reactor-simulation', '/api/compressor-simulation', '/api/sulfur-furnace-simulation',
   '/api/drying-tower-simulation', '/api/drying-tower-calc', '/api/converter-pass-simulation',
   '/api/jug-valve-simulation', '/api/superheater-simulation', '/api/inlet-air-filter-simulation',
+  '/api/plant-orchestrator',
 ];
 
 const apiLimiter = rateLimit({
@@ -166,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/jug-valve-simulation', simulationLimiter);
   app.use('/api/superheater-simulation', simulationLimiter);
   app.use('/api/inlet-air-filter-simulation', simulationLimiter);
+  app.use('/api/plant-orchestrator', simulationLimiter);
 
   app.use('/api/', apiLimiter);
 
@@ -2170,6 +2172,64 @@ Be professional, concise, and helpful. If asked about features not yet implement
       console.error('Compressor simulation error:', error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Compressor simulation failed" 
+      });
+    }
+  });
+
+  app.post('/api/plant-orchestrator', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body || {};
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'plant_orchestrator.py');
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdin.write(JSON.stringify(pythonInput));
+        pythonProcess.stdin.end();
+
+        pythonProcess.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+          if (code !== 0) {
+            console.error('Plant orchestrator error:', stderr);
+            reject(new Error(`Plant orchestrator exited with code ${code}: ${stderr}`));
+            return;
+          }
+
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse orchestrator output:', stdout);
+            reject(new Error('Failed to parse plant orchestrator results'));
+          }
+        });
+
+        pythonProcess.on('error', (err: Error) => {
+          console.error('Failed to start plant orchestrator:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Plant orchestrator failed" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Plant orchestrator error:', error);
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Plant orchestrator failed"
       });
     }
   });

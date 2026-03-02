@@ -319,6 +319,7 @@ const HomeScreen = () => {
   // Static simulation state
   const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
   const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
+  const [orchestratorResult, setOrchestratorResult] = useState<any>(null);
   const pendingStaticRecalcRef = useRef(false);
   
   const runStaticSimulation = async () => {
@@ -329,23 +330,20 @@ const HomeScreen = () => {
     
     setStaticSimulationRunning(true);
     try {
-      // 1. Fetch PV case data
       const pvResponse = await fetch('/api/process-variables');
       const pvData = await pvResponse.json();
       
-      // 2. Fetch SP case data (for setpoint values)
       const spResponse = await fetch('/api/setpoint-variables');
       const spData = await spResponse.json();
       
-      // 3. Extract compressor inputs from selected case or defaults
-      // Use activePVCaseId if available, otherwise use default values
-      let rpmPercent = 87; // Default
-      let inletTemp = 150; // Default in F
-      let barometricPressure = 0.85; // Default in atm
-      let plantCondition = "clean"; // Default
-      let inletPressureInwc = -3.0; // Default in wc
+      let rpmPercent = 87;
+      let inletTemp = 150;
+      let barometricPressure = 0.85;
+      let plantCondition = "clean";
+      let sulfurFlowGpm = 79;
+      let jugValvePct = 10;
+      let damperOpenPct = 100;
       
-      // Helper function to extract numeric value from case data
       const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
         if (!variables || !caseId) return null;
         for (const pattern of tagPatterns) {
@@ -363,25 +361,16 @@ const HomeScreen = () => {
         return null;
       };
       
-      // Extract values from PV case data
       if (pvData?.variables && activePVCaseId) {
-        // Main compressor RPM (1540-H-4030)
         const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor'], activePVCaseId);
         if (rpmVal !== null) rpmPercent = rpmVal;
         
-        // DT inlet temperature
         const tempVal = extractCaseValue(pvData.variables, ['dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
         if (tempVal !== null) inletTemp = tempVal;
         
-        // Barometric pressure (ambient_pressure)
         const baroVal = extractCaseValue(pvData.variables, ['ambient_pressure', 'barometric'], activePVCaseId);
         if (baroVal !== null) barometricPressure = baroVal;
         
-        // Inlet pressure (pass_1_ash_dp or similar)
-        const pressVal = extractCaseValue(pvData.variables, ['pass_1_ash_dp', 'inlet_pressure', 'inlet press'], activePVCaseId);
-        if (pressVal !== null) inletPressureInwc = pressVal;
-        
-        // Plant condition (if stored in PV data)
         const plantVar = pvData.variables.find((v: any) => 
           v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
         );
@@ -389,52 +378,62 @@ const HomeScreen = () => {
           const val = String(plantVar.cases[activePVCaseId]).toLowerCase();
           if (val === 'dirty' || val === 'clean') plantCondition = val;
         }
-      }
-      
-      // Also check SP data for setpoint overrides
-      if (spData?.variables && activePVCaseId) {
-        // Main compressor SP
-        const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
-        if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal; // Use SP if PV not found
         
-        // DT inlet temp SP
-        const tempSpVal = extractCaseValue(spData.variables, ['dt_inlet_temp_sp'], activePVCaseId);
-        if (tempSpVal !== null && inletTemp === 150) inletTemp = tempSpVal; // Use SP if PV not found
+        const sulfurVal = extractCaseValue(pvData.variables, ['1530-F-2602', 'sulfur_flow', 'sulfur flow'], activePVCaseId);
+        if (sulfurVal !== null) sulfurFlowGpm = sulfurVal;
+        
+        const jugVal = extractCaseValue(pvData.variables, ['1540-H-4282', 'jug_valve', 'jug valve'], activePVCaseId);
+        if (jugVal !== null) jugValvePct = jugVal;
+        
+        const damperVal = extractCaseValue(pvData.variables, ['1540-H-4283', 'damper', 'whb_dp'], activePVCaseId);
+        if (damperVal !== null) damperOpenPct = damperVal;
       }
       
-      console.log('Static simulation inputs:', { rpmPercent, inletTemp, barometricPressure, plantCondition, inletPressureInwc });
+      if (spData?.variables && activePVCaseId) {
+        const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
+        if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal;
+      }
       
-      // 4. Call compressor simulation API
-      const simResponse = await fetch('/api/compressor-simulation', {
+      if (loadedCaseValue1540H4030 !== null) rpmPercent = loadedCaseValue1540H4030;
+      if (loadedCaseValueSulfurFlow !== null) sulfurFlowGpm = loadedCaseValueSulfurFlow;
+      if (loadedCaseValueJugValve !== null) jugValvePct = loadedCaseValueJugValve;
+      if (loadedCaseValueWHBdP !== null) damperOpenPct = loadedCaseValueWHBdP;
+      
+      const orchInput = {
+        compressor_rpm_pct: rpmPercent,
+        barometric_atm: barometricPressure,
+        plant_condition: plantCondition,
+        sulfur_flow_sp_gpm: sulfurFlowGpm,
+        jug_valve_pct: jugValvePct,
+        damper_open_pct: damperOpenPct,
+        dt_acid_inlet_temp_F: inletTemp,
+        mode: "static",
+      };
+      
+      console.log('Plant orchestrator inputs:', orchInput);
+      
+      const simResponse = await fetch('/api/plant-orchestrator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rpm_percent: rpmPercent,
-          temp: inletTemp,
-          barometricPressure: barometricPressure,
-          plant_condition: plantCondition,
-          inlet_pressure_inwc: inletPressureInwc
-        })
+        body: JSON.stringify(orchInput)
       });
       
       if (!simResponse.ok) {
-        throw new Error('Compressor simulation failed');
+        throw new Error('Plant orchestrator failed');
       }
       
-      const simResponseData = await simResponse.json();
-      console.log('Static simulation results:', simResponseData);
+      const orchData = await simResponse.json();
+      console.log('Plant orchestrator results:', orchData);
       
-      // Extract the results from the nested structure
-      const simResults = simResponseData.results || simResponseData;
-      setStaticSimulationResults(simResults);
+      setOrchestratorResult(orchData);
+      setStaticSimulationResults(orchData);
       
-      // 5. Update faceplate displays with results
-      // Update the loaded case value to show the compressor speed % in the controller
-      // In Static mode: PV = SP = OUT = same value
-      if (simResults.compressor_speed !== undefined) {
-        const speedPercent = (simResults.compressor_speed / 4505) * 100;
-        console.log('Setting static case value for 1540-H-4030:', speedPercent);
-        setLoadedCaseValue1540H4030(speedPercent);
+      if (orchData.sensor_tags) {
+        const tags = orchData.sensor_tags;
+        if (tags["1540-SIC-4030"] !== undefined && tags["1540-SIC-4030"] !== loadedCaseValue1540H4030) {
+          console.log('Setting static case value for 1540-H-4030:', tags["1540-SIC-4030"]);
+          setLoadedCaseValue1540H4030(tags["1540-SIC-4030"]);
+        }
       }
       
     } catch (error) {
@@ -878,7 +877,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         clearTimeout(staticAutoCalcTimerRef.current);
       }
     };
-  }, [selectedMode, activePVCaseId, loadedCaseValue1540H4030, loadedCaseValueSulfurFlow]);
+  }, [selectedMode, activePVCaseId, loadedCaseValue1540H4030, loadedCaseValueSulfurFlow, loadedCaseValueJugValve, loadedCaseValueWHBdP]);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -4614,6 +4613,70 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               />
             </Rnd>
 
+            {/* Furnace Area Orchestrator Outputs */}
+            {orchestratorResult?.sensor_tags && (
+              <div
+                className="absolute bg-gray-900/95 border border-gray-600 rounded-md p-3"
+                style={{ left: '1600px', top: '20px', zIndex: 50, minWidth: '340px' }}
+                data-testid="furnace-orchestrator-outputs"
+              >
+                <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 border-b border-gray-600 pb-1">
+                  Furnace Area — Process Data
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div className="text-gray-400">1540-TI-4010 Furnace T</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-furnace-temp">
+                    {orchestratorResult.sensor_tags["1540-TI-4010"]?.toFixed(0) ?? "—"} °F
+                  </div>
+                  <div className="text-gray-400">1540-PI-4010 Furnace P</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-furnace-pressure">
+                    {orchestratorResult.sensor_tags["1540-PI-4010"]?.toFixed(1) ?? "—"} inwc
+                  </div>
+                  <div className="text-gray-400">1540-TI-4021 WHB Mixed T</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-whb-mixed-temp">
+                    {orchestratorResult.sensor_tags["1540-TI-4021"]?.toFixed(0) ?? "—"} °F
+                  </div>
+                  <div className="text-gray-400">1540-ZI-4020 Jug Valve</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-jug-valve-pos">
+                    {orchestratorResult.sensor_tags["1540-ZI-4020"]?.toFixed(1) ?? "—"} %
+                  </div>
+                  <div className="text-gray-400">1530-FIC-2602 Sulfur Flow</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-sulfur-flow">
+                    {orchestratorResult.sensor_tags["1530-FIC-2602"]?.toFixed(1) ?? "—"} gpm
+                  </div>
+                  <div className="text-gray-400">1540-FI-4030 Air Flow</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-air-flow">
+                    {orchestratorResult.sensor_tags["1540-FI-4030"]?.toFixed(0) ?? "—"} scfm
+                  </div>
+                </div>
+                {orchestratorResult.streams?.["5"] && (
+                  <>
+                    <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mt-2 mb-1 border-t border-gray-600 pt-2">
+                      Stream 5 — Furnace Outlet Gas
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div className="text-gray-400">SO2</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-so2">
+                        {orchestratorResult.streams["5"].SO2?.toFixed(1)} scfm
+                      </div>
+                      <div className="text-gray-400">SO3</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-so3">
+                        {orchestratorResult.streams["5"].SO3?.toFixed(1)} scfm
+                      </div>
+                      <div className="text-gray-400">O2</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-o2">
+                        {orchestratorResult.streams["5"].O2?.toFixed(1)} scfm
+                      </div>
+                      <div className="text-gray-400">N2</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-n2">
+                        {orchestratorResult.streams["5"].N2?.toFixed(0)} scfm
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Temperature Sensor 1540-TI-4200A Faceplate for L2 */}
             <Rnd
               key="temp-sensor-4200a-l2"
@@ -5765,6 +5828,72 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             </div>
           </Rnd>
         ))}
+
+        {/* Key Process Parameters from Master Orchestrator */}
+        {orchestratorResult?.kpp && (
+          <div
+            className="absolute bg-gray-900/95 border border-gray-600 rounded-md p-3"
+            style={{ left: '3200px', top: '20px', zIndex: 50, minWidth: '320px' }}
+            data-testid="kpp-orchestrator-outputs"
+          >
+            <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 border-b border-gray-600 pb-1">
+              Key Process Parameters
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              <div className="text-gray-400">SO2 Conversion</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-conversion">
+                {orchestratorResult.kpp.overall_SO2_conversion_pct?.toFixed(2) ?? "—"} %
+              </div>
+              <div className="text-gray-400">H2SO4 Production</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-production">
+                {orchestratorResult.kpp.H2SO4_production_STPD?.toFixed(0) ?? "—"} STPD
+              </div>
+              <div className="text-gray-400">Stack SO2</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-stack-so2">
+                {orchestratorResult.kpp.SO2_ppm_stack?.toFixed(1) ?? "—"} ppm
+              </div>
+              <div className="text-gray-400">Furnace Temp</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-furnace-temp">
+                {orchestratorResult.kpp.furnace_temp_F?.toFixed(0) ?? "—"} °F
+              </div>
+              <div className="text-gray-400">Compressor Speed</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-compressor">
+                {orchestratorResult.kpp.compressor_rpm_pct?.toFixed(1) ?? "—"} %
+              </div>
+              <div className="text-gray-400">Sulfur Flow</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-sulfur-flow">
+                {orchestratorResult.kpp.sulfur_flow_gpm?.toFixed(1) ?? "—"} gpm
+              </div>
+              <div className="text-gray-400">Jug Valve</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-jug-valve">
+                {orchestratorResult.kpp.jug_valve_pct?.toFixed(1) ?? "—"} %
+              </div>
+              <div className="text-gray-400">Plant Condition</div>
+              <div className="text-yellow-300 font-mono text-right" data-testid="value-kpp-condition">
+                {orchestratorResult.kpp.plant_condition ?? "—"}
+              </div>
+            </div>
+            {orchestratorResult.alarms?.length > 0 && (
+              <>
+                <div className="text-xs font-bold text-red-400 uppercase tracking-wider mt-2 mb-1 border-t border-gray-600 pt-2">
+                  Active Alarms ({orchestratorResult.alarms.length})
+                </div>
+                {orchestratorResult.alarms.slice(0, 5).map((alarm: any, idx: number) => (
+                  <div key={idx} className="text-xs flex items-center gap-2 py-0.5">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      alarm.priority === 'critical' ? 'bg-red-500' :
+                      alarm.priority === 'high' ? 'bg-orange-500' :
+                      alarm.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`} />
+                    <span className="text-gray-300 truncate" data-testid={`alarm-${idx}`}>
+                      {alarm.tag}: {alarm.message}
+                    </span>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
         {/* Render vertical arrows for this screen */}
         {verticalArrows.filter(va => va.screen === 'L1 – System Overview').map((vArrow) => (
