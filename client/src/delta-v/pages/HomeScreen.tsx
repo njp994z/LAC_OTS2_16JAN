@@ -1431,7 +1431,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ? orchestratorResult.sensor_tags["1540-TI-4010"]
     : null;
   const tempSensor4200APV = orchestratorFurnaceTemp ?? furnaceOutletTemp ?? tempSensor4200ASyncState.syncedPV;
-  
+
+  // Compute alarm states directly from displayed PV (not sync context which has dynamic noise)
+  const furnaceHHLimit = tempSensor4200AConfig.ALM_HH_LIM ?? 2195;
+  const furnaceHLimit = tempSensor4200AConfig.ALM_H_LIM ?? 2155;
+  const furnaceLLimit = tempSensor4200AConfig.ALM_L_LIM ?? 0;
+  const furnaceLLLimit = tempSensor4200AConfig.ALM_LL_LIM ?? 0;
+  const furnaceAlarmHH = furnaceHHLimit > 0 && tempSensor4200APV >= furnaceHHLimit;
+  const furnaceAlarmH = furnaceHLimit > 0 && tempSensor4200APV >= furnaceHLimit;
+  const furnaceAlarmL = furnaceLLimit > 0 && tempSensor4200APV <= furnaceLLimit;
+  const furnaceAlarmLL = furnaceLLLimit > 0 && tempSensor4200APV <= furnaceLLLimit;
+  const furnaceAlarmActive = furnaceAlarmHH || furnaceAlarmH || furnaceAlarmL || furnaceAlarmLL;
+  const furnaceAlarmColor = (furnaceAlarmHH || furnaceAlarmLL) ? 'red' as const
+    : (furnaceAlarmH || furnaceAlarmL) ? 'yellow' as const : undefined;
+
   const tempSensor4200AData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: tempSensor4200AConfig.TAGNAME || '1540-TI-4200A',
@@ -1443,58 +1456,78 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     pvUnits: tempSensor4200AConfig.EU || '°F',
     pvRangeMin: tempSensor4200AConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200AConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.H || 
-                 tempSensor4200ASyncState.alarmStates.L || tempSensor4200ASyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.LL) ? 'red' : 
-                (tempSensor4200ASyncState.alarmStates.H || tempSensor4200ASyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: tempSensor4200AConfig.ALM_LL_LIM,
-    alarmL: tempSensor4200AConfig.ALM_L_LIM,
-    alarmH: tempSensor4200AConfig.ALM_H_LIM,
-    alarmHH: tempSensor4200AConfig.ALM_HH_LIM,
+    alarmActive: furnaceAlarmActive,
+    alarmColor: furnaceAlarmColor,
+    alarmLL: furnaceLLLimit,
+    alarmL: furnaceLLimit,
+    alarmH: furnaceHLimit,
+    alarmHH: furnaceHHLimit,
   };
 
   // Build Temperature Sensor 1540-TI-4200B data from synced state
+  const tempSensor4200BPV = orchestratorFurnaceTemp ?? tempSensor4200BSyncState.syncedPV;
+  const furnaceBHHLimit = tempSensor4200BConfig.ALM_HH_LIM ?? 2195;
+  const furnaceBHLimit = tempSensor4200BConfig.ALM_H_LIM ?? 2155;
+  const furnaceBLLimit = tempSensor4200BConfig.ALM_L_LIM ?? 0;
+  const furnaceBLLLimit = tempSensor4200BConfig.ALM_LL_LIM ?? 0;
+  const furnaceBAlarmHH = furnaceBHHLimit > 0 && tempSensor4200BPV >= furnaceBHHLimit;
+  const furnaceBAlarmH = furnaceBHLimit > 0 && tempSensor4200BPV >= furnaceBHLimit;
+  const furnaceBAlarmL = furnaceBLLimit > 0 && tempSensor4200BPV <= furnaceBLLimit;
+  const furnaceBAlarmLL = furnaceBLLLimit > 0 && tempSensor4200BPV <= furnaceBLLLimit;
+  const furnaceBAlarmActive = furnaceBAlarmHH || furnaceBAlarmH || furnaceBAlarmL || furnaceBAlarmLL;
+  const furnaceBAlarmColor = (furnaceBAlarmHH || furnaceBAlarmLL) ? 'red' as const
+    : (furnaceBAlarmH || furnaceBAlarmL) ? 'yellow' as const : undefined;
+
   const tempSensor4200BData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: tempSensor4200BConfig.TAGNAME || '1540-TI-4200B',
     description: tempSensor4200BConfig.DESC || 'Furnace Temp Out B',
-    pv: orchestratorFurnaceTemp ?? tempSensor4200BSyncState.syncedPV,
+    pv: tempSensor4200BPV,
     sp: tempSensor4200BSyncState.syncedSP,
     out: tempSensor4200BSyncState.syncedOUT,
     mode: tempSensor4200BSyncState.syncedMode,
     pvUnits: tempSensor4200BConfig.EU || '°F',
     pvRangeMin: tempSensor4200BConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200BConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.H || 
-                 tempSensor4200BSyncState.alarmStates.L || tempSensor4200BSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.LL) ? 'red' : 
-                (tempSensor4200BSyncState.alarmStates.H || tempSensor4200BSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: tempSensor4200BConfig.ALM_LL_LIM,
-    alarmL: tempSensor4200BConfig.ALM_L_LIM,
-    alarmH: tempSensor4200BConfig.ALM_H_LIM,
-    alarmHH: tempSensor4200BConfig.ALM_HH_LIM,
+    alarmActive: furnaceBAlarmActive,
+    alarmColor: furnaceBAlarmColor,
+    alarmLL: furnaceBLLLimit,
+    alarmL: furnaceBLLimit,
+    alarmH: furnaceBHLimit,
+    alarmHH: furnaceBHHLimit,
   };
 
   // Build Temperature Sensor 1540-TI-4200C data from synced state (Furnace temp 1800-2300°F)
+  const tempSensor4200CPV = orchestratorFurnaceTemp ?? tempSensor4200CSyncState.syncedPV;
+  const furnaceCHHLimit = 2250;
+  const furnaceCHLimit = 2200;
+  const furnaceCLLimit = 1900;
+  const furnaceCLLLimit = 1850;
+  const furnaceCAlarmHH = furnaceCHHLimit > 0 && tempSensor4200CPV >= furnaceCHHLimit;
+  const furnaceCAlarmH = furnaceCHLimit > 0 && tempSensor4200CPV >= furnaceCHLimit;
+  const furnaceCAlarmL = furnaceCLLimit > 0 && tempSensor4200CPV <= furnaceCLLimit;
+  const furnaceCAlarmLL = furnaceCLLLimit > 0 && tempSensor4200CPV <= furnaceCLLLimit;
+  const furnaceCAlarmActive = furnaceCAlarmHH || furnaceCAlarmH || furnaceCAlarmL || furnaceCAlarmLL;
+  const furnaceCAlarmColor = (furnaceCAlarmHH || furnaceCAlarmLL) ? 'red' as const
+    : (furnaceCAlarmH || furnaceCAlarmL) ? 'yellow' as const : undefined;
+
   const tempSensor4200CData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: '1540-TI-4200C',
     description: 'Furnace C',
-    pv: orchestratorFurnaceTemp ?? tempSensor4200CSyncState.syncedPV,
+    pv: tempSensor4200CPV,
     sp: tempSensor4200CSyncState.syncedSP,
     out: tempSensor4200CSyncState.syncedOUT,
     mode: tempSensor4200CSyncState.syncedMode,
     pvUnits: '°F',
     pvRangeMin: 1800,
     pvRangeMax: 2300,
-    alarmActive: tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.H || 
-                 tempSensor4200CSyncState.alarmStates.L || tempSensor4200CSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.LL) ? 'red' : 
-                (tempSensor4200CSyncState.alarmStates.H || tempSensor4200CSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: 1850,
-    alarmL: 1900,
-    alarmH: 2200,
-    alarmHH: 2250,
+    alarmActive: furnaceCAlarmActive,
+    alarmColor: furnaceCAlarmColor,
+    alarmLL: furnaceCLLLimit,
+    alarmL: furnaceCLLimit,
+    alarmH: furnaceCHLimit,
+    alarmHH: furnaceCHHLimit,
   };
 
   // Use shared compressor context
@@ -4336,7 +4369,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               style={{ zIndex: 30 }}
             >
               <div 
-                className={`w-full h-full ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full relative ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleFurnaceClick}
               >
                 <img 
@@ -4345,7 +4378,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   className="w-full h-full object-contain"
                   draggable={false}
                   data-testid="img-metal-tank-l2"
+                  style={furnaceAlarmHH ? { filter: 'brightness(0.5) sepia(1) saturate(10) hue-rotate(-10deg)' } : undefined}
                 />
+                {furnaceAlarmHH && (
+                  <div
+                    className="absolute inset-0 bg-red-600/30 animate-pulse pointer-events-none rounded"
+                    data-testid="overlay-furnace-alarm"
+                  />
+                )}
               </div>
             </Rnd>
 
