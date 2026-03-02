@@ -747,9 +747,14 @@ class CatalyticPass:
         Simplified pass calculation: uses equilibrium approach.
         For full RK4, call main.py / rk_solver.py backend.
         """
-        # Approximate conversion per pass
-        # These are typical industrial values for a 3-1 double absorption plant
-        pass_conversions = {1: 0.62, 2: 0.27, 3: 0.06, 4: 0.035}
+        # Fractional conversion of REMAINING SO2 at each pass inlet
+        # For a 3-1 double-absorption plant, cumulative targets:
+        #   Pass 1: ~62%  cumulative  (0.62 of inlet)
+        #   Pass 2: ~93%  cumulative  (0.816 of remaining after P1)
+        #   Pass 3: ~98%  cumulative  (0.714 of remaining after P2)
+        #   IPAT absorption between P3 and P4
+        #   Pass 4: ~99.7% cumulative (0.85 of remaining after IPAT)
+        pass_conversions = {1: 0.62, 2: 0.816, 3: 0.714, 4: 0.85}
         fractional_conv = pass_conversions.get(pass_number, 0.05)
 
         # Adjust for catalyst activity
