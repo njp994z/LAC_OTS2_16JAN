@@ -1547,7 +1547,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (selectedMode === "Static") {
       const comp = orchestratorResult?.compressor;
       if (comp && comp.compressor_rpm) {
-        const speedPercent = (comp.speed_ratio ?? 0) * 100;
+        const speedPercent = orchestratorResult?.sensor_tags?.["1540-SIC-4030"] ?? (comp.speed_ratio ?? 0) * 100;
         setStaticValues({
           speedPV: speedPercent,
           speedSP: speedPercent,
