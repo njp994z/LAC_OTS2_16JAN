@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import KPIMetrics from "@/components/KPIMetrics";
 import ScenarioSelector from "@/components/ScenarioSelector";
+import KPICard from "./unit-operation/kpi-card";
 import { Activity, Video, LogOut, Users, Settings } from "lucide-react";
 
 export default function Simulator() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const [selectedScenario, setSelectedScenario] = useState<number | null>(null);
-  
   // Check for scenario query parameter on page load
   useEffect(() => {
     const params = new URLSearchParams(searchString);
@@ -100,6 +100,18 @@ export default function Simulator() {
       
       <main className="flex-1 p-6 overflow-auto">
         <div className="max-w-7xl mx-auto space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Plant Status</CardTitle>
+              <CardDescription>
+                Live key performance parameters from static simulation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <KPICard />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Training Scenarios</CardTitle>

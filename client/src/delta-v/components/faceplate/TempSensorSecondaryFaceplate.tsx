@@ -153,7 +153,7 @@ export const TempSensorSecondaryFaceplate = ({
             "bg-amber-400 text-black font-mono font-bold text-lg",
             "shadow-lg shadow-amber-400/30"
           )}>
-            {data.PV.toFixed(1)} {config.EU}
+            {(data.PV ?? 0).toFixed(1)} {config.EU}
           </div>
         </div>
 
@@ -162,7 +162,7 @@ export const TempSensorSecondaryFaceplate = ({
           {/* PV Bar Graph with Arrows and Unit Scale */}
           <div className="flex flex-col items-center">
             <div className="flex items-end gap-1 h-[18px]">
-              <span className="text-[9px] text-muted-foreground leading-none">{rangeMax.toFixed(1)}</span>
+              <span className="text-[9px] text-muted-foreground leading-none">{(rangeMax ?? 0).toFixed(1)}</span>
               <span className="text-[10px] text-muted-foreground leading-none">{config.EU}</span>
             </div>
             
@@ -171,7 +171,7 @@ export const TempSensorSecondaryFaceplate = ({
               {/* Unit Scale Column */}
               <div className="relative h-[140px] w-7 flex flex-col justify-center items-end pr-0.5">
                 <span className="text-[8px] text-muted-foreground">
-                  {((rangeMax + rangeMin) / 2).toFixed(0)} {config.EU}
+                  {(((rangeMax ?? 0) + (rangeMin ?? 0)) / 2).toFixed(0)} {config.EU}
                 </span>
               </div>
 
@@ -262,7 +262,7 @@ export const TempSensorSecondaryFaceplate = ({
               </div>
             </div>
             
-            <span className="text-[9px] text-muted-foreground mt-1">{rangeMin.toFixed(0)} {config.EU}</span>
+            <span className="text-[9px] text-muted-foreground mt-1">{(rangeMin ?? 0).toFixed(0)} {config.EU}</span>
           </div>
         </div>
 
