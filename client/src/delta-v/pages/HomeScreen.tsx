@@ -319,10 +319,13 @@ const HomeScreen = () => {
   // Static simulation state
   const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
   const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
+  const pendingStaticRecalcRef = useRef(false);
   
-  // Run static simulation when Start button is clicked in Static mode
   const runStaticSimulation = async () => {
-    if (staticSimulationRunning) return;
+    if (staticSimulationRunning) {
+      pendingStaticRecalcRef.current = true;
+      return;
+    }
     
     setStaticSimulationRunning(true);
     try {
@@ -434,23 +437,17 @@ const HomeScreen = () => {
         setLoadedCaseValue1540H4030(speedPercent);
       }
       
-      toast({
-        title: "Static Simulation Complete",
-        description: `Compressor: ${simResults.compressor_speed?.toFixed(0) || 'N/A'} RPM, Outlet: ${simResults.outlet_temp_F?.toFixed(1) || 'N/A'}°F, Power: ${simResults.brake_power_hp?.toFixed(1) || 'N/A'} HP`,
-      });
-      
     } catch (error) {
       console.error('Static simulation error:', error);
-      toast({
-        title: "Simulation Error",
-        description: error instanceof Error ? error.message : "Failed to run static simulation",
-        variant: "destructive",
-      });
     } finally {
       setStaticSimulationRunning(false);
+      if (pendingStaticRecalcRef.current) {
+        pendingStaticRecalcRef.current = false;
+        setTimeout(() => runStaticSimulation(), 100);
+      }
     }
   };
-  
+
   // Toggle fullscreen mode
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -865,6 +862,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setLoadedCaseValueWHBdP(null);
     }
   }, [selectedMode, activePVCaseId]);
+
+  const staticAutoCalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (selectedMode !== "Static") return;
+    if (staticAutoCalcTimerRef.current) {
+      clearTimeout(staticAutoCalcTimerRef.current);
+    }
+    staticAutoCalcTimerRef.current = setTimeout(() => {
+      runStaticSimulation();
+    }, 500);
+    return () => {
+      if (staticAutoCalcTimerRef.current) {
+        clearTimeout(staticAutoCalcTimerRef.current);
+      }
+    };
+  }, [selectedMode, activePVCaseId, loadedCaseValue1540H4030, loadedCaseValueSulfurFlow]);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -3092,28 +3106,6 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Start Button - runs static simulation in Static mode */}
-          <Button
-            variant="default"
-            size="sm"
-            className={`gap-2 ${staticSimulationRunning ? 'bg-yellow-600 border-yellow-600' : 'bg-green-600 border border-green-600'} text-white hover:bg-green-700`}
-            data-testid="button-toolbar-start"
-            onClick={runStaticSimulation}
-            disabled={staticSimulationRunning || selectedMode !== "Static"}
-          >
-            {staticSimulationRunning ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Running...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Start
-              </>
-            )}
-          </Button>
 
           {/* PFDs Dropdown Menu */}
           <DropdownMenu>
