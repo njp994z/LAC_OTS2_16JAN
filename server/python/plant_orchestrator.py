@@ -236,17 +236,17 @@ class PlantInputs:
     damper_open_pct: float = 100.0
 
     # --- Catalytic Converter ---
-    pass1_catalyst: str = "MECS GR330"
-    pass1_liters: float = 36.0        # total (L1 + L2)
+    pass1_catalyst: str = "MECS GR-330"
+    pass1_liters: float = 80000.0     # Pass 1: largest bed, ~27% of total
     pass1_activity: float = 100.0
     pass2_catalyst: str = "MECS Super Gear XLP-310"
-    pass2_liters: float = 40.0
+    pass2_liters: float = 75000.0     # Pass 2
     pass2_activity: float = 100.0
     pass3_catalyst: str = "MECS Super Gear XLP-310"
-    pass3_liters: float = 45.0
+    pass3_liters: float = 70000.0     # Pass 3
     pass3_activity: float = 100.0
-    pass4_catalyst: str = "MECS Super Gear XLP-310"
-    pass4_liters: float = 50.0
+    pass4_catalyst: str = "Topsoe VK69"
+    pass4_liters: float = 65000.0     # Pass 4: Cs-promoted for low-T finish
     pass4_activity: float = 100.0
 
     pass1_inlet_temp_C: float = 390.0
@@ -731,7 +731,285 @@ class WHBJugValve:
 
 
 class CatalyticPass:
-    """Single catalytic converter pass (simplified steady-state model)."""
+    """
+    Single catalytic converter pass — FULL RK4 SOLVER (inlined from rk_solver.py).
+
+    Integrates dT/dW and dX/dW through the catalyst bed using:
+      - Eklund kinetics (V2O5 catalyst, modified Arrhenius)
+      - NASA 7-coefficient Cp polynomials
+      - Equilibrium bisection (Kp from Eklund thermodynamics)
+      - Fogler-style epsilon stoichiometry correction
+
+    Reaction: SO2 + 0.5 O2 → SO3  (delta = -0.5)
+    """
+
+    # ── Catalyst database ────────────────────────────────────────────
+    CATALYST_DB = {
+        "Topsoe VK69": {
+            "cesium_promoted": True, "activity_fresh": 3.51,
+            "bulk_density_kg_m3": 800.0, "ignition_temp_c": 350.0,
+        },
+        "MECS Super Gear XLP-310": {
+            "cesium_promoted": True, "activity_fresh": 3.35,
+            "bulk_density_kg_m3": 815.0, "ignition_temp_c": 390.0,
+        },
+        "MECS GR-330": {
+            "cesium_promoted": False, "activity_fresh": 1.4,
+            "bulk_density_kg_m3": 865.0, "ignition_temp_c": 360.0,
+        },
+    }
+
+    # ── Constants ─────────────────────────────────────────────────────
+    DELTA = -0.5                    # stoichiometric mole change
+    dHrxn_BTU_lbmol = -42560.0     # ΔH_rxn in BTU/lbmol SO2 (exothermic)
+    R_BTU = 1.9858775              # gas constant BTU/(lbmol·°R)
+    SCF_PER_LBMOL = 379.0
+    KG_TO_LB = 2.20462
+    L_TO_M3 = 1.0e-3
+
+    # NASA 7-coefficient polynomial Cp/R = a1 + a2*T + a3*T² + a4*T³ + a5*T⁴
+    NASA_COEFFS = {
+        "O2":  (3.66096065, 6.56365811e-4, -1.41149627e-7, 2.05797935e-11, -1.29913436e-15),
+        "N2":  (2.95257637, 1.39690040e-3, -4.92631603e-7, 7.86010195e-11, -4.60755204e-15),
+        "SO2": (5.25449370, 1.97825490e-3, -5.31672630e-7, 5.93886740e-11, -2.37466450e-15),
+        "SO3": (7.07573800, 3.17944400e-3, -1.00630500e-6, 1.41851800e-10, -7.31948300e-15),
+        "CO2": (4.63659490, 2.74131990e-3, -9.95828530e-7, 1.60373011e-10, -9.16103680e-15),
+    }
+
+    # ── Static helper methods (thermodynamics + kinetics) ─────────
+
+    @staticmethod
+    def _C_to_K(TC: float) -> float:
+        return TC + 273.15
+
+    @staticmethod
+    def _C_to_R(TC: float) -> float:
+        return (TC + 273.15) * 9.0 / 5.0
+
+    @staticmethod
+    def _epsilon(y_so2_0: float) -> float:
+        return CatalyticPass.DELTA * y_so2_0
+
+    @staticmethod
+    def _y_at_conversion(y0: Dict[str, float], X: float) -> Dict[str, float]:
+        """Mole fractions at conversion X using Fogler epsilon correction."""
+        ySO2_0 = y0.get("SO2", 0.0)
+        yO2_0  = y0.get("O2", 0.0)
+        ySO3_0 = y0.get("SO3", 0.0)
+        yN2_0  = y0.get("N2", 0.0)
+        yCO2_0 = y0.get("CO2", 0.0)
+
+        e = CatalyticPass._epsilon(ySO2_0)
+        denom = 1.0 + e * X
+
+        ySO2 = ySO2_0 * (1.0 - X) / denom
+        yO2  = (yO2_0 - 0.5 * ySO2_0 * X) / denom
+        ySO3 = (ySO3_0 + ySO2_0 * X) / denom
+        yN2  = yN2_0 / denom
+        yCO2 = yCO2_0 / denom
+
+        yO2  = max(yO2, 0.0)
+        ySO2 = max(ySO2, 1e-30)
+        ySO3 = max(ySO3, 1e-30)
+
+        s = ySO2 + yO2 + ySO3 + yN2 + yCO2
+        return {"SO2": ySO2/s, "O2": yO2/s, "SO3": ySO3/s, "N2": yN2/s, "CO2": yCO2/s}
+
+    @staticmethod
+    def _compute_local_composition(y0: Dict[str, float], X: float) -> Dict[str, float]:
+        """Local mole fractions at conversion X (for Cp calculation)."""
+        ySO2_0 = y0.get("SO2", 0.0)
+        ySO3_0 = y0.get("SO3", 0.0)
+        yO2_0  = y0.get("O2", 0.0)
+        yN2_0  = y0.get("N2", 0.0)
+        yCO2_0 = y0.get("CO2", 0.0)
+
+        delta_SO2 = ySO2_0 * X
+        ySO2_new = ySO2_0 - delta_SO2
+        ySO3_new = ySO3_0 + delta_SO2
+        yO2_new  = max(0.0, yO2_0 - 0.5 * delta_SO2)
+        total_moles = 1.0 - 0.5 * delta_SO2
+
+        if total_moles <= 0:
+            return y0
+
+        return {
+            "SO2": ySO2_new / total_moles,
+            "SO3": ySO3_new / total_moles,
+            "O2":  yO2_new  / total_moles,
+            "N2":  yN2_0    / total_moles,
+            "CO2": yCO2_0   / total_moles,
+        }
+
+    @staticmethod
+    def _Kp_eklund(TC: float) -> float:
+        """Equilibrium constant Kp (atm^-0.5) from Eklund thermodynamics."""
+        TR = CatalyticPass._C_to_R(TC)
+        return math.exp(42311.0 / (1.98 * TR) - 11.24)
+
+    @staticmethod
+    def _k_eff_arrhenius(TC: float) -> float:
+        """Arrhenius rate constant (lbmol SO2 / lb-cat / hr / atm^1.5)."""
+        TK = CatalyticPass._C_to_K(TC)
+        Ea = 88000.0   # J/mol
+        A  = 2.5e6     # pre-exponential (calibrated)
+        R  = 8.314     # J/(mol·K)
+        return A * math.exp(-Ea / (R * TK))
+
+    @staticmethod
+    def _eklund_rate(TC: float, X: float, P_atm: float,
+                     y0: Dict[str, float], a_eff: float) -> float:
+        """
+        SO2 oxidation rate: r = a_eff * k * sqrt(pSO2/pSO3) * [pO2 - (pSO3/(pSO2*Kp))²]
+        Returns lbmol SO2 reacted / lb-catalyst / hr
+        """
+        y = CatalyticPass._y_at_conversion(y0, X)
+        pSO2 = max(y["SO2"] * P_atm, 1e-6)
+        pSO3_min = 0.001 * P_atm
+        pSO3 = max(y["SO3"] * P_atm, pSO3_min)
+        pO2  = max(y["O2"]  * P_atm, 1e-6)
+
+        k  = CatalyticPass._k_eff_arrhenius(TC)
+        Kp = max(CatalyticPass._Kp_eklund(TC), 1e-30)
+
+        bracket = pO2 - (pSO3 / (pSO2 * Kp)) ** 2
+        if bracket <= 0.0:
+            return 0.0
+
+        return a_eff * k * math.sqrt(pSO2 / pSO3) * bracket
+
+    @staticmethod
+    def _Xeq_at_T(TC: float, P_atm: float, y0: Dict[str, float]) -> float:
+        """Equilibrium conversion by bisection on Qp(X) = Kp(T)."""
+        Kp = max(CatalyticPass._Kp_eklund(TC), 1e-30)
+
+        def Qp(X: float) -> float:
+            y = CatalyticPass._y_at_conversion(y0, X)
+            pSO3 = y["SO3"] * P_atm
+            pSO2 = max(y["SO2"] * P_atm, 1e-30)
+            pO2  = y["O2"]  * P_atm
+            if pO2 <= 1e-30:
+                return 1e300
+            return pSO3 / (pSO2 * math.sqrt(pO2))
+
+        XL, XR = 0.0, 0.999
+        fL = Qp(XL) - Kp
+        if fL >= 0:
+            return 0.0
+        fR = Qp(XR) - Kp
+        if fR <= 0:
+            return XR
+
+        for _ in range(80):
+            XM = 0.5 * (XL + XR)
+            fM = Qp(XM) - Kp
+            if abs(fM) < 1e-8:
+                return XM
+            if fM < 0:
+                XL = XM
+            else:
+                XR = XM
+        return 0.5 * (XL + XR)
+
+    @staticmethod
+    def _cp_species(species: str, TK: float) -> float:
+        """Species Cp in BTU/(lbmol·°R) from NASA polynomials."""
+        coeffs = CatalyticPass.NASA_COEFFS.get(species)
+        if coeffs is None:
+            return 8.0
+        a1, a2, a3, a4, a5 = coeffs
+        Cp_over_R = a1 + a2*TK + a3*TK**2 + a4*TK**3 + a5*TK**4
+        return Cp_over_R * CatalyticPass.R_BTU
+
+    @staticmethod
+    def _cp_mix(TK: float, y: Dict[str, float]) -> float:
+        """Mixture Cp in BTU/(lbmol·°R)."""
+        cp = 0.0
+        for species, mf in y.items():
+            if mf > 0:
+                cp += mf * CatalyticPass._cp_species(species, TK)
+        return cp
+
+    # ── RK4 Integrator ───────────────────────────────────────────────
+
+    @staticmethod
+    def _rk4_solve(
+        T_in_C: float,
+        P_abs_atm: float,
+        y0: Dict[str, float],
+        F_T0_lbmol_hr: float,
+        catalyst_name: str,
+        catalyst_liters: float,
+        activity_pct: float,
+        n_steps: int = 100,
+    ) -> Tuple[float, float]:
+        """
+        RK4 integrate dT/dW and dX/dW through the catalyst bed.
+
+        Returns:
+            T_out_C: outlet temperature (°C)
+            X_out: fractional conversion at outlet (0-1)
+        """
+        # Catalyst properties
+        cat = CatalyticPass.CATALYST_DB.get(catalyst_name)
+        if cat is None:
+            # Fallback: try partial match
+            for name, props in CatalyticPass.CATALYST_DB.items():
+                if catalyst_name in name or name in catalyst_name:
+                    cat = props
+                    break
+            if cat is None:
+                cat = CatalyticPass.CATALYST_DB["Topsoe VK69"]  # default
+
+        a_eff = cat["activity_fresh"] * max(activity_pct, 0.0) / 100.0
+
+        # Catalyst weight
+        W_total = catalyst_liters * CatalyticPass.L_TO_M3 * cat["bulk_density_kg_m3"] * CatalyticPass.KG_TO_LB
+        dW = W_total / n_steps if W_total > 0 else 1.0
+
+        ySO2_0 = y0.get("SO2", 1e-9)
+        F_SO2_0 = max(F_T0_lbmol_hr * ySO2_0, 1e-12)
+
+        dHrxn = CatalyticPass.dHrxn_BTU_lbmol
+
+        T = T_in_C
+        X = 0.0
+
+        def deriv(TC: float, Xc: float) -> Tuple[float, float]:
+            """Returns (dT/dW in °C/lb-cat, dX/dW in 1/lb-cat)"""
+            y_local = CatalyticPass._compute_local_composition(y0, Xc)
+
+            Xeq = CatalyticPass._Xeq_at_T(TC, P_abs_atm, y0)
+            if Xc >= Xeq:
+                r = 0.0
+            else:
+                r = CatalyticPass._eklund_rate(TC, Xc, P_abs_atm, y0, a_eff)
+
+            dX_dW = r / F_SO2_0
+
+            TK = CatalyticPass._C_to_K(TC)
+            Cp_BTU = max(CatalyticPass._cp_mix(TK, y_local), 1e-9)
+
+            # dT/dW in °R/lb-cat, then ×5/9 → °C/lb-cat
+            dT_dW_R = (-(dHrxn) * r) / max(F_T0_lbmol_hr * Cp_BTU, 1e-12)
+            dT_dW = dT_dW_R * 5.0 / 9.0
+
+            return dT_dW, dX_dW
+
+        # ── RK4 loop ─────────────────────────────────────────────────
+        for _ in range(n_steps):
+            k1T, k1X = deriv(T, X)
+            k2T, k2X = deriv(T + 0.5*dW*k1T, X + 0.5*dW*k1X)
+            k3T, k3X = deriv(T + 0.5*dW*k2T, X + 0.5*dW*k2X)
+            k4T, k4X = deriv(T + dW*k3T, X + dW*k3X)
+
+            T = T + (dW / 6.0) * (k1T + 2*k2T + 2*k3T + k4T)
+            X = X + (dW / 6.0) * (k1X + 2*k2X + 2*k3X + k4X)
+            X = max(0.0, min(X, 0.999))
+
+        return T, X
+
+    # ── Main calculate method ────────────────────────────────────────
 
     @staticmethod
     def calculate(
@@ -744,40 +1022,59 @@ class CatalyticPass:
         barometric_psia: float,
     ) -> GasStream:
         """
-        Simplified pass calculation: uses equilibrium approach.
-        For full RK4, call main.py / rk_solver.py backend.
+        Full RK4 catalytic pass calculation.
+
+        Converts GasStream (scfm) → mole fractions → RK4 solve → outlet GasStream.
         """
-        # Fractional conversion of REMAINING SO2 at each pass inlet
-        # For a 3-1 double-absorption plant, cumulative targets:
-        #   Pass 1: ~62%  cumulative  (0.62 of inlet)
-        #   Pass 2: ~93%  cumulative  (0.816 of remaining after P1)
-        #   Pass 3: ~98%  cumulative  (0.714 of remaining after P2)
-        #   IPAT absorption between P3 and P4
-        #   Pass 4: ~99.7% cumulative (0.85 of remaining after IPAT)
-        pass_conversions = {1: 0.62, 2: 0.816, 3: 0.714, 4: 0.85}
-        fractional_conv = pass_conversions.get(pass_number, 0.05)
+        # ── Convert scfm to mole fractions ───────────────────────────
+        total_scfm = max(inlet.TOTAL, 1.0)
+        y0 = {
+            "SO2": inlet.SO2 / total_scfm,
+            "SO3": inlet.SO3 / total_scfm,
+            "O2":  inlet.O2  / total_scfm,
+            "N2":  inlet.N2  / total_scfm,
+            "CO2": inlet.CO2 / total_scfm,
+        }
 
-        # Adjust for catalyst activity
-        fractional_conv *= (activity_pct / 100.0)
+        # Total molar flow: scfm / 379 scf/lbmol × 60 min/hr = lbmol/hr
+        F_T0 = total_scfm / CatalyticPass.SCF_PER_LBMOL * 60.0
 
-        so2_in = inlet.SO2
-        so2_converted = so2_in * fractional_conv
-        so3_produced = so2_converted  # 1:1 molar (SO2 → SO3)
-        o2_consumed = so2_converted * 0.5
+        # Absolute pressure in atm
+        P_inwc = inlet.pressure_inwc
+        P_psia = barometric_psia + P_inwc * 0.03613
+        P_atm  = P_psia / 14.696
+
+        # ── Solve ────────────────────────────────────────────────────
+        T_out_C, X_out = CatalyticPass._rk4_solve(
+            T_in_C=inlet_temp_C,
+            P_abs_atm=P_atm,
+            y0=y0,
+            F_T0_lbmol_hr=F_T0,
+            catalyst_name=catalyst_name,
+            catalyst_liters=catalyst_liters,
+            activity_pct=activity_pct,
+            n_steps=100,
+        )
+
+        # ── Convert outlet composition back to scfm ──────────────────
+        y_out = CatalyticPass._y_at_conversion(y0, X_out)
+
+        # Total moles change: n_out/n_in = 1 + ε·X
+        eps = CatalyticPass._epsilon(y0["SO2"])
+        total_out_scfm = total_scfm * (1.0 + eps * X_out)
 
         outlet = inlet.copy()
         outlet.stream_id = inlet.stream_id + 1
-        outlet.SO2 = max(0.0, inlet.SO2 - so2_converted)
-        outlet.SO3 = inlet.SO3 + so3_produced
-        outlet.O2 = max(0.0, inlet.O2 - o2_consumed)
+        outlet.SO2 = y_out["SO2"] * total_out_scfm
+        outlet.SO3 = y_out["SO3"] * total_out_scfm
+        outlet.O2  = y_out["O2"]  * total_out_scfm
+        outlet.N2  = y_out["N2"]  * total_out_scfm
+        outlet.CO2 = y_out["CO2"] * total_out_scfm
+        outlet.H2O = inlet.H2O  # water unchanged through converter
 
-        # Adiabatic temperature rise (~110°C per 1% SO2 converted at 11% SO2)
-        # More precisely: ΔT ≈ (-ΔH_rxn × ySO2_0 × ΔX) / Cp_mix
-        delta_T_C = so2_converted / max(inlet.TOTAL, 1.0) * 100.0 * 110.0
-        outlet_temp_C = inlet_temp_C + delta_T_C
-        outlet.temperature_F = outlet_temp_C * 9.0 / 5.0 + 32.0
+        outlet.temperature_F = T_out_C * 9.0 / 5.0 + 32.0
 
-        # Pressure drop (~2-5 inwc per pass)
+        # Pressure drop: ~2-5 inwc per pass
         dp_per_pass = {1: 4.0, 2: 3.5, 3: 3.0, 4: 3.0}
         outlet.pressure_inwc = inlet.pressure_inwc - dp_per_pass.get(pass_number, 3.0)
 
@@ -786,7 +1083,89 @@ class CatalyticPass:
 
 
 class InterpassHX:
-    """Unit Ops [8,10]: Hot and Cold Interpass Heat Exchangers."""
+    """
+    Unit Ops [8,10]: Hot and Cold Interpass Heat Exchangers (HIP and CIP).
+
+    Physical arrangement (3:1 double-absorption):
+      HOT SIDE (Passes 1-3 loop):
+        HIP hot: Pass 1 outlet → cooled → Pass 2 inlet
+        CIP hot: Pass 2 outlet → cooled → Pass 3 inlet
+      COLD SIDE (after IPAT, reheating to Pass 4):
+        CIP cold: IPAT outlet → heated by CIP duty
+        HIP cold: CIP cold outlet → heated by HIP duty → Pass 4 inlet
+
+    No bypasses in this demo → cold-side duty = hot-side duty for each HX.
+    """
+
+    # Average Cp for process gas (BTU/lb·°F) — mostly N2 + O2 + SO2
+    CP_AVG = 0.26
+
+    @staticmethod
+    def cool_stream_with_duty(
+        hot_stream: GasStream,
+        target_temp_F: float,
+        stream_id: int,
+        tag: str,
+        label: str,
+        dp_inwc: float = 4.0,
+    ) -> Tuple[GasStream, float]:
+        """
+        Cool a gas stream (hot side) and return the duty in BTU/hr.
+
+        Returns:
+            cooled_stream: The cooled gas stream
+            duty_btu_hr: Heat duty removed from hot side (positive value, BTU/hr)
+        """
+        # Mass flow from scfm: m_dot = TOTAL × MW_avg / 379.0 (lbmol→scf) × 60 min
+        # MW_avg for converter gas ≈ 30.5 (N2/O2/SO2 mixture)
+        MW_avg = 30.5
+        m_dot_lbhr = hot_stream.TOTAL * MW_avg / 379.0 * 60.0
+
+        delta_T = hot_stream.temperature_F - target_temp_F
+        duty_btu_hr = m_dot_lbhr * InterpassHX.CP_AVG * max(delta_T, 0.0)
+
+        cooled = hot_stream.copy()
+        cooled.stream_id = stream_id
+        cooled.tag = tag
+        cooled.label = label
+        cooled.temperature_F = target_temp_F
+        cooled.pressure_inwc = hot_stream.pressure_inwc - dp_inwc
+        cooled.recalc_total()
+
+        return cooled, duty_btu_hr
+
+    @staticmethod
+    def heat_stream_with_duty(
+        cold_stream: GasStream,
+        duty_btu_hr: float,
+        stream_id: int,
+        tag: str,
+        label: str,
+        dp_inwc: float = 3.0,
+    ) -> GasStream:
+        """
+        Heat a gas stream (cold side) using a known duty.
+
+        The cold-side gas (post-IPAT, SO3 removed) has slightly lower flow
+        than the hot side, so the same duty produces a slightly larger ΔT.
+
+        Returns:
+            heated_stream: The heated gas stream
+        """
+        MW_avg = 30.0  # post-IPAT gas is lighter (SO3 removed → more N2/O2 fraction)
+        m_dot_lbhr = cold_stream.TOTAL * MW_avg / 379.0 * 60.0
+
+        delta_T = duty_btu_hr / max(m_dot_lbhr * InterpassHX.CP_AVG, 1.0)
+
+        heated = cold_stream.copy()
+        heated.stream_id = stream_id
+        heated.tag = tag
+        heated.label = label
+        heated.temperature_F = cold_stream.temperature_F + delta_T
+        heated.pressure_inwc = cold_stream.pressure_inwc - dp_inwc
+        heated.recalc_total()
+
+        return heated
 
     @staticmethod
     def cool_stream(
@@ -797,14 +1176,10 @@ class InterpassHX:
         label: str,
         dp_inwc: float = 4.0,
     ) -> GasStream:
-        """Cool a gas stream to a target temperature (simplified)."""
-        cooled = hot_stream.copy()
-        cooled.stream_id = stream_id
-        cooled.tag = tag
-        cooled.label = label
-        cooled.temperature_F = target_temp_F
-        cooled.pressure_inwc = hot_stream.pressure_inwc - dp_inwc
-        cooled.recalc_total()
+        """Legacy wrapper — cool without returning duty (used for SH1B etc.)."""
+        cooled, _ = InterpassHX.cool_stream_with_duty(
+            hot_stream, target_temp_F, stream_id, tag, label, dp_inwc
+        )
         return cooled
 
 
@@ -1033,11 +1408,6 @@ def build_sensor_tags(
         outlet = s.get(outlet_id, GasStream())
         tags[f"1540-TI-41{p_num}1"] = outlet.temperature_F          # Pass outlet T
 
-    # --- Pass 1 SO2 Strength (Analyzer) ---
-    s10 = s.get(10, GasStream())
-    s10_total = max(s10.TOTAL, 1e-9)
-    tags["1540-AI-4825"] = (s10.SO2 / s10_total) * 100.0            # Pass 1 inlet SO2 %
-
     # --- IPAT ---
     tags["1540-TI-4200"] = s.get(16, GasStream()).temperature_F      # IPAT gas inlet T
     tags["1540-TI-4201"] = s.get(17, GasStream()).temperature_F      # IPAT gas outlet T
@@ -1146,8 +1516,9 @@ class PlantOrchestrator:
         s11.label = "Stream 11 — Pass 1 Outlet"
         streams[11] = s11
 
-        # ── [8] Hot Interpass HX → Stream 12 (cooled) ────────────────────
-        s12 = InterpassHX.cool_stream(
+        # ── [8] Hot Interpass HX (HIP) hot side → Stream 12 (cooled) ────
+        #     Duty saved for cold-side reheat after IPAT
+        s12, hip_duty_btu = InterpassHX.cool_stream_with_duty(
             s11,
             target_temp_F=inp.pass2_inlet_temp_C * 9.0 / 5.0 + 32.0,
             stream_id=12, tag="G12", label="Stream 12 — HIP Outlet / Pass 2 Inlet",
@@ -1169,8 +1540,9 @@ class PlantOrchestrator:
         s13.label = "Stream 13 — Pass 2 Outlet"
         streams[13] = s13
 
-        # ── [10] Cold Interpass HX → Stream 14 ──────────────────────────
-        s14 = InterpassHX.cool_stream(
+        # ── [10] Cold Interpass HX (CIP) hot side → Stream 14 ──────────
+        #      Duty saved for cold-side reheat after IPAT
+        s14, cip_duty_btu = InterpassHX.cool_stream_with_duty(
             s13,
             target_temp_F=inp.pass3_inlet_temp_C * 9.0 / 5.0 + 32.0,
             stream_id=14, tag="G14", label="Stream 14 — CIP Outlet / Pass 3 Inlet",
@@ -1202,12 +1574,28 @@ class PlantOrchestrator:
         s17 = IPATower.calculate(s16, inp)
         streams[17] = s17
 
-        # ── [14] Converter Pass 4 ────────────────────────────────────────
-        # IPAT outlet → interpass HX cooling → Pass 4 inlet (Stream 18)
-        s18 = InterpassHX.cool_stream(
-            s17,
-            target_temp_F=inp.pass4_inlet_temp_C * 9.0 / 5.0 + 32.0,
-            stream_id=18, tag="G18", label="Stream 18 — Pass 4 Inlet",
+        # ── [14] CIP Cold Side + HIP Cold Side (reheat IPAT outlet) ─────
+        #     Physical path: IPAT outlet → CIP cold → HIP cold → Pass 4
+        #     No bypasses → cold-side duty = hot-side duty for each HX
+        #     Total cold-side duty = CIP duty + HIP duty
+        #
+        #     Stream 17 (IPAT out, ~180°F) → heated → Stream 18 (Pass 4 inlet)
+
+        # Apply CIP cold-side duty first (smaller HX, lower duty)
+        s17a = InterpassHX.heat_stream_with_duty(
+            s17, cip_duty_btu,
+            stream_id=17, tag="GCC1",
+            label="Stream 17A — CIP Cold Side Outlet",
+            dp_inwc=3.0,
+        )
+        # Override stream_id to not collide — use 17 in internal tracking only
+        # (This is an intermediate point; final Pass 4 inlet is Stream 18)
+
+        # Apply HIP cold-side duty second (larger HX, higher duty)
+        s18 = InterpassHX.heat_stream_with_duty(
+            s17a, hip_duty_btu,
+            stream_id=18, tag="G18",
+            label="Stream 18 — HIP Cold Side Outlet / Pass 4 Inlet",
             dp_inwc=3.0,
         )
         streams[18] = s18
