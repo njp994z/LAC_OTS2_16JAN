@@ -1,142 +1,160 @@
-# jug_valve_calc.py
-# Calculation logic for Jug Valve (WHB hot-side bypass) simulation
+import sys
+import json
+import math
+from dataclasses import dataclass, asdict
 
-def calculate_jug_valve_flows(
-    furnace_outlet_scfm_dry: float,
-    furnace_outlet_so2: float,
-    furnace_outlet_so3: float,
-    furnace_outlet_o2: float,
-    furnace_outlet_n2: float,
-    furnace_outlet_temp_f: float,
-    furnace_outlet_press_inwc: float,
-    jug_open_pct: float,
-    positioner_open_pct: float,
-    cv_max: float = 12500,
-    u_value: float = 16.0,
-    whb_area: float = 9800,
-    baro_psia: float = 14.3
-) -> dict:
-    """
-    Simplified static calculation for jug valve bypass around WHB.
-    Returns dictionary with flow/pressure/temperature for each stream.
-    """
+WHB_AREA: float       = 9_800.0
+WHB_UO: float         = 16.0
+STEAM_TEMP_F: float   = 540.7
+CP_GAS: float         = 0.26
+WHB_PRESS_DROP: float = 16.0
+DAMPER_DP_MAX: float  = 5.0
 
-    # Convert percentages to fractions
-    jug_frac = jug_open_pct / 100.0
-    pos_frac = positioner_open_pct / 100.0   # currently not heavily used
 
-    # Total furnace outlet flow (dry basis from HMB stream 9)
-    total_dry_scfm = furnace_outlet_scfm_dry
+@dataclass
+class StreamValues:
+    so2:         float
+    so3:         float
+    o2:          float
+    n2:          float
+    h2o:         float
+    h2so4:       float
+    total:       float
+    pressure:    float
+    temperature: float
 
-    # Approximate total flow split (very simplified - real model would iterate ΔP)
-    # Assume jug valve takes majority when open due to lower resistance
-    jug_flow_scfm = total_dry_scfm * jug_frac * 0.92   # bias toward jug when open
-    whb_flow_scfm = total_dry_scfm - jug_flow_scfm
 
-    # Pressure drop estimation (very approximate)
-    # Assume small ΔP across WHB and jug valve when jug is partially open
-    delta_p_inwc = 16.0 * (1 - jug_frac * 0.5)   # less drop when jug more open
-    inlet_press_inwc = furnace_outlet_press_inwc
-    whb_out_press_inwc = inlet_press_inwc - delta_p_inwc
-    jug_out_press_inwc = whb_out_press_inwc   # assume same downstream
+def _stream_to_dict(s: StreamValues) -> dict:
+    return {
+        "so2":         round(s.so2),
+        "so3":         round(s.so3),
+        "o2":          round(s.o2),
+        "n2":          round(s.n2),
+        "h2o":         round(s.h2o),
+        "h2so4":       round(s.h2so4),
+        "total":       round(s.total),
+        "pressure":    round(s.pressure, 1),
+        "temperature": round(s.temperature),
+    }
 
-    # Temperature (assume adiabatic mixing downstream)
-    # Very rough: WHB cools gas significantly, jug stays hot
-    whb_out_temp_f = 705.0   # from HMB
-    jug_out_temp_f = furnace_outlet_temp_f
-    mixed_temp_f = (whb_flow_scfm * whb_out_temp_f + jug_flow_scfm * jug_out_temp_f) / total_dry_scfm
 
-    # Composition remains the same in all branches (no reaction)
-    so2_scfm = furnace_outlet_so2
-    so3_scfm = furnace_outlet_so3
-    o2_scfm  = furnace_outlet_o2
-    n2_scfm  = furnace_outlet_n2
-    h2o_scfm = 0.0   # dry basis
+def compute_all_streams(s5, jug_open_pct, damper_open_pct):
+    jug_bypass_frac = min(1.0, max(0.0, jug_open_pct / 100.0))
+    whb_frac        = 1.0 - jug_bypass_frac
 
-    # Build results dictionary matching GUI labels
-    results = {}
+    s6 = StreamValues(
+        so2         = s5.so2   * whb_frac,
+        so3         = s5.so3   * whb_frac,
+        o2          = s5.o2    * whb_frac,
+        n2          = s5.n2    * whb_frac,
+        h2o         = s5.h2o   * whb_frac,
+        h2so4       = s5.h2so4 * whb_frac,
+        total       = s5.total * whb_frac,
+        pressure    = s5.pressure,
+        temperature = s5.temperature,
+    )
 
-    # Furnace Outlet (GF1) - input
-    results["TOTAL_GF1"] = round(total_dry_scfm)
-    results["SO2_GF1"]   = round(so2_scfm)
-    results["SO3_GF1"]   = round(so3_scfm)
-    results["O2_GF1"]    = round(o2_scfm)
-    results["N2_GF1"]    = round(n2_scfm)
-    results["H2O_GF1"]   = round(h2o_scfm)
-    results["H2SO4_GF1"] = 0
-    results["PRESSURE_GF1"] = round(inlet_press_inwc, 1)
-    results["TEMPERATURE_GF1"] = round(furnace_outlet_temp_f)
+    s7 = StreamValues(
+        so2         = s5.so2   * jug_bypass_frac,
+        so3         = s5.so3   * jug_bypass_frac,
+        o2          = s5.o2    * jug_bypass_frac,
+        n2          = s5.n2    * jug_bypass_frac,
+        h2o         = s5.h2o   * jug_bypass_frac,
+        h2so4       = s5.h2so4 * jug_bypass_frac,
+        total       = s5.total * jug_bypass_frac,
+        pressure    = s5.pressure,
+        temperature = s5.temperature,
+    )
 
-    # WHB In (GB0) ≈ Furnace Outlet
-    for k in ["SO2", "SO3", "O2", "N2", "H2O", "H2SO4", "TOTAL"]:
-        results[f"{k}_GB0"] = results[f"{k}_GF1"]
-    results["PRESSURE_GB0"] = results["PRESSURE_GF1"]
-    results["TEMPERATURE_GB0"] = results["TEMPERATURE_GF1"]
+    whb_outlet_temp = s5.temperature
+    if s6.total > 0:
+        m_cp          = s6.total * 60.0 * CP_GAS
+        ntu           = (WHB_UO * WHB_AREA) / m_cp
+        effectiveness = 1.0 - math.exp(-ntu)
+        whb_outlet_temp = s5.temperature - effectiveness * (s5.temperature - STEAM_TEMP_F)
+        whb_outlet_temp = max(STEAM_TEMP_F + 10.0, whb_outlet_temp)
 
-    # Jug Valve Inlet (GJV0) ≈ Furnace Outlet
-    for k in ["SO2", "SO3", "O2", "N2", "H2O", "H2SO4", "TOTAL"]:
-        results[f"{k}_GJV0"] = results[f"{k}_GF1"]
-    results["PRESSURE_GJV0"] = results["PRESSURE_GF1"]
-    results["TEMPERATURE_GJV0"] = results["TEMPERATURE_GF1"]
+    s8a_press = s5.pressure - WHB_PRESS_DROP
 
-    # WHB Out (GB1)
-    results["TOTAL_GB1"] = round(whb_flow_scfm)
-    results["SO2_GB1"]   = round(so2_scfm * whb_flow_scfm / total_dry_scfm)
-    results["SO3_GB1"]   = round(so3_scfm * whb_flow_scfm / total_dry_scfm)
-    results["O2_GB1"]    = round(o2_scfm  * whb_flow_scfm / total_dry_scfm)
-    results["N2_GB1"]    = round(n2_scfm  * whb_flow_scfm / total_dry_scfm)
-    results["H2O_GB1"]   = 0
-    results["H2SO4_GB1"] = 0
-    results["PRESSURE_GB1"] = round(whb_out_press_inwc, 1)
-    results["TEMPERATURE_GB1"] = round(whb_out_temp_f)
+    s8a = StreamValues(
+        so2         = s6.so2,
+        so3         = s6.so3,
+        o2          = s6.o2,
+        n2          = s6.n2,
+        h2o         = s6.h2o,
+        h2so4       = s6.h2so4,
+        total       = s6.total,
+        pressure    = s8a_press,
+        temperature = whb_outlet_temp,
+    )
 
-    # Positioner Outlet (GPV1) - interpreted as positioner-controlled stream
-    # (could be a small trim or vent - here assumed same as jug for simplicity)
-    results["TOTAL_GPV1"] = round(jug_flow_scfm * pos_frac)
-    results["SO2_GPV1"]   = round(so2_scfm * jug_flow_scfm / total_dry_scfm * pos_frac)
-    results["SO3_GPV1"]   = round(so3_scfm * jug_flow_scfm / total_dry_scfm * pos_frac)
-    results["O2_GPV1"]    = round(o2_scfm  * jug_flow_scfm / total_dry_scfm * pos_frac)
-    results["N2_GPV1"]    = round(n2_scfm  * jug_flow_scfm / total_dry_scfm * pos_frac)
-    results["H2O_GPV1"]   = 0
-    results["H2SO4_GPV1"] = 0
-    results["PRESSURE_GPV1"] = round(jug_out_press_inwc, 1)
-    results["TEMPERATURE_GPV1"] = round(jug_out_temp_f)
+    damper_frac    = min(1.0, max(0.0, damper_open_pct / 100.0))
+    damper_delta_p = DAMPER_DP_MAX * (1.0 - damper_frac) ** 2
 
-    # Gas Pass 1 Inlet (GP10) - mixed downstream
-    results["TOTAL_GP10"] = round(total_dry_scfm)
-    results["SO2_GP10"]   = round(so2_scfm)
-    results["SO3_GP10"]   = round(so3_scfm)
-    results["O2_GP10"]    = round(o2_scfm)
-    results["N2_GP10"]    = round(n2_scfm)
-    results["H2O_GP10"]   = 0
-    results["H2SO4_GP10"] = 0
-    results["PRESSURE_GP10"] = round(whb_out_press_inwc, 1)   # downstream pressure
-    results["TEMPERATURE_GP10"] = round(mixed_temp_f)
+    s8b = StreamValues(
+        so2         = s8a.so2,
+        so3         = s8a.so3,
+        o2          = s8a.o2,
+        n2          = s8a.n2,
+        h2o         = s8a.h2o,
+        h2so4       = s8a.h2so4,
+        total       = s8a.total,
+        pressure    = s8a_press - damper_delta_p,
+        temperature = s8a.temperature,
+    )
 
-    return results
+    total_flow_9 = s8b.total + s7.total
+
+    if total_flow_9 > 0:
+        mixed_temp_9  = (
+            s8b.temperature * s8b.total + s7.temperature * s7.total
+        ) / total_flow_9
+        mixed_press_9 = (
+            s8b.pressure * s8b.total + s7.pressure * s7.total
+        ) / total_flow_9
+    else:
+        mixed_temp_9  = s5.temperature
+        mixed_press_9 = s8b.pressure
+
+    s9 = StreamValues(
+        so2         = s8b.so2   + s7.so2,
+        so3         = s8b.so3   + s7.so3,
+        o2          = s8b.o2    + s7.o2,
+        n2          = s8b.n2    + s7.n2,
+        h2o         = s8b.h2o   + s7.h2o,
+        h2so4       = s8b.h2so4 + s7.h2so4,
+        total       = total_flow_9,
+        pressure    = mixed_press_9,
+        temperature = mixed_temp_9,
+    )
+
+    return {
+        "GF1":  _stream_to_dict(s5),
+        "GB0":  _stream_to_dict(s6),
+        "GJV0": _stream_to_dict(s7),
+        "GB1":  _stream_to_dict(s8a),
+        "GPV1": _stream_to_dict(s8b),
+        "GP10": _stream_to_dict(s9),
+    }
 
 
 if __name__ == "__main__":
-    import sys
-    import json
-
-    # Read input from stdin
     input_data = json.loads(sys.stdin.read())
 
-    result = calculate_jug_valve_flows(
-        furnace_outlet_scfm_dry=input_data.get("furnace_outlet_scfm_dry", 109697),
-        furnace_outlet_so2=input_data.get("furnace_outlet_so2", 12401),
-        furnace_outlet_so3=input_data.get("furnace_outlet_so3", 227),
-        furnace_outlet_o2=input_data.get("furnace_outlet_o2", 10261),
-        furnace_outlet_n2=input_data.get("furnace_outlet_n2", 86808),
-        furnace_outlet_temp_f=input_data.get("furnace_outlet_temp_f", 2080),
-        furnace_outlet_press_inwc=input_data.get("furnace_outlet_press_inwc", 196),
-        jug_open_pct=input_data.get("jug_open_pct", 10),
-        positioner_open_pct=input_data.get("positioner_open_pct", 100),
-        cv_max=input_data.get("cv_max", 12500),
-        u_value=input_data.get("u_value", 16.0),
-        whb_area=input_data.get("whb_area", 9800),
-        baro_psia=input_data.get("baro_psia", 14.3)
+    s5 = StreamValues(
+        so2         = float(input_data.get("s5_so2", 12401)),
+        so3         = float(input_data.get("s5_so3", 227)),
+        o2          = float(input_data.get("s5_o2", 10261)),
+        n2          = float(input_data.get("s5_n2", 86808)),
+        h2o         = float(input_data.get("s5_h2o", 0)),
+        h2so4       = float(input_data.get("s5_h2so4", 0)),
+        total       = float(input_data.get("s5_total", 109697)),
+        pressure    = float(input_data.get("s5_pressure", 196)),
+        temperature = float(input_data.get("s5_temperature", 2080)),
     )
 
+    jug_open    = float(input_data.get("jug_open_pct", 10))
+    damper_open = float(input_data.get("damper_open_pct", 100))
+
+    result = compute_all_streams(s5, jug_open, damper_open)
     print(json.dumps(result))
