@@ -6481,7 +6481,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
       {/* Alarm Banner - always visible at bottom */}
       <div className="flex-shrink-0">
-        <AlarmBanner />
+        <AlarmBanner alarms={orchestratorResult?.alarms ?? []} />
       </div>
 
       {/* VFD Faceplate Modal */}
