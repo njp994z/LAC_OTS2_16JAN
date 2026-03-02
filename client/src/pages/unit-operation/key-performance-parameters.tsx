@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -93,6 +93,21 @@ function calculateParameters(
   };
 }
 
+function tryCalculate(inputs: Inputs): Results | null {
+  const sulfurFlow = parseFloat(inputs.sulfurFlow);
+  const scfmSO2 = parseFloat(inputs.scfmSO2TailHr);
+  const scfmSO3 = parseFloat(inputs.scfmSO3TailHr);
+  const scfmO2  = parseFloat(inputs.scfmO2TailHr);
+  const scfmN2  = parseFloat(inputs.scfmN2TailHr);
+  if ([sulfurFlow, scfmSO2, scfmSO3, scfmO2, scfmN2].some(isNaN)) return null;
+  if (sulfurFlow <= 0) return null;
+  try {
+    return calculateParameters(sulfurFlow, scfmSO2, scfmSO3, scfmO2, scfmN2);
+  } catch {
+    return null;
+  }
+}
+
 function InputField({ label, value, onChange, unit, testId }: {
   label: string; value: string; onChange: (v: string) => void; unit: string; testId: string;
 }) {
@@ -111,13 +126,74 @@ function InputField({ label, value, onChange, unit, testId }: {
   );
 }
 
-function ResultRow({ label, value, unit, testId }: { label: string; value: string; unit?: string; testId: string }) {
+function FaceplateRow({ label, value, unit, testId }: { label: string; value: string; unit: string; testId: string }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0" data-testid={testId}>
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-base font-mono font-semibold">
-        {value}{unit && <span className="text-xs text-muted-foreground ml-1">{unit}</span>}
-      </span>
+    <div className="flex items-baseline justify-between gap-2 py-1.5 border-b border-gray-200 dark:border-gray-700 last:border-0" data-testid={testId}>
+      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{label}:</span>
+      <span className="text-sm font-bold font-mono text-blue-700 dark:text-blue-400 whitespace-nowrap">{value} {unit}</span>
+    </div>
+  );
+}
+
+function KPPFaceplate({ results }: { results: Results | null }) {
+  return (
+    <div
+      className="rounded-md border-[3px] border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 p-5 shadow-sm"
+      data-testid="faceplate-kpp"
+    >
+      <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-4" data-testid="text-faceplate-title">
+        Key Performance Parameters
+      </h3>
+      <div className="space-y-0">
+        <FaceplateRow
+          label="Plant Rate"
+          value={results ? results.plantRate.toLocaleString() : "----"}
+          unit="STPD"
+          testId="faceplate-plant-rate"
+        />
+        <FaceplateRow
+          label="Pass 1 Strength"
+          value={results ? results.compPass1.toFixed(1) : "--.-"}
+          unit="% SO2"
+          testId="faceplate-pass1"
+        />
+        <FaceplateRow
+          label="SO2 Conversion"
+          value={results ? results.conversion.toFixed(1) : "--.-"}
+          unit="%"
+          testId="faceplate-conversion"
+        />
+        <FaceplateRow
+          label="O2 Tail Gas"
+          value={results ? results.o2TailPct.toFixed(1) : "-.-"}
+          unit="%"
+          testId="faceplate-o2-tail"
+        />
+        <FaceplateRow
+          label="Emissions"
+          value={results ? results.emissions.toFixed(1) : "--"}
+          unit="lb/STPD"
+          testId="faceplate-emissions"
+        />
+        <FaceplateRow
+          label="Steam Gen."
+          value={results ? results.steamGen.toLocaleString() : "----"}
+          unit="ST/ST"
+          testId="faceplate-steam"
+        />
+        <FaceplateRow
+          label="Gross Power Gen."
+          value={results ? results.grossPowerMW.toFixed(2) : "--.--"}
+          unit="MW"
+          testId="faceplate-power"
+        />
+        <FaceplateRow
+          label="Power Ratio"
+          value={results ? results.powerFactor.toFixed(0) : "---"}
+          unit="KW/STPH"
+          testId="faceplate-power-ratio"
+        />
+      </div>
     </div>
   );
 }
@@ -126,6 +202,29 @@ export default function KeyPerformanceParameters() {
   const [inputs, setInputs] = useState<Inputs>(defaultInputs);
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const r = tryCalculate(inputs);
+    if (r) {
+      setResults(r);
+      setError(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const r = tryCalculate(inputs);
+      if (r) {
+        setResults(r);
+        setError(null);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [inputs]);
 
   const update = useCallback((field: keyof Inputs, value: string) => {
     setInputs(prev => ({ ...prev, [field]: value }));
@@ -157,21 +256,20 @@ export default function KeyPerformanceParameters() {
 
   const handleReset = useCallback(() => {
     setInputs(defaultInputs);
-    setResults(null);
     setError(null);
   }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-3">
             <Link href="/unit-operation-simulator">
               <Button variant="ghost" size="icon" data-testid="button-back"><ArrowLeft className="h-5 w-5" /></Button>
             </Link>
             <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
               <div>
                 <h1 className="text-lg font-bold leading-tight" data-testid="text-page-title">Key Performance Parameters</h1>
                 <p className="text-xs text-muted-foreground">Sulfuric acid plant performance calculator</p>
@@ -190,46 +288,35 @@ export default function KeyPerformanceParameters() {
       </header>
 
       <main className="pt-20 pb-12 px-4">
-        <div className="max-w-3xl mx-auto space-y-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="py-3 px-5">
+                  <CardTitle className="text-sm">Process Inputs</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5 space-y-3">
+                  <InputField label="Sulfur Flow" value={inputs.sulfurFlow} onChange={(v) => update("sulfurFlow", v)} unit="lb/min" testId="input-sulfur-flow" />
+                  <InputField label="SO₂ Tail Gas" value={inputs.scfmSO2TailHr} onChange={(v) => update("scfmSO2TailHr", v)} unit="scfm" testId="input-scfm-so2-tail" />
+                  <InputField label="SO₃ Tail Gas" value={inputs.scfmSO3TailHr} onChange={(v) => update("scfmSO3TailHr", v)} unit="scfm" testId="input-scfm-so3-tail" />
+                  <InputField label="O₂ Tail Gas" value={inputs.scfmO2TailHr} onChange={(v) => update("scfmO2TailHr", v)} unit="scfm" testId="input-scfm-o2-tail" />
+                  <InputField label="N₂ Tail Gas" value={inputs.scfmN2TailHr} onChange={(v) => update("scfmN2TailHr", v)} unit="scfm" testId="input-scfm-n2-tail" />
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="py-3 px-5">
-              <CardTitle className="text-sm">Process Inputs</CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 pb-5 space-y-3">
-              <InputField label="Sulfur Flow" value={inputs.sulfurFlow} onChange={(v) => update("sulfurFlow", v)} unit="lb/min" testId="input-sulfur-flow" />
-              <InputField label="SO₂ Tail Gas" value={inputs.scfmSO2TailHr} onChange={(v) => update("scfmSO2TailHr", v)} unit="scfm" testId="input-scfm-so2-tail" />
-              <InputField label="SO₃ Tail Gas" value={inputs.scfmSO3TailHr} onChange={(v) => update("scfmSO3TailHr", v)} unit="scfm" testId="input-scfm-so3-tail" />
-              <InputField label="O₂ Tail Gas" value={inputs.scfmO2TailHr} onChange={(v) => update("scfmO2TailHr", v)} unit="scfm" testId="input-scfm-o2-tail" />
-              <InputField label="N₂ Tail Gas" value={inputs.scfmN2TailHr} onChange={(v) => update("scfmN2TailHr", v)} unit="scfm" testId="input-scfm-n2-tail" />
-            </CardContent>
-          </Card>
+              {error && (
+                <Card className="border-destructive">
+                  <CardContent className="py-3 px-5">
+                    <p className="text-sm text-destructive" data-testid="text-error">{error}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-          {error && (
-            <Card className="border-destructive">
-              <CardContent className="py-3 px-5">
-                <p className="text-sm text-destructive" data-testid="text-error">{error}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {results && (
-            <Card>
-              <CardHeader className="py-3 px-5">
-                <CardTitle className="text-sm">Calculated Performance Parameters</CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5">
-                <ResultRow label="Plant Rate (STPD)" value={results.plantRate.toLocaleString()} unit="ST/day" testId="result-plant-rate" />
-                <ResultRow label="Comp Pass 1" value={results.compPass1.toFixed(2)} unit="% SO₂" testId="result-comp-pass1" />
-                <ResultRow label="Conversion" value={results.conversion.toFixed(4)} unit="%" testId="result-conversion" />
-                <ResultRow label="O₂ Tail Gas" value={results.o2TailPct.toFixed(2)} unit="% (dry)" testId="result-o2-tail-pct" />
-                <ResultRow label="Emissions" value={results.emissions.toFixed(1)} unit="lb/ST acid" testId="result-emissions" />
-                <ResultRow label="Steam Gen." value={results.steamGen.toLocaleString()} unit="ST/day" testId="result-steam-gen" />
-                <ResultRow label="Gross Power Gen." value={results.grossPowerMW.toFixed(2)} unit="MW" testId="result-gross-power" />
-                <ResultRow label="Power Factor" value={results.powerFactor.toFixed(1)} unit="kW/STPH" testId="result-power-factor" />
-              </CardContent>
-            </Card>
-          )}
+            <div className="lg:sticky lg:top-20">
+              <KPPFaceplate results={results} />
+            </div>
+          </div>
         </div>
       </main>
     </div>
