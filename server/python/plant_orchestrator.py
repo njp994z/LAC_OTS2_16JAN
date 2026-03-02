@@ -236,7 +236,7 @@ class PlantInputs:
     damper_open_pct: float = 100.0
 
     # --- Catalytic Converter ---
-    converter_bypass_frac: float = 0.0015  # 0.15% gas bypasses catalyst (wall channeling, seal gaps)
+    converter_bypass_frac: float = 0.0007  # 0.07% gas bypasses catalyst (wall channeling, seal gaps)
 
     pass1_catalyst: str = "MECS GR-330"
     pass1_liters: float = 80000.0     # Pass 1: largest bed, ~27% of total
@@ -1631,18 +1631,20 @@ class PlantOrchestrator:
         # (higher SO2 %, lower O2/SO2 ratio), equilibrium approach degrades
         # and effective bypass increases — matching real plant behaviour.
         #
-        # Model: bypass = base × max(1, design_ratio / actual_ratio)^2
-        #   At design O2/SO2 ratio (79 gpm, 85.5% RPM): bypass = base → 99.85%
+        # Model: bypass = base × (design_ratio / actual_ratio)^2
+        #   At design O2/SO2 ratio (79 gpm, 85.5% RPM): bypass = base → ~99.93%
         #   Above design SO2 %: bypass grows quadratically → conversion drops
-        #   Below design SO2 %: bypass stays at base (capped at 1.0)
+        #   Below design SO2 %: bypass shrinks → conversion rises (leaner gas)
+        #   Floor: 0.0002 (irreducible leakage from wall channeling)
         DESIGN_O2_SO2_RATIO = 0.8598
+        MIN_BYPASS = 0.0002
         base_bypass = inp.converter_bypass_frac
         if inp.plant_condition == "dirty":
-            base_bypass = max(base_bypass, 0.0020)
+            base_bypass = max(base_bypass, 0.0013)
 
         actual_o2_so2 = s10.O2 / max(s10.SO2, 1.0)
-        ratio_factor = max(1.0, DESIGN_O2_SO2_RATIO / max(actual_o2_so2, 0.01)) ** 2.0
-        bypass = base_bypass * ratio_factor
+        ratio_factor = (DESIGN_O2_SO2_RATIO / max(actual_o2_so2, 0.01)) ** 2.0
+        bypass = max(MIN_BYPASS, base_bypass * ratio_factor)
 
         s24.SO2 += s5.SO2 * bypass
         s24.recalc_total()
