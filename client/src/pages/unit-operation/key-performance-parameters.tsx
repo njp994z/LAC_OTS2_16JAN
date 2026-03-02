@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, BarChart3, Calculator, RotateCcw } from "lucide-react";
 import expLogo from "@/assets/exp-logo.png";
+import { KPPFaceplate } from "@/components/KPPFaceplate";
 
 interface Inputs {
   sulfurFlow: string;
@@ -126,76 +127,18 @@ function InputField({ label, value, onChange, unit, testId }: {
   );
 }
 
-function FaceplateRow({ label, value, unit, testId }: { label: string; value: string; unit: string; testId: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-1.5 py-1 border-b border-gray-200 dark:border-gray-700 last:border-0" data-testid={testId}>
-      <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{label}:</span>
-      <span className="text-xs font-bold font-mono text-blue-700 dark:text-blue-400 whitespace-nowrap">{value} {unit}</span>
-    </div>
-  );
-}
-
-function KPPFaceplate({ results }: { results: Results | null }) {
-  return (
-    <div
-      className="rounded-md border-[3px] border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 p-3 shadow-sm max-w-[280px]"
-      data-testid="faceplate-kpp"
-    >
-      <h3 className="text-center text-sm font-bold text-gray-900 dark:text-gray-100 mb-2" data-testid="text-faceplate-title">
-        Key Performance Parameters
-      </h3>
-      <div className="space-y-0">
-        <FaceplateRow
-          label="Plant Rate"
-          value={results ? results.plantRate.toLocaleString() : "----"}
-          unit="STPD"
-          testId="faceplate-plant-rate"
-        />
-        <FaceplateRow
-          label="Pass 1 Strength"
-          value={results ? results.compPass1.toFixed(1) : "--.-"}
-          unit="% SO2"
-          testId="faceplate-pass1"
-        />
-        <FaceplateRow
-          label="SO2 Conversion"
-          value={results ? results.conversion.toFixed(3) : "--.---"}
-          unit="%"
-          testId="faceplate-conversion"
-        />
-        <FaceplateRow
-          label="O2 Tail Gas"
-          value={results ? results.o2TailPct.toFixed(1) : "-.-"}
-          unit="%"
-          testId="faceplate-o2-tail"
-        />
-        <FaceplateRow
-          label="Emissions"
-          value={results ? results.emissions.toFixed(1) : "--"}
-          unit="lb/STPD"
-          testId="faceplate-emissions"
-        />
-        <FaceplateRow
-          label="Steam Gen."
-          value={results ? results.steamGen.toLocaleString() : "----"}
-          unit="ST/ST"
-          testId="faceplate-steam"
-        />
-        <FaceplateRow
-          label="Gross Power Gen."
-          value={results ? results.grossPowerMW.toFixed(2) : "--.--"}
-          unit="MW"
-          testId="faceplate-power"
-        />
-        <FaceplateRow
-          label="Specific Power Output"
-          value={results ? results.powerFactor.toFixed(0) : "---"}
-          unit="KW/STPH"
-          testId="faceplate-power-ratio"
-        />
-      </div>
-    </div>
-  );
+function resultsToKPPData(results: Results | null) {
+  if (!results) return null;
+  return {
+    plantRate: results.plantRate,
+    pass1Strength: results.compPass1,
+    conversion: results.conversion,
+    o2TailGas: results.o2TailPct,
+    emissions: results.emissions,
+    steamGen: results.steamGen,
+    grossPowerMW: results.grossPowerMW,
+    powerRatio: results.powerFactor,
+  };
 }
 
 export default function KeyPerformanceParameters() {
@@ -314,7 +257,7 @@ export default function KeyPerformanceParameters() {
             </div>
 
             <div className="lg:sticky lg:top-20">
-              <KPPFaceplate results={results} />
+              <KPPFaceplate data={resultsToKPPData(results)} />
             </div>
           </div>
         </div>

@@ -61,6 +61,7 @@ import { ControllerFaceplate } from "@/delta-v/components/faceplate/ControllerFa
 import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/SecondaryControllerFaceplate";
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { TempSensorPrimaryFaceplate } from "@/delta-v/components/faceplate/TempSensorPrimaryFaceplate";
+import { KPPFaceplate } from "@/components/KPPFaceplate";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
 import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
@@ -4674,6 +4675,37 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     </div>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* KPP Faceplate for L2 Furnace Area */}
+            {orchestratorResult?.kpp && (
+              <div
+                className="absolute"
+                style={{ left: '1600px', top: '340px', zIndex: 50 }}
+                data-testid="l2-kpp-faceplate"
+              >
+                <KPPFaceplate data={(() => {
+                  const kpp = orchestratorResult.kpp;
+                  const s24 = orchestratorResult.streams?.["24"];
+                  const stpd = kpp.H2SO4_production_STPD;
+                  const so2TailScfm = s24?.SO2 ?? 0;
+                  const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                  const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                  const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                  const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                  const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                  return {
+                    plantRate: stpd,
+                    conversion: kpp.overall_SO2_conversion_pct,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? null,
+                    o2TailGas: o2Pct,
+                    emissions: emissionsLbPerST,
+                    steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                    grossPowerMW: grossMW,
+                    powerRatio: 243,
+                  };
+                })()} />
               </div>
             )}
 
