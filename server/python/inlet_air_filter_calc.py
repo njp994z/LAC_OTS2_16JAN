@@ -151,7 +151,7 @@ def main():
             humidity_gr_lb=11.1,
             inlet_temp_F=38,
             filter_dp_inwc=3,
-            barometric_atm=1.0010
+            barometric_atm=0.85
         )
     else:
         # Parse JSON input from command line
@@ -161,7 +161,7 @@ def main():
             humidity_gr_lb=float(input_data.get("humidity", 11.1)),
             inlet_temp_F=float(input_data.get("inletTemp", 38)),
             filter_dp_inwc=float(input_data.get("filterDp", 3)),
-            barometric_atm=float(input_data.get("barometric", 1.0010))
+            barometric_atm=float(input_data.get("barometric", 0.85))
         )
     
     # Calculate streams
