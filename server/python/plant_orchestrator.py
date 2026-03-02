@@ -1028,6 +1028,11 @@ def build_sensor_tags(
         outlet = s.get(outlet_id, GasStream())
         tags[f"1540-TI-41{p_num}1"] = outlet.temperature_F          # Pass outlet T
 
+    # --- Pass 1 SO2 Strength (Analyzer) ---
+    s10 = s.get(10, GasStream())
+    s10_total = max(s10.TOTAL, 1e-9)
+    tags["1540-AI-4825"] = (s10.SO2 / s10_total) * 100.0            # Pass 1 inlet SO2 %
+
     # --- IPAT ---
     tags["1540-TI-4200"] = s.get(16, GasStream()).temperature_F      # IPAT gas inlet T
     tags["1540-TI-4201"] = s.get(17, GasStream()).temperature_F      # IPAT gas outlet T

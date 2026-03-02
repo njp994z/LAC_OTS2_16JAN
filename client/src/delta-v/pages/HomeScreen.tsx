@@ -4764,7 +4764,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   return {
                     plantRate: stpd,
                     conversion: kpp.overall_SO2_conversion_pct,
-                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? null,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                      const s10 = orchestratorResult.streams?.["10"];
+                      return s10 ? (s10.SO2 / Math.max(s10.TOTAL, 1e-9)) * 100 : null;
+                    })(),
                     o2TailGas: o2Pct,
                     emissions: emissionsLbPerST,
                     steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
