@@ -75,13 +75,6 @@ const unitOperations = [
     icon: Factory
   },
   {
-    id: "acid-hydraulics",
-    title: "Acid Hydraulics",
-    description: "Model acid circulation system hydraulics including pump curves, pressure drops, and flow distribution across towers.",
-    path: "/unit-operation/acid-hydraulics",
-    icon: PipetteIcon
-  },
-  {
     id: "gas-gas-heat-exchanger",
     title: "Gas-Gas Heat Exchanger",
     description: "Optimize heat recovery between hot and cold process gas streams.",
@@ -101,13 +94,6 @@ const unitOperations = [
     description: "Control steam temperature and quality for optimal turbine performance.",
     path: "/unit-operation/superheater",
     icon: Thermometer
-  },
-  {
-    id: "acid-cooler",
-    title: "Acid Cooler",
-    description: "Manage product acid temperature for safe storage and handling.",
-    path: "/unit-operation/acid-cooler",
-    icon: Wind
   },
   {
     id: "economizer 3B",
@@ -145,6 +131,13 @@ const unitOperations = [
     icon: Zap
   },
   {
+    id: "acid-hydraulics",
+    title: "Acid Hydraulics",
+    description: "Model acid circulation system hydraulics including pump curves, pressure drops, and flow distribution across towers.",
+    path: "/unit-operation/acid-hydraulics",
+    icon: PipetteIcon
+  },
+  {
     id: "start-up-burner",
     title: "Start-Up Burner",
     description: "Provide auxiliary heat during plant startup to bring catalyst beds to operating temperature.",
@@ -164,6 +157,13 @@ const unitOperations = [
     description: "Condense steam to water using ambient air cooling for water conservation.",
     path: "/unit-operation/air-cooled-condenser",
     icon: Snowflake
+  },
+  {
+    id: "acid-cooler",
+    title: "Acid Cooler",
+    description: "Manage product acid temperature for safe storage and handling.",
+    path: "/unit-operation/acid-cooler",
+    icon: Wind
   }
 ];
 
