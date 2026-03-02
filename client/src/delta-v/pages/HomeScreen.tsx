@@ -436,6 +436,11 @@ const HomeScreen = () => {
           console.log('Setting static case value for 1540-H-4030:', tags["1540-SIC-4030"]);
           setLoadedCaseValue1540H4030(tags["1540-SIC-4030"]);
         }
+        if (tags["1540-TI-4010"] !== undefined) {
+          const furnaceTemp = tags["1540-TI-4010"];
+          setFurnaceOutletTemp(furnaceTemp);
+          updateTempSensor4200APV(furnaceTemp);
+        }
       }
       
     } catch (error) {
