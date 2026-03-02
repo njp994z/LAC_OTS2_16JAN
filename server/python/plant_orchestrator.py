@@ -236,6 +236,8 @@ class PlantInputs:
     damper_open_pct: float = 100.0
 
     # --- Catalytic Converter ---
+    converter_bypass_frac: float = 0.0015  # 0.15% gas bypasses catalyst (wall channeling, seal gaps)
+
     pass1_catalyst: str = "MECS GR-330"
     pass1_liters: float = 80000.0     # Pass 1: largest bed, ~27% of total
     pass1_activity: float = 100.0
@@ -1622,6 +1624,16 @@ class PlantOrchestrator:
 
         # ── [16] FAT ─────────────────────────────────────────────────────
         s24 = FATower.calculate(streams[23], inp)
+
+        # ── Converter bypass leakage ───────────────────────────────────
+        # Real packed beds have 0.1-0.2% gas bypass through wall channeling,
+        # seal gaps, and catalyst bed edge effects.  Dirty plants have more.
+        bypass = inp.converter_bypass_frac
+        if inp.plant_condition == "dirty":
+            bypass = max(bypass, 0.0020)
+        s24.SO2 += s5.SO2 * bypass
+        s24.recalc_total()
+
         streams[24] = s24
 
         # ── Post-processing ──────────────────────────────────────────────
@@ -1698,6 +1710,7 @@ def parse_inputs(data: Dict[str, Any]) -> PlantInputs:
         "sulfur_pit_level_ft": "sulfur_pit_level_ft",
         "jug_valve_pct": "jug_valve_pct",
         "damper_open_pct": "damper_open_pct",
+        "converter_bypass_frac": "converter_bypass_frac",
         "pass1_inlet_temp_C": "pass1_inlet_temp_C",
         "pass2_inlet_temp_C": "pass2_inlet_temp_C",
         "pass3_inlet_temp_C": "pass3_inlet_temp_C",
