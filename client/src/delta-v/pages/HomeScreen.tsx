@@ -444,6 +444,9 @@ const HomeScreen = () => {
         if (tags["1540-ZI-4020"] !== undefined) {
           setLoadedCaseValueJugValve(tags["1540-ZI-4020"]);
         }
+        if (tags["1540-TI-4820"] !== undefined) {
+          updateTempSensor4820PV(tags["1540-TI-4820"]);
+        }
       }
       
     } catch (error) {
@@ -740,6 +743,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Temperature Sensor 1540-TI-4200A position and size
   const [tempSensor4200AL2Position, setTempSensor4200AL2Position] = useState({ x: 1200, y: 400 });
   const [tempSensor4200AL2Size, setTempSensor4200AL2Size] = useState({ width: 180, height: 120 });
+  // L2 Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) position and size
+  const [tempSensor4820L2Position, setTempSensor4820L2Position] = useState({ x: 1400, y: 400 });
+  const [tempSensor4820L2Size, setTempSensor4820L2Size] = useState({ width: 180, height: 120 });
   const [processDataPanelL2Position, setProcessDataPanelL2Position] = useState({ x: 1600, y: 20 });
   const [processDataPanelL2Size, setProcessDataPanelL2Size] = useState({ width: 340, height: 320 });
   const [kppFaceplateL2Position, setKppFaceplateL2Position] = useState({ x: 1600, y: 340 });
@@ -982,6 +988,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const { state: tempSensor4200CSyncState, initializeController: initTempSensor4200C, updateAlarmLimits: updateTempSensor4200CAlarmLimits } = useControllerSync('1540-TI-4200C');
   const tempSensor4200CConfig = getControllerConfig('1540-TI-4200C');
   
+  // Get real-time synced state for Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct)
+  const { state: tempSensor4820SyncState, initializeController: initTempSensor4820, updateAlarmLimits: updateTempSensor4820AlarmLimits, updateSyncedPV: updateTempSensor4820PV } = useControllerSync('1540-TI-4820');
+  const tempSensor4820Config = getControllerConfig('1540-TI-4820');
+
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
   const tempSensor4825Config = getControllerConfig('1540-TI-4825');
@@ -1068,6 +1078,28 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     });
   }, [tempSensor4200CConfig.TYPICAL_PV, tempSensor4200CConfig.ALM_LL_LIM, tempSensor4200CConfig.ALM_L_LIM, tempSensor4200CConfig.ALM_H_LIM, tempSensor4200CConfig.ALM_HH_LIM, initTempSensor4200C, updateTempSensor4200CAlarmLimits]);
   
+  // Initialize temperature sensor 1540-TI-4820 (Pass 1 Inlet Duct) with configured Typical PV and alarm limits
+  useEffect(() => {
+    const configPV = tempSensor4820Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) 
+      ? configPV 
+      : 750;
+    
+    initTempSensor4820(
+      typicalPV,
+      typicalPV,
+      tempSensor4820Config.SP_LIM_LO ?? 0,
+      tempSensor4820Config.SP_LIM_HI ?? 2000
+    );
+    
+    updateTempSensor4820AlarmLimits({
+      LL: tempSensor4820Config.ALM_LL_LIM ?? 0,
+      L: tempSensor4820Config.ALM_L_LIM ?? 0,
+      H: tempSensor4820Config.ALM_H_LIM ?? 0,
+      HH: tempSensor4820Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor4820Config.TYPICAL_PV, tempSensor4820Config.ALM_LL_LIM, tempSensor4820Config.ALM_L_LIM, tempSensor4820Config.ALM_H_LIM, tempSensor4820Config.ALM_HH_LIM, initTempSensor4820, updateTempSensor4820AlarmLimits]);
+
   // Initialize temperature sensor 1540-TI-4825 (Pass 1 Catalyst In) with configured Typical PV and alarm limits
   useEffect(() => {
     // Use configured TYPICAL_PV if available and valid
@@ -1464,6 +1496,28 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     alarmL: furnaceLLimit,
     alarmH: furnaceHLimit,
     alarmHH: furnaceHHLimit,
+  };
+
+  // Build Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) data from synced state
+  const orchestratorPass1InletTemp = selectedMode === 'Static' && orchestratorResult?.sensor_tags?.["1540-TI-4820"] != null
+    ? orchestratorResult.sensor_tags["1540-TI-4820"]
+    : null;
+  const tempSensor4820PV = orchestratorPass1InletTemp ?? tempSensor4820SyncState.syncedPV;
+  const tempSensor4820Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor4820Config.TAGNAME || '1540-TI-4820',
+    description: tempSensor4820Config.DESC || 'Pass 1 Inlet Duct',
+    pv: tempSensor4820PV,
+    sp: tempSensor4820SyncState.syncedSP,
+    out: tempSensor4820SyncState.syncedOUT,
+    mode: tempSensor4820SyncState.syncedMode,
+    pvUnits: tempSensor4820Config.EU || 'F',
+    pvRangeMin: tempSensor4820Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor4820Config.SP_LIM_HI ?? 2000,
+    alarmLL: tempSensor4820Config.ALM_LL_LIM ?? 0,
+    alarmL: tempSensor4820Config.ALM_L_LIM ?? 0,
+    alarmH: tempSensor4820Config.ALM_H_LIM ?? 0,
+    alarmHH: tempSensor4820Config.ALM_HH_LIM ?? 0,
   };
 
   // Build Temperature Sensor 1540-TI-4200B data from synced state
@@ -2251,6 +2305,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setTempSensor4200AL2Size({ width: tempSensor4200AL2.width, height: tempSensor4200AL2.height });
     }
 
+    const tempSensor4820L2 = positionMap.get('temp_sensor_4820_l2');
+    if (tempSensor4820L2) {
+      setTempSensor4820L2Position({ x: tempSensor4820L2.x, y: tempSensor4820L2.y });
+      setTempSensor4820L2Size({ width: tempSensor4820L2.width, height: tempSensor4820L2.height });
+    }
+
     const processDataPanel = positionMap.get('process_data_panel_l2');
     if (processDataPanel) {
       setProcessDataPanelL2Position({ x: processDataPanel.x, y: processDataPanel.y });
@@ -2699,6 +2759,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
         { elementId: 'black_vert_line_l2', positionX: Math.round(blackVertLineL2Position.x), positionY: Math.round(blackVertLineL2Position.y), width: blackVertLineL2Size.width, height: blackVertLineL2Size.height, rotation: 0 },
         { elementId: 'temp_sensor_4200a_l2', positionX: Math.round(tempSensor4200AL2Position.x), positionY: Math.round(tempSensor4200AL2Position.y), width: tempSensor4200AL2Size.width, height: tempSensor4200AL2Size.height, rotation: 0 },
+        { elementId: 'temp_sensor_4820_l2', positionX: Math.round(tempSensor4820L2Position.x), positionY: Math.round(tempSensor4820L2Position.y), width: tempSensor4820L2Size.width, height: tempSensor4820L2Size.height, rotation: 0 },
         { elementId: 'process_data_panel_l2', positionX: Math.round(processDataPanelL2Position.x), positionY: Math.round(processDataPanelL2Position.y), width: processDataPanelL2Size.width, height: processDataPanelL2Size.height, rotation: 0 },
         { elementId: 'kpp_faceplate_l2', positionX: Math.round(kppFaceplateL2Position.x), positionY: Math.round(kppFaceplateL2Position.y), width: kppFaceplateL2Size.width, height: kppFaceplateL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
@@ -4861,6 +4922,47 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               >
                 <TempSensorPrimaryFaceplate 
                   data={tempSensor4200AData}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            {/* Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) for L2 */}
+            <Rnd
+              key="temp-sensor-4820-l2"
+              position={tempSensor4820L2Position}
+              size={tempSensor4820L2Size}
+              onDragStop={(e, d) => {
+                setTempSensor4820L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setTempSensor4820L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setTempSensor4820L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={80}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 40 }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                data-testid="faceplate-4820-l2-container"
+                style={{
+                  transform: `scale(${Math.min(tempSensor4820L2Size.width / 180, tempSensor4820L2Size.height / 120)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <TempSensorPrimaryFaceplate 
+                  data={tempSensor4820Data}
                   isTransparent={true}
                 />
               </div>

@@ -1410,6 +1410,9 @@ def build_sensor_tags(
         outlet = s.get(outlet_id, GasStream())
         tags[f"1540-TI-41{p_num}1"] = outlet.temperature_F          # Pass outlet T
 
+    # --- Converter Duct Sensors ---
+    tags["1540-TI-4820"] = s.get(10, GasStream()).temperature_F      # Pass 1 Inlet Duct
+
     # --- IPAT ---
     tags["1540-TI-4200"] = s.get(16, GasStream()).temperature_F      # IPAT gas inlet T
     tags["1540-TI-4201"] = s.get(17, GasStream()).temperature_F      # IPAT gas outlet T
