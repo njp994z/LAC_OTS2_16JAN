@@ -337,22 +337,23 @@ const HomeScreen = () => {
       const spResponse = await fetch('/api/setpoint-variables');
       const spData = await spResponse.json();
       
-      let rpmPercent = 87;
-      let inletTemp = 150;
-      let barometricPressure = 0.85;
+      let rpmPercent = 85.5;
+      let inletTemp = 70;
+      let barometricPressure = 1.0;
       let plantCondition = "clean";
-      let sulfurFlowGpm = 75;
-      let jugValvePct = 10;
-      let damperOpenPct = 100;
+      let sulfurFlowGpm = 79;
+      let jugValvePct = 50;
+      let damperOpenPct = 50;
       
       const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
         if (!variables || !caseId) return null;
         for (const pattern of tagPatterns) {
+          const lowerPattern = pattern.toLowerCase();
           const variable = variables.find((v: any) => 
             v.tag === pattern || 
             v.tagNumber === pattern || 
-            v.tag?.includes(pattern) ||
-            v.description?.toLowerCase().includes(pattern.toLowerCase())
+            v.tag?.toLowerCase().includes(lowerPattern) ||
+            v.description?.toLowerCase().includes(lowerPattern)
           );
           if (variable?.cases?.[caseId]) {
             const val = parseFloat(String(variable.cases[caseId]).replace(/[^0-9.-]/g, ''));
@@ -366,10 +367,10 @@ const HomeScreen = () => {
         const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor'], activePVCaseId);
         if (rpmVal !== null) rpmPercent = rpmVal;
         
-        const tempVal = extractCaseValue(pvData.variables, ['dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
+        const tempVal = extractCaseValue(pvData.variables, ['Ambient Temperature', 'dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
         if (tempVal !== null) inletTemp = tempVal;
         
-        const baroVal = extractCaseValue(pvData.variables, ['ambient_pressure', 'barometric'], activePVCaseId);
+        const baroVal = extractCaseValue(pvData.variables, ['Ambient Pressure', 'ambient_pressure', 'barometric'], activePVCaseId);
         if (baroVal !== null) barometricPressure = baroVal;
         
         const plantVar = pvData.variables.find((v: any) => 
@@ -392,7 +393,7 @@ const HomeScreen = () => {
       
       if (spData?.variables && activePVCaseId) {
         const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
-        if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal;
+        if (rpmSpVal !== null && rpmPercent === 85.5) rpmPercent = rpmSpVal;
       }
       
       if (loadedCaseValue1540H4030 !== null) rpmPercent = loadedCaseValue1540H4030;
@@ -797,9 +798,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 setLoadedCaseValue1540H4030(val);
               }
             } else {
-              // Default to 75% if no case value found
-              console.log('No case value found for 1540-H-4030, using default 75%');
-              setLoadedCaseValue1540H4030(75);
+              console.log('No case value found for 1540-H-4030, using default 85.5%');
+              setLoadedCaseValue1540H4030(85.5);
             }
             
             // Look for sulfur flow value in the selected case
@@ -815,8 +815,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 setLoadedCaseValueSulfurFlow(val);
               }
             } else {
-              // Default to 79 gpm if no case value found (typical sulfur flow)
-              console.log('No case value found for 1530-F-2602, using default 75 gpm');
+              console.log('No case value found for 1530-F-2602, using default 79 gpm');
               setLoadedCaseValueSulfurFlow(79);
             }
             
