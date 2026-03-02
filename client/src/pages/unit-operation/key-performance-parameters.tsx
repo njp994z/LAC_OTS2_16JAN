@@ -257,7 +257,7 @@ export default function KeyPerformanceParameters() {
             </div>
 
             <div className="lg:sticky lg:top-20">
-              <KPPFaceplate data={resultsToKPPData(results)} />
+              <KPPFaceplate data={resultsToKPPData(results)} className="max-w-[280px]" />
             </div>
           </div>
         </div>

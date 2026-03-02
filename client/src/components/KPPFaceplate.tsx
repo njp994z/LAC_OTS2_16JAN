@@ -27,7 +27,7 @@ function fmt(val: number | null | undefined, decimals: number, placeholder: stri
 export function KPPFaceplate({ data, className }: { data: KPPData | null; className?: string }) {
   return (
     <div
-      className={`rounded-md border-[3px] border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 p-3 shadow-sm max-w-[280px] ${className ?? ""}`}
+      className={`rounded-md border-[3px] border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 p-3 shadow-sm ${className ?? ""}`}
       data-testid="faceplate-kpp"
     >
       <h3 className="text-center text-sm font-bold text-gray-900 dark:text-gray-100 mb-2" data-testid="text-faceplate-title">

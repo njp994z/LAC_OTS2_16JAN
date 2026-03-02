@@ -731,6 +731,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2 Temperature Sensor 1540-TI-4200A position and size
   const [tempSensor4200AL2Position, setTempSensor4200AL2Position] = useState({ x: 1200, y: 400 });
   const [tempSensor4200AL2Size, setTempSensor4200AL2Size] = useState({ width: 180, height: 120 });
+  const [processDataPanelL2Position, setProcessDataPanelL2Position] = useState({ x: 1600, y: 20 });
+  const [processDataPanelL2Size, setProcessDataPanelL2Size] = useState({ width: 340, height: 320 });
+  const [kppFaceplateL2Position, setKppFaceplateL2Position] = useState({ x: 1600, y: 340 });
+  const [kppFaceplateL2Size, setKppFaceplateL2Size] = useState({ width: 280, height: 300 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -2210,6 +2214,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setTempSensor4200AL2Size({ width: tempSensor4200AL2.width, height: tempSensor4200AL2.height });
     }
 
+    const processDataPanel = positionMap.get('process_data_panel_l2');
+    if (processDataPanel) {
+      setProcessDataPanelL2Position({ x: processDataPanel.x, y: processDataPanel.y });
+      setProcessDataPanelL2Size({ width: processDataPanel.width, height: processDataPanel.height });
+    }
+
+    const kppFaceplate = positionMap.get('kpp_faceplate_l2');
+    if (kppFaceplate) {
+      setKppFaceplateL2Position({ x: kppFaceplate.x, y: kppFaceplate.y });
+      setKppFaceplateL2Size({ width: kppFaceplate.width, height: kppFaceplate.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2646,6 +2662,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
         { elementId: 'black_vert_line_l2', positionX: Math.round(blackVertLineL2Position.x), positionY: Math.round(blackVertLineL2Position.y), width: blackVertLineL2Size.width, height: blackVertLineL2Size.height, rotation: 0 },
         { elementId: 'temp_sensor_4200a_l2', positionX: Math.round(tempSensor4200AL2Position.x), positionY: Math.round(tempSensor4200AL2Position.y), width: tempSensor4200AL2Size.width, height: tempSensor4200AL2Size.height, rotation: 0 },
+        { elementId: 'process_data_panel_l2', positionX: Math.round(processDataPanelL2Position.x), positionY: Math.round(processDataPanelL2Position.y), width: processDataPanelL2Size.width, height: processDataPanelL2Size.height, rotation: 0 },
+        { elementId: 'kpp_faceplate_l2', positionX: Math.round(kppFaceplateL2Position.x), positionY: Math.round(kppFaceplateL2Position.y), width: kppFaceplateL2Size.width, height: kppFaceplateL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -4616,9 +4634,34 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
             {/* Furnace Area Orchestrator Outputs */}
             {orchestratorResult?.sensor_tags && (
+              <Rnd
+                key="process-data-panel-l2"
+                data-testid="rnd-process-data-panel-l2"
+                position={processDataPanelL2Position}
+                size={processDataPanelL2Size}
+                onDragStop={(e, d) => {
+                  setProcessDataPanelL2Position({ x: d.x, y: d.y });
+                  setIsL2Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setProcessDataPanelL2Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setProcessDataPanelL2Position(position);
+                  setIsL2Dirty(true);
+                }}
+                minWidth={280}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL2}
+                enableResizing={!isLockedL2}
+                resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+                className={isLockedL2 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
               <div
-                className="absolute bg-gray-900/95 border border-gray-600 rounded-md p-3"
-                style={{ left: '1600px', top: '20px', zIndex: 50, minWidth: '340px' }}
+                className="w-full h-full bg-gray-900/95 border border-gray-600 rounded-md p-3 overflow-auto"
                 data-testid="furnace-orchestrator-outputs"
               >
                 <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 border-b border-gray-600 pb-1">
@@ -4676,16 +4719,39 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   </>
                 )}
               </div>
+              </Rnd>
             )}
 
             {/* KPP Faceplate for L2 Furnace Area */}
             {orchestratorResult?.kpp && (
-              <div
-                className="absolute"
-                style={{ left: '1600px', top: '340px', zIndex: 50 }}
-                data-testid="l2-kpp-faceplate"
+              <Rnd
+                key="kpp-faceplate-l2"
+                data-testid="rnd-kpp-faceplate-l2"
+                position={kppFaceplateL2Position}
+                size={kppFaceplateL2Size}
+                onDragStop={(e, d) => {
+                  setKppFaceplateL2Position({ x: d.x, y: d.y });
+                  setIsL2Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setKppFaceplateL2Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setKppFaceplateL2Position(position);
+                  setIsL2Dirty(true);
+                }}
+                minWidth={200}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL2}
+                enableResizing={!isLockedL2}
+                resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+                className={isLockedL2 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
               >
-                <KPPFaceplate data={(() => {
+                <div className="w-full h-full" data-testid="l2-kpp-faceplate">
+                <KPPFaceplate className="w-full h-full" data={(() => {
                   const kpp = orchestratorResult.kpp;
                   const s24 = orchestratorResult.streams?.["24"];
                   const stpd = kpp.H2SO4_production_STPD;
@@ -4706,7 +4772,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     powerRatio: 243,
                   };
                 })()} />
-              </div>
+                </div>
+              </Rnd>
             )}
 
             {/* Temperature Sensor 1540-TI-4200A Faceplate for L2 */}
