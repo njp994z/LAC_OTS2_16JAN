@@ -81,11 +81,13 @@ function calculateParameters(
 
   const dryTotalScfm = scfmSO2 + scfmSO3 + scfmO2 + scfmN2;
   const o2TailPct = dryTotalScfm > 0 ? (scfmO2 / dryTotalScfm) * 100 : 0;
+  const so2Ppmv = dryTotalScfm > 0 ? (scfmSO2 / dryTotalScfm) * 1e6 : 0;
 
   return {
     plantRate: Math.round(plantRate),
     compPass1: Math.round(compPass1 * 100) / 100,
     conversion: Math.round(conversion * 10000) / 10000,
+    emissionsPpmv: Math.round(so2Ppmv),
     emissions: Math.round(emissions * 10) / 10,
     steamGen: Math.round(steamGen),
     grossPowerMW: Math.round(powerMW * 100) / 100,
@@ -134,6 +136,7 @@ function resultsToKPPData(results: Results | null) {
     pass1Strength: results.compPass1,
     conversion: results.conversion,
     o2TailGas: results.o2TailPct,
+    emissionsPpmv: results.emissionsPpmv,
     emissions: results.emissions,
     steamGen: results.steamGen,
     grossPowerMW: results.grossPowerMW,

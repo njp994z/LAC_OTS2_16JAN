@@ -3,6 +3,7 @@ export interface KPPData {
   pass1Strength?: number | null;
   conversion?: number | null;
   o2TailGas?: number | null;
+  emissionsPpmv?: number | null;
   emissions?: number | null;
   steamGen?: number | null;
   grossPowerMW?: number | null;
@@ -38,6 +39,7 @@ export function KPPFaceplate({ data, className }: { data: KPPData | null; classN
         <FaceplateRow label="Pass 1 Strength" value={fmt(data?.pass1Strength, 1, "--.-")} unit="% SO2" testId="faceplate-pass1" />
         <FaceplateRow label="SO2 Conversion" value={fmt(data?.conversion, 3, "--.---")} unit="%" testId="faceplate-conversion" />
         <FaceplateRow label="O2 Tail Gas" value={fmt(data?.o2TailGas, 1, "-.-")} unit="%" testId="faceplate-o2-tail" />
+        <FaceplateRow label="Emissions" value={fmt(data?.emissionsPpmv, 0, "---")} unit="ppmv SO2" testId="faceplate-emissions-ppmv" />
         <FaceplateRow label="Emissions" value={fmt(data?.emissions, 1, "--")} unit="lb/STPD" testId="faceplate-emissions" />
         <FaceplateRow label="Steam Gen." value={fmt(data?.steamGen, 0, "----")} unit="ST/ST" testId="faceplate-steam" />
         <FaceplateRow label="Gross Power Gen." value={fmt(data?.grossPowerMW, 2, "--.--")} unit="MW" testId="faceplate-power" />

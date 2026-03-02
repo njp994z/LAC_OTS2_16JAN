@@ -4768,6 +4768,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                       return s10 ? (s10.SO2 / Math.max(s10.TOTAL, 1e-9)) * 100 : null;
                     })(),
                     o2TailGas: o2Pct,
+                    emissionsPpmv: kpp.SO2_ppm_stack ?? null,
                     emissions: emissionsLbPerST,
                     steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
                     grossPowerMW: grossMW,
