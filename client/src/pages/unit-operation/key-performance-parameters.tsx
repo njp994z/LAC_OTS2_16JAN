@@ -128,9 +128,9 @@ function InputField({ label, value, onChange, unit, testId }: {
 
 function FaceplateRow({ label, value, unit, testId }: { label: string; value: string; unit: string; testId: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-2 py-1.5 border-b border-gray-200 dark:border-gray-700 last:border-0" data-testid={testId}>
-      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{label}:</span>
-      <span className="text-sm font-bold font-mono text-blue-700 dark:text-blue-400 whitespace-nowrap">{value} {unit}</span>
+    <div className="flex items-baseline justify-between gap-1.5 py-1 border-b border-gray-200 dark:border-gray-700 last:border-0" data-testid={testId}>
+      <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{label}:</span>
+      <span className="text-xs font-bold font-mono text-blue-700 dark:text-blue-400 whitespace-nowrap">{value} {unit}</span>
     </div>
   );
 }
@@ -138,10 +138,10 @@ function FaceplateRow({ label, value, unit, testId }: { label: string; value: st
 function KPPFaceplate({ results }: { results: Results | null }) {
   return (
     <div
-      className="rounded-md border-[3px] border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 p-5 shadow-sm"
+      className="rounded-md border-[3px] border-green-500 dark:border-green-600 bg-white dark:bg-gray-900 p-3 shadow-sm max-w-[280px]"
       data-testid="faceplate-kpp"
     >
-      <h3 className="text-center text-base font-bold text-gray-900 dark:text-gray-100 mb-4" data-testid="text-faceplate-title">
+      <h3 className="text-center text-sm font-bold text-gray-900 dark:text-gray-100 mb-2" data-testid="text-faceplate-title">
         Key Performance Parameters
       </h3>
       <div className="space-y-0">
@@ -159,7 +159,7 @@ function KPPFaceplate({ results }: { results: Results | null }) {
         />
         <FaceplateRow
           label="SO2 Conversion"
-          value={results ? results.conversion.toFixed(1) : "--.-"}
+          value={results ? results.conversion.toFixed(3) : "--.---"}
           unit="%"
           testId="faceplate-conversion"
         />
