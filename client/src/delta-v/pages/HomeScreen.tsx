@@ -342,7 +342,7 @@ const HomeScreen = () => {
       let barometricPressure = 1.0;
       let plantCondition = "clean";
       let sulfurFlowGpm = 79;
-      let jugValvePct = 50;
+      let jugValvePct = 10;
       let damperOpenPct = 50;
       
       const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
@@ -440,6 +440,9 @@ const HomeScreen = () => {
           const furnaceTemp = tags["1540-TI-4010"];
           setFurnaceOutletTemp(furnaceTemp);
           updateTempSensor4200APV(furnaceTemp);
+        }
+        if (tags["1540-ZI-4020"] !== undefined) {
+          setLoadedCaseValueJugValve(tags["1540-ZI-4020"]);
         }
       }
       
@@ -837,9 +840,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 setLoadedCaseValueJugValve(val);
               }
             } else {
-              // Default to 50% if no case value found
-              console.log('No case value found for 1540-H-4282, using default 50%');
-              setLoadedCaseValueJugValve(50);
+              console.log('No case value found for 1540-H-4282, using default 10%');
+              setLoadedCaseValueJugValve(10);
             }
             
             // Look for WHB dP value in the selected case
@@ -6691,7 +6693,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onOutChange={(value) => updateJugValveHandControllerOUT(value)}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={loadedCaseValueJugValve}
           />
         </DialogContent>
       </Dialog>
