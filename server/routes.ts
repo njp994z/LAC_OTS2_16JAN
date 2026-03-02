@@ -17,10 +17,26 @@ import { sessionWS } from "./websocket";
 import { getCurrentPsychrometrics, getHistoricalPsychrometrics, isWeatherServiceConfigured, WeatherServiceError } from "./services/weatherService";
 import { weatherRequestSchema, weatherHistoryRequestSchema, catalystParameterApiSchema, insertConverterCaseSchema } from "../shared/schema";
 
+const simulationPaths = [
+  '/api/ipat-calc', '/api/fat-calc', '/api/sh4a-ec4c-ec4a-calc', '/api/ec3b-calc',
+  '/api/catalytic-reactor-simulation', '/api/compressor-simulation', '/api/sulfur-furnace-simulation',
+  '/api/drying-tower-simulation', '/api/drying-tower-calc', '/api/converter-pass-simulation',
+  '/api/jug-valve-simulation', '/api/superheater-simulation', '/api/inlet-air-filter-simulation',
+];
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { message: "Too many requests from this IP, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => simulationPaths.some(p => req.path === p),
+});
+
+const simulationLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 300,
+  message: { message: "Too many simulation requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -136,7 +152,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/login', authLimiter);
   app.use('/api/register', authLimiter);
-  
+
+  app.use('/api/ipat-calc', simulationLimiter);
+  app.use('/api/fat-calc', simulationLimiter);
+  app.use('/api/sh4a-ec4c-ec4a-calc', simulationLimiter);
+  app.use('/api/ec3b-calc', simulationLimiter);
+  app.use('/api/catalytic-reactor-simulation', simulationLimiter);
+  app.use('/api/compressor-simulation', simulationLimiter);
+  app.use('/api/sulfur-furnace-simulation', simulationLimiter);
+  app.use('/api/drying-tower-simulation', simulationLimiter);
+  app.use('/api/drying-tower-calc', simulationLimiter);
+  app.use('/api/converter-pass-simulation', simulationLimiter);
+  app.use('/api/jug-valve-simulation', simulationLimiter);
+  app.use('/api/superheater-simulation', simulationLimiter);
+  app.use('/api/inlet-air-filter-simulation', simulationLimiter);
+
   app.use('/api/', apiLimiter);
 
   app.post('/api/register', async (req: Request, res: Response) => {
