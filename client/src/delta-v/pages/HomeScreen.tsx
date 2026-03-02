@@ -1426,10 +1426,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build Temperature Sensor 1540-TI-4200A data from synced state
-  // Use furnace outlet temperature from simulation when available (Static mode), otherwise use synced PV
-  const tempSensor4200APV = selectedMode === 'Static' && furnaceOutletTemp !== null 
-    ? furnaceOutletTemp 
-    : tempSensor4200ASyncState.syncedPV;
+  // In Static mode, use orchestrator furnace temp (1540-TI-4010) as source of truth
+  const orchestratorFurnaceTemp = selectedMode === 'Static' && orchestratorResult?.sensor_tags?.["1540-TI-4010"] != null
+    ? orchestratorResult.sensor_tags["1540-TI-4010"]
+    : null;
+  const tempSensor4200APV = orchestratorFurnaceTemp ?? furnaceOutletTemp ?? tempSensor4200ASyncState.syncedPV;
   
   const tempSensor4200AData: ControllerData = {
     ...defaultControllerData,
@@ -1457,7 +1458,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ...defaultControllerData,
     instrumentTag: tempSensor4200BConfig.TAGNAME || '1540-TI-4200B',
     description: tempSensor4200BConfig.DESC || 'Furnace Temp Out B',
-    pv: tempSensor4200BSyncState.syncedPV,
+    pv: orchestratorFurnaceTemp ?? tempSensor4200BSyncState.syncedPV,
     sp: tempSensor4200BSyncState.syncedSP,
     out: tempSensor4200BSyncState.syncedOUT,
     mode: tempSensor4200BSyncState.syncedMode,
@@ -1479,7 +1480,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ...defaultControllerData,
     instrumentTag: '1540-TI-4200C',
     description: 'Furnace C',
-    pv: tempSensor4200CSyncState.syncedPV,
+    pv: orchestratorFurnaceTemp ?? tempSensor4200CSyncState.syncedPV,
     sp: tempSensor4200CSyncState.syncedSP,
     out: tempSensor4200CSyncState.syncedOUT,
     mode: tempSensor4200CSyncState.syncedMode,
