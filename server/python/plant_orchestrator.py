@@ -1445,6 +1445,7 @@ class PlantOrchestrator:
         self.kpp: Dict[str, Any] = {}
         self.alarms: List[Alarm] = []
         self.sensor_tags: Dict[str, Any] = {}
+        self.comp_details: Dict[str, float] = {}
         self.dynamic_state: Dict[str, Any] = {}
 
     def solve_static(self, inp: PlantInputs) -> Dict[str, Any]:
@@ -1466,6 +1467,7 @@ class PlantOrchestrator:
         #   Inlet P  = -13 inwc × (Q / Q_design)^1.5   (system curve)
         #   One iteration: Q(0) → P_inlet → re-solve → Q(1)
         s3, s4, comp_details = MainCompressor.calculate(inp)
+        self.comp_details = comp_details
         streams[3] = s3   # compressor suction = DT outlet
         streams[4] = s4   # compressor discharge
 
@@ -1700,6 +1702,7 @@ class PlantOrchestrator:
             "kpp": self.kpp,
             "alarms": [a.to_dict() for a in self.alarms],
             "sensor_tags": self.sensor_tags,
+            "compressor": self.comp_details,
             "metadata": {
                 "timestamp": time.time(),
                 "stream_count": len(self.streams),

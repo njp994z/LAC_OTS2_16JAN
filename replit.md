@@ -29,7 +29,7 @@ Preferred communication style: Simple, everyday language.
 ### Backend Architecture
 - **Server Framework**: Express.js with TypeScript for API endpoints, including middleware for logging, JSON parsing, and error handling.
 - **Authentication & Session Management**: Username/password authentication using bcrypt for hashing, and session management via `express-session` with a PostgreSQL store, secure HTTP-only cookies, and session regeneration.
-- **API Endpoints**: Provides endpoints for user registration, login, logout, authenticated user information, AI chat, Monte Carlo simulation, and psychrometric data.
+- **API Endpoints**: Provides endpoints for user registration, login, logout, authenticated user information, AI chat, Monte Carlo simulation, and psychrometric data. The plant orchestrator API (`/api/plant-orchestrator`) returns a `compressor` block with real VFD/motor performance data (motor_power_hp, vfd_current_amps, driver_rpm, compressor_rpm, speed_ratio) that feeds the VFD faceplate in Static mode.
 - **Psychrometric Data Service**: Uses Open-Meteo API for real-time and historical weather data, calculating psychrometric properties (e.g., humidity ratio, dew point). Includes in-memory caching.
 - **AI Integration**: OpenAI chat endpoint using Replit AI Integrations (gpt-4o-mini) with a system prompt incorporating specialized domain knowledge.
 

@@ -1542,29 +1542,26 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     vfdConfig,
   } = useCompressor();
 
-  // Update compressor context when static mode is active
+  // Update compressor context when static mode is active — use orchestrator compressor data
   useEffect(() => {
     if (selectedMode === "Static") {
-      // Use simulation results if available, otherwise use loaded case value
-      if (staticSimulationResults) {
-        const speedPercent = staticSimulationResults.compressor_speed 
-          ? (staticSimulationResults.compressor_speed / 4505) * 100 
-          : 75;
-        
+      const comp = orchestratorResult?.compressor;
+      if (comp && comp.compressor_rpm) {
+        const speedPercent = (comp.speed_ratio ?? 0) * 100;
         setStaticValues({
           speedPV: speedPercent,
           speedSP: speedPercent,
-          motorSpeedRPM: staticSimulationResults.compressor_speed || 0,
-          compressorSpeedRPM: staticSimulationResults.compressor_speed || 0,
-          motorPowerHP: staticSimulationResults.brake_power_hp || 0,
-          currentPV: staticSimulationResults.vfd_current || 0,
+          motorSpeedRPM: comp.driver_rpm ?? 0,
+          compressorSpeedRPM: comp.compressor_rpm ?? 0,
+          motorPowerHP: comp.motor_power_hp ?? 0,
+          vfdCurrentAmps: comp.vfd_current_amps ?? 0,
+          currentPV: comp.vfd_current_amps ?? 0,
+          powerPV: comp.motor_power_hp ?? 0,
           state: "RUNNING",
           deviceState: "Static Mode",
         });
       } else if (loadedCaseValue1540H4030 !== null) {
-        // Use the auto-loaded case value for VFD display
         const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
-        // Calculate estimated VFD current based on speed percentage (rough estimate)
         const estimatedCurrent = (loadedCaseValue1540H4030 / 100) * 50;
         setStaticValues({
           speedPV: loadedCaseValue1540H4030,
@@ -1578,7 +1575,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         });
       }
     }
-  }, [selectedMode, staticSimulationResults, loadedCaseValue1540H4030, setStaticValues]);
+  }, [selectedMode, orchestratorResult, loadedCaseValue1540H4030, setStaticValues]);
 
   const handleCompressorClick = () => {
     if (isLocked) {
