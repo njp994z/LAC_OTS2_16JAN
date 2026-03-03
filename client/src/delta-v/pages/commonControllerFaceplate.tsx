@@ -894,7 +894,7 @@ if __name__ == "__main__":
 
 const CommonControllerFaceplatePage = () => {
   const { id: activeControllerId } = useParams();
-  const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, initializeController } = useControllerSync(activeControllerId!);
+  const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, initializeController, updatePvRange } = useControllerSync(activeControllerId!);
   const { getControllerConfig, getControllerData } = useControllerConfig();
   const { toast } = useToast();
   
@@ -934,7 +934,10 @@ const CommonControllerFaceplatePage = () => {
     if (typicalPV != null && typicalPV > 0) {
       initializeController(typicalPV, typicalPV, cfg.PV_SCALE_LO, cfg.PV_SCALE_HI);
     }
-  }, [activeControllerId, getControllerConfig, initializeController]);
+    if (cfg.PV_SCALE_LO != null && cfg.PV_SCALE_HI != null) {
+      updatePvRange(cfg.PV_SCALE_LO, cfg.PV_SCALE_HI);
+    }
+  }, [activeControllerId, getControllerConfig, initializeController, updatePvRange]);
 
   // Sync config changes from Faceplate3F
   useEffect(() => {

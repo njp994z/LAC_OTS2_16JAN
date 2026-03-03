@@ -44,6 +44,7 @@ interface ControllerSyncContextType {
   updateSyncedOUT: (controllerId: string, value: number) => void;
   updateSyncedMode: (controllerId: string, mode: SyncedMode) => void;
   updateAlarmStates: (controllerId: string, alarms: AlarmStates) => void;
+  updatePvRange: (controllerId: string, pvRangeMin: number, pvRangeMax: number) => void;
   updateAlarmLimits: (controllerId: string, limits: AlarmLimits) => void;
   addAlarmLogEntry: (controllerId: string, entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => void;
   acknowledgeAlarm: (controllerId: string, id: string) => void;
@@ -439,6 +440,20 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
     channel.close();
   }, []);
 
+  const updatePvRange = useCallback((controllerId: string, pvRangeMin: number, pvRangeMax: number) => {
+    const safeMin = toFiniteNumber(pvRangeMin, 0);
+    const safeMax = toFiniteNumber(pvRangeMax, 100);
+    setState((prev) => {
+      const currentController = prev.controllers[controllerId] || createDefaultControllerState();
+      return {
+        controllers: {
+          ...prev.controllers,
+          [controllerId]: { ...currentController, pvRangeMin: safeMin, pvRangeMax: safeMax },
+        },
+      };
+    });
+  }, []);
+
   const updateAlarmLimits = useCallback((controllerId: string, limits: AlarmLimits) => {
     setState((prev) => {
       const currentController = prev.controllers[controllerId] || createDefaultControllerState();
@@ -527,6 +542,7 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
         updateSyncedOUT,
         updateSyncedMode,
         updateAlarmStates,
+        updatePvRange,
         updateAlarmLimits,
         addAlarmLogEntry,
         acknowledgeAlarm,
@@ -556,6 +572,7 @@ export const useControllerSync = (controllerId: string) => {
     updateSyncedOUT: (value: number) => context.updateSyncedOUT(controllerId, value),
     updateSyncedMode: (mode: SyncedMode) => context.updateSyncedMode(controllerId, mode),
     updateAlarmStates: (alarms: AlarmStates) => context.updateAlarmStates(controllerId, alarms),
+    updatePvRange: (pvRangeMin: number, pvRangeMax: number) => context.updatePvRange(controllerId, pvRangeMin, pvRangeMax),
     updateAlarmLimits: (limits: AlarmLimits) => context.updateAlarmLimits(controllerId, limits),
     addAlarmLogEntry: (entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => context.addAlarmLogEntry(controllerId, entry),
     acknowledgeAlarm: (id: string) => context.acknowledgeAlarm(controllerId, id),

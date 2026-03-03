@@ -153,7 +153,7 @@ const Faceplate3E = () => {
     return getControllerMetadata(activeControllerId).label;
   };
   
-  const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits } = useControllerSync(activeControllerId);
+  const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits, updatePvRange } = useControllerSync(activeControllerId);
   const { getControllerConfig, updateControllerConfig, getControllerData, updateControllerData, saveController } = useControllerConfig();
   
   // Separate state for string fields (stable, no sync)
@@ -246,6 +246,7 @@ const Faceplate3E = () => {
     
     const typicalPV = finalConfig.TYPICAL_PV ?? latestData.PV;
     
+    updatePvRange(finalConfig.PV_SCALE_LO ?? 0, finalConfig.PV_SCALE_HI ?? 100);
     updateSyncedPV(typicalPV);
     updateSyncedSP(typicalPV);
     updateSyncedOUT(latestData.OUT_PCT);
@@ -263,7 +264,7 @@ const Faceplate3E = () => {
   }, [
     activeControllerId,
     updateControllerConfig, updateControllerData, saveController,
-    updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits
+    updatePvRange, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits
   ]);
 
   if (!isLoaded) {
