@@ -7,10 +7,12 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, LogIn, BarChart3, Move, Lock, Unlock, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, LogIn, BarChart3, Move, Lock, Unlock, Pencil, Check, X, LogOut } from "lucide-react";
 import { operatorScreens, ScreenId, InputControlConfig } from "@/lib/screenConfig";
 import { PidFaceplate, FaceplateButton } from "@/components/PidFaceplate";
 import expLogo from "@/assets/exp-logo.png";
+import { useSession } from "@/contexts/SessionContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DragPosition {
   x: number;
@@ -116,6 +118,21 @@ function DraggableOverlay({ id, initialPosition, customPosition, onDragEnd, isLo
 
 export default function StaticSimulation() {
   const [, setLocation] = useLocation();
+    const { isAuthenticated } = useAuth();
+      const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (response.ok) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
   
   // Screen selection state
   const [selectedScreenId, setSelectedScreenId] = useState<ScreenId>('compressor');
@@ -304,14 +321,22 @@ export default function StaticSimulation() {
               <span className="font-semibold text-lg text-foreground hover:underline cursor-pointer">Lithium Americas</span>
             </Link>
           </div>
-          <Button 
+          {isAuthenticated ? <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+            : <Button 
             onClick={() => setLocation("/login")}
             data-testid="button-login-header"
             className="gap-2"
           >
             <LogIn className="w-4 h-4" />
             Login
-          </Button>
+          </Button>}
         </div>
       </header>
       <main className="pt-20 pb-12 px-6">

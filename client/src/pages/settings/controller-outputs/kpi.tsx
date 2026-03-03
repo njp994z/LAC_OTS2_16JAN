@@ -2,6 +2,7 @@ import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, BarChart3, Clock } from 'lucide-react';
+import KPICard from '@/pages/unit-operation/kpi-card';
 
 export default function KPIPage() {
   const [, setLocation] = useLocation();
@@ -32,15 +33,7 @@ export default function KPIPage() {
 
       <main className="flex-1 p-6 overflow-auto">
         <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[60vh]">
-          <Card>
-            <CardContent className="flex flex-col items-center gap-4 py-12 px-16">
-              <Clock className="w-12 h-12 text-muted-foreground" data-testid="icon-coming-soon" />
-              <h2 className="text-xl font-semibold text-foreground" data-testid="text-coming-soon-title">Coming Soon</h2>
-              <p className="text-sm text-muted-foreground text-center max-w-md" data-testid="text-coming-soon-description">
-                Key Performance Indicators dashboard is under development. This screen will provide real-time tracking of conversion efficiency, production rates, energy consumption, and environmental compliance metrics.
-              </p>
-            </CardContent>
-          </Card>
+          <KPICard />
         </div>
       </main>
 

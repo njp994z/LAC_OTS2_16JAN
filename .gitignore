@@ -6,3 +6,8 @@ vite.config.ts.*
 *.tar.gzdownload.zip
 download.zip
 .replit
+ecosystem.config.cjs
+.env
+package-lock.json
+claude
+.claude

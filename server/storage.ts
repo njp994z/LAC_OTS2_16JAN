@@ -3,7 +3,7 @@
 // Reviewed and resolved manually - do not blindly overwrite in future merges
 
 
-import { users, processTags, catalystParameters, converterCases, processVariables, processVariableCaseColumns, setpointVariables, setpointCaseColumns, sulfurProcessNodes, homescreenLayout, controllerConfigs, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type ProcessVariableCaseColumn, type InsertProcessVariableCaseColumn, type SetpointVariable, type InsertSetpointVariable, type SetpointCaseColumn, type InsertSetpointCaseColumn, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig } from "@shared/schema";
+import { users, processTags, catalystParameters, converterCases, processVariables, processVariableCaseColumns, setpointVariables, setpointCaseColumns, sulfurProcessNodes, homescreenLayout, controllerConfigs, screenLayouts, type User, type UpsertUser, type UserType, type ProcessTag, type InsertProcessTag, type CatalystParameter, type InsertCatalystParameter, type ConverterCase, type InsertConverterCase, type ProcessVariable, type InsertProcessVariable, type ProcessVariableCaseColumn, type InsertProcessVariableCaseColumn, type SetpointVariable, type InsertSetpointVariable, type SetpointCaseColumn, type InsertSetpointCaseColumn, type SulfurProcessNode, type InsertSulfurProcessNode, type HomescreenLayout, type InsertHomescreenLayout, type ControllerConfig, type InsertControllerConfig, type ScreenLayout, type InsertScreenLayout } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -68,6 +68,11 @@ export interface IStorage {
   getAllControllerConfigs(): Promise<ControllerConfig[]>;
   getControllerConfig(controllerId: string): Promise<ControllerConfig | undefined>;
   upsertControllerConfig(controllerId: string, config: unknown, data?: unknown): Promise<ControllerConfig>;
+  upsertControllerConfig(controllerId: string, config: unknown, data?: unknown): Promise<ControllerConfig>;
+  
+  // Screen Layouts
+  getScreenLayout(id: string): Promise<ScreenLayout | undefined>;
+  saveScreenLayout(id: string, data: unknown): Promise<ScreenLayout>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -389,6 +394,30 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return inserted;
     }
+  }
+
+  // Screen Layout methods
+  async getScreenLayout(id: string): Promise<ScreenLayout | undefined> {
+    const [layout] = await db.select().from(screenLayouts).where(eq(screenLayouts.id, id));
+    return layout;
+  }
+
+  async saveScreenLayout(id: string, data: unknown): Promise<ScreenLayout> {
+    const [result] = await db
+      .insert(screenLayouts)
+      .values({
+        id,
+        data,
+      })
+      .onConflictDoUpdate({
+        target: screenLayouts.id,
+        set: {
+          data,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
   }
 }
 
