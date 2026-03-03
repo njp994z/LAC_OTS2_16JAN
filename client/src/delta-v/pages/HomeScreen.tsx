@@ -679,6 +679,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L4-Converter: 1540-TI-4825 Primary Faceplate position/size
   const [faceplate4825L4Position, setFaceplate4825L4Position] = useState({ x: 600, y: 150 });
   const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({ width: 160, height: 240 });
+  const [tempSensor4820L4Position, setTempSensor4820L4Position] = useState({ x: 2800, y: 500 });
+  const [tempSensor4820L4Size, setTempSensor4820L4Size] = useState({ width: 180, height: 120 });
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
@@ -2238,6 +2240,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setKppFaceplateL4Size({ width: kppL4.width, height: kppL4.height });
     }
 
+    const ts4820L4 = positionMap.get('temp_sensor_4820_l4');
+    if (ts4820L4) {
+      setTempSensor4820L4Position({ x: ts4820L4.x, y: ts4820L4.y });
+      setTempSensor4820L4Size({ width: ts4820L4.width, height: ts4820L4.height });
+    }
+
     // Restore vertical arrows for L4-Converter
     const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
     layoutDataL4.layouts.forEach((item) => {
@@ -2831,6 +2839,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
         { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
         { elementId: 'kpp_faceplate_l4', positionX: Math.round(kppFaceplateL4Position.x), positionY: Math.round(kppFaceplateL4Position.y), width: kppFaceplateL4Size.width, height: kppFaceplateL4Size.height, rotation: 0 },
+        { elementId: 'temp_sensor_4820_l4', positionX: Math.round(tempSensor4820L4Position.x), positionY: Math.round(tempSensor4820L4Position.y), width: tempSensor4820L4Size.width, height: tempSensor4820L4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -3880,6 +3889,48 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </div>
               </Rnd>
             )}
+
+            {/* Temperature Sensor 1540-TI-4820 (Pass 1 Duct) for L4 */}
+            <Rnd
+              key="temp-sensor-4820-l4"
+              position={tempSensor4820L4Position}
+              size={tempSensor4820L4Size}
+              onDragStop={(e, d) => {
+                setTempSensor4820L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setTempSensor4820L4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setTempSensor4820L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={80}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              resizeHandleStyles={!isLockedL4 ? resizeHandleStyles : undefined}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 40, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={() => { if (isLockedL4) setIsTempSensor4820ModalOpen(true); }}
+                data-testid="faceplate-4820-l4-container"
+                style={{
+                  transform: `scale(${Math.min(tempSensor4820L4Size.width / 180, tempSensor4820L4Size.height / 120)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor4820Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
             <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4} modal={false}>
