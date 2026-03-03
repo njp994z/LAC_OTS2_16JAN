@@ -42,7 +42,7 @@ const TemperatureControllerFaceplates = () => {
             { to: "/settings/controller-outputs/faceplates/controller/1520-T-5823", label: "1520-T-5823 DT SA Inlet Temperature Controller" },
             { to: "/settings/controller-outputs/faceplates/controller/6722", label: "1520-T-6722 IPAT SA Inlet Temperature Controller" },
             { to: "/settings/controller-outputs/faceplates/controller-6622", label: "1520-T-6622 FAT SA Inlet Temperature Controller" },
-            { to: "/settings/controller-outputs/faceplates/controller/1520-T-4828", label: "1540-T-4828 Pass 2 Inlet Temperature Controller" },
+            { to: "/settings/controller-outputs/faceplates/controller/1520-T-4822", label: "1540-T-4822 Pass 2 Inlet Temperature Controller" },
             { to: "/settings/controller-outputs/faceplates/controller/1520-T-5220", label: "1540-T-5220 Pass 3 Inlet Temperature Controller" },
             { to: "/settings/controller-outputs/faceplates/controller/1520-T-5224", label: "1540-T-5224 Pass 4 Inlet Temperature Controller" },
             { to: "/settings/controller-outputs/faceplates/controller/1520-T-7221", label: "1540-T-7221 Econ 4A Outlet Temperature Controller" },
