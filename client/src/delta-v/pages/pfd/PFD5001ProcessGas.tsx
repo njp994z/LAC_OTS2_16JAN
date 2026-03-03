@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import processGasDiagram from "@assets/image_1769045383009.png";
 
 const spInputCases = [
+  { id: "current-static", label: "Current Static", description: "Live Plant Orchestrator (Static)", caseNum: 0 },
+  { id: "current-dynamic", label: "Current Dynamic", description: "Live Plant Orchestrator (Dynamic)", caseNum: 0 },
   { id: "case1", label: "Case 1", description: "SP_2480 STPD - Clean", caseNum: 1 },
   { id: "case2", label: "Case 2", description: "SP_2480 STPD - Dirty", caseNum: 2 },
   { id: "case3", label: "Case 3", description: "SP_1100 STPD - Clean", caseNum: 3 },
@@ -180,28 +182,60 @@ export default function PFD5001ProcessGas() {
     stream3: StreamResult;
     stream4: StreamResult;
   } | null>(null);
+  const [orchestratorStreams, setOrchestratorStreams] = useState<Record<string, {
+    SO2: number; SO3: number; O2: number; N2: number; H2O: number;
+    H2SO4: number; TOTAL: number; PRESSURE: number; TEMPERATURE: number;
+  }> | null>(null);
   const { toast } = useToast();
+
+  const isOrchestratorCase = (caseId: string) =>
+    caseId === "current-static" || caseId === "current-dynamic";
 
   const handleCaseChange = (spCase: typeof spInputCases[0]) => {
     setSelectedCase(spCase);
     setHasSimulated(false);
     setCalculatedStreams(null);
+    setOrchestratorStreams(null);
   };
 
   const handleSimulate = async () => {
     setIsSimulating(true);
     try {
-      const response = await fetch(`/api/material-balance/streams-1-4?case=${selectedCase.caseNum}&zipCode=89414&countryCode=US`);
-      if (!response.ok) {
-        throw new Error('Failed to calculate streams');
+      if (isOrchestratorCase(selectedCase.id)) {
+        const mode = selectedCase.id === "current-static" ? "static" : "dynamic";
+        const response = await fetch('/api/plant-orchestrator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode }),
+        });
+        if (!response.ok) {
+          throw new Error('Plant orchestrator simulation failed');
+        }
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Orchestrator returned an error');
+        }
+        setOrchestratorStreams(data.streams);
+        setCalculatedStreams(null);
+        setHasSimulated(true);
+        toast({
+          title: "Simulation Complete",
+          description: `All streams calculated via ${mode} orchestrator`,
+        });
+      } else {
+        const response = await fetch(`/api/material-balance/streams-1-4?case=${selectedCase.caseNum}&zipCode=89414&countryCode=US`);
+        if (!response.ok) {
+          throw new Error('Failed to calculate streams');
+        }
+        const data = await response.json();
+        setCalculatedStreams(data.streams);
+        setOrchestratorStreams(null);
+        setHasSimulated(true);
+        toast({
+          title: "Simulation Complete",
+          description: `Streams 1-4 calculated for ${selectedCase.label}`,
+        });
       }
-      const data = await response.json();
-      setCalculatedStreams(data.streams);
-      setHasSimulated(true);
-      toast({
-        title: "Simulation Complete",
-        description: `Streams 1-4 calculated for ${selectedCase.label}`,
-      });
     } catch (error) {
       console.error('Simulation error:', error);
       toast({
@@ -214,11 +248,35 @@ export default function PFD5001ProcessGas() {
     }
   };
 
+  const getOrchestratorValue = (streamNum: number, field: string): number => {
+    if (!orchestratorStreams) return 0;
+    const s = orchestratorStreams[String(streamNum)];
+    if (!s) return 0;
+    return (s as any)[field] ?? 0;
+  };
+
   const getStreamData = () => {
+    if (orchestratorStreams) {
+      const streamNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+      return {
+        headers: streamDataPart1.headers,
+        rows: [
+          { component: "SO2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO2")) },
+          { component: "SO3", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO3")) },
+          { component: "O2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "O2")) },
+          { component: "N2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "N2")) },
+          { component: "H2O", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "H2O")) },
+          { component: "Total", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "TOTAL")) },
+          { component: "PRESSURE", unit: "IN W.C.", values: streamNums.map(n => getOrchestratorValue(n, "PRESSURE")) },
+          { component: "TEMPERATURE", unit: "°F", values: streamNums.map(n => getOrchestratorValue(n, "TEMPERATURE")) },
+        ],
+      };
+    }
+
     if (!calculatedStreams) return streamDataPart1;
-    
+
     const { stream1, stream2, stream3, stream4 } = calculatedStreams;
-    
+
     return {
       headers: streamDataPart1.headers,
       rows: [
@@ -232,6 +290,26 @@ export default function PFD5001ProcessGas() {
         { component: "TEMPERATURE", unit: "°F", values: [stream1.temperature, stream2.temperature, stream3.temperature, stream4.temperature, 2073, 2073, 2073, 706, 779, 1145, 806, 964, 806, 847] },
       ],
     };
+  };
+
+  const getStreamDataPart2 = () => {
+    if (orchestratorStreams) {
+      const streamNums = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
+      return {
+        headers: streamDataPart2.headers,
+        rows: [
+          { component: "SO2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO2")) },
+          { component: "SO3", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO3")) },
+          { component: "O2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "O2")) },
+          { component: "N2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "N2")) },
+          { component: "H2O", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "H2O")) },
+          { component: "Total", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "TOTAL")) },
+          { component: "PRESSURE", unit: "IN W.C.", values: streamNums.map(n => getOrchestratorValue(n, "PRESSURE")) },
+          { component: "TEMPERATURE", unit: "°F", values: streamNums.map(n => getOrchestratorValue(n, "TEMPERATURE")) },
+        ],
+      };
+    }
+    return streamDataPart2;
   };
 
   return (
@@ -346,19 +424,26 @@ export default function PFD5001ProcessGas() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" data-testid="dropdown-content-sp-inputs">
-                    {spInputCases.map((spCase) => (
-                      <DropdownMenuItem
-                        key={spCase.id}
-                        onClick={() => handleCaseChange(spCase)}
-                        className={selectedCase.id === spCase.id ? "bg-accent" : ""}
-                        data-testid={`dropdown-item-${spCase.id}`}
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{spCase.label}</span>
-                          <span className="text-xs text-muted-foreground">{spCase.description}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
+                    {spInputCases.flatMap((spCase, idx) => {
+                      const items = [];
+                      if (idx === 2) {
+                        items.push(<DropdownMenuSeparator key="separator-orchestrator" />);
+                      }
+                      items.push(
+                        <DropdownMenuItem
+                          key={spCase.id}
+                          onClick={() => handleCaseChange(spCase)}
+                          className={selectedCase.id === spCase.id ? "bg-accent" : ""}
+                          data-testid={`dropdown-item-${spCase.id}`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{spCase.label}</span>
+                            <span className="text-xs text-muted-foreground">{spCase.description}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                      return items;
+                    })}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button
@@ -393,7 +478,7 @@ export default function PFD5001ProcessGas() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold" data-testid="text-section-streams-15-27">Stream Data - Streams 15-27</h2>
             <div className="bg-card rounded-md border border-border p-2">
-              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" showValues={hasSimulated} />
+              <StreamTable headers={getStreamDataPart2().headers} rows={getStreamDataPart2().rows} title="streams-15-27" showValues={hasSimulated} />
             </div>
           </div>
 
