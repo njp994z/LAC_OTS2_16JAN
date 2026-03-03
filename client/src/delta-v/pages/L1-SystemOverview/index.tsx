@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 import L1SystemElementsMap, { ElementType, L1SystemElements } from "./components";
+import { KPPFaceplate } from "@/components/KPPFaceplate";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -51,10 +52,12 @@ export enum Mode {
 
 const L1SystemOverview = ({
     defaultMode = Mode.Static,
-    instrumentFilter = 'all'
+    instrumentFilter = 'all',
+    orchestratorResult = null
 }: {
     defaultMode?: Mode;
     instrumentFilter?: 'all' | 'controllers' | 'sensors';
+    orchestratorResult?: any;
 }) => {
     const { toast } = useToast();
     const [, setLocation] = useLocation();
@@ -465,6 +468,57 @@ const L1SystemOverview = ({
                                 )
                             })
                         }
+
+                        {orchestratorResult?.kpp && (() => {
+                            const kppPos = positions?.['kpp_faceplate_l1'] || { x: 4400, y: 100 };
+                            return (
+                                <div
+                                    key="kpp-faceplate-l1"
+                                    className="absolute pointer-events-auto"
+                                    data-testid="l1-kpp-faceplate"
+                                    style={{
+                                        left: kppPos.x,
+                                        top: kppPos.y,
+                                        zIndex: 50,
+                                        width: kppPos.w || 280,
+                                    }}
+                                    onMouseDown={(e) => {
+                                        if (mode === Mode.Edit && editMode === 'components') {
+                                            e.stopPropagation();
+                                            setDraggingId('kpp_faceplate_l1');
+                                        }
+                                    }}
+                                >
+                                    <div style={{ cursor: mode === Mode.Edit ? 'move' : 'default' }}>
+                                        <KPPFaceplate className="w-full" data={(() => {
+                                            const kpp = orchestratorResult.kpp;
+                                            const s24 = orchestratorResult.streams?.["24"];
+                                            const stpd = kpp.H2SO4_production_STPD;
+                                            const so2TailScfm = s24?.SO2 ?? 0;
+                                            const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                                            const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                                            const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                                            const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                                            const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                                            return {
+                                                plantRate: stpd,
+                                                conversion: kpp.overall_SO2_conversion_pct,
+                                                pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                                                    const s9 = orchestratorResult.streams?.["9"];
+                                                    return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
+                                                })(),
+                                                o2TailGas: o2Pct,
+                                                emissionsPpmv: kpp.SO2_ppm_stack ?? null,
+                                                emissions: emissionsLbPerST,
+                                                steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                                                grossPowerMW: grossMW,
+                                                powerRatio: 243,
+                                            };
+                                        })()} />
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

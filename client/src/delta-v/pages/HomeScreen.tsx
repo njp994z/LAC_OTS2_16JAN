@@ -780,6 +780,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
 
+  // L2_1520 ACID: KPP Faceplate
+  const [kppFaceplateL21520Position, setKppFaceplateL21520Position] = useState({ x: 2600, y: 100 });
+  const [kppFaceplateL21520Size, setKppFaceplateL21520Size] = useState({ width: 280, height: 300 });
   // L2_1520 ACID: Acid Boiler position and size
   const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
   const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
@@ -5437,7 +5440,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         )}
 
         {/* L1 - System Overview */}
-        {selectedScreen === "L1 – System Overview" && <L1SystemOverview instrumentFilter={instrumentFilter} />}
+        {selectedScreen === "L1 – System Overview" && <L1SystemOverview instrumentFilter={instrumentFilter} orchestratorResult={orchestratorResult} />}
 
         {/* L2_1520 ACID View */}
         {selectedScreen === "L2_1520 ACID" && (
@@ -5560,6 +5563,61 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 data-testid="img-acid-tower-2-l2-1520"
               />
             </Rnd>
+
+            {orchestratorResult?.kpp && (
+              <Rnd
+                key="kpp-faceplate-l2-1520"
+                data-testid="rnd-kpp-faceplate-l2-1520"
+                position={kppFaceplateL21520Position}
+                size={kppFaceplateL21520Size}
+                onDragStop={(e, d) => {
+                  setKppFaceplateL21520Position({ x: d.x, y: d.y });
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setKppFaceplateL21520Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setKppFaceplateL21520Position(position);
+                }}
+                minWidth={200}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL21520}
+                enableResizing={!isLockedL21520}
+                resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+                className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
+                <div className="w-full h-full" data-testid="l2-1520-kpp-faceplate">
+                <KPPFaceplate className="w-full h-full" data={(() => {
+                  const kpp = orchestratorResult.kpp;
+                  const s24 = orchestratorResult.streams?.["24"];
+                  const stpd = kpp.H2SO4_production_STPD;
+                  const so2TailScfm = s24?.SO2 ?? 0;
+                  const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                  const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                  const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                  const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                  const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                  return {
+                    plantRate: stpd,
+                    conversion: kpp.overall_SO2_conversion_pct,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                      const s9 = orchestratorResult.streams?.["9"];
+                      return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
+                    })(),
+                    o2TailGas: o2Pct,
+                    emissionsPpmv: kpp.SO2_ppm_stack ?? null,
+                    emissions: emissionsLbPerST,
+                    steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                    grossPowerMW: grossMW,
+                    powerRatio: 243,
+                  };
+                })()} />
+                </div>
+              </Rnd>
+            )}
           </div>
         )}
       </div>
