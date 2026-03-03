@@ -357,11 +357,11 @@ const HomeScreen = () => {
       
       let rpmPercent = 78.5;
       let inletTemp = 70;
-      let barometricPressure = 1.0;
+      let barometricPressure = 0.850;
       let plantCondition = "clean";
       let sulfurFlowGpm = 72;
-      let jugValvePct = 10;
-      let damperOpenPct = 50;
+      let jugValvePct = 4.5;
+      let damperOpenPct = 100;
       
       const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
         if (!variables || !caseId) return null;
