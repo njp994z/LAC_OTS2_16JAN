@@ -192,7 +192,6 @@ export default function PFD5001ProcessGas() {
     caseId === "current-static" || caseId === "current-dynamic";
 
   const abortControllerRef = useRef<AbortController | null>(null);
-  const dynamicInFlightRef = useRef(false);
 
   const simulateForCase = useCallback(async (spCase: typeof spInputCases[0], silent = false) => {
     if (!silent) {
@@ -348,18 +347,23 @@ export default function PFD5001ProcessGas() {
   useEffect(() => {
     if (selectedCase.id !== "current-dynamic" || !hasSimulated) return;
 
-    const tick = async () => {
-      if (dynamicInFlightRef.current) return;
-      dynamicInFlightRef.current = true;
-      try {
-        await simulateForCase(selectedCase, true);
-      } finally {
-        dynamicInFlightRef.current = false;
+    let cancelled = false;
+
+    const loop = async () => {
+      while (!cancelled) {
+        try {
+          await simulateForCase(selectedCase, true);
+        } catch {
+          // ignore errors in continuous loop
+        }
+        if (!cancelled) {
+          await new Promise(r => setTimeout(r, 100));
+        }
       }
     };
 
-    const intervalId = setInterval(tick, 2000);
-    return () => clearInterval(intervalId);
+    loop();
+    return () => { cancelled = true; };
   }, [selectedCase, hasSimulated, simulateForCase]);
 
   const getOrchestratorValue = (streamNum: number, field: string): number => {
