@@ -794,7 +794,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2_1520 ACID: Acid Tower 2 position and size
   const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
   const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
-  const [isLockedL21520, setIsLockedL21520] = useState(false);
+  const [isLockedL21520, setIsLockedL21520] = useState(true);
   const [isSavingL21520, setIsSavingL21520] = useState(false);
   const [isL21520Dirty, setIsL21520Dirty] = useState(false);
 
