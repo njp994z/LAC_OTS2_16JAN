@@ -1103,7 +1103,7 @@ export default function SulfurControlHydraulics() {
                   disabled={!isDynamicMode}
                   onClick={() => {
                     if (isDynamicMode) {
-                      window.open("https://delta-v-controller-faceplate.lovable.app/home-screen", "_blank", "noopener,noreferrer");
+                      setLocation("/home-screen");
                     }
                   }}
                   data-testid="button-start-scenario"

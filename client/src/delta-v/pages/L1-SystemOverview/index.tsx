@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
-import L1SystemElementsMap, { ElementType, L1SystemElements } from "./components";
+import L1SystemElementsMap, { BlockType, ElementType, L1SystemElements } from "./components";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { defaultPositionL1 } from "./defalutPosition.constant";
 import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
 import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/SecondaryControllerFaceplate";
@@ -65,6 +65,13 @@ const L1SystemOverview = ({
 }) => {
     const { toast } = useToast();
     const [, setLocation] = useLocation();
+
+    const searchString = useSearch();
+    const searchParams = new URLSearchParams(searchString);
+    const rawFilter = searchParams.get("filter");
+    const instBlockFilter: "all" | "controllers" | "sensors" =
+        rawFilter === "controllers" || rawFilter === "sensors" ? rawFilter : "all";
+
     const [tempSensor, setTempSensor] = useState<TempSensor | null>(null);
     const [mode, setMode] = useState<Mode>(defaultMode);
     const [editMode, setEditMode] = useState<'components' | 'edges'>('components');
@@ -671,6 +678,11 @@ const L1SystemOverview = ({
                                         key={`${elData.tag}-${index}`}
                                         className="absolute pointer-events-auto"
                                         style={{
+                                            display: (instBlockFilter === "all" ||
+                                                (instBlockFilter === "controllers" && elData?.blockType !== BlockType.Sensor) ||
+                                                (instBlockFilter === "sensors" && elData?.blockType !== BlockType.Controller))
+                                                ? "block"
+                                                : "none",
                                             left: pos.x,
                                             top: pos.y,
                                             zIndex: pos.z || 1,
