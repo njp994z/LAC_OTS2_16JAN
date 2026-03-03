@@ -894,7 +894,7 @@ if __name__ == "__main__":
 
 const CommonControllerFaceplatePage = () => {
   const { id: activeControllerId } = useParams();
-  const { state: syncState, updateSyncedSP, updateSyncedOUT, updateSyncedMode } = useControllerSync(activeControllerId!);
+  const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, initializeController } = useControllerSync(activeControllerId!);
   const { getControllerConfig, getControllerData } = useControllerConfig();
   const { toast } = useToast();
   
@@ -927,6 +927,15 @@ const CommonControllerFaceplatePage = () => {
     OUT_PCT: syncState.syncedOUT,
   });
   
+  // Initialize sync state with TYPICAL_PV from config whenever config store updates (incl. DB load)
+  useEffect(() => {
+    const cfg = getControllerConfig(activeControllerId!);
+    const typicalPV = cfg.TYPICAL_PV ?? cfg.PV_INIT_VAL;
+    if (typicalPV != null && typicalPV > 0) {
+      initializeController(typicalPV, typicalPV, cfg.PV_SCALE_LO, cfg.PV_SCALE_HI);
+    }
+  }, [activeControllerId, getControllerConfig, initializeController]);
+
   // Sync config changes from Faceplate3F
   useEffect(() => {
     const savedConfig = getControllerConfig(activeControllerId!);

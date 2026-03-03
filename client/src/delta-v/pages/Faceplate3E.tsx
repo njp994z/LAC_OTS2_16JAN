@@ -63,7 +63,7 @@ const StableStringInput = ({
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
       onBlur={handleBlur}
-      className={`font-mono bg-background/50 border-border/50 h-8 w-48 ${className}`}
+      className={`font-mono bg-background/50 border-border/50 w-48 ${className}`}
     />
   );
 };
@@ -102,7 +102,7 @@ const StableNumberInput = ({
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
-        className={`font-mono bg-background/50 border-border/50 h-8 w-32 ${className}`}
+        className={`font-mono bg-background/50 border-border/50 w-32 ${className}`}
       />
       {unit && <span className="text-muted-foreground text-sm">{unit}</span>}
     </div>
@@ -512,7 +512,7 @@ const Faceplate3E = () => {
                             value={data.MODE_AUTOMAN} 
                             onValueChange={(v) => updateDataField('MODE_AUTOMAN', v as AutoManMode)}
                           >
-                            <SelectTrigger className="w-32 bg-background/50 border-border/50 h-8 font-mono">
+                            <SelectTrigger className="w-32 bg-background/50 border-border/50 font-mono">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-border">
@@ -529,7 +529,7 @@ const Faceplate3E = () => {
                             value={data.MODE_ROUTRCAS} 
                             onValueChange={(v) => updateDataField('MODE_ROUTRCAS', v as RoutRcasMode)}
                           >
-                            <SelectTrigger className="w-32 bg-background/50 border-border/50 h-8 font-mono">
+                            <SelectTrigger className="w-32 bg-background/50 border-border/50 font-mono">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-border">
@@ -732,7 +732,7 @@ const Faceplate3E = () => {
                             value={config.INTLK_ACTION} 
                             onValueChange={(v) => updateConfigField('INTLK_ACTION', v as InterlockAction)}
                           >
-                            <SelectTrigger className="w-32 bg-background/50 border-border/50 h-8 font-mono">
+                            <SelectTrigger className="w-32 bg-background/50 border-border/50 font-mono">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-border">
