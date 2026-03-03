@@ -9,6 +9,7 @@ import {
   type SecondaryControllerData,
   type SecondaryControllerConfig 
 } from '@/delta-v/types/secondaryController';
+import { getDefaultSecondaryControllerConfig } from '@/delta-v/lib/controllerDefaults';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Code, FileCode, Copy, Check, ChevronDown } from 'lucide-react';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
@@ -930,12 +931,15 @@ const CommonControllerFaceplatePage = () => {
   // Initialize sync state with TYPICAL_PV from config whenever config store updates (incl. DB load)
   useEffect(() => {
     const cfg = getControllerConfig(activeControllerId!);
-    const typicalPV = cfg.TYPICAL_PV ?? cfg.PV_INIT_VAL;
+    const defaults = getDefaultSecondaryControllerConfig(activeControllerId!);
+    const scaleLo = defaults.PV_SCALE_LO ?? cfg.PV_SCALE_LO;
+    const scaleHi = defaults.PV_SCALE_HI ?? cfg.PV_SCALE_HI;
+    const typicalPV = defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? cfg.PV_INIT_VAL;
     if (typicalPV != null && typicalPV > 0) {
-      initializeController(typicalPV, typicalPV, cfg.PV_SCALE_LO, cfg.PV_SCALE_HI);
+      initializeController(typicalPV, typicalPV, scaleLo, scaleHi);
     }
-    if (cfg.PV_SCALE_LO != null && cfg.PV_SCALE_HI != null) {
-      updatePvRange(cfg.PV_SCALE_LO, cfg.PV_SCALE_HI);
+    if (scaleLo != null && scaleHi != null) {
+      updatePvRange(scaleLo, scaleHi);
     }
   }, [activeControllerId, getControllerConfig, initializeController, updatePvRange]);
 

@@ -18,22 +18,22 @@ export const CONTROLLER_METADATA: Record<string, ControllerMetadata> = {
   },
   '1540-T-5220': {
     name: '1540-T-5220',
-    backRoute: '/settings/controller-outputs/faceplates/1540-T-5220',
+    backRoute: '/settings/controller-outputs/faceplates/controller/1540-T-5220',
     label: '1540-T-5220 Temperature Controller',
   },
   '1540-T-5224': {
     name: '1540-T-5224',
-    backRoute: '/settings/controller-outputs/faceplates/1540-T-5224',
+    backRoute: '/settings/controller-outputs/faceplates/controller/1540-T-5224',
     label: '1540-T-5224 Temperature Controller',
   },
   '1540-T-7221': {
     name: '1540-T-7221',
-    backRoute: '/settings/controller-outputs/faceplates/1540-T-7221',
+    backRoute: '/settings/controller-outputs/faceplates/controller/1540-T-7221',
     label: '1540-T-7221 Temperature Controller',
   },
   '1540-T-7224': {
     name: '1540-T-7224',
-    backRoute: '/settings/controller-outputs/faceplates/1540-T-7224',
+    backRoute: '/settings/controller-outputs/faceplates/controller/1540-T-7224',
     label: '1540-T-7224 Temperature Controller',
   },
   '1530-F-2602': {

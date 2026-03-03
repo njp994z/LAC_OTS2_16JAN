@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, type ReactNode } from "react";
 import type { AlarmLogEntry } from "@/delta-v/types/secondaryController";
 
 type SyncedMode = "AUTO" | "MAN" | "BYPASS" | "RCAS" | "ROUT";
@@ -445,10 +445,17 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
     const safeMax = toFiniteNumber(pvRangeMax, 100);
     setState((prev) => {
       const currentController = prev.controllers[controllerId] || createDefaultControllerState();
+      if (currentController.pvRangeMin === safeMin && currentController.pvRangeMax === safeMax) {
+        return prev;
+      }
+      const updated = { ...currentController, pvRangeMin: safeMin, pvRangeMax: safeMax };
+      if (currentController.syncedPV < safeMin || currentController.syncedPV > safeMax) {
+        updated.syncedPV = Math.max(safeMin, Math.min(safeMax, currentController.syncedPV));
+      }
       return {
         controllers: {
           ...prev.controllers,
-          [controllerId]: { ...currentController, pvRangeMin: safeMin, pvRangeMax: safeMax },
+          [controllerId]: updated,
         },
       };
     });
@@ -561,23 +568,27 @@ export const useControllerSync = (controllerId: string) => {
     throw new Error("useControllerSync must be used within a ControllerSyncProvider");
   }
 
+  const contextRef = useRef(context);
+  contextRef.current = context;
+
   const state = context.getControllerState(controllerId);
 
-  return {
-    state,
+  const actions = useMemo(() => ({
     initializeController: (initialPV: number, initialSP?: number, pvRangeMin?: number, pvRangeMax?: number) => 
-      context.initializeController(controllerId, initialPV, initialSP, pvRangeMin, pvRangeMax),
-    updateSyncedPV: (value: number) => context.updateSyncedPV(controllerId, value),
-    updateSyncedSP: (value: number) => context.updateSyncedSP(controllerId, value),
-    updateSyncedOUT: (value: number) => context.updateSyncedOUT(controllerId, value),
-    updateSyncedMode: (mode: SyncedMode) => context.updateSyncedMode(controllerId, mode),
-    updateAlarmStates: (alarms: AlarmStates) => context.updateAlarmStates(controllerId, alarms),
-    updatePvRange: (pvRangeMin: number, pvRangeMax: number) => context.updatePvRange(controllerId, pvRangeMin, pvRangeMax),
-    updateAlarmLimits: (limits: AlarmLimits) => context.updateAlarmLimits(controllerId, limits),
-    addAlarmLogEntry: (entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => context.addAlarmLogEntry(controllerId, entry),
-    acknowledgeAlarm: (id: string) => context.acknowledgeAlarm(controllerId, id),
-    acknowledgeAllAlarms: () => context.acknowledgeAllAlarms(controllerId),
-  };
+      contextRef.current.initializeController(controllerId, initialPV, initialSP, pvRangeMin, pvRangeMax),
+    updateSyncedPV: (value: number) => contextRef.current.updateSyncedPV(controllerId, value),
+    updateSyncedSP: (value: number) => contextRef.current.updateSyncedSP(controllerId, value),
+    updateSyncedOUT: (value: number) => contextRef.current.updateSyncedOUT(controllerId, value),
+    updateSyncedMode: (mode: SyncedMode) => contextRef.current.updateSyncedMode(controllerId, mode),
+    updateAlarmStates: (alarms: AlarmStates) => contextRef.current.updateAlarmStates(controllerId, alarms),
+    updatePvRange: (pvRangeMin: number, pvRangeMax: number) => contextRef.current.updatePvRange(controllerId, pvRangeMin, pvRangeMax),
+    updateAlarmLimits: (limits: AlarmLimits) => contextRef.current.updateAlarmLimits(controllerId, limits),
+    addAlarmLogEntry: (entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => contextRef.current.addAlarmLogEntry(controllerId, entry),
+    acknowledgeAlarm: (id: string) => contextRef.current.acknowledgeAlarm(controllerId, id),
+    acknowledgeAllAlarms: () => contextRef.current.acknowledgeAllAlarms(controllerId),
+  }), [controllerId]);
+
+  return { state, ...actions };
 };
 
 // Export types for external use
