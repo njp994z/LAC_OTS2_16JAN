@@ -1382,9 +1382,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ...defaultControllerData,
     instrumentTag: handControllerConfig.TAGNAME || '1540-H-4030',
     description: handControllerConfig.DESC || 'Main Compressor Hand Controller',
-    pv: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedPV,
+    pv: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
     sp: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
-    out: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedOUT,
+    out: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
     mode: handControllerSyncState.syncedMode,
     pvUnits: handControllerConfig.EU || '%',
     pvRangeMin: handControllerConfig.PV_SCALE_LO ?? 0,
@@ -1406,9 +1406,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ...defaultControllerData,
     instrumentTag: whbHandControllerConfig.TAGNAME || '1540-H-4283',
     description: whbHandControllerConfig.DESC || 'WHB Outlet dP Hand Controller',
-    pv: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedPV,
+    pv: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
     sp: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
-    out: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedOUT,
+    out: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
     mode: whbHandControllerSyncState.syncedMode,
     pvUnits: whbHandControllerConfig.EU || '%',
     pvRangeMin: whbHandControllerConfig.PV_SCALE_LO ?? 0,
@@ -1431,9 +1431,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ...defaultControllerData,
     instrumentTag: jugValveHandControllerConfig.TAGNAME || '1540-H-4282',
     description: jugValveHandControllerConfig.DESC || 'Jug Valve Hand Controller',
-    pv: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedPV,
+    pv: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
     sp: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
-    out: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedOUT,
+    out: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
     mode: jugValveHandControllerSyncState.syncedMode,
     pvUnits: jugValveHandControllerConfig.EU || '%',
     pvRangeMin: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
@@ -1982,10 +1982,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Build Hand Controller 1540-H-4030 secondary faceplate data
   const handControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: handControllerSyncState.syncedPV,
+    PV: handControllerSyncState.syncedSP,
     SP: handControllerSyncState.syncedSP,
     TSP: handControllerSyncState.syncedSP,
-    OUT_PCT: handControllerSyncState.syncedOUT,
+    OUT_PCT: handControllerSyncState.syncedSP,
     MODE_AUTOMAN: handControllerSyncState.syncedMode === 'AUTO' || handControllerSyncState.syncedMode === 'MAN' 
       ? handControllerSyncState.syncedMode 
       : 'AUTO',
@@ -2014,10 +2014,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Build Jug Valve Hand Controller 1540-H-4282 secondary faceplate data
   const jugValveHandControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: jugValveHandControllerSyncState.syncedPV,
+    PV: jugValveHandControllerSyncState.syncedSP,
     SP: jugValveHandControllerSyncState.syncedSP,
     TSP: jugValveHandControllerSyncState.syncedSP,
-    OUT_PCT: jugValveHandControllerSyncState.syncedOUT,
+    OUT_PCT: jugValveHandControllerSyncState.syncedSP,
     MODE_AUTOMAN: jugValveHandControllerSyncState.syncedMode === 'AUTO' || jugValveHandControllerSyncState.syncedMode === 'MAN' 
       ? jugValveHandControllerSyncState.syncedMode 
       : 'AUTO',
@@ -2048,10 +2048,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Build WHB Hand Controller 1540-H-4283 secondary faceplate data
   const whbHandControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: whbHandControllerSyncState.syncedPV,
+    PV: whbHandControllerSyncState.syncedSP,
     SP: whbHandControllerSyncState.syncedSP,
     TSP: whbHandControllerSyncState.syncedSP,
-    OUT_PCT: whbHandControllerSyncState.syncedOUT,
+    OUT_PCT: whbHandControllerSyncState.syncedSP,
     MODE_AUTOMAN: whbHandControllerSyncState.syncedMode === 'AUTO' || whbHandControllerSyncState.syncedMode === 'MAN' 
       ? whbHandControllerSyncState.syncedMode 
       : 'AUTO',
