@@ -970,7 +970,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
   async function runPythonRK4Simulation(inputData: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const pythonScriptPath = path.join(process.cwd(), 'server', 'python', 'main.py');
-      const pythonProcess = spawn('python3', [pythonScriptPath], {
+      const pythonProcess = spawn('python', [pythonScriptPath], {
         cwd: path.join(process.cwd(), 'server', 'python'),
       });
 
@@ -1010,6 +1010,68 @@ Be professional, concise, and helpful. If asked about features not yet implement
       });
     });
   }
+
+  // ===== HELPER: Call Full-Plant Orchestrator (plant_orchestrator.py) =====
+  async function runPythonPlantSimulation(inputData: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const scriptPath = path.join(process.cwd(), 'server', 'python', 'plant_orchestrator.py');
+      const pythonProcess = spawn('python', [scriptPath], {
+        cwd: path.join(process.cwd(), 'server', 'python'),
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdin.write(JSON.stringify(inputData));
+      pythonProcess.stdin.end();
+
+      pythonProcess.stdout.on('data', (data) => { stdout += data.toString(); });
+      pythonProcess.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('[PlantSim] Python orchestrator error:', stderr);
+          reject(new Error(`Plant simulation failed (exit ${code}): ${stderr.slice(0, 500)}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(stdout));
+        } catch {
+          console.error('[PlantSim] Failed to parse output:', stdout.slice(0, 200));
+          reject(new Error('Failed to parse plant simulation results'));
+        }
+      });
+
+      pythonProcess.on('error', (err) => {
+        console.error('[PlantSim] Failed to start Python process:', err);
+        reject(err);
+      });
+    });
+  }
+
+  // Full-Plant Static Simulation (L1 Heat & Material Balance)
+  app.post('/api/plant-simulation', async (req: Request, res: Response) => {
+    try {
+      console.log('[PlantSim] Received request with inputs:', JSON.stringify(req.body).slice(0, 200));
+
+      // Pass operator inputs directly to plant_orchestrator.py; it supplies defaults for missing fields.
+      const result = await runPythonPlantSimulation(req.body || {});
+
+      if (!result.success) {
+        console.error('[PlantSim] Orchestrator returned failure:', result.error);
+        return res.status(500).json({
+          message: result.error || 'Plant simulation failed',
+          traceback: result.traceback,
+        });
+      }
+
+      res.json(result);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to run plant simulation';
+      console.error('[PlantSim] Error:', error);
+      res.status(500).json({ message: msg });
+    }
+  });
 
   // Catalytic Reactor Simulation endpoint
   app.post('/api/catalytic-reactor-simulation', async (req: Request, res: Response) => {
@@ -1562,7 +1624,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       // Spawn Python process to run the simulation
       const pythonScriptPath = path.join(process.cwd(), 'server', 'python', 'main.py');
-      const pythonProcess = spawn('python3', [pythonScriptPath], {
+      const pythonProcess = spawn('python', [pythonScriptPath], {
         cwd: path.join(process.cwd(), 'server', 'python'),
       });
 
@@ -2080,7 +2142,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(process.cwd(), 'server', 'python', 'streams_1_to_4.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath, JSON.stringify(pythonInput)]);
+        const pythonProcess = spawn('python', [pythonScriptPath, JSON.stringify(pythonInput)]);
 
         let stdout = '';
         let stderr = '';
@@ -2158,7 +2220,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'compressor_calculator.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2248,7 +2310,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_furnace_calc.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2376,7 +2438,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'drying_tower_solver.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2441,7 +2503,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'drying_tower_calc.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2506,7 +2568,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'ipat_calc.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2571,7 +2633,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'fat_calc.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2636,7 +2698,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'rk_solver.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2706,7 +2768,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_static_solver.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -2780,7 +2842,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sulfur_dynamic_solver.py');
 
       const result = await new Promise<any>((resolve, reject) => {
-        const pythonProcess = spawn('python3', [pythonScriptPath]);
+        const pythonProcess = spawn('python', [pythonScriptPath]);
 
         let stdout = '';
         let stderr = '';
@@ -3015,7 +3077,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       };
 
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'jug_valve_calc.py');
-      const pythonProcess = spawn('python3', [pythonScriptPath]);
+      const pythonProcess = spawn('python', [pythonScriptPath]);
 
       let stdout = '';
       let stderr = '';
@@ -3065,7 +3127,7 @@ Be professional, concise, and helpful. If asked about features not yet implement
       };
 
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'inlet_air_filter_calc.py');
-      const pythonProcess = spawn('python3', [pythonScriptPath, JSON.stringify(pythonInput)]);
+      const pythonProcess = spawn('python', [pythonScriptPath, JSON.stringify(pythonInput)]);
 
       let stdout = '';
       let stderr = '';
@@ -3209,6 +3271,58 @@ Be professional, concise, and helpful. If asked about features not yet implement
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'text/x-python');
     res.sendFile(filePath);
+  });
+
+  // Full Plant Static Simulation — orchestrates all unit ops in sequence
+  // Returns sensor_tags (flat tag→value dict), streams (numbered), and summary KPIs
+  app.post('/api/plant-simulation', async (req: Request, res: Response) => {
+    try {
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'plant_orchestrator.py');
+      const pythonDir        = path.join(import.meta.dirname, 'python');
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const proc = spawn('python', [pythonScriptPath], { cwd: pythonDir });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdin.write(JSON.stringify(req.body || {}));
+        proc.stdin.end();
+
+        proc.stdout.on('data', (data) => { stdout += data.toString(); });
+        proc.stderr.on('data', (data) => { stderr += data.toString(); });
+
+        proc.on('close', (code) => {
+          if (code !== 0) {
+            console.error('plant_orchestrator error:', stderr);
+            reject(new Error(`Plant orchestrator exited with code ${code}: ${stderr}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(stdout));
+          } catch {
+            console.error('plant_orchestrator parse error, stdout:', stdout);
+            reject(new Error('Failed to parse plant simulation results'));
+          }
+        });
+
+        proc.on('error', (err) => {
+          console.error('Failed to start plant_orchestrator:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || 'Plant simulation failed' });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Plant simulation error:', error);
+      res.status(500).json({
+        message: error instanceof Error ? error.message : 'Plant simulation failed',
+      });
+    }
   });
 
   return httpServer;

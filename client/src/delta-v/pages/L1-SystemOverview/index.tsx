@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
-import L1SystemElementsMap, { ElementType, L1SystemElements } from "./components";
+import L1SystemElementsMap, { BlockType, ElementType, L1SystemElements } from "./components";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -26,8 +26,14 @@ import {
 } from "@/components/ui/dialog";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { defaultPositionL1 } from "./defalutPosition.constant";
+import { VFDFaceplate } from "@/delta-v/components/faceplate/VFDFaceplate";
+import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/SecondaryControllerFaceplate";
+import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
+import { defaultSecondaryData, defaultSecondaryConfig, type SecondaryControllerData, type SecondaryControllerConfig } from "@/delta-v/types/secondaryController";
+import { useL1StaticSimulation } from "@/delta-v/hooks/useL1StaticSimulation";
+import { useControllerSyncContext } from "@/delta-v/contexts/ControllerSyncContext";
 
 const customColors = [
     { id: "light-blue", label: "Light Blue", fill: "rgb(130,204,237)" },
@@ -50,15 +56,30 @@ export enum Mode {
 }
 
 const L1SystemOverview = ({
-    defaultMode = Mode.Static
+    defaultMode = Mode.Static,
+    simulationTriggerRef,
 }: {
     defaultMode?: Mode;
+    /** Optional ref that HomeScreen can populate with the L1 start-simulation function */
+    simulationTriggerRef?: React.MutableRefObject<(() => void) | null>;
 }) => {
     const { toast } = useToast();
     const [, setLocation] = useLocation();
+
+    const searchString = useSearch();
+    const searchParams = new URLSearchParams(searchString);
+    const rawFilter = searchParams.get("filter");
+    const instBlockFilter: "all" | "controllers" | "sensors" =
+        rawFilter === "controllers" || rawFilter === "sensors" ? rawFilter : "all";
+
     const [tempSensor, setTempSensor] = useState<TempSensor | null>(null);
     const [mode, setMode] = useState<Mode>(defaultMode);
     const [editMode, setEditMode] = useState<'components' | 'edges'>('components');
+
+    // Bring in shared contexts first (needed for modal state init below)
+    const { getControllerConfig } = useControllerConfig();
+    const compressor1540GB001 = useCompressor();
+
     const {
         data: layoutData,
         isLoading,
@@ -67,10 +88,130 @@ const L1SystemOverview = ({
 
     const [updateLayout, { isLoading: isUpdatingLayout }] = useUpdateLayoutMutation();
 
-    const { getControllerConfig } = useControllerConfig();
-    const compressor1540GB001 = useCompressor();
-
     const L1Elements = L1SystemElementsMap(getControllerConfig, false, compressor1540GB001);
+
+    // VFD Modal
+    const [isVFDModalOpen, setIsVFDModalOpen] = useState(false);
+    const {
+        compressorData,
+        handleStart,
+        handleStop,
+        handleModeChange: handleVFDModeChange,
+        handleSpeedSPChange,
+        handleClearAlarm,
+        vfdConfig,
+    } = compressor1540GB001;
+
+    // Sulfur Flow Controller Modal (1530-F-2602)
+    const [isSulfurFlowModalOpen, setIsSulfurFlowModalOpen] = useState(false);
+    const { state: sulfurSyncState, updateSyncedMode: updateSulfurMode, updateSyncedSP: updateSulfurSP, updateSyncedOUT: updateSulfurOUT } = useControllerSync('1530-F-2602');
+    const sulfurFlowConfig = getControllerConfig('1530-F-2602');
+    const [sulfurFlowSecondaryData, setSulfurFlowSecondaryData] = useState<SecondaryControllerData>({
+        ...defaultSecondaryData,
+        PV: sulfurSyncState.syncedPV,
+        SP: sulfurSyncState.syncedSP,
+        OUT_PCT: sulfurSyncState.syncedOUT,
+    });
+
+    // Hand Controller Modal (1540-H-4030)
+    const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false);
+    const { state: handControllerSyncState, updateSyncedMode: updateHandControllerMode, updateSyncedSP: updateHandControllerSP, updateSyncedOUT: updateHandControllerOUT } = useControllerSync('1540-H-4030');
+    const handControllerConfig = getControllerConfig('1540-H-4030');
+    const [handControllerSecondaryData, setHandControllerSecondaryData] = useState<SecondaryControllerData>({
+        ...defaultSecondaryData,
+        PV: handControllerSyncState.syncedPV,
+        SP: handControllerSyncState.syncedSP,
+        OUT_PCT: handControllerSyncState.syncedOUT,
+    });
+
+    // Jug Valve Hand Controller Modal (1540-H-4282)
+    const [isJugValveHandControllerModalOpen, setIsJugValveHandControllerModalOpen] = useState(false);
+    const { state: jugValveSyncState, updateSyncedMode: updateJugValveHandControllerMode, updateSyncedSP: updateJugValveHandControllerSP, updateSyncedOUT: updateJugValveHandControllerOUT } = useControllerSync('1540-H-4282');
+    const jugValveConfig = getControllerConfig('1540-H-4282');
+    const [jugValveHandControllerSecondaryData, setJugValveHandControllerSecondaryData] = useState<SecondaryControllerData>({
+        ...defaultSecondaryData,
+        PV: jugValveSyncState.syncedPV,
+        SP: jugValveSyncState.syncedSP,
+        OUT_PCT: jugValveSyncState.syncedOUT,
+    });
+
+    // WHB Hand Controller Modal (1540-H-4283)
+    const [isWhbHandControllerModalOpen, setIsWhbHandControllerModalOpen] = useState(false);
+    const { state: whbSyncState, updateSyncedMode: updateWhbHandControllerMode, updateSyncedSP: updateWhbHandControllerSP, updateSyncedOUT: updateWhbHandControllerOUT } = useControllerSync('1540-H-4283');
+    const whbHandControllerConfig = getControllerConfig('1540-H-4283');
+    const [whbHandControllerSecondaryData, setWhbHandControllerSecondaryData] = useState<SecondaryControllerData>({
+        ...defaultSecondaryData,
+        PV: whbSyncState.syncedPV,
+        SP: whbSyncState.syncedSP,
+        OUT_PCT: whbSyncState.syncedOUT,
+    });
+
+    // ---- Static Simulation (full-plant H&M Balance) ----
+    const { run: runL1Simulation, isRunning: isL1SimRunning } = useL1StaticSimulation();
+    // Raw context so we can update ALL sensor-tag PVs in one sweep
+    const { updateSyncedPV: ctxUpdatePV, updateSyncedSP: ctxUpdateSP } = useControllerSyncContext();
+
+    /** Kick off the full-plant simulation using current controller sync states as inputs */
+    const startStaticSimulation = useCallback(async () => {
+        if (isL1SimRunning) return;
+        const results = await runL1Simulation({
+            compressor_rpm_pct: handControllerSyncState.syncedSP ?? undefined,
+            sulfur_flow_sp_gpm: sulfurSyncState.syncedSP ?? undefined,
+            jug_open_pct: jugValveSyncState.syncedSP ?? undefined,
+            positioner_open_pct: whbSyncState.syncedSP ?? undefined,
+        });
+        if (results?.success) {
+            const tags = results.sensor_tags as Record<string, number>;
+            // ── Bulk-write every sensor tag from the simulation result as PV.
+            // This drives ALL TempSensorPrimaryFaceplate and Valve/Controller
+            // components on the canvas without needing individual hook calls.
+            //
+            // Tag → controller-id mapping:
+            //   sensor_tags key     DCS tag (same string)
+            //   e.g. '1540-TI-4031' → updateSyncedPV('1540-TI-4031', 136.5)
+            //
+            // KPI_ keys are not DCS tags — skip them.
+            Object.entries(tags).forEach(([tagId, value]) => {
+                if (!tagId.startsWith('KPI_') && typeof value === 'number' && Number.isFinite(value)) {
+                    ctxUpdatePV(tagId, value);
+                    // For setpoint-like tags (SIC, FIC, ZIC), also push the SP
+                    if (tagId.includes('-SIC-') || tagId.includes('-FIC-') || tagId.includes('-ZIC-')) {
+                        ctxUpdateSP(tagId, value);
+                    }
+                }
+            });
+
+            // Convenience: also forward to the modal-specific SP updaters used by
+            // the secondary faceplates so they stay in sync with current readings.
+            if (tags['1540-SIC-4030'] !== undefined) {
+                updateHandControllerSP(tags['1540-SIC-4030']);
+                updateHandControllerOUT(tags['1540-SIC-4030']);
+            }
+            if (tags['1530-FIC-2602'] !== undefined) {
+                updateSulfurSP(tags['1530-FIC-2602']);
+                updateSulfurOUT(tags['1530-FIC-2602']);
+            }
+            if (tags['1540-ZIC-3051'] !== undefined) {
+                updateJugValveHandControllerSP(tags['1540-ZIC-3051']);
+                updateJugValveHandControllerOUT(tags['1540-ZIC-3051']);
+            }
+        }
+    }, [isL1SimRunning, runL1Simulation,
+        handControllerSyncState.syncedSP, sulfurSyncState.syncedSP, jugValveSyncState.syncedSP, whbSyncState.syncedSP,
+        ctxUpdatePV, ctxUpdateSP,
+        updateHandControllerSP, updateHandControllerOUT,
+        updateSulfurSP, updateSulfurOUT,
+        updateJugValveHandControllerSP, updateJugValveHandControllerOUT]);
+
+    // Register our trigger function with the caller's ref so HomeScreen can invoke it
+    useEffect(() => {
+        if (simulationTriggerRef) {
+            simulationTriggerRef.current = startStaticSimulation;
+        }
+        return () => {
+            if (simulationTriggerRef) simulationTriggerRef.current = null;
+        };
+    }, [simulationTriggerRef, startStaticSimulation]);
 
     const canvasRef = useRef<HTMLDivElement>(null);
     const [positions, setPositions] = useState<Record<string, { x: number, y: number, z?: number, h?: number, w?: number }>>({});
@@ -537,6 +678,11 @@ const L1SystemOverview = ({
                                         key={`${elData.tag}-${index}`}
                                         className="absolute pointer-events-auto"
                                         style={{
+                                            display: (instBlockFilter === "all" ||
+                                                (instBlockFilter === "controllers" && elData?.blockType !== BlockType.Sensor) ||
+                                                (instBlockFilter === "sensors" && elData?.blockType !== BlockType.Controller))
+                                                ? "block"
+                                                : "none",
                                             left: pos.x,
                                             top: pos.y,
                                             zIndex: pos.z || 1,
@@ -569,8 +715,22 @@ const L1SystemOverview = ({
                                                 ].join(" ")}
                                                 style={{ width: '100%', height: '100%' }}
                                                 onClick={(e) => {
-                                                    console.log(elData);
-                                                    if (elData?.type === ElementType.TemperatureController) {
+                                                    if (elData.tag === '1530-F-2602') {
+                                                        setIsSulfurFlowModalOpen(true);
+                                                    }
+                                                    else if (elData.tag === '1540-H-4030') {
+                                                        setIsHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData.tag === '1540-H-4282') {
+                                                        setIsJugValveHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData.tag === '1540-HCV-4282') {
+                                                        setLocation('/unit-operation/jug-valve-whb');
+                                                    }
+                                                    else if (elData.tag === '1540-VCF-2602') {
+                                                        setLocation('/unit-operation/sulfur-control-hydraulics');
+                                                    }
+                                                    else if (elData?.type === ElementType.TemperatureController) {
                                                         setTempSensor({
                                                             id: element,
                                                             data: (elData as any)?.data,
@@ -580,6 +740,27 @@ const L1SystemOverview = ({
                                                     else if (elData?.type === ElementType.TurboGenerator) {
                                                         setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
                                                     }
+                                                    else if (elData?.type === ElementType.KPI) {
+                                                        setLocation('/settings/controller-outputs/faceplates/kpi');
+                                                    }
+                                                    else if (elData?.type === ElementType.Compressor) {
+                                                        setIsVFDModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.SulfurFlowController) {
+                                                        setIsSulfurFlowModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.HandController) {
+                                                        setIsHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.JugValveHandController) {
+                                                        setIsJugValveHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.WhbHandController) {
+                                                        setIsWhbHandControllerModalOpen(true);
+                                                    }
+
+                                                    // /unit-operation/jug-valve-whb
+                                                    // /unit-operation/sulfur-control-hydraulics?from=l2-furnace
                                                 }}
                                             >
                                                 {elData.component}
@@ -632,6 +813,127 @@ const L1SystemOverview = ({
                         sensorId={tempSensor?.id!}
                         onClose={() => setTempSensor(null)}
                     />}
+                </DialogContent>
+            </Dialog>
+
+            {/* VFD Faceplate Modal */}
+            <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>VFD Faceplate</DialogTitle>
+                    </VisuallyHidden>
+                    <VFDFaceplate
+                        data={compressorData}
+                        onStart={handleStart}
+                        onStop={handleStop}
+                        onModeChange={handleVFDModeChange}
+                        onSpeedSPChange={handleSpeedSPChange}
+                        onClearAlarm={handleClearAlarm}
+                        onClose={() => setIsVFDModalOpen(false)}
+                        configTagName={vfdConfig?.tagName}
+                        configDescription={vfdConfig?.description}
+                        configUnit={vfdConfig?.unit}
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* Sulfur Flow Controller Secondary Faceplate Modal */}
+            <Dialog open={isSulfurFlowModalOpen} onOpenChange={setIsSulfurFlowModalOpen}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>Sulfur Flow Controller</DialogTitle>
+                    </VisuallyHidden>
+                    <SecondaryControllerFaceplate
+                        data={sulfurFlowSecondaryData}
+                        config={sulfurFlowConfig}
+                        controllerId="1530-F-2602"
+                        onClose={() => setIsSulfurFlowModalOpen(false)}
+                        onModeChange={(mode) => updateSulfurMode(mode)}
+                        onSpChange={(value) => {
+                            updateSulfurSP(value);
+                            setSulfurFlowSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                        }}
+                        onOutChange={(value) => {
+                            updateSulfurOUT(value);
+                            setSulfurFlowSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                        }}
+                        fromSource="home-screen"
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* Hand Controller 1540-H-4030 Secondary Faceplate Modal */}
+            <Dialog open={isHandControllerModalOpen} onOpenChange={setIsHandControllerModalOpen}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>Hand Controller 1540-H-4030</DialogTitle>
+                    </VisuallyHidden>
+                    <SecondaryControllerFaceplate
+                        data={handControllerSecondaryData}
+                        config={handControllerConfig}
+                        controllerId="1540-H-4030"
+                        onClose={() => setIsHandControllerModalOpen(false)}
+                        onModeChange={(mode) => updateHandControllerMode(mode)}
+                        onSpChange={(value) => {
+                            updateHandControllerSP(value);
+                            setHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                        }}
+                        onOutChange={(value) => {
+                            updateHandControllerOUT(value);
+                            setHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                        }}
+                        fromSource="home-screen"
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* Jug Valve Hand Controller 1540-H-4282 Secondary Faceplate Modal */}
+            <Dialog open={isJugValveHandControllerModalOpen} onOpenChange={setIsJugValveHandControllerModalOpen}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>Jug Valve Hand Controller 1540-H-4282</DialogTitle>
+                    </VisuallyHidden>
+                    <SecondaryControllerFaceplate
+                        data={jugValveHandControllerSecondaryData}
+                        config={jugValveConfig}
+                        controllerId="1540-H-4282"
+                        onClose={() => setIsJugValveHandControllerModalOpen(false)}
+                        onModeChange={(mode) => updateJugValveHandControllerMode(mode)}
+                        onSpChange={(value) => {
+                            updateJugValveHandControllerSP(value);
+                            setJugValveHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                        }}
+                        onOutChange={(value) => {
+                            updateJugValveHandControllerOUT(value);
+                            setJugValveHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                        }}
+                        fromSource="home-screen"
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* WHB Hand Controller 1540-H-4283 Secondary Faceplate Modal */}
+            <Dialog open={isWhbHandControllerModalOpen} onOpenChange={setIsWhbHandControllerModalOpen}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>WHB Outlet dP Hand Controller 1540-H-4283</DialogTitle>
+                    </VisuallyHidden>
+                    <SecondaryControllerFaceplate
+                        data={whbHandControllerSecondaryData}
+                        config={whbHandControllerConfig}
+                        controllerId="1540-H-4283"
+                        onClose={() => setIsWhbHandControllerModalOpen(false)}
+                        onModeChange={(mode) => updateWhbHandControllerMode(mode)}
+                        onSpChange={(value) => {
+                            updateWhbHandControllerSP(value);
+                            setWhbHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                        }}
+                        onOutChange={(value) => {
+                            updateWhbHandControllerOUT(value);
+                            setWhbHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                        }}
+                        fromSource="home-screen"
+                    />
                 </DialogContent>
             </Dialog>
         </>
