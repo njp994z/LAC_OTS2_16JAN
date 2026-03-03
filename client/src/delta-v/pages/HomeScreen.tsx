@@ -774,6 +774,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [processDataPanelL2Size, setProcessDataPanelL2Size] = useState({ width: 340, height: 320 });
   const [kppFaceplateL2Position, setKppFaceplateL2Position] = useState({ x: 1600, y: 340 });
   const [kppFaceplateL2Size, setKppFaceplateL2Size] = useState({ width: 280, height: 300 });
+  const [kppFaceplateL4Position, setKppFaceplateL4Position] = useState({ x: 2800, y: 100 });
+  const [kppFaceplateL4Size, setKppFaceplateL4Size] = useState({ width: 280, height: 300 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
@@ -2227,6 +2229,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setJugValveHandControllerL4Size({ width: jugValveHcL4.width, height: jugValveHcL4.height });
     }
 
+    const kppL4 = positionMap.get('kpp_faceplate_l4');
+    if (kppL4) {
+      setKppFaceplateL4Position({ x: kppL4.x, y: kppL4.y });
+      setKppFaceplateL4Size({ width: kppL4.width, height: kppL4.height });
+    }
+
     // Restore vertical arrows for L4-Converter
     const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
     layoutDataL4.layouts.forEach((item) => {
@@ -2819,6 +2827,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
         { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
         { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
+        { elementId: 'kpp_faceplate_l4', positionX: Math.round(kppFaceplateL4Position.x), positionY: Math.round(kppFaceplateL4Position.y), width: kppFaceplateL4Size.width, height: kppFaceplateL4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -3811,6 +3820,63 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </div>
               </Rnd>
             ))}
+
+            {orchestratorResult?.kpp && (
+              <Rnd
+                key="kpp-faceplate-l4"
+                data-testid="rnd-kpp-faceplate-l4"
+                position={kppFaceplateL4Position}
+                size={kppFaceplateL4Size}
+                onDragStop={(e, d) => {
+                  setKppFaceplateL4Position({ x: d.x, y: d.y });
+                  setIsL4Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setKppFaceplateL4Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setKppFaceplateL4Position(position);
+                  setIsL4Dirty(true);
+                }}
+                minWidth={200}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL4}
+                enableResizing={!isLockedL4}
+                resizeHandleStyles={!isLockedL4 ? resizeHandleStyles : undefined}
+                className={isLockedL4 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
+                <div className="w-full h-full" data-testid="l4-kpp-faceplate">
+                <KPPFaceplate className="w-full h-full" data={(() => {
+                  const kpp = orchestratorResult.kpp;
+                  const s24 = orchestratorResult.streams?.["24"];
+                  const stpd = kpp.H2SO4_production_STPD;
+                  const so2TailScfm = s24?.SO2 ?? 0;
+                  const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                  const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                  const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                  const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                  const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                  return {
+                    plantRate: stpd,
+                    conversion: kpp.overall_SO2_conversion_pct,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                      const s9 = orchestratorResult.streams?.["9"];
+                      return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
+                    })(),
+                    o2TailGas: o2Pct,
+                    emissionsPpmv: kpp.SO2_ppm_stack ?? null,
+                    emissions: emissionsLbPerST,
+                    steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                    grossPowerMW: grossMW,
+                    powerRatio: 243,
+                  };
+                })()} />
+                </div>
+              </Rnd>
+            )}
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
             <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4} modal={false}>
