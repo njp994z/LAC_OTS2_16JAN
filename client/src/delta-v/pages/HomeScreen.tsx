@@ -463,7 +463,8 @@ const HomeScreen = () => {
           setLoadedCaseValueJugValve(tags["1540-ZI-4020"]);
         }
         if (tags["1540-TI-4820"] !== undefined) {
-          updateTempSensor4820PV(tags["1540-TI-4820"]);
+          const raw4820 = tags["1540-TI-4820"];
+          updateTempSensor4820PV(typeof raw4820 === 'object' && raw4820 !== null ? (raw4820 as any).value : raw4820);
         }
       }
       
@@ -1050,7 +1051,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               updateTempSensor4200APV(tags["1540-TI-4010"]);
             }
             if (tags["1540-TI-4820"] !== undefined) {
-              updateTempSensor4820PV(tags["1540-TI-4820"]);
+              const raw4820 = tags["1540-TI-4820"];
+              updateTempSensor4820PV(typeof raw4820 === 'object' && raw4820 !== null ? (raw4820 as any).value : raw4820);
             }
           }
         }
