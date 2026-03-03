@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useParams, useSearch } from 'wouter';
 import { ArrowLeft, Sliders, Save } from 'lucide-react';
 import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
@@ -172,69 +172,85 @@ const Faceplate3E = () => {
   // Track if initial load is complete
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const configRef = useRef(config);
+  const stringFieldsRef = useRef(stringFields);
+  const dataRef = useRef(data);
+
   // Load saved config and data ONCE on mount or when controllerId changes
   useEffect(() => {
     const savedConfig = getControllerConfig(activeControllerId);
     const savedData = getControllerData(activeControllerId);
     
     setConfig(savedConfig);
-    setStringFields({
+    configRef.current = savedConfig;
+    const sf = {
       TAGNAME: savedConfig.TAGNAME || '',
       DESC: savedConfig.DESC || '',
       UNIT: savedConfig.UNIT || ''
-    });
+    };
+    setStringFields(sf);
+    stringFieldsRef.current = sf;
     setData(savedData);
+    dataRef.current = savedData;
     setIsLoaded(true);
     
     console.log(`Loaded config for controller: ${activeControllerId}`, savedConfig);
   }, [activeControllerId, getControllerConfig, getControllerData]);
 
-  // Update config field (non-string fields only)
   const updateConfigField = useCallback(<K extends keyof SecondaryControllerConfig>(
     key: K, 
     value: SecondaryControllerConfig[K]
   ) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+    setConfig(prev => {
+      const next = { ...prev, [key]: value };
+      configRef.current = next;
+      return next;
+    });
   }, []);
 
-  // Update string field
   const updateStringField = useCallback((key: 'TAGNAME' | 'DESC' | 'UNIT', value: string) => {
-    setStringFields(prev => ({ ...prev, [key]: value }));
+    setStringFields(prev => {
+      const next = { ...prev, [key]: value };
+      stringFieldsRef.current = next;
+      return next;
+    });
   }, []);
 
-  // Update data field (no auto-sync to context)
   const updateDataField = useCallback(<K extends keyof SecondaryControllerData>(
     key: K, 
     value: SecondaryControllerData[K]
   ) => {
-    setData(prev => ({ ...prev, [key]: value }));
+    setData(prev => {
+      const next = { ...prev, [key]: value };
+      dataRef.current = next;
+      return next;
+    });
   }, []);
 
-  // Apply all changes and sync to context
+  // Apply all changes and sync to context (reads from refs to avoid stale closure from onBlur race)
   const handleApply = useCallback(() => {
-    // Merge string fields back into config
+    const latestConfig = configRef.current;
+    const latestStringFields = stringFieldsRef.current;
+    const latestData = dataRef.current;
+
     const finalConfig: SecondaryControllerConfig = {
-      ...config,
-      TAGNAME: stringFields.TAGNAME,
-      DESC: stringFields.DESC,
-      UNIT: stringFields.UNIT
+      ...latestConfig,
+      TAGNAME: latestStringFields.TAGNAME,
+      DESC: latestStringFields.DESC,
+      UNIT: latestStringFields.UNIT
     };
     
-    // Save to context and localStorage
     updateControllerConfig(activeControllerId, finalConfig);
-    updateControllerData(activeControllerId, data);
+    updateControllerData(activeControllerId, latestData);
     saveController(activeControllerId);
     
-    // Use TYPICAL_PV if set, otherwise use current PV for syncing
-    const typicalPV = finalConfig.TYPICAL_PV ?? data.PV;
+    const typicalPV = finalConfig.TYPICAL_PV ?? latestData.PV;
     
-    // Sync live values to sync context - set both PV and SP to TYPICAL_PV to prevent drift
     updateSyncedPV(typicalPV);
-    updateSyncedSP(typicalPV);  // Critical: SP must match PV to prevent simulation drift
-    updateSyncedOUT(data.OUT_PCT);
-    updateSyncedMode(data.MODE_AUTOMAN);
+    updateSyncedSP(typicalPV);
+    updateSyncedOUT(latestData.OUT_PCT);
+    updateSyncedMode(latestData.MODE_AUTOMAN);
     
-    // Sync alarm limits to simulation engine
     updateAlarmLimits({
       LL: finalConfig.ALM_LL_LIM ?? 0,
       L: finalConfig.ALM_L_LIM ?? 0,
@@ -242,10 +258,10 @@ const Faceplate3E = () => {
       HH: finalConfig.ALM_HH_LIM ?? 0,
     });
     
-    toast.success(`Configuration saved for ${stringFields.TAGNAME || activeControllerId}`);
+    toast.success(`Configuration saved for ${latestStringFields.TAGNAME || activeControllerId}`);
     console.log(`[Faceplate3E] Applied config for ${activeControllerId}, TYPICAL_PV=${typicalPV}`);
   }, [
-    config, stringFields, data, activeControllerId,
+    activeControllerId,
     updateControllerConfig, updateControllerData, saveController,
     updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits
   ]);
