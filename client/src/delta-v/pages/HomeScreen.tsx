@@ -808,7 +808,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const lastCalculatedSulfurFlowRef = useRef<number | null>(null);
   // Debounce timer for SP changes to prevent API spam during user edits
   const spDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
+  const pvSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const savePVCaseValue = useCallback((tag: string, value: number) => {
+    const caseId = activePVCaseId || 'case1';
+    if (pvSaveTimers.current[tag]) clearTimeout(pvSaveTimers.current[tag]);
+    pvSaveTimers.current[tag] = setTimeout(() => {
+      fetch(`/api/process-variables/${encodeURIComponent(tag)}/cases/${encodeURIComponent(caseId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: String(value) }),
+      }).catch(err => console.error(`Failed to save PV case value for ${tag}:`, err));
+    }, 500);
+  }, [activePVCaseId]);
+
   // Auto-load static values when PV case is selected in Static mode
   useEffect(() => {
     // Default to case1 if no case is selected when entering Static mode
@@ -5527,16 +5540,16 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             onBypassChange={(active) => setSulfurFlowBypass(active)}
             onSpChange={(value) => {
               updateSulfurSP(value);
-              // In Static mode, also update the loaded case value so both faceplates stay in sync
               if (useStaticSulfurFlow) {
                 setLoadedCaseValueSulfurFlow(value);
+                savePVCaseValue('1530-F-2602', value);
               }
             }}
             onOutChange={(value) => {
               updateSulfurOUT(value);
-              // In Static mode, also update the loaded case value so both faceplates stay in sync
               if (useStaticSulfurFlow) {
                 setLoadedCaseValueSulfurFlow(value);
+                savePVCaseValue('1530-F-2602', value);
               }
             }}
             onModelockOverrideChange={(active) => setSulfurFlowModelockOverride(active)}
@@ -5638,12 +5651,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               updateHandControllerSP(value);
               if (selectedMode === 'Static') {
                 setLoadedCaseValue1540H4030(value);
+                savePVCaseValue('1540-H-4030', value);
               }
             }}
             onOutChange={(value) => {
               updateHandControllerOUT(value);
               if (selectedMode === 'Static') {
                 setLoadedCaseValue1540H4030(value);
+                savePVCaseValue('1540-H-4030', value);
               }
             }}
             fromSource="home-screen"
@@ -5669,12 +5684,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               updateJugValveHandControllerSP(value);
               if (selectedMode === 'Static') {
                 setLoadedCaseValueJugValve(value);
+                savePVCaseValue('1540-H-4282', value);
               }
             }}
             onOutChange={(value) => {
               updateJugValveHandControllerOUT(value);
               if (selectedMode === 'Static') {
                 setLoadedCaseValueJugValve(value);
+                savePVCaseValue('1540-H-4282', value);
               }
             }}
             fromSource="home-screen"
@@ -5696,11 +5713,23 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             controllerId="1540-H-4283"
             onClose={() => setIsWhbHandControllerModalOpen(false)}
             onModeChange={(mode) => updateWhbHandControllerMode(mode)}
-            onSpChange={(value) => updateWhbHandControllerSP(value)}
-            onOutChange={(value) => updateWhbHandControllerOUT(value)}
+            onSpChange={(value) => {
+              updateWhbHandControllerSP(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueWHBdP(value);
+                savePVCaseValue('1540-H-4283', value);
+              }
+            }}
+            onOutChange={(value) => {
+              updateWhbHandControllerOUT(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueWHBdP(value);
+                savePVCaseValue('1540-H-4283', value);
+              }
+            }}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={loadedCaseValueWHBdP}
           />
         </DialogContent>
       </Dialog>

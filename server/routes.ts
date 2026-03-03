@@ -1822,6 +1822,21 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  app.patch('/api/process-variables/:tag/cases/:caseId', async (req: Request, res: Response) => {
+    try {
+      const { tag, caseId } = req.params;
+      const { value } = req.body;
+      if (value === undefined || value === null) {
+        return res.status(400).json({ message: "value is required" });
+      }
+      await storage.updateProcessVariableCaseValue(tag, caseId, String(value));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Process variable case update error:", error);
+      res.status(500).json({ message: "Failed to update process variable case value" });
+    }
+  });
+
   // Get all setpoint variables and case columns
   app.get('/api/setpoint-variables', async (req: Request, res: Response) => {
     try {
