@@ -959,8 +959,7 @@ const CommonControllerFaceplatePage = () => {
   
   // Derive alarm state from secondary controller alarms
   const hasRedAlarm = !secondaryData.PV_OK || secondaryData.ALM_LL_ACT || secondaryData.ALM_HH_ACT;
-  const hasYellowAlarm = secondaryData.ALM_L_ACT || secondaryData.ALM_DL_ACT || 
-                          secondaryData.ALM_DH_ACT || secondaryData.ALM_H_ACT;
+  const hasYellowAlarm = secondaryData.ALM_L_ACT || secondaryData.ALM_H_ACT;
   const primaryAlarmActive = hasRedAlarm || hasYellowAlarm;
   const primaryAlarmColor: 'red' | 'yellow' = hasRedAlarm ? 'red' : 'yellow';
 
