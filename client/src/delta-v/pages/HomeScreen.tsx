@@ -1382,9 +1382,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     ...defaultControllerData,
     instrumentTag: handControllerConfig.TAGNAME || '1540-H-4030',
     description: handControllerConfig.DESC || 'Main Compressor Hand Controller',
-    pv: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
+    pv: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedPV,
     sp: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
-    out: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
+    out: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedOUT,
     mode: handControllerSyncState.syncedMode,
     pvUnits: handControllerConfig.EU || '%',
     pvRangeMin: handControllerConfig.PV_SCALE_LO ?? 0,
@@ -1982,10 +1982,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Build Hand Controller 1540-H-4030 secondary faceplate data
   const handControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: handControllerSyncState.syncedSP,
+    PV: handControllerSyncState.syncedPV,
     SP: handControllerSyncState.syncedSP,
     TSP: handControllerSyncState.syncedSP,
-    OUT_PCT: handControllerSyncState.syncedSP,
+    OUT_PCT: handControllerSyncState.syncedOUT,
     MODE_AUTOMAN: handControllerSyncState.syncedMode === 'AUTO' || handControllerSyncState.syncedMode === 'MAN' 
       ? handControllerSyncState.syncedMode 
       : 'AUTO',
