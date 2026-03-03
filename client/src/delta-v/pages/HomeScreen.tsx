@@ -411,7 +411,7 @@ const HomeScreen = () => {
       
       if (spData?.variables && activePVCaseId) {
         const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
-        if (rpmSpVal !== null && rpmPercent === 78.5) rpmPercent = rpmSpVal;
+        if (rpmSpVal !== null && rpmPercent === 85.5) rpmPercent = rpmSpVal;
       }
       
       if (loadedCaseValue1540H4030 !== null) rpmPercent = loadedCaseValue1540H4030;
@@ -832,8 +832,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 setLoadedCaseValue1540H4030(val);
               }
             } else {
-              console.log('No case value found for 1540-H-4030, using default 78.5%');
-              setLoadedCaseValue1540H4030(78.5);
+              console.log('No case value found for 1540-H-4030, using default 85.5%');
+              setLoadedCaseValue1540H4030(85.5);
             }
             
             // Look for sulfur flow value in the selected case
@@ -849,8 +849,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 setLoadedCaseValueSulfurFlow(val);
               }
             } else {
-              console.log('No case value found for 1530-F-2602, using default 73.5 gpm');
-              setLoadedCaseValueSulfurFlow(73.5);
+              console.log('No case value found for 1530-F-2602, using default 79 gpm');
+              setLoadedCaseValueSulfurFlow(79);
             }
             
             // Look for jug valve value in the selected case
@@ -866,8 +866,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 setLoadedCaseValueJugValve(val);
               }
             } else {
-              console.log('No case value found for 1540-H-4282, using default 4.5%');
-              setLoadedCaseValueJugValve(4.5);
+              console.log('No case value found for 1540-H-4282, using default 10%');
+              setLoadedCaseValueJugValve(10);
             }
             
             // Look for WHB dP value in the selected case
