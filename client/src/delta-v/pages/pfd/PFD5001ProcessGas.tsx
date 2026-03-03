@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, ChevronDown, Play, Settings, Loader2, Code, Download, Eye } from "lucide-react";
@@ -191,22 +191,24 @@ export default function PFD5001ProcessGas() {
   const isOrchestratorCase = (caseId: string) =>
     caseId === "current-static" || caseId === "current-dynamic";
 
-  const handleCaseChange = (spCase: typeof spInputCases[0]) => {
-    setSelectedCase(spCase);
-    setHasSimulated(false);
-    setCalculatedStreams(null);
-    setOrchestratorStreams(null);
-  };
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const handleSimulate = async () => {
+  const simulateForCase = useCallback(async (spCase: typeof spInputCases[0]) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsSimulating(true);
     try {
-      if (isOrchestratorCase(selectedCase.id)) {
-        const mode = selectedCase.id === "current-static" ? "static" : "dynamic";
+      if (isOrchestratorCase(spCase.id)) {
+        const mode = spCase.id === "current-static" ? "static" : "dynamic";
         const response = await fetch('/api/plant-orchestrator', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mode }),
+          signal: controller.signal,
         });
         if (!response.ok) {
           throw new Error('Plant orchestrator simulation failed');
@@ -218,12 +220,10 @@ export default function PFD5001ProcessGas() {
         setOrchestratorStreams(data.streams);
         setCalculatedStreams(null);
         setHasSimulated(true);
-        toast({
-          title: "Simulation Complete",
-          description: `All streams calculated via ${mode} orchestrator`,
-        });
       } else {
-        const response = await fetch(`/api/material-balance/streams-1-4?case=${selectedCase.caseNum}&zipCode=89414&countryCode=US`);
+        const response = await fetch(`/api/material-balance/streams-1-4?case=${spCase.caseNum}&zipCode=89414&countryCode=US`, {
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error('Failed to calculate streams');
         }
@@ -231,12 +231,9 @@ export default function PFD5001ProcessGas() {
         setCalculatedStreams(data.streams);
         setOrchestratorStreams(null);
         setHasSimulated(true);
-        toast({
-          title: "Simulation Complete",
-          description: `Streams 1-4 calculated for ${selectedCase.label}`,
-        });
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Simulation error:', error);
       toast({
         title: "Simulation Failed",
@@ -244,9 +241,31 @@ export default function PFD5001ProcessGas() {
         variant: "destructive",
       });
     } finally {
-      setIsSimulating(false);
+      if (!controller.signal.aborted) {
+        setIsSimulating(false);
+      }
     }
+  }, [toast]);
+
+  const handleCaseChange = (spCase: typeof spInputCases[0]) => {
+    setSelectedCase(spCase);
+    setHasSimulated(false);
+    setCalculatedStreams(null);
+    setOrchestratorStreams(null);
+    simulateForCase(spCase);
   };
+
+  const handleSimulate = () => {
+    simulateForCase(selectedCase);
+  };
+
+  const hasAutoSimulated = useRef(false);
+  useEffect(() => {
+    if (!hasAutoSimulated.current) {
+      hasAutoSimulated.current = true;
+      simulateForCase(spInputCases[0]);
+    }
+  }, [simulateForCase]);
 
   const getOrchestratorValue = (streamNum: number, field: string): number => {
     if (!orchestratorStreams) return 0;
