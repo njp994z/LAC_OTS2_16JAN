@@ -4957,8 +4957,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     plantRate: stpd,
                     conversion: kpp.overall_SO2_conversion_pct,
                     pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
-                      const s10 = orchestratorResult.streams?.["10"];
-                      return s10 ? (s10.SO2 / Math.max(s10.TOTAL, 1e-9)) * 100 : null;
+                      const s9 = orchestratorResult.streams?.["9"];
+                      return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
                     })(),
                     o2TailGas: o2Pct,
                     emissionsPpmv: kpp.SO2_ppm_stack ?? null,

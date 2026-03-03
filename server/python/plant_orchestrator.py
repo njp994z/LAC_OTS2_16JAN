@@ -2293,6 +2293,11 @@ def build_sensor_tags(
     tags["1530-AI-0461"] = _tag_with_alarms(o2_vol_pct, "AI-0461")  # Stack O2
     tags["1540-AI-4010"] = kpp.get("SO2_ppm_stack", 0)              # Stack SO2 (legacy)
 
+    # --- Pass 1 Inlet SO2 Strength (converter feed) ---
+    s9_data = s.get(9, GasStream())
+    tags["1540-AI-4825"] = round(
+        (s9_data.SO2 / max(s9_data.TOTAL, 1e-9)) * 100.0, 2)
+
     # --- Converter Pass Temperatures (with alarm limits) ---
     # Pass 1 inlet — Stream 9 (WHB mixed outlet, dynamic)
     tags["1540-TI-4820"] = _tag_with_alarms(
