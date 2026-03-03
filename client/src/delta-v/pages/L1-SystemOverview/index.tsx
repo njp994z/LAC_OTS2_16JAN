@@ -334,7 +334,7 @@ const L1SystemOverview = ({
 
     return (
         <>
-            <div className="w-full h-screen flex flex-col pt-10">
+            <div className="w-full h-full flex flex-col">
                 {mode !== Mode.Static && <div className="w-full flex justify-between items-center h-fit max-h-[70px] px-4 py-2 border-b bg-white shadow-sm">
                     {mode === Mode.Edit ? (
                         <div className="flex gap-4 items-center">
