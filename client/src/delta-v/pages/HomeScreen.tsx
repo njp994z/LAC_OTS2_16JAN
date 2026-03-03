@@ -1016,8 +1016,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            compressor_rpm_pct: handControllerSyncState.syncedSP,
-            sulfur_flow_sp_gpm: sulfurSyncState.syncedSP,
+            compressor_rpm_pct: handControllerSyncState.syncedPV,
+            sulfur_flow_sp_gpm: sulfurSyncState.syncedPV,
             jug_valve_pct: jugValveHandControllerSyncState.syncedSP,
             damper_open_pct: whbHandControllerSyncState.syncedSP,
             barometric_atm: 1.0,
@@ -1050,7 +1050,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     const id = setInterval(tick, Math.max(intervalMs, 500));
     return () => clearInterval(id);
   }, [dynamicRunning, dynamicDt, dynamicSpeed,
-      handControllerSyncState.syncedSP, sulfurSyncState.syncedSP,
+      handControllerSyncState.syncedPV, sulfurSyncState.syncedPV,
       jugValveHandControllerSyncState.syncedSP, whbHandControllerSyncState.syncedSP]);
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
