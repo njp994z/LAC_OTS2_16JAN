@@ -355,11 +355,11 @@ const HomeScreen = () => {
       const spResponse = await fetch('/api/setpoint-variables');
       const spData = await spResponse.json();
       
-      let rpmPercent = 85.5;
+      let rpmPercent = 78.5;
       let inletTemp = 70;
       let barometricPressure = 1.0;
       let plantCondition = "clean";
-      let sulfurFlowGpm = 79;
+      let sulfurFlowGpm = 72;
       let jugValvePct = 10;
       let damperOpenPct = 50;
       
@@ -1572,8 +1572,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   };
 
   // Build Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) data from synced state
-  const orchestratorPass1InletTemp = selectedMode === 'Static' && orchestratorResult?.sensor_tags?.["1540-TI-4820"] != null
-    ? orchestratorResult.sensor_tags["1540-TI-4820"]
+  const rawTag4820 = orchestratorResult?.sensor_tags?.["1540-TI-4820"];
+  const orchestratorPass1InletTemp = selectedMode === 'Static' && rawTag4820 != null
+    ? (typeof rawTag4820 === 'object' && rawTag4820 !== null ? (rawTag4820 as any).value : rawTag4820)
     : null;
   const tempSensor4820PV = orchestratorPass1InletTemp ?? tempSensor4820SyncState.syncedPV;
   const tempSensor4820Data: ControllerData = {
