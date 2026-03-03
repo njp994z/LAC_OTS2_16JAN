@@ -2,6 +2,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Layout, Position, FlowEdge } from "./type";
 
+const KNOWN_L1_MARKERS = new Set([
+  "FurnaceWhbt", "IPAT", "FAT", "CIP", "DT",
+  "1540-PI-4072", "1540-GB-001", "1540-H-4030",
+]);
+
 interface LayoutApiRow {
   elementId: string;
   positionX: number;
@@ -91,7 +96,16 @@ export function useGetLayoutByIdQuery(id: string) {
       const json = await res.json();
       const rows: LayoutApiRow[] = json.layouts || [];
       if (rows.length === 0) return undefined;
-      return apiRowsToLayout(rows);
+      const layout = apiRowsToLayout(rows);
+      if (id === "L1") {
+        const hasRecognizedPositions = Object.keys(layout.positions).some(
+          (key) => KNOWN_L1_MARKERS.has(key)
+        );
+        if (!hasRecognizedPositions && layout.edges.length === 0) {
+          return undefined;
+        }
+      }
+      return layout;
     },
     staleTime: Infinity,
   });
