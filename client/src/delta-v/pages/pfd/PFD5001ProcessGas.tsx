@@ -192,15 +192,21 @@ export default function PFD5001ProcessGas() {
     caseId === "current-static" || caseId === "current-dynamic";
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const dynamicInFlightRef = useRef(false);
 
-  const simulateForCase = useCallback(async (spCase: typeof spInputCases[0]) => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  const simulateForCase = useCallback(async (spCase: typeof spInputCases[0], silent = false) => {
+    if (!silent) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    const controller = silent ? new AbortController() : (() => {
+      const c = new AbortController();
+      abortControllerRef.current = c;
+      return c;
+    })();
 
-    setIsSimulating(true);
+    if (!silent) setIsSimulating(true);
     try {
       if (isOrchestratorCase(spCase.id)) {
         const mode = spCase.id === "current-static" ? "static" : "dynamic";
@@ -313,7 +319,7 @@ export default function PFD5001ProcessGas() {
         variant: "destructive",
       });
     } finally {
-      if (!controller.signal.aborted) {
+      if (!silent && !controller.signal.aborted) {
         setIsSimulating(false);
       }
     }
@@ -338,6 +344,23 @@ export default function PFD5001ProcessGas() {
       simulateForCase(spInputCases[0]);
     }
   }, [simulateForCase]);
+
+  useEffect(() => {
+    if (selectedCase.id !== "current-dynamic" || !hasSimulated) return;
+
+    const tick = async () => {
+      if (dynamicInFlightRef.current) return;
+      dynamicInFlightRef.current = true;
+      try {
+        await simulateForCase(selectedCase, true);
+      } finally {
+        dynamicInFlightRef.current = false;
+      }
+    };
+
+    const intervalId = setInterval(tick, 2000);
+    return () => clearInterval(intervalId);
+  }, [selectedCase, hasSimulated, simulateForCase]);
 
   const getOrchestratorValue = (streamNum: number, field: string): number => {
     if (!orchestratorStreams) return 0;
