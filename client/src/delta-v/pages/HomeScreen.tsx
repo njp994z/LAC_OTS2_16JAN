@@ -795,6 +795,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
   const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
   const [isLockedL21520, setIsLockedL21520] = useState(true);
+  const [isSavingL21520, setIsSavingL21520] = useState(false);
+  const [isL21520Dirty, setIsL21520Dirty] = useState(false);
 
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
@@ -2507,6 +2509,56 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   }, [layoutDataL2, isL2Dirty]);
 
+  const { data: layoutDataL21520 } = useQuery<{ layouts: Array<{
+    elementId: string;
+    positionX: number;
+    positionY: number;
+    width: number;
+    height: number;
+    rotation: number;
+  }> }>({
+    queryKey: ['/api/homescreen-layout/L2_1520'],
+  });
+
+  useEffect(() => {
+    if (!layoutDataL21520?.layouts || layoutDataL21520.layouts.length === 0) return;
+    if (isL21520Dirty) return;
+
+    const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
+    layoutDataL21520.layouts.forEach((item) => {
+      positionMap.set(item.elementId, {
+        x: item.positionX,
+        y: item.positionY,
+        width: item.width,
+        height: item.height,
+      });
+    });
+
+    const acidBoiler = positionMap.get('acid_boiler_l2_1520');
+    if (acidBoiler) {
+      setAcidBoilerPosition({ x: acidBoiler.x, y: acidBoiler.y });
+      setAcidBoilerSize({ width: acidBoiler.width, height: acidBoiler.height });
+    }
+
+    const acidTower1 = positionMap.get('acid_tower_1_l2_1520');
+    if (acidTower1) {
+      setAcidTower1Position({ x: acidTower1.x, y: acidTower1.y });
+      setAcidTower1Size({ width: acidTower1.width, height: acidTower1.height });
+    }
+
+    const acidTower2 = positionMap.get('acid_tower_2_l2_1520');
+    if (acidTower2) {
+      setAcidTower2Position({ x: acidTower2.x, y: acidTower2.y });
+      setAcidTower2Size({ width: acidTower2.width, height: acidTower2.height });
+    }
+
+    const kppFaceplate = positionMap.get('kpp_faceplate_l2_1520');
+    if (kppFaceplate) {
+      setKppFaceplateL21520Position({ x: kppFaceplate.x, y: kppFaceplate.y });
+      setKppFaceplateL21520Size({ width: kppFaceplate.width, height: kppFaceplate.height });
+    }
+  }, [layoutDataL21520, isL21520Dirty]);
+
   // Apply loaded positions to state when data arrives
   useEffect(() => {
     if (!layoutData?.layouts || layoutData.layouts.length === 0) return;
@@ -2945,6 +2997,27 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     }
   };
 
+  const handleSaveL21520Layout = async () => {
+    setIsSavingL21520(true);
+    try {
+      const layouts = [
+        { elementId: 'acid_boiler_l2_1520', positionX: Math.round(acidBoilerPosition.x), positionY: Math.round(acidBoilerPosition.y), width: acidBoilerSize.width, height: acidBoilerSize.height, rotation: 0 },
+        { elementId: 'acid_tower_1_l2_1520', positionX: Math.round(acidTower1Position.x), positionY: Math.round(acidTower1Position.y), width: acidTower1Size.width, height: acidTower1Size.height, rotation: 0 },
+        { elementId: 'acid_tower_2_l2_1520', positionX: Math.round(acidTower2Position.x), positionY: Math.round(acidTower2Position.y), width: acidTower2Size.width, height: acidTower2Size.height, rotation: 0 },
+        { elementId: 'kpp_faceplate_l2_1520', positionX: Math.round(kppFaceplateL21520Position.x), positionY: Math.round(kppFaceplateL21520Position.y), width: kppFaceplateL21520Size.width, height: kppFaceplateL21520Size.height, rotation: 0 },
+      ];
+
+      await apiRequest('PUT', '/api/homescreen-layout/L2_1520', { layouts });
+      setIsL21520Dirty(false);
+      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L2_1520'] });
+      toast({ title: "Layout saved", description: "L2_1520 ACID layout saved to database." });
+    } catch (error) {
+      console.error('Failed to save L2_1520 layout:', error);
+      toast({ title: "Error", description: "Failed to save L2_1520 layout positions.", variant: "destructive" });
+    } finally {
+      setIsSavingL21520(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -3242,18 +3315,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                       handleSaveL4Layout();
                     } else if (selectedScreen === "L2 – Furnace Area") {
                       handleSaveL2Layout();
+                    } else if (selectedScreen === "L2_1520 ACID") {
+                      handleSaveL21520Layout();
                     } else {
                       handleSaveLayout();
                     }
                   }}
-                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving}
+                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : selectedScreen === "L2_1520 ACID" ? isSavingL21520 : isSaving}
                   data-testid="button-save-layout"
                 >
-                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
+                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : selectedScreen === "L2_1520 ACID" ? isSavingL21520 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? "Saving..." : "Save Layout"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : selectedScreen === "L2_1520 ACID" ? isSavingL21520 : isSaving) ? "Saving..." : "Save Layout"}</p>
               </TooltipContent>
             </Tooltip>
             
@@ -5496,8 +5571,20 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         {/* L2_1520 ACID View */}
         {selectedScreen === "L2_1520 ACID" && (
           <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-            {/* Lock/Unlock Button for L2_1520 */}
+            {/* Lock/Unlock and Save Buttons for L2_1520 */}
             <div className="absolute top-4 right-4 z-50 flex gap-2">
+              {!isLockedL21520 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveL21520Layout}
+                  disabled={isSavingL21520}
+                  className="bg-green-500/20 border-green-500 text-green-400"
+                  data-testid="button-save-layout-l2-1520"
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -5521,6 +5608,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               size={acidBoilerSize}
               onDragStop={(e, d) => {
                 setAcidBoilerPosition({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
               }}
               onResizeStop={(e, dir, ref, delta, position) => {
                 setAcidBoilerSize({
@@ -5528,6 +5616,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   height: parseInt(ref.style.height)
                 });
                 setAcidBoilerPosition(position);
+                setIsL21520Dirty(true);
               }}
               minWidth={200}
               minHeight={100}
@@ -5555,6 +5644,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               size={acidTower1Size}
               onDragStop={(e, d) => {
                 setAcidTower1Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
               }}
               onResizeStop={(e, dir, ref, delta, position) => {
                 setAcidTower1Size({
@@ -5562,6 +5652,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   height: parseInt(ref.style.height)
                 });
                 setAcidTower1Position(position);
+                setIsL21520Dirty(true);
               }}
               minWidth={200}
               minHeight={100}
@@ -5589,6 +5680,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               size={acidTower2Size}
               onDragStop={(e, d) => {
                 setAcidTower2Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
               }}
               onResizeStop={(e, dir, ref, delta, position) => {
                 setAcidTower2Size({
@@ -5596,6 +5688,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   height: parseInt(ref.style.height)
                 });
                 setAcidTower2Position(position);
+                setIsL21520Dirty(true);
               }}
               minWidth={200}
               minHeight={100}
@@ -5623,6 +5716,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 size={kppFaceplateL21520Size}
                 onDragStop={(e, d) => {
                   setKppFaceplateL21520Position({ x: d.x, y: d.y });
+                  setIsL21520Dirty(true);
                 }}
                 onResizeStop={(e, dir, ref, delta, position) => {
                   setKppFaceplateL21520Size({
@@ -5630,6 +5724,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                     height: parseInt(ref.style.height)
                   });
                   setKppFaceplateL21520Position(position);
+                  setIsL21520Dirty(true);
                 }}
                 minWidth={200}
                 minHeight={200}
