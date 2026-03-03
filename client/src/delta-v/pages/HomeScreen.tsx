@@ -3285,13 +3285,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                       setIsLockedL4(!isLockedL4);
                     } else if (selectedScreen === "L2 – Furnace Area") {
                       setIsLockedL2(!isLockedL2);
+                    } else if (selectedScreen === "L2_1520 ACID") {
+                      setIsLockedL21520(!isLockedL21520);
                     } else {
                       setIsLocked(!isLocked);
                     }
                   }}
                   data-testid="button-lock-toggle"
                 >
-                  {(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? (
+                  {(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : selectedScreen === "L2_1520 ACID" ? isLockedL21520 : isLocked) ? (
                     <Lock className="h-5 w-5 text-yellow-600" />
                   ) : (
                     <LockOpen className="h-5 w-5 text-gray-500" />
@@ -3299,7 +3301,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : selectedScreen === "L2_1520 ACID" ? isLockedL21520 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
               </TooltipContent>
             </Tooltip>
 
