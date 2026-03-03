@@ -309,54 +309,6 @@ const HomeScreen = () => {
 
   const dynamicOrchInFlightRef = useRef(false);
 
-  useEffect(() => {
-    if (!dynamicRunning) return;
-    const intervalMs = dynamicDt * 1000 / dynamicSpeed;
-    const tick = async () => {
-      if (dynamicOrchInFlightRef.current) return;
-      dynamicOrchInFlightRef.current = true;
-      try {
-        const res = await fetch('/api/plant-orchestrator', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            compressor_rpm_pct: handControllerSyncState.syncedSP,
-            sulfur_flow_sp_gpm: sulfurSyncState.syncedSP,
-            jug_valve_pct: jugValveHandControllerSyncState.syncedSP,
-            damper_open_pct: whbHandControllerSyncState.syncedSP,
-            barometric_atm: 1.0,
-            plant_condition: "clean",
-            dt_acid_inlet_temp_F: 70,
-            mode: "dynamic",
-          }),
-        });
-        if (res.ok) {
-          const orchData = await res.json();
-          setOrchestratorResult(orchData);
-          if (orchData.sensor_tags) {
-            const tags = orchData.sensor_tags;
-            if (tags["1540-TI-4010"] !== undefined) {
-              setFurnaceOutletTemp(tags["1540-TI-4010"]);
-              updateTempSensor4200APV(tags["1540-TI-4010"]);
-            }
-            if (tags["1540-TI-4820"] !== undefined) {
-              updateTempSensor4820PV(tags["1540-TI-4820"]);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Dynamic orchestrator error:', e);
-      } finally {
-        dynamicOrchInFlightRef.current = false;
-      }
-    };
-    tick();
-    const id = setInterval(tick, Math.max(intervalMs, 500));
-    return () => clearInterval(id);
-  }, [dynamicRunning, dynamicDt, dynamicSpeed,
-      handControllerSyncState.syncedSP, sulfurSyncState.syncedSP,
-      jugValveHandControllerSyncState.syncedSP, whbHandControllerSyncState.syncedSP]);
-
   // Auto-start simulation when entering Dynamic/Start-Up/Emergency modes
   useEffect(() => {
     const isDynamicMode = selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios";
@@ -1052,6 +1004,54 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Get real-time synced state for Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct)
   const { state: tempSensor4820SyncState, initializeController: initTempSensor4820, updateAlarmLimits: updateTempSensor4820AlarmLimits, updateSyncedPV: updateTempSensor4820PV } = useControllerSync('1540-TI-4820');
   const tempSensor4820Config = getControllerConfig('1540-TI-4820');
+
+  useEffect(() => {
+    if (!dynamicRunning) return;
+    const intervalMs = dynamicDt * 1000 / dynamicSpeed;
+    const tick = async () => {
+      if (dynamicOrchInFlightRef.current) return;
+      dynamicOrchInFlightRef.current = true;
+      try {
+        const res = await fetch('/api/plant-orchestrator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            compressor_rpm_pct: handControllerSyncState.syncedSP,
+            sulfur_flow_sp_gpm: sulfurSyncState.syncedSP,
+            jug_valve_pct: jugValveHandControllerSyncState.syncedSP,
+            damper_open_pct: whbHandControllerSyncState.syncedSP,
+            barometric_atm: 1.0,
+            plant_condition: "clean",
+            dt_acid_inlet_temp_F: 70,
+            mode: "dynamic",
+          }),
+        });
+        if (res.ok) {
+          const orchData = await res.json();
+          setOrchestratorResult(orchData);
+          if (orchData.sensor_tags) {
+            const tags = orchData.sensor_tags;
+            if (tags["1540-TI-4010"] !== undefined) {
+              setFurnaceOutletTemp(tags["1540-TI-4010"]);
+              updateTempSensor4200APV(tags["1540-TI-4010"]);
+            }
+            if (tags["1540-TI-4820"] !== undefined) {
+              updateTempSensor4820PV(tags["1540-TI-4820"]);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Dynamic orchestrator error:', e);
+      } finally {
+        dynamicOrchInFlightRef.current = false;
+      }
+    };
+    tick();
+    const id = setInterval(tick, Math.max(intervalMs, 500));
+    return () => clearInterval(id);
+  }, [dynamicRunning, dynamicDt, dynamicSpeed,
+      handControllerSyncState.syncedSP, sulfurSyncState.syncedSP,
+      jugValveHandControllerSyncState.syncedSP, whbHandControllerSyncState.syncedSP]);
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
