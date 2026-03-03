@@ -997,6 +997,15 @@ const CommonControllerFaceplatePage = () => {
   }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, syncState.syncedMode, primaryAlarmActive, primaryAlarmColor, hasRedAlarm, hasYellowAlarm, config, secondaryData.ALM_HH_ACT, secondaryData.ALM_LL_ACT]);
   
   // Sync Secondary Controller values from context
+  // Use controller-specific defaults for alarm limits to avoid stale DB-saved generic limits
+  const alarmDefaults = getDefaultSecondaryControllerConfig(activeControllerId!);
+  const almLL = alarmDefaults.ALM_LL_LIM ?? config.ALM_LL_LIM;
+  const almL = alarmDefaults.ALM_L_LIM ?? config.ALM_L_LIM;
+  const almDL = alarmDefaults.ALM_DL_LIM ?? config.ALM_DL_LIM;
+  const almDH = alarmDefaults.ALM_DH_LIM ?? config.ALM_DH_LIM;
+  const almH = alarmDefaults.ALM_H_LIM ?? config.ALM_H_LIM;
+  const almHH = alarmDefaults.ALM_HH_LIM ?? config.ALM_HH_LIM;
+
   useEffect(() => {
     setSecondaryData(prev => {
       const newPV = syncState.syncedPV;
@@ -1007,16 +1016,16 @@ const CommonControllerFaceplatePage = () => {
         PV: newPV,
         SP: syncState.syncedSP,
         OUT_PCT: syncState.syncedOUT,
-        ALM_LL_ACT: newPV <= config.ALM_LL_LIM,
-        ALM_L_ACT: newPV <= config.ALM_L_LIM,
-        ALM_DL_ACT: dev <= config.ALM_DL_LIM,
-        ALM_DH_ACT: dev >= config.ALM_DH_LIM,
-        ALM_H_ACT: newPV >= config.ALM_H_LIM,
-        ALM_HH_ACT: newPV >= config.ALM_HH_LIM,
-        PV_OK: !(newPV <= config.ALM_LL_LIM || newPV >= config.ALM_HH_LIM),
+        ALM_LL_ACT: newPV <= almLL,
+        ALM_L_ACT: newPV <= almL,
+        ALM_DL_ACT: dev <= almDL,
+        ALM_DH_ACT: dev >= almDH,
+        ALM_H_ACT: newPV >= almH,
+        ALM_HH_ACT: newPV >= almHH,
+        PV_OK: !(newPV <= almLL || newPV >= almHH),
       };
     });
-  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, config]);
+  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, almLL, almL, almDL, almDH, almH, almHH]);
 
   // Expose update functions for Python integration
   useEffect(() => {
