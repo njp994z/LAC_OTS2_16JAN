@@ -2191,6 +2191,19 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  let latestDynamicOrchestratorResult: { data: any; timestamp: number } | null = null;
+
+  app.get('/api/plant-orchestrator/latest-dynamic', (_req: Request, res: Response) => {
+    if (!latestDynamicOrchestratorResult) {
+      return res.json({ available: false });
+    }
+    res.json({
+      available: true,
+      timestamp: latestDynamicOrchestratorResult.timestamp,
+      ...latestDynamicOrchestratorResult.data,
+    });
+  });
+
   app.post('/api/plant-orchestrator', async (req: Request, res: Response) => {
     try {
       const pythonInput = req.body || {};
@@ -2238,6 +2251,10 @@ Be professional, concise, and helpful. If asked about features not yet implement
 
       if (!result.success) {
         return res.status(500).json({ message: result.error || "Plant orchestrator failed" });
+      }
+
+      if (pythonInput.mode === 'dynamic' && result.success) {
+        latestDynamicOrchestratorResult = { data: result, timestamp: Date.now() };
       }
 
       res.json(result);

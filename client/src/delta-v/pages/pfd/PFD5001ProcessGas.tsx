@@ -344,27 +344,37 @@ export default function PFD5001ProcessGas() {
     }
   }, [simulateForCase]);
 
+  const lastDynamicTimestampRef = useRef<number>(0);
+
   useEffect(() => {
     if (selectedCase.id !== "current-dynamic" || !hasSimulated) return;
 
     let cancelled = false;
 
-    const loop = async () => {
+    const poll = async () => {
       while (!cancelled) {
         try {
-          await simulateForCase(selectedCase, true);
+          const res = await fetch('/api/plant-orchestrator/latest-dynamic');
+          if (!cancelled && res.ok) {
+            const data = await res.json();
+            if (data.available && data.timestamp !== lastDynamicTimestampRef.current) {
+              lastDynamicTimestampRef.current = data.timestamp;
+              if (data.streams) {
+                setOrchestratorStreams(data.streams);
+              }
+            }
+          }
         } catch {
-          // ignore errors in continuous loop
         }
         if (!cancelled) {
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 250));
         }
       }
     };
 
-    loop();
+    poll();
     return () => { cancelled = true; };
-  }, [selectedCase, hasSimulated, simulateForCase]);
+  }, [selectedCase, hasSimulated]);
 
   const getOrchestratorValue = (streamNum: number, field: string): number => {
     if (!orchestratorStreams) return 0;
