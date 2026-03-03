@@ -15,7 +15,7 @@ export const getDefaultSecondaryControllerConfig = (
   controllerId: string
 ): SecondaryControllerConfig => {
   const metadata = getControllerMetadata(controllerId);
-  
+
   // Controller-specific default overrides
   const controllerDefaults: Record<string, Partial<SecondaryControllerConfig>> = {
     '1540-HCV-4282': {
@@ -129,10 +129,37 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
     },
+    '1520-TI-6624': {
+      // Furnace Temperature Sensor C: Configure proper ranges and typical PV
+      TYPICAL_PV: 2050,
+      PV_SCALE_LO: 1800,
+      PV_SCALE_HI: 2300,
+      SP_LIM_LO: 1800,
+      SP_LIM_HI: 2300,
+      EU: '°F',
+      DESC: 'Furnace C',
+      ALM_LL_LIM: 1850,
+      ALM_L_LIM: 1900,
+      ALM_H_LIM: 2200,
+      ALM_HH_LIM: 2250,
+      ALM_DL_LIM: 0,
+      ALM_DH_LIM: 0,
+      SHOW_ALARM_CIRCLE: false,
+      SHOW_NO_SYMBOL: false,
+      SHOW_INTERLOCK_DIAMOND_INDICATOR: false,
+      SHOW_BLUE_ALARM_INDICATOR: false,
+      SHOW_BAD_IO_INDICATOR: false,
+      SHOW_MODULE_NOT_RUNNING: false,
+      SHOW_VALVE_TYPE_LABEL: false,
+      SHOW_LOCK_INDICATOR: false,
+      SHOW_OUTPUT_PATH_INDICATOR: false,
+      SHOW_HOLD_INDICATOR: false,
+      SHOW_INTERLOCK_INDICATOR: false,
+    },
   };
-  
+
   const specificDefaults = controllerDefaults[controllerId] || {};
-  
+
   return {
     ...defaultSecondaryConfig,
     ...specificDefaults,

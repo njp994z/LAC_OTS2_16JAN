@@ -11,6 +11,7 @@ const pressureSensors = [
   { tag: '1540-DPI-4200', description: 'Sulfur Furnace dP' },
   { tag: '1520-DPI-5800B', description: 'Inlet Filter dP Sensor' },
   { tag: '1520-DPI-4851', description: 'Pass 1; dP Sensor' },
+  { tag: '1540-PI-4002', description: 'Compressor Outlet' },
 ];
 
 const PressureSensorsPage = () => {

@@ -16,6 +16,7 @@ import { calculateReactorFlow, calculateGasFlowFromPlantRate } from "../shared/r
 import { sessionWS } from "./websocket";
 import { getCurrentPsychrometrics, getHistoricalPsychrometrics, isWeatherServiceConfigured, WeatherServiceError } from "./services/weatherService";
 import { weatherRequestSchema, weatherHistoryRequestSchema, catalystParameterApiSchema, insertConverterCaseSchema } from "../shared/schema";
+import { getLayout, getLayouts, setLayout } from "./services/layoutServices";
 
 const simulationPaths = [
   '/api/ipat-calc', '/api/fat-calc', '/api/sh4a-ec4c-ec4a-calc', '/api/ec3b-calc',
@@ -91,6 +92,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error upserting controller config:", error);
       res.status(500).json({ message: "Failed to save controller config" });
+    }
+  });
+
+  // Layout Services API
+  app.get('/api/layouts', async (_req, res) => {
+    try {
+      const layouts = getLayouts();
+      res.json(layouts);
+    } catch (error) {
+      console.error("Error fetching layouts:", error);
+      res.status(500).json({ message: "Failed to fetch layouts" });
+    }
+  });
+
+  app.get('/api/layout/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const layout = await getLayout(id);
+      if (!layout) {
+        return res.status(404).json({ message: "Layout not found" });
+      }
+      res.json(layout);
+    } catch (error) {
+      console.error("Error fetching layout:", error);
+      res.status(500).json({ message: "Failed to fetch layout" });
+    }
+  });
+
+  app.put('/api/layout/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const layoutData = req.body;
+      const updated = await setLayout(layoutData, id);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error saving layout:", error);
+      res.status(500).json({ message: "Failed to save layout" });
+    }
+  });
+
+  // Legacy Homescreen Layout API (for Draggable Icons)
+  app.get('/api/homescreen-layout/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const layout = await storage.getHomescreenLayout(id);
+      res.json(layout);
+    } catch (error) {
+      console.error("Error fetching homescreen layout:", error);
+      res.status(500).json({ message: "Failed to fetch homescreen layout" });
+    }
+  });
+
+  app.put('/api/homescreen-layout/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { layouts } = req.body;
+      if (!layouts || !Array.isArray(layouts)) {
+        return res.status(400).json({ message: "Layouts array is required" });
+      }
+      const updated = await storage.upsertHomescreenLayout(id, layouts);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error saving homescreen layout:", error);
+      res.status(500).json({ message: "Failed to save homescreen layout" });
     }
   });
 
