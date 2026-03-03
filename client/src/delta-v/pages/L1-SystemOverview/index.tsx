@@ -50,9 +50,11 @@ export enum Mode {
 }
 
 const L1SystemOverview = ({
-    defaultMode = Mode.Static
+    defaultMode = Mode.Static,
+    instrumentFilter = 'all'
 }: {
     defaultMode?: Mode;
+    instrumentFilter?: 'all' | 'controllers' | 'sensors';
 }) => {
     const { toast } = useToast();
     const [, setLocation] = useLocation();
@@ -417,6 +419,11 @@ const L1SystemOverview = ({
                                 const elData = L1Elements[element];
                                 if (!elData) return null;
 
+                                const alwaysVisible = elData.type === ElementType.Image || elData.type === ElementType.Text;
+                                const isSensor = elData.type === ElementType.TemperatureController || elData.type === ElementType.PressureController;
+                                const isController = elData.type === ElementType.CompressorController || elData.type === ElementType.FlowController || elData.type === ElementType.ValveController || elData.type === ElementType.Compressor || elData.type === ElementType.TurboGenerator;
+                                const isVisible = alwaysVisible || instrumentFilter === 'all' || (instrumentFilter === 'sensors' && isSensor) || (instrumentFilter === 'controllers' && isController);
+
                                 const pos = positions?.[element] || { x: (index % 5) * 200, y: Math.floor(index / 5) * 200 };
                                 return (
                                     <div
@@ -426,6 +433,7 @@ const L1SystemOverview = ({
                                             left: pos.x,
                                             top: pos.y,
                                             zIndex: pos.z || 1,
+                                            visibility: isVisible ? 'visible' : 'hidden',
                                         }}
                                         onMouseDown={(e) => {
                                             if (mode === Mode.Edit && editMode === 'components') {

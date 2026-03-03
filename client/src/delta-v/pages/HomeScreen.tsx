@@ -282,6 +282,9 @@ const HomeScreen = () => {
     return saved || "L1 – System Overview";
   });
   const [selectedMode, setSelectedMode] = useState("Static");
+  const [instrumentFilter, setInstrumentFilter] = useState<'all' | 'controllers' | 'sensors'>('all');
+  const sensorVisible = instrumentFilter === 'all' || instrumentFilter === 'sensors';
+  const controllerVisible = instrumentFilter === 'all' || instrumentFilter === 'controllers';
   
   // Save selected screen to localStorage when it changes
   useEffect(() => {
@@ -3374,6 +3377,41 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-blue-600 border border-blue-600 text-white gap-2"
+                data-testid="toolbar-filter-view-dropdown"
+              >
+                <Filter className="h-4 w-4" />
+                {instrumentFilter === 'all' ? 'All Inst. Blocks' : instrumentFilter === 'controllers' ? 'Controllers Only' : 'Sensors Only'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => setInstrumentFilter('all')}
+                data-testid="filter-view-all"
+              >
+                All Inst. Blocks
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setInstrumentFilter('controllers')}
+                data-testid="filter-view-controllers"
+              >
+                Controllers Only
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setInstrumentFilter('sensors')}
+                data-testid="filter-view-sensors"
+              >
+                Sensors Only
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Right side - Date, Time, User, Window controls */}
@@ -3565,7 +3603,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
@@ -3613,7 +3651,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
               data-testid="jug-valve-hc-l4-rnd"
             >
               <div 
@@ -3938,7 +3976,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -3980,7 +4018,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4024,7 +4062,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4067,7 +4105,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4108,7 +4146,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4150,7 +4188,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -5001,7 +5039,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 40 }}
+              style={{ zIndex: 40, visibility: sensorVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -5042,7 +5080,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 40 }}
+              style={{ zIndex: 40, visibility: sensorVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -5275,7 +5313,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               disableDragging={isLocked61}
               enableResizing={!isLocked61}
               className={isLocked61 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
               data-testid="faceplate-4825-61-rnd"
             >
               <div 
@@ -5320,7 +5358,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         )}
 
         {/* L1 - System Overview */}
-        {selectedScreen === "L1 – System Overview" && <L1SystemOverview />}
+        {selectedScreen === "L1 – System Overview" && <L1SystemOverview instrumentFilter={instrumentFilter} />}
 
         {/* L2_1520 ACID View */}
         {selectedScreen === "L2_1520 ACID" && (
