@@ -251,10 +251,13 @@ class PlantInputs:
     pass4_liters: float = 65000.0     # Pass 4: Cs-promoted for low-T finish
     pass4_activity: float = 100.0
 
-    pass1_inlet_temp_C: float = 390.0
-    pass2_inlet_temp_C: float = 420.0
-    pass3_inlet_temp_C: float = 440.0
-    pass4_inlet_temp_C: float = 390.0
+    pass1_inlet_temp_C: float = 415.0     # WHB mixed outlet (dynamic)
+    pass2_inlet_temp_C: float = 430.0     # SH1B cools Pass 1 outlet → 806°F
+    pass3_inlet_temp_C: float = 430.0     # HIP cools Pass 2 outlet → 806°F
+    pass4_inlet_temp_C: float = 415.0     # HIP cold outlet (dynamic from duties)
+
+    # CIP hot side outlet temperature
+    cip_hot_outlet_F: float = 548.0       # Cools Pass 3 outlet → EC3B inlet
 
     # Converter inlet pressures (gauge, in. w.c.)
     pass1_inlet_pres_inwc: float = 150.0
@@ -370,7 +373,7 @@ class MainCompressor:
 
     # Reference point from Howden SF14 datasheet
     REF_SPEED_RPM = 4174.0
-    REF_DP_INWC = 212.0
+    REF_DP_INWC = 240.0
     REF_FLOW_ACFM = 177051.0
 
     # Gearbox ratio (compressor RPM / motor RPM)
@@ -646,7 +649,12 @@ class SulfurFurnace:
         T_out = inp.ambient_temp_F + delta_T
 
         total = scfm_so2 + scfm_so3 + o2_out + air_stream.N2
-        P_out = 176.0 + (total - 115000.0) / 1000.0 * 5.0
+
+        # Furnace outlet P = compressor discharge minus furnace ΔP
+        design_flow = inp.design_air_flow_scfm
+        Q_ratio_sq = (total / max(design_flow, 1.0)) ** 2
+        furnace_dp = 9.0 * Q_ratio_sq
+        P_out = air_stream.pressure_inwc - furnace_dp
 
         s5 = GasStream(
             stream_id=5, tag="GF1", label="Stream 5 — Furnace Outlet",
@@ -658,13 +666,20 @@ class SulfurFurnace:
 
 
 class WHBJugValve:
-    """Unit Op [5]: Waste Heat Boiler + Jug Valve bypass."""
+    """Unit Op [5]: Waste Heat Boiler + Jug Valve bypass.
 
-    WHB_AREA = 9800.0
-    WHB_UO = 16.0
-    STEAM_TEMP_F = 540.7
-    CP_GAS = 0.26
-    WHB_DP = 16.0
+    Fire-tube boiler generating saturated steam at ~900 psig / 540°F.
+    Gas cools from ~2080°F to ~705°F through the shell side.
+    Jug valve bypasses a fraction at full furnace temp; mixed = converter feed.
+    """
+
+    WHB_AREA = 9800.0        # ft² tube area
+    WHB_UO = 30.0            # BTU/(hr·ft²·°F) — calibrated 2080→705°F at design
+    STEAM_TEMP_F = 540.7     # saturated steam (~900 psig)
+    CP_GAS = 0.26            # BTU/(lb·°F) avg furnace gas
+    MW_GAS = 30.5            # avg molecular weight
+    SCF_PER_LBMOL = 379.0
+    WHB_DP = 16.0            # inwc pressure drop
     DAMPER_DP_MAX = 5.0
 
     @staticmethod
@@ -690,20 +705,24 @@ class WHBJugValve:
             setattr(s7, attr, getattr(s5, attr) * jug_frac)
         s7.recalc_total()
 
-        # WHB heat exchange (NTU-effectiveness)
+        # WHB heat exchange — NTU-effectiveness with MASS-based m_cp
+        # Bug fix: old code used m_cp = TOTAL_scfm * 60 * Cp which is volumetric,
+        # giving NTU ≈ 0 and almost no cooling. Correct: scfm → lb/hr via MW.
         whb_out_T = s5.temperature_F
         if s6.TOTAL > 0:
-            m_cp = s6.TOTAL * 60.0 * WHBJugValve.CP_GAS
-            ntu = (WHBJugValve.WHB_UO * WHBJugValve.WHB_AREA) / max(m_cp, 1.0)
+            m_dot_lbhr = s6.TOTAL * WHBJugValve.MW_GAS / WHBJugValve.SCF_PER_LBMOL * 60.0
+            m_cp = m_dot_lbhr * WHBJugValve.CP_GAS   # BTU/(hr·°F)
+            UA = WHBJugValve.WHB_UO * WHBJugValve.WHB_AREA
+            ntu = UA / max(m_cp, 1.0)
             eff = 1.0 - math.exp(-ntu)
             whb_out_T = s5.temperature_F - eff * (s5.temperature_F - WHBJugValve.STEAM_TEMP_F)
             whb_out_T = max(WHBJugValve.STEAM_TEMP_F + 10.0, whb_out_T)
 
-        # Stream 8a: WHB outlet
+        # Stream 8: WHB outlet
         s8a = s6.copy()
         s8a.stream_id = 8
         s8a.tag = "GB1"
-        s8a.label = "Stream 8a — WHB Outlet"
+        s8a.label = "Stream 8 — WHB Outlet"
         s8a.temperature_F = whb_out_T
         s8a.pressure_inwc = s5.pressure_inwc - WHBJugValve.WHB_DP
 
@@ -1055,7 +1074,7 @@ class CatalyticPass:
             catalyst_name=catalyst_name,
             catalyst_liters=catalyst_liters,
             activity_pct=activity_pct,
-            n_steps=100,
+            n_steps=500,
         )
 
         # ── Convert outlet composition back to scfm ──────────────────
@@ -1086,43 +1105,39 @@ class CatalyticPass:
 
 class InterpassHX:
     """
-    Unit Ops [8,10]: Hot and Cold Interpass Heat Exchangers (HIP and CIP).
+    Unit Ops: SH1B, HIP, CIP — Interpass Heat Exchangers.
 
-    Physical arrangement (3:1 double-absorption):
-      HOT SIDE (Passes 1-3 loop):
-        HIP hot: Pass 1 outlet → cooled → Pass 2 inlet
-        CIP hot: Pass 2 outlet → cooled → Pass 3 inlet
-      COLD SIDE (after IPAT, reheating to Pass 4):
-        CIP cold: IPAT outlet → heated by CIP duty
-        HIP cold: CIP cold outlet → heated by HIP duty → Pass 4 inlet
-
-    No bypasses in this demo → cold-side duty = hot-side duty for each HX.
+    Correct MECS 3:1 topology:
+      HOT SIDE:
+        SH1B: Pass 1 outlet (Stm 11) → cooled → Pass 2 inlet (Stm 10)
+        HIP:  Pass 2 outlet (Stm 13) → cooled → Pass 3 inlet (Stm 12)
+        CIP:  Pass 3 outlet (Stm 14) → cooled → EC3B inlet (Stm 15)
+      COLD SIDE (after IPAT, reheat to Pass 4):
+        CIP cold: IPAT outlet (Stm 17) → heated → Stm 18
+        HIP cold: Stm 18 → heated → Pass 4 inlet (Stm 19)
     """
 
-    # Average Cp for process gas (BTU/lb·°F) — mostly N2 + O2 + SO2
-    CP_AVG = 0.26
+    CP_AVG = 0.26  # BTU/(lb·°F)
+    MW_SPECIES = {"SO2": 64.06, "SO3": 80.06, "O2": 32.0, "N2": 28.01,
+                  "H2O": 18.015, "H2SO4": 98.08, "CO2": 44.01}
+
+    @staticmethod
+    def _stream_mw(stream: GasStream) -> float:
+        """Compute mass-averaged molecular weight from stream composition."""
+        total = max(stream.TOTAL, 1.0)
+        mw_sum = 0.0
+        for species, mw in InterpassHX.MW_SPECIES.items():
+            mw_sum += getattr(stream, species, 0.0) * mw
+        return mw_sum / total
 
     @staticmethod
     def cool_stream_with_duty(
-        hot_stream: GasStream,
-        target_temp_F: float,
-        stream_id: int,
-        tag: str,
-        label: str,
-        dp_inwc: float = 4.0,
+        hot_stream: GasStream, target_temp_F: float,
+        stream_id: int, tag: str, label: str, dp_inwc: float = 4.0,
     ) -> Tuple[GasStream, float]:
-        """
-        Cool a gas stream (hot side) and return the duty in BTU/hr.
-
-        Returns:
-            cooled_stream: The cooled gas stream
-            duty_btu_hr: Heat duty removed from hot side (positive value, BTU/hr)
-        """
-        # Mass flow from scfm: m_dot = TOTAL × MW_avg / 379.0 (lbmol→scf) × 60 min
-        # MW_avg for converter gas ≈ 30.5 (N2/O2/SO2 mixture)
-        MW_avg = 30.5
+        """Cool a gas stream (hot side) and return the duty in BTU/hr."""
+        MW_avg = InterpassHX._stream_mw(hot_stream)
         m_dot_lbhr = hot_stream.TOTAL * MW_avg / 379.0 * 60.0
-
         delta_T = hot_stream.temperature_F - target_temp_F
         duty_btu_hr = m_dot_lbhr * InterpassHX.CP_AVG * max(delta_T, 0.0)
 
@@ -1133,30 +1148,16 @@ class InterpassHX:
         cooled.temperature_F = target_temp_F
         cooled.pressure_inwc = hot_stream.pressure_inwc - dp_inwc
         cooled.recalc_total()
-
         return cooled, duty_btu_hr
 
     @staticmethod
     def heat_stream_with_duty(
-        cold_stream: GasStream,
-        duty_btu_hr: float,
-        stream_id: int,
-        tag: str,
-        label: str,
-        dp_inwc: float = 3.0,
+        cold_stream: GasStream, duty_btu_hr: float,
+        stream_id: int, tag: str, label: str, dp_inwc: float = 3.0,
     ) -> GasStream:
-        """
-        Heat a gas stream (cold side) using a known duty.
-
-        The cold-side gas (post-IPAT, SO3 removed) has slightly lower flow
-        than the hot side, so the same duty produces a slightly larger ΔT.
-
-        Returns:
-            heated_stream: The heated gas stream
-        """
-        MW_avg = 30.0  # post-IPAT gas is lighter (SO3 removed → more N2/O2 fraction)
+        """Heat a gas stream (cold side) using a known duty."""
+        MW_avg = InterpassHX._stream_mw(cold_stream)
         m_dot_lbhr = cold_stream.TOTAL * MW_avg / 379.0 * 60.0
-
         delta_T = duty_btu_hr / max(m_dot_lbhr * InterpassHX.CP_AVG, 1.0)
 
         heated = cold_stream.copy()
@@ -1166,19 +1167,14 @@ class InterpassHX:
         heated.temperature_F = cold_stream.temperature_F + delta_T
         heated.pressure_inwc = cold_stream.pressure_inwc - dp_inwc
         heated.recalc_total()
-
         return heated
 
     @staticmethod
     def cool_stream(
-        hot_stream: GasStream,
-        target_temp_F: float,
-        stream_id: int,
-        tag: str,
-        label: str,
-        dp_inwc: float = 4.0,
+        hot_stream: GasStream, target_temp_F: float,
+        stream_id: int, tag: str, label: str, dp_inwc: float = 4.0,
     ) -> GasStream:
-        """Legacy wrapper — cool without returning duty (used for SH1B etc.)."""
+        """Legacy wrapper — cool without returning duty."""
         cooled, _ = InterpassHX.cool_stream_with_duty(
             hot_stream, target_temp_F, stream_id, tag, label, dp_inwc
         )
@@ -1198,7 +1194,7 @@ class IPATower:
         outlet.tag = "GI1"
         outlet.label = "Stream 17 — IPAT Outlet (SO3 Removed)"
         outlet.SO3 = inlet.SO3 - so3_removed
-        outlet.pressure_inwc = inlet.pressure_inwc - 6.0
+        outlet.pressure_inwc = inlet.pressure_inwc - 23.0  # IPAT ΔP (ref: 92→69)
         # Gas cools in IPAT (typically to ~180°F)
         outlet.temperature_F = 180.0
         outlet.recalc_total()
@@ -1214,52 +1210,47 @@ class EC3B:
         cooled.tag = "GEB1"
         cooled.label = "EC3B Gas Outlet → IPAT Inlet"
         cooled.temperature_F = target_temp_F
-        cooled.pressure_inwc = inlet.pressure_inwc - 3.0
+        cooled.pressure_inwc = inlet.pressure_inwc - 9.0   # EC3B ΔP (ref: 101→92)
         cooled.recalc_total()
         return cooled
 
 
 class SH4A_EC4C_EC4A:
-    """Unit Op [15]: Superheater 4A / Economizer 4C / Economizer 4A train."""
+    """Unit Op [15]: Superheater 4A / Economizer 4C / Economizer 4A train.
+
+    Receives Stream 20 (Pass 4 outlet) → SH4A → 21 → EC4C → 22 → EC4A → 23.
+    """
 
     @staticmethod
     def calculate(inlet: GasStream, inp: PlantInputs) -> Dict[str, GasStream]:
-        # SH4A: hot gas → superheat steam
-        s20 = inlet.copy()
-        s20.stream_id = 20
-        s20.tag = "GSA0"
-        s20.label = "Stream 20 — SH4A Gas Inlet"
-
-        # Approximate gas cooling through the 3 exchangers
-        # SH4A cools ~100°F, EC4C cools ~80°F, EC4A cools to setpoint
-        sh4a_dt = 100.0
-        ec4c_dt = 80.0
-
-        s21 = s20.copy()
+        # SH4A: superheat steam (ref: 808→638°F, ΔT≈170°F)
+        s21 = inlet.copy()
         s21.stream_id = 21
-        s21.tag = "GEC0"
-        s21.label = "Stream 21 — EC4C Gas Inlet"
-        s21.temperature_F = s20.temperature_F - sh4a_dt
-        s21.pressure_inwc = s20.pressure_inwc - 4.0
+        s21.tag = "GSA1"
+        s21.label = "Stream 21 — SH4A Outlet / EC4C Inlet"
+        s21.temperature_F = inlet.temperature_F - 170.0
+        s21.pressure_inwc = inlet.pressure_inwc - 8.0    # ref: 47→39
 
+        # EC4C: economizer (ref: 638→461°F, ΔT≈177°F)
         s22 = s21.copy()
         s22.stream_id = 22
-        s22.tag = "GEA0"
-        s22.label = "Stream 22 — EC4A Gas Inlet"
-        s22.temperature_F = s21.temperature_F - ec4c_dt
-        s22.pressure_inwc = s21.pressure_inwc - 3.0
+        s22.tag = "GEC1"
+        s22.label = "Stream 22 — EC4C Outlet / EC4A Inlet"
+        s22.temperature_F = s21.temperature_F - 177.0
+        s22.pressure_inwc = s21.pressure_inwc - 3.0      # ref: 39→36
 
+        # EC4A: cools to setpoint (ref: 461→275°F)
         s23 = s22.copy()
         s23.stream_id = 23
-        s23.tag = "GF0"
-        s23.label = "Stream 23 — FAT Gas Inlet"
+        s23.tag = "GEA1"
+        s23.label = "Stream 23 — EC4A Outlet / FAT Gas Inlet"
         s23.temperature_F = inp.ec4a_gas_setpt_F
-        s23.pressure_inwc = s22.pressure_inwc - 3.0
+        s23.pressure_inwc = s22.pressure_inwc - 4.0      # ref: 36→32
 
-        for s in (s20, s21, s22, s23):
+        for s in (s21, s22, s23):
             s.recalc_total()
 
-        return {"s20": s20, "s21": s21, "s22": s22, "s23": s23}
+        return {"s21": s21, "s22": s22, "s23": s23}
 
 
 class FATower:
@@ -1276,7 +1267,7 @@ class FATower:
         s24.tag = "GF1"
         s24.label = "Stream 24 — FAT Outlet (Stack Gas)"
         s24.SO3 = inlet.SO3 - so3_removed
-        s24.pressure_inwc = inlet.pressure_inwc - 6.0
+        s24.pressure_inwc = inlet.pressure_inwc - 15.0  # FAT ΔP (ref: 32→17)
         s24.temperature_F = 160.0  # gas exits cool
         s24.recalc_total()
         return s24
@@ -1318,42 +1309,901 @@ def compute_kpp(streams: Dict[int, GasStream], inp: PlantInputs) -> Dict[str, An
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ALARM CHECKS
+# ALARM SETPOINT DATABASE  (from Doc 102-008.00 Rev 0, 9 Jun 2025)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Each entry: tag → { "desc", "units", "LL", "L", "N", "H", "HH", "pid", "remarks" }
+# None = not defined or "By Detail" (detail engineer responsibility)
+#
+
+ALARM_SETPOINT_DB: Dict[str, Dict[str, Any]] = {
+    # ── Analytical / pH / Concentration ────────────────────────────────
+    "ADI-0002": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Circulating Liquid pH Difference",
+        "units": "pH", "LL": None, "L": None, "N": 0.0, "H": 0.5, "HH": None,
+    },
+    "AI-0002": {
+        "pid": "1540-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Circulating Liquid pH",
+        "units": "pH", "LL": None, "L": 5.5, "N": 8, "H": 10, "HH": None,
+        "remarks": "Detail Engineer to update low and high alarms if needed for effluent disposal.",
+    },
+    "AI-0241": {
+        "pid": "1530-PR-PID-0000-EXP-5102",
+        "desc": "SO2 Area Monitor (Tail Gas Scrubber Area)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-0460": {
+        "pid": "1530-PR-PID-0000-EXP-5104",
+        "desc": "Stack Gas Outlet SO2 (0 - 1000 ppmv)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": 6.8, "H": 6.8, "HH": None,
+        "remarks": "Normal < 6.8",
+    },
+    "AI-0461": {
+        "pid": "1530-PR-PID-0000-EXP-5104",
+        "desc": "Stack Gas Outlet O2",
+        "units": "vol% O2", "LL": None, "L": 3.5, "N": 4.4, "H": None, "HH": None,
+    },
+    "AI-0465": {
+        "pid": "1530-PR-PID-0000-EXP-5104",
+        "desc": "Stack Gas Outlet SO2 (0 - 50 ppmv)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": 6.8, "H": 6.8, "HH": None,
+        "remarks": "Normal < 6.8",
+    },
+    "AI-4242": {
+        "pid": "1540-PR-PID-0000-EXP-5042",
+        "desc": "SO2 Area Monitor (Sulfur Furnace)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-4882": {
+        "pid": "1540-PR-PID-0000-EXP-5048",
+        "desc": "SO2 Area Monitor (Converter)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-5842": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "SO2 Area Monitor (Inlet Air Filter)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-6461": {
+        "pid": "1520-PR-PID-0000-EXP-5064",
+        "desc": "Product Acid Cooler Cooling Water Return Conductivity",
+        "units": "µS/cm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-6562": {
+        "pid": "1520-PR-PID-0000-EXP-5065",
+        "desc": "Final Tower Acid Cooler Cooling Water Return Conductivity",
+        "units": "µS/cm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-6641": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "SO2 Area Monitor (Final Tower)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-6745": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Boiler Feedwater Preheater Treated Water Outlet Conductivity",
+        "units": "µS/cm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-6746": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Boiler Feedwater Preheater Treated Water Outlet Conductivity",
+        "units": "µS/cm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail (redundant)",
+    },
+    "AI-6762": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Drying / Interpass Acid Cooler Cooling Water Return Conductivity",
+        "units": "µS/cm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-7241": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "SO2 Area Monitor (Economizer / Superheater Area)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-7441": {
+        "pid": "1540-PR-PID-0000-EXP-5074",
+        "desc": "SO2 Area Monitor (Waste Heat Boiler Area)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "AI-7841": {
+        "pid": "1540-PR-PID-0000-EXP-5078",
+        "desc": "SO2 Area Monitor (Superheater 1B Area)",
+        "units": "ppmv SO2", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+
+    # ── Acid Concentration Controllers (alarm setpoints) ──────────────
+    "AIC-6060": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Drying Tower / Interpass Tower Acid Concentration",
+        "units": "wt.% H2SO4", "LL": 97.5, "L": 98.0, "N": 98.5, "H": 99.0, "HH": None,
+    },
+    "AIC-6063": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Final Tower Acid Concentration",
+        "units": "wt.% H2SO4", "LL": 97.5, "L": 98.0, "N": 98.5, "H": 99.0, "HH": None,
+    },
+    "AIC-6260": {
+        "pid": "1520-PR-PID-0000-EXP-5062",
+        "desc": "Dilution Pump Tank Acid Concentration",
+        "units": "wt.% H2SO4", "LL": None, "L": 92.7, "N": 93.2, "H": 99.0, "HH": None,
+    },
+
+    # ── Density ────────────────────────────────────────────────────────
+    "DIC-0006": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Circulating Liquid Density",
+        "units": "lb/ft3", "LL": None, "L": None, "N": 66.5, "H": 68.5, "HH": None,
+    },
+
+    # ── Flow ───────────────────────────────────────────────────────────
+    "FI-0003": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Reverse Jet Flow",
+        "units": "gpm", "LL": 16500, "L": 17500, "N": None, "H": 19500, "HH": 21500,
+    },
+    "FI-6064": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Drying Tower / Interpass Tower Acid Concentration Analyzer Flowrate",
+        "units": "gpm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "FI-6065": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Final Tower Acid Concentration Analyzer Flowrate",
+        "units": "gpm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "FI-6242": {
+        "pid": "1520-PR-PID-0000-EXP-5062",
+        "desc": "Dilution Pump Tank Acid Concentration Analyzer Flowrate",
+        "units": "gpm", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "FIC-5870": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Acid Inlet Flowrate",
+        "units": "gpm", "LL": 2800, "L": 3150, "N": 3500, "H": 4200, "HH": None,
+    },
+    "FIC-6670": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Acid Inlet Flowrate",
+        "units": "gpm", "LL": 2400, "L": 2700, "N": 3000, "H": 3300, "HH": None,
+    },
+    "FIC-6770": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Interpass Tower Acid Inlet Flowrate",
+        "units": "gpm", "LL": 4200, "L": 4400, "N": 4800, "H": 5300, "HH": None,
+    },
+
+    # ── Level ──────────────────────────────────────────────────────────
+    "LI-0014": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Sump Level",
+        "units": "feet", "LL": None, "L": 24, "N": 25, "H": 26, "HH": 26.5,
+        "remarks": "Low-low to be set by Detail Engineer based on pump NPSHr.",
+    },
+    "LI-5240": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Cold Interpass Vestibule Drain Pot Level",
+        "units": "inches", "LL": None, "L": None, "N": 4, "H": 8, "HH": None,
+        "remarks": "Normal < 4",
+    },
+    "LI-5241": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Cold Interpass Inlet Drip Ring Drain Pot Level",
+        "units": "inches", "LL": None, "L": None, "N": 4, "H": 8, "HH": None,
+        "remarks": "Normal < 4",
+    },
+    "LI-5871": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Acid Level",
+        "units": "inches", "LL": None, "L": None, "N": 20, "H": 27, "HH": None,
+        "remarks": "Normal < 20",
+    },
+    "LI-6093": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Strong Acid Basin Level (Combination Pump Tank Area)",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LI-6625": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Acid Level",
+        "units": "inches", "LL": None, "L": None, "N": 18, "H": 25, "HH": None,
+        "remarks": "Normal < 18",
+    },
+    "LI-7240": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Economizer 3B Drain Pot Level",
+        "units": "inches", "LL": None, "L": None, "N": 4, "H": 8, "HH": None,
+        "remarks": "Normal < 4",
+    },
+    "LI-7241": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Economizer 4A Drain Pot Level",
+        "units": "inches", "LL": None, "L": None, "N": 4, "H": 8, "HH": None,
+        "remarks": "Normal < 4",
+    },
+    "LI-7440": {
+        "pid": "1540-PR-PID-0000-EXP-5074",
+        "desc": "Waste Heat Boiler Steam Drum Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LI-7441": {
+        "pid": "1540-PR-PID-0000-EXP-5074",
+        "desc": "Waste Heat Boiler Steam Drum Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LI-7655": {
+        "pid": "1540-PR-PID-0000-EXP-5076",
+        "desc": "Boiler Blowdown Sump Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LI-8461": {
+        "pid": "1520-PR-PID-0000-EXP-5084",
+        "desc": "Interpass Tower Acid Level",
+        "units": "inches", "LL": None, "L": None, "N": 24, "H": 31, "HH": None,
+        "remarks": "Normal < 24",
+    },
+    "LIC-0013": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Sump Level",
+        "units": "feet", "LL": None, "L": 24, "N": 25, "H": 26, "HH": 26.5,
+        "remarks": "Low-low to be set by Detail Engineer based on pump NPSHr.",
+    },
+    "LIC-6040": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Combination Pump Tank Level",
+        "units": "inches", "LL": 70, "L": 73, "N": 76, "H": 79, "HH": 82,
+    },
+    "LIC-6240": {
+        "pid": "1520-PR-PID-0000-EXP-5062",
+        "desc": "Dilution Pump Tank Level",
+        "units": "inches", "LL": 26, "L": 32, "N": 38, "H": 44, "HH": 47,
+    },
+    "LIC-6840": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LIC-7640": {
+        "pid": "1540-PR-PID-0000-EXP-5076",
+        "desc": "Pressurized Boiler Blowdown Tank Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LSHH-6841": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "LSLL-6842": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Level",
+        "units": "inches", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+
+    # ── Differential Pressure ──────────────────────────────────────────
+    "PDI-0008": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Mesh Pad Differential Pressure",
+        "units": "in w.c.", "LL": None, "L": None, "N": None, "H": 3.5, "HH": 5,
+    },
+    "PDI-0009": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Chevron Differential Pressure",
+        "units": "in w.c.", "LL": None, "L": None, "N": None, "H": 0.5, "HH": 1.5,
+    },
+    "PDI-4200": {
+        "pid": "1540-PR-PID-0000-EXP-5042",
+        "desc": "Sulfur Furnace and Waste Heat Boiler Differential Pressure",
+        "units": "in w.c.", "LL": 3, "L": 4.5, "N": 24, "H": None, "HH": None,
+        "remarks": "Startup Burner Vendor to confirm during commissioning",
+    },
+    "PDI-5800": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Inlet Air Filter Differential Pressure",
+        "units": "in w.c.", "LL": None, "L": None, "N": 2, "H": None, "HH": None,
+        "remarks": "HH By Detail",
+    },
+
+    # ── Pressure ───────────────────────────────────────────────────────
+    "PI-0652": {
+        "pid": "1530-PR-PID-0000-EXP-5106",
+        "desc": "Oxidation Air Blower Air Outlet Pressure",
+        "units": "psig", "LL": None, "L": None, "N": 10, "H": None, "HH": None,
+        "remarks": "H and HH By Detail",
+    },
+    "PI-2604": {
+        "pid": "1540-PR-PID-0000-EXP-5026",
+        "desc": "Sulfur Furnace Sulfur Header Pressure",
+        "units": "psig", "LL": None, "L": 100, "N": 113, "H": 180, "HH": None,
+    },
+    "PI-4002": {
+        "pid": "1540-PR-PID-0000-EXP-5040",
+        "desc": "Main Compressor Discharge Pressure",
+        "units": "in w.g.", "LL": None, "L": None, "N": 205, "H": None, "HH": None,
+        "remarks": "LL, L, H By Detail",
+    },
+    "PI-5801": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Gas Inlet Duct Pressure",
+        "units": "in w.g.", "LL": None, "L": None, "N": None, "H": -4, "HH": -2,
+    },
+    "PI-5804": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Gas Outlet Duct Pressure",
+        "units": "in w.g.", "LL": -25, "L": -15, "N": -12, "H": None, "HH": None,
+    },
+    "PI-7000": {
+        "pid": "1540-PR-PID-0000-EXP-5070",
+        "desc": "Boiler Feedwater Pump Discharge Pressure",
+        "units": "psig", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "PI-7400": {
+        "pid": "1540-PR-PID-0000-EXP-5074",
+        "desc": "Waste Heat Boiler Steam Outlet Pressure",
+        "units": "psig", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "PI-7401": {
+        "pid": "1540-PR-PID-0000-EXP-5074",
+        "desc": "Waste Heat Boiler Steam Drum Pressure",
+        "units": "psig", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "PIC-0004": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Reverse Jet Pressure",
+        "units": "psig", "LL": 7, "L": 8, "N": 10, "H": 12, "HH": None,
+    },
+    "PIC-6801": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Pressure",
+        "units": "psig", "LL": None, "L": None, "N": 4.9, "H": None, "HH": None,
+        "remarks": "LL and H By Detail",
+    },
+    "PIC-7806": {
+        "pid": "1540-PR-PID-0000-EXP-5078",
+        "desc": "Superheater 1B Steam Outlet Pressure",
+        "units": "psig", "LL": None, "L": None, "N": 870, "H": None, "HH": None,
+        "remarks": "L and H By Detail",
+    },
+
+    # ── Temperature ────────────────────────────────────────────────────
+    "TI-0420": {
+        "pid": "1530-PR-PID-0000-EXP-5104",
+        "desc": "Tail Gas Scrubber Gas Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 76, "H": 85, "HH": None,
+    },
+    "TI-0653": {
+        "pid": "1530-PR-PID-0000-EXP-5106",
+        "desc": "Oxidation Air Blower Air Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": None, "H": None, "HH": None,
+        "remarks": "By Detail",
+    },
+    "TI-0654": {
+        "pid": "1530-PR-PID-0000-EXP-5106",
+        "desc": "Oxidation Air Blower Humidified Air Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 120, "H": 130, "HH": 140,
+    },
+    "TI-4220": {
+        "pid": "1540-PR-PID-0000-EXP-5042",
+        "desc": "Sulfur Furnace Outlet Temperature",
+        "units": "°F", "LL": None, "L": 1900, "N": 2080, "H": 2150, "HH": 2195,
+    },
+    "TI-4820": {
+        "pid": "1540-PR-PID-0000-EXP-5048",
+        "desc": "Pass 1 Inlet Duct Gas Temperature",
+        "units": "°F", "LL": None, "L": 770, "N": 779, "H": 797, "HH": None,
+    },
+    "TI-6420": {
+        "pid": "1520-PR-PID-0000-EXP-5064",
+        "desc": "Product Acid Cooler Acid Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 100, "H": 110, "HH": None,
+    },
+    "TI-6421": {
+        "pid": "1520-PR-PID-0000-EXP-5064",
+        "desc": "Product Acid Cooler Acid Inlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 160, "H": 170, "HH": None,
+    },
+    "TI-6622": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Acid Inlet Temperature",
+        "units": "°F", "LL": None, "L": 165, "N": 172, "H": 180, "HH": None,
+    },
+    "TI-6624": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Gas Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 172, "H": 182, "HH": None,
+    },
+    "TI-6726": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Boiler Feedwater Preheater Treated Water Outlet Temperature (at cooler)",
+        "units": "°F", "LL": None, "L": None, "N": 190, "H": 200, "HH": None,
+    },
+    "TI-6820": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Temperature (Trayed Section)",
+        "units": "°F", "LL": None, "L": None, "N": 220, "H": None, "HH": None,
+        "remarks": "H By Detail",
+    },
+    "TI-6821": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Temperature (Storage Section)",
+        "units": "°F", "LL": None, "L": None, "N": 220, "H": None, "HH": None,
+        "remarks": "H By Detail",
+    },
+    "TI-7220": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Economizer 3B Boiler Feedwater Inlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 275, "H": 295, "HH": None,
+    },
+    "TI-7223": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Waste Heat Boiler Feedwater Inlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 465, "H": 535, "HH": None,
+    },
+    "TI-7821": {
+        "pid": "1540-PR-PID-0000-EXP-5078",
+        "desc": "Pass 1 Outlet Duct Gas Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 1144, "H": 1171, "HH": None,
+    },
+    "TI-8421": {
+        "pid": "1520-PR-PID-0000-EXP-5084",
+        "desc": "Interpass Tower Gas Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 180, "H": 200, "HH": None,
+    },
+
+    # ── Temperature Controllers (alarm setpoints) ─────────────────────
+    "TIC-4822": {
+        "pid": "1540-PR-PID-0000-EXP-5048",
+        "desc": "Pass 2 Inlet Duct Gas Temperature",
+        "units": "°F", "LL": None, "L": 797, "N": 806, "H": 824, "HH": None,
+    },
+    "TIC-5220": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Pass 3 Inlet Duct Gas Temperature",
+        "units": "°F", "LL": None, "L": 797, "N": 806, "H": 824, "HH": None,
+    },
+    "TIC-5224": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Pass 4 Inlet Duct Gas Temperature",
+        "units": "°F", "LL": None, "L": 770, "N": 779, "H": 797, "HH": None,
+    },
+    "TIC-5823": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Acid Inlet Temperature",
+        "units": "°F", "LL": None, "L": 100, "N": 150, "H": 160, "HH": None,
+    },
+    "TIC-6622": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Acid Inlet Temperature",
+        "units": "°F", "LL": None, "L": 165, "N": 172, "H": 180, "HH": None,
+    },
+    "TIC-6722": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Interpass Tower Acid Inlet Temperature",
+        "units": "°F", "LL": None, "L": 165, "N": 180, "H": 190, "HH": None,
+    },
+    "TIC-6731": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Boiler Feedwater Preheater Treated Water Outlet Temperature (after bypass)",
+        "units": "°F", "LL": None, "L": None, "N": 190, "H": 200, "HH": 220,
+    },
+    "TIC-7221": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Final Tower Gas Inlet Temperature",
+        "units": "°F", "LL": None, "L": 265, "N": 275, "H": 315, "HH": None,
+    },
+    "TIC-7224": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Interpass Tower Gas Inlet Temperature",
+        "units": "°F", "LL": None, "L": 320, "N": 330, "H": 370, "HH": None,
+    },
+    "TIC-7810": {
+        "pid": "1540-PR-PID-0000-EXP-5078",
+        "desc": "Superheater 1B Steam Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 900, "H": None, "HH": None,
+        "remarks": "L and H By Detail",
+    },
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONTROLLER SETPOINT DATABASE  (from Doc 102-008.00 Rev 0, Pages 3-5)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Each entry: tag → { "desc", "units", "normal_setpoint", "pid", "remarks" }
+#
+
+CONTROLLER_SETPOINT_DB: Dict[str, Dict[str, Any]] = {
+    "AIC-0002": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Circulating Liquid pH",
+        "units": "", "normal_setpoint": 8,
+    },
+    "AIC-6060": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Drying Tower / Interpass Tower Acid Concentration",
+        "units": "wt.% H2SO4", "normal_setpoint": 98.5,
+    },
+    "AIC-6063": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Final Tower Acid Concentration",
+        "units": "wt.% H2SO4", "normal_setpoint": 98.5,
+    },
+    "AIC-6260": {
+        "pid": "1520-PR-PID-0000-EXP-5062",
+        "desc": "Dilution Pump Tank Acid Concentration",
+        "units": "wt.% H2SO4", "normal_setpoint": 93.2,
+        "remarks": "Dilution system isolated when 98.5% is produced.",
+    },
+    "DIC-0006": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Circulating Liquid Density",
+        "units": "lb/ft3", "normal_setpoint": 66.5,
+    },
+    "FIC-2602": {
+        "pid": "1540-PR-PID-0000-EXP-5026",
+        "desc": "Sulfur Furnace Sulfur Flowrate",
+        "units": "lb/h", "normal_setpoint": None,
+        "remarks": "Operator Adjusted. Set by Operator to establish plant production rate.",
+    },
+    "FIC-5870": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Acid Inlet Flowrate",
+        "units": "gpm", "normal_setpoint": 3500,
+    },
+    "FIC-6670": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Acid Inlet Flowrate",
+        "units": "gpm", "normal_setpoint": 3000,
+    },
+    "FIC-6770": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Interpass Tower Acid Inlet Flowrate",
+        "units": "gpm", "normal_setpoint": 4800,
+    },
+    "FIC-7070": {
+        "pid": "1540-PR-PID-0000-EXP-5070",
+        "desc": "Boiler Feedwater Flowrate",
+        "units": "gpm", "normal_setpoint": None,
+        "remarks": "Remote Setpoint",
+    },
+    "HIC-1073": {
+        "pid": "1540-PR-PID-0000-EXP-5040",
+        "desc": "Main Compressor Rotor Speed (Variable Frequency Drive)",
+        "units": "rpm", "normal_setpoint": None,
+        "remarks": "Operator Adjusted",
+    },
+    "HIC-4030": {
+        "pid": "1540-PR-PID-0000-EXP-5040",
+        "desc": "Main Compressor Inlet Guide Vane Position",
+        "units": "% Open", "normal_setpoint": None,
+        "remarks": "Operator Adjusted",
+    },
+    "HIC-4081": {
+        "pid": "1540-PR-PID-0000-EXP-5040",
+        "desc": "Main Compressor Brick Cure Blow-off Valve",
+        "units": "% Open", "normal_setpoint": None,
+        "remarks": "Operator Adjusted. Valve positioned manually to satisfy Main Compressor flow and Sulfur Furnace temperature requirements during Brick Cure.",
+    },
+    "HIC-4281": {
+        "pid": "1540-PR-PID-0000-EXP-5042",
+        "desc": "Waste Heat Boiler Outlet Main Line Valve Position",
+        "units": "% Open", "normal_setpoint": 100,
+    },
+    "HIC-4282": {
+        "pid": "1540-PR-PID-0000-EXP-5042",
+        "desc": "Waste Heat Boiler Gas Bypass Jug Valve Position",
+        "units": "% Open", "normal_setpoint": None,
+        "remarks": "Operator Adjusted. Adjusted to maintain Pass 1 inlet temperature.",
+    },
+    "LIC-0013": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Sump Level",
+        "units": "feet", "normal_setpoint": 25,
+    },
+    "LIC-6040": {
+        "pid": "1520-PR-PID-0000-EXP-5060",
+        "desc": "Combination Pump Tank Level",
+        "units": "inches", "normal_setpoint": 76,
+    },
+    "LIC-6240": {
+        "pid": "1520-PR-PID-0000-EXP-5062",
+        "desc": "Dilution Pump Tank Level",
+        "units": "inches", "normal_setpoint": 38,
+    },
+    "LIC-6840": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Level",
+        "units": "inches", "normal_setpoint": None,
+        "remarks": "By Detail",
+    },
+    "LIC-7440": {
+        "pid": "1540-PR-PID-0000-EXP-5074",
+        "desc": "Waste Heat Boiler Steam Drum Level",
+        "units": "inches", "normal_setpoint": None,
+        "remarks": "By Detail",
+    },
+    "LIC-7640": {
+        "pid": "1540-PR-PID-0000-EXP-5076",
+        "desc": "Pressurized Boiler Blowdown Tank Level",
+        "units": "inches", "normal_setpoint": None,
+        "remarks": "By Detail",
+    },
+    "PIC-0004": {
+        "pid": "1530-PR-PID-0000-EXP-5100",
+        "desc": "Tail Gas Scrubber Reverse Jet Pressure",
+        "units": "psig", "normal_setpoint": 10,
+    },
+    "PIC-6801": {
+        "pid": "1540-PR-PID-0000-EXP-5068",
+        "desc": "Deaerator Pressure",
+        "units": "psig", "normal_setpoint": 4.9,
+    },
+    "PIC-7806": {
+        "pid": "1540-PR-PID-0000-EXP-5078",
+        "desc": "Superheater 1B Steam Outlet Pressure",
+        "units": "psig", "normal_setpoint": 870,
+    },
+    "TIC-4220": {
+        "pid": "1540-PR-PID-0000-EXP-5042",
+        "desc": "Sulfur Furnace Outlet Temperature (Start-up Burner Online)",
+        "units": "°F", "normal_setpoint": None,
+        "remarks": "Variable. Start-up Only, Defined by Brick Cure or Heat-up Schedule.",
+    },
+    "TIC-4822": {
+        "pid": "1540-PR-PID-0000-EXP-5048",
+        "desc": "Pass 2 Inlet Duct Gas Temperature",
+        "units": "°F", "normal_setpoint": 806,
+    },
+    "TIC-5220": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Pass 3 Inlet Duct Gas Temperature",
+        "units": "°F", "normal_setpoint": 806,
+    },
+    "TIC-5224": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Pass 4 Inlet Duct Gas Temperature",
+        "units": "°F", "normal_setpoint": 779,
+    },
+    "TIC-5823": {
+        "pid": "1520-PR-PID-0000-EXP-5058",
+        "desc": "Drying Tower Acid Inlet Temperature",
+        "units": "°F", "normal_setpoint": 150,
+    },
+    "TIC-6622": {
+        "pid": "1520-PR-PID-0000-EXP-5066",
+        "desc": "Final Tower Acid Inlet Temperature",
+        "units": "°F", "normal_setpoint": 172,
+    },
+    "TIC-6722": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Interpass Tower Acid Inlet Temperature",
+        "units": "°F", "normal_setpoint": 180,
+    },
+    "TIC-6731": {
+        "pid": "1520-PR-PID-0000-EXP-5067",
+        "desc": "Boiler Feedwater Preheater Treated Water Outlet Temperature",
+        "units": "°F", "normal_setpoint": 190,
+    },
+    "TIC-7221": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Final Tower Gas Inlet Temperature",
+        "units": "°F", "normal_setpoint": 275,
+    },
+    "TIC-7224": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Interpass Tower Gas Inlet Temperature",
+        "units": "°F", "normal_setpoint": 330,
+    },
+    "TIC-7810": {
+        "pid": "1540-PR-PID-0000-EXP-5078",
+        "desc": "Superheater 1B Steam Outlet Temperature",
+        "units": "°F", "normal_setpoint": 900,
+    },
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ALARM CHECKS  (expanded from Doc 102-008.00 alarm setpoint database)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _check_limit(
+    alarms: List[Alarm],
+    tag: str,
+    value: float,
+    alarm_entry: Dict[str, Any],
+    now: float,
+) -> None:
+    """
+    Generic helper — checks a process value against LL/L/H/HH limits
+    from the ALARM_SETPOINT_DB and appends any active alarms.
+    """
+    desc = alarm_entry["desc"]
+    units = alarm_entry["units"]
+
+    hh = alarm_entry.get("HH")
+    h  = alarm_entry.get("H")
+    l  = alarm_entry.get("L")
+    ll = alarm_entry.get("LL")
+
+    if hh is not None and value >= hh:
+        alarms.append(Alarm(
+            tag=tag, message=f"{desc} HIGH-HIGH ({value:.1f} >= {hh} {units})",
+            priority=AlarmPriority.CRITICAL, value=value, limit=hh, unit=units, timestamp=now,
+        ))
+    elif h is not None and value >= h:
+        alarms.append(Alarm(
+            tag=tag, message=f"{desc} HIGH ({value:.1f} >= {h} {units})",
+            priority=AlarmPriority.HIGH, value=value, limit=h, unit=units, timestamp=now,
+        ))
+
+    if ll is not None and value <= ll:
+        alarms.append(Alarm(
+            tag=tag, message=f"{desc} LOW-LOW ({value:.1f} <= {ll} {units})",
+            priority=AlarmPriority.CRITICAL, value=value, limit=ll, unit=units, timestamp=now,
+        ))
+    elif l is not None and value <= l:
+        alarms.append(Alarm(
+            tag=tag, message=f"{desc} LOW ({value:.1f} <= {l} {units})",
+            priority=AlarmPriority.MEDIUM, value=value, limit=l, unit=units, timestamp=now,
+        ))
+
+
 def check_alarms(streams: Dict[int, GasStream], inp: PlantInputs) -> List[Alarm]:
-    """Check all alarm conditions and return active alarms."""
-    alarms = []
+    """
+    Check all alarm conditions from Doc 102-008.00 alarm setpoint list
+    against computed process values and return active alarms.
+    """
+    alarms: List[Alarm] = []
     now = time.time()
 
-    s5 = streams.get(5, GasStream())
-    s9 = streams.get(9, GasStream())
-    s24 = streams.get(24, GasStream())
+    s = streams  # shorthand
+    s4  = s.get(4,  GasStream())
+    s5  = s.get(5,  GasStream())
+    s10 = s.get(10, GasStream())
+    s11 = s.get(11, GasStream())
+    s12 = s.get(12, GasStream())
+    s14 = s.get(14, GasStream())
+    s16 = s.get(16, GasStream())
+    s17 = s.get(17, GasStream())
+    s18 = s.get(18, GasStream())
+    s19 = s.get(19, GasStream())
+    s23 = s.get(23, GasStream())
+    s24 = s.get(24, GasStream())
 
-    # Furnace temperature
-    if s5.temperature_F > 2200:
-        alarms.append(Alarm("1540-TAH-4010", "Furnace outlet temperature HIGH-HIGH",
-                            AlarmPriority.CRITICAL, s5.temperature_F, 2200, "°F", now))
-    if s5.temperature_F < 1800:
-        alarms.append(Alarm("1540-TAL-4010", "Furnace outlet temperature LOW",
-                            AlarmPriority.MEDIUM, s5.temperature_F, 1800, "°F", now))
+    # ── Temperature alarms ────────────────────────────────────────────
 
-    # Converter inlet temperature (Pass 1)
-    s10 = streams.get(10, GasStream())
-    if s10.temperature_F > 850:
-        alarms.append(Alarm("1540-TAH-4101", "Pass 1 inlet temperature HIGH",
-                            AlarmPriority.HIGH, s10.temperature_F, 850, "°F", now))
+    # TI-4220 A/B/C  Sulfur Furnace Outlet Temperature
+    _check_limit(alarms, "TI-4220", s5.temperature_F,
+                 ALARM_SETPOINT_DB["TI-4220"], now)
 
-    # Stack SO2
+    # TI-4820  Pass 1 Inlet Duct Gas Temperature
+    # Uses Stream 9 (WHB mixed outlet) — the dynamically computed gas temperature
+    # entering the converter inlet duct, responsive to sulfur flow, jug valve, RPM.
+    s9 = s.get(9, GasStream())
+    _check_limit(alarms, "TI-4820", s9.temperature_F,
+                 ALARM_SETPOINT_DB["TI-4820"], now)
+
+    # TI-7821  Pass 1 Outlet Duct Gas Temperature
+    _check_limit(alarms, "TI-7821", s11.temperature_F,
+                 ALARM_SETPOINT_DB["TI-7821"], now)
+
+    # TIC-4822  Pass 2 Inlet — Stream 10 (SH1B outlet)
+    _check_limit(alarms, "TIC-4822", s10.temperature_F,
+                 ALARM_SETPOINT_DB["TIC-4822"], now)
+
+    # TIC-5220  Pass 3 Inlet — Stream 12 (HIP hot outlet)
+    _check_limit(alarms, "TIC-5220", s12.temperature_F,
+                 ALARM_SETPOINT_DB["TIC-5220"], now)
+
+    # TIC-5224  Pass 4 Inlet — Stream 19 (HIP cold outlet)
+    _check_limit(alarms, "TIC-5224", s19.temperature_F,
+                 ALARM_SETPOINT_DB["TIC-5224"], now)
+
+    # TIC-5823  Drying Tower Acid Inlet Temperature
+    _check_limit(alarms, "TIC-5823", inp.dt_acid_inlet_temp_F,
+                 ALARM_SETPOINT_DB["TIC-5823"], now)
+
+    # TIC-6722  Interpass Tower Acid Inlet Temperature
+    _check_limit(alarms, "TIC-6722", inp.ipat_acid_temp_F,
+                 ALARM_SETPOINT_DB["TIC-6722"], now)
+
+    # TIC-7221  Final Tower Gas Inlet Temperature (EC4A outlet → FAT inlet)
+    _check_limit(alarms, "TIC-7221", s23.temperature_F,
+                 ALARM_SETPOINT_DB["TIC-7221"], now)
+
+    # TIC-7224  Interpass Tower Gas Inlet Temperature (EC3B setpoint)
+    _check_limit(alarms, "TIC-7224", inp.ec3b_ipat_setpt_F,
+                 ALARM_SETPOINT_DB["TIC-7224"], now)
+
+    # TI-8421  Interpass Tower Gas Outlet Temperature
+    _check_limit(alarms, "TI-8421", s17.temperature_F,
+                 ALARM_SETPOINT_DB["TI-8421"], now)
+
+    # ── Pressure alarms ───────────────────────────────────────────────
+
+    # PDI-4200  Sulfur Furnace and WHB Differential Pressure
+    # Approximate: furnace outlet P - WHB outlet P
+    s8a = s.get(8, GasStream())
+    whb_dp = s5.pressure_inwc - s8a.pressure_inwc if s8a.TOTAL > 0 else 0.0
+    _check_limit(alarms, "PDI-4200", whb_dp,
+                 ALARM_SETPOINT_DB["PDI-4200"], now)
+
+    # PI-5804  Drying Tower Gas Outlet Duct Pressure (= compressor suction)
+    s3 = s.get(3, GasStream())
+    _check_limit(alarms, "PI-5804", s3.pressure_inwc,
+                 ALARM_SETPOINT_DB["PI-5804"], now)
+
+    # PI-4002  Main Compressor Discharge Pressure
+    _check_limit(alarms, "PI-4002", s4.pressure_inwc,
+                 ALARM_SETPOINT_DB["PI-4002"], now)
+
+    # ── Stack Gas SO2 ─────────────────────────────────────────────────
+
+    # AI-0460 / AI-0465  Stack Gas Outlet SO2
     so2_ppm = (s24.SO2 / max(s24.TOTAL, 1e-9)) * 1e6
-    if so2_ppm > 500:
-        alarms.append(Alarm("1540-AIH-9001", "Stack SO2 HIGH",
-                            AlarmPriority.CRITICAL, so2_ppm, 500, "ppm", now))
+    _check_limit(alarms, "AI-0460", so2_ppm,
+                 ALARM_SETPOINT_DB["AI-0460"], now)
 
-    # Compressor surge (low flow warning)
-    s4 = streams.get(4, GasStream())
+    # AI-0461  Stack Gas Outlet O2
+    o2_vol_pct = (s24.O2 / max(s24.TOTAL, 1e-9)) * 100.0
+    _check_limit(alarms, "AI-0461", o2_vol_pct,
+                 ALARM_SETPOINT_DB["AI-0461"], now)
+
+    # ── Flow alarms (acid circuits — check against controller setpoints) ──
+
+    # FIC-5870  Drying Tower Acid Inlet Flowrate
+    _check_limit(alarms, "FIC-5870", inp.dt_acid_flow_gpm,
+                 ALARM_SETPOINT_DB["FIC-5870"], now)
+
+    # FIC-6770  Interpass Tower Acid Inlet Flowrate
+    _check_limit(alarms, "FIC-6770", inp.ipat_acid_flow_gpm,
+                 ALARM_SETPOINT_DB["FIC-6770"], now)
+
+    # FIC-6670  Final Tower Acid Inlet Flowrate
+    _check_limit(alarms, "FIC-6670", inp.fat_acid_flow_gpm,
+                 ALARM_SETPOINT_DB["FIC-6670"], now)
+
+    # ── Acid concentration alarms ─────────────────────────────────────
+
+    # AIC-6060  Drying / Interpass Tower Acid Concentration
+    dt_acid_pct = inp.dt_acid_strength * 100.0
+    _check_limit(alarms, "AIC-6060", dt_acid_pct,
+                 ALARM_SETPOINT_DB["AIC-6060"], now)
+
+    # AIC-6063  Final Tower Acid Concentration
+    fat_acid_pct = inp.fat_acid_strength * 100.0
+    _check_limit(alarms, "AIC-6063", fat_acid_pct,
+                 ALARM_SETPOINT_DB["AIC-6063"], now)
+
+    # ── Compressor surge (supplemental — not in MECS doc) ─────────────
     if s4.TOTAL < 80000:
-        alarms.append(Alarm("1540-FAL-4030", "Main compressor flow LOW — surge risk",
+        alarms.append(Alarm("PI-4002-SURGE", "Main compressor flow LOW — surge risk",
                             AlarmPriority.CRITICAL, s4.TOTAL, 80000, "scfm", now))
 
     return alarms
@@ -1371,55 +2221,149 @@ def build_sensor_tags(
     """
     Build a flat dict keyed by instrument tag number.
     The React frontend reads these directly: sensorTags["1540-TI-4010"]
+
+    Each tag now returns either a scalar value (backward-compatible) or,
+    for tags with alarm setpoints, a dict:
+      { "value": <float>, "LL": <float|None>, "L": <float|None>,
+        "N": <float|None>, "H": <float|None>, "HH": <float|None>,
+        "units": <str>, "desc": <str> }
     """
     tags: Dict[str, Any] = {}
 
     s = streams  # shorthand
 
+    # ── Helper: build a rich tag entry with alarm limits ──────────────
+    def _tag_with_alarms(value: float, alarm_tag: Optional[str] = None) -> Any:
+        """If the alarm_tag exists in the DB, return a dict with limits; else scalar."""
+        if alarm_tag and alarm_tag in ALARM_SETPOINT_DB:
+            entry = ALARM_SETPOINT_DB[alarm_tag]
+            return {
+                "value": round(value, 2),
+                "LL": entry.get("LL"),
+                "L": entry.get("L"),
+                "N": entry.get("N"),
+                "H": entry.get("H"),
+                "HH": entry.get("HH"),
+                "units": entry.get("units", ""),
+                "desc": entry.get("desc", ""),
+            }
+        return round(value, 2)
+
     # --- Ambient / Filter ---
     tags["1540-TI-5800"] = s.get(1, GasStream()).temperature_F      # Ambient temp
-    tags["1540-PI-5801"] = s.get(2, GasStream()).pressure_inwc       # Filter outlet pressure
-    tags["1540-PDI-5801"] = inp.filter_dp_inwc                       # Filter dP
+    tags["1540-PI-5801"] = _tag_with_alarms(
+        s.get(2, GasStream()).pressure_inwc, "PI-5801")              # Filter outlet pressure
+    tags["1540-PDI-5800"] = _tag_with_alarms(
+        inp.filter_dp_inwc, "PDI-5800")                              # Filter dP
+    tags["1540-PDI-5801"] = inp.filter_dp_inwc                       # Filter dP (legacy)
 
     # --- Main Compressor ---
     tags["1540-SIC-4030"] = inp.compressor_rpm_pct                   # Compressor speed %
     tags["1540-TI-4031"] = s.get(4, GasStream()).temperature_F       # Compressor outlet T
-    tags["1540-PI-4031"] = s.get(4, GasStream()).pressure_inwc       # Compressor outlet P
+    tags["1540-PI-4002"] = _tag_with_alarms(
+        s.get(4, GasStream()).pressure_inwc, "PI-4002")              # Compressor discharge P
+    tags["1540-PI-4031"] = s.get(4, GasStream()).pressure_inwc       # Compressor outlet P (legacy)
     tags["1540-FI-4030"] = s.get(4, GasStream()).TOTAL               # Compressor flow
 
     # --- Sulfur System ---
     tags["1530-FIC-2602"] = inp.sulfur_flow_sp_gpm                   # Sulfur flow SP
     tags["1530-TI-2601"] = inp.sulfur_temp_F                         # Sulfur temperature
     tags["1530-LI-2600"] = inp.sulfur_pit_level_ft                   # Sulfur pit level
+    tags["1540-PI-2604"] = _tag_with_alarms(
+        inp.sulfur_flow_sp_gpm * 1.43, "PI-2604")                   # Sulfur header pressure (approx)
 
     # --- Furnace ---
-    tags["1540-TI-4010"] = s.get(5, GasStream()).temperature_F       # Furnace outlet T
+    tags["1540-TI-4220"] = _tag_with_alarms(
+        s.get(5, GasStream()).temperature_F, "TI-4220")              # Furnace outlet T
+    tags["1540-TI-4010"] = s.get(5, GasStream()).temperature_F       # Furnace outlet T (legacy)
     tags["1540-PI-4010"] = s.get(5, GasStream()).pressure_inwc       # Furnace outlet P
-    tags["1540-AI-4010"] = kpp.get("SO2_ppm_stack", 0)              # Stack SO2
 
     # --- WHB / Jug Valve ---
     tags["1540-ZI-4020"] = inp.jug_valve_pct                         # Jug valve position
     tags["1540-TI-4021"] = s.get(9, GasStream()).temperature_F       # WHB mixed outlet T
+    s8a = s.get(8, GasStream())
+    whb_dp = s.get(5, GasStream()).pressure_inwc - s8a.pressure_inwc if s8a.TOTAL > 0 else 0.0
+    tags["1540-PDI-4200"] = _tag_with_alarms(whb_dp, "PDI-4200")    # Furnace+WHB dP
 
-    # --- Converter Pass Temperatures ---
-    pass_streams = {1: 10, 2: 12, 3: 14, 4: 18}
-    for p_num, s_id in pass_streams.items():
-        stream = s.get(s_id, GasStream())
-        tags[f"1540-TI-41{p_num}0"] = stream.temperature_F          # Pass inlet T
-        outlet_id = s_id + 1
-        outlet = s.get(outlet_id, GasStream())
-        tags[f"1540-TI-41{p_num}1"] = outlet.temperature_F          # Pass outlet T
+    # --- Stack Gas Analytical ---
+    so2_ppm = (s.get(24, GasStream()).SO2 / max(s.get(24, GasStream()).TOTAL, 1e-9)) * 1e6
+    o2_vol_pct = (s.get(24, GasStream()).O2 / max(s.get(24, GasStream()).TOTAL, 1e-9)) * 100.0
+    tags["1530-AI-0460"] = _tag_with_alarms(so2_ppm, "AI-0460")     # Stack SO2 (0-1000 ppmv)
+    tags["1530-AI-0465"] = _tag_with_alarms(so2_ppm, "AI-0465")     # Stack SO2 (0-50 ppmv)
+    tags["1530-AI-0461"] = _tag_with_alarms(o2_vol_pct, "AI-0461")  # Stack O2
+    tags["1540-AI-4010"] = kpp.get("SO2_ppm_stack", 0)              # Stack SO2 (legacy)
 
-    # --- Converter Duct Sensors ---
-    tags["1540-TI-4820"] = s.get(9, GasStream()).temperature_F       # Pass 1 Inlet Duct (WHB mixed outlet)
+    # --- Converter Pass Temperatures (with alarm limits) ---
+    # Pass 1 inlet — Stream 9 (WHB mixed outlet, dynamic)
+    tags["1540-TI-4820"] = _tag_with_alarms(
+        s.get(9, GasStream()).temperature_F, "TI-4820")
+    # Pass 1 outlet — Stream 11 (hot, before SH1B)
+    tags["1540-TI-7821"] = _tag_with_alarms(
+        s.get(11, GasStream()).temperature_F, "TI-7821")
+    # Pass 2 inlet — Stream 10 (SH1B outlet)
+    tags["1540-TIC-4822"] = _tag_with_alarms(
+        s.get(10, GasStream()).temperature_F, "TIC-4822")
+    # Pass 3 inlet — Stream 12 (HIP hot outlet)
+    tags["1540-TIC-5220"] = _tag_with_alarms(
+        s.get(12, GasStream()).temperature_F, "TIC-5220")
+    # Pass 4 inlet — Stream 19 (HIP cold outlet)
+    tags["1540-TIC-5224"] = _tag_with_alarms(
+        s.get(19, GasStream()).temperature_F, "TIC-5224")
+
+    # Legacy pass tags (backward compatibility)
+    pass_inlet  = {1: 9, 2: 10, 3: 12, 4: 19}
+    pass_outlet = {1: 11, 2: 13, 3: 14, 4: 20}
+    for p_num in range(1, 5):
+        tags[f"1540-TI-41{p_num}0"] = s.get(pass_inlet[p_num], GasStream()).temperature_F
+        tags[f"1540-TI-41{p_num}1"] = s.get(pass_outlet[p_num], GasStream()).temperature_F
+
+    # --- Drying Tower Acid ---
+    tags["1520-TIC-5823"] = _tag_with_alarms(
+        inp.dt_acid_inlet_temp_F, "TIC-5823")                       # DT acid inlet T
+    tags["1520-FIC-5870"] = _tag_with_alarms(
+        inp.dt_acid_flow_gpm, "FIC-5870")                           # DT acid flow
+    tags["1520-AIC-6060"] = _tag_with_alarms(
+        inp.dt_acid_strength * 100.0, "AIC-6060")                   # DT acid concentration
+
+    # --- Interpass Tower Acid ---
+    tags["1520-TIC-6722"] = _tag_with_alarms(
+        inp.ipat_acid_temp_F, "TIC-6722")                           # IPAT acid inlet T
+    tags["1520-FIC-6770"] = _tag_with_alarms(
+        inp.ipat_acid_flow_gpm, "FIC-6770")                         # IPAT acid flow
+
+    # --- Final Tower Acid ---
+    tags["1520-TIC-6622"] = _tag_with_alarms(
+        inp.fat_acid_temp_F, "TIC-6622")                            # FAT acid inlet T  (TI-6622)
+    tags["1520-FIC-6670"] = _tag_with_alarms(
+        inp.fat_acid_flow_gpm, "FIC-6670")                          # FAT acid flow
+    tags["1520-AIC-6063"] = _tag_with_alarms(
+        inp.fat_acid_strength * 100.0, "AIC-6063")                  # FAT acid concentration
+
+    # --- EC3B / IPAT Gas ---
+    tags["1540-TIC-7224"] = _tag_with_alarms(
+        inp.ec3b_ipat_setpt_F, "TIC-7224")                          # IPAT gas inlet T
+    tags["1540-TI-8421"] = _tag_with_alarms(
+        s.get(17, GasStream()).temperature_F, "TI-8421")             # IPAT gas outlet T
 
     # --- IPAT ---
-    tags["1540-TI-4200"] = s.get(16, GasStream()).temperature_F      # IPAT gas inlet T
-    tags["1540-TI-4201"] = s.get(17, GasStream()).temperature_F      # IPAT gas outlet T
+    tags["1540-TI-4200"] = s.get(16, GasStream()).temperature_F      # IPAT gas inlet T (legacy)
+    tags["1540-TI-4201"] = s.get(17, GasStream()).temperature_F      # IPAT gas outlet T (legacy)
 
     # --- SH4A / EC4C / EC4A ---
-    tags["1540-TI-4300"] = s.get(20, GasStream()).temperature_F      # SH4A gas inlet T
-    tags["1540-TI-4301"] = s.get(23, GasStream()).temperature_F      # EC4A gas outlet T
+    tags["1540-TI-4300"] = s.get(20, GasStream()).temperature_F      # Pass 4 outlet = SH4A gas inlet
+    tags["1540-TIC-7221"] = _tag_with_alarms(
+        s.get(23, GasStream()).temperature_F, "TIC-7221")            # EC4A gas outlet = FAT gas inlet T
+    tags["1540-TI-4301"] = s.get(23, GasStream()).temperature_F      # EC4A gas outlet T (legacy)
+
+    # --- Superheater 1B Steam ---
+    tags["1540-TIC-7810"] = _tag_with_alarms(
+        inp.sh1b_out_setpt_F, "TIC-7810")                           # SH1B steam outlet T
+    tags["1540-PIC-7806"] = _tag_with_alarms(
+        inp.sh_steam_press_psig, "PIC-7806")                        # SH1B steam outlet P
+
+    # --- Compressor Suction ---
+    tags["1520-PI-5804"] = _tag_with_alarms(
+        s.get(3, GasStream()).pressure_inwc, "PI-5804")              # DT gas outlet / compressor suction P
 
     # --- FAT / Stack ---
     tags["1540-TI-4400"] = s.get(24, GasStream()).temperature_F      # Stack gas T
@@ -1428,6 +2372,10 @@ def build_sensor_tags(
     tags["KPP_CONVERSION"] = kpp.get("overall_SO2_conversion_pct", 0)
     tags["KPP_PRODUCTION"] = kpp.get("H2SO4_production_STPD", 0)
     tags["KPP_SO2_STACK"] = kpp.get("SO2_ppm_stack", 0)
+
+    # --- Full Alarm Setpoint Database (for frontend alarm display) ---
+    tags["_ALARM_SETPOINTS"] = ALARM_SETPOINT_DB
+    tags["_CONTROLLER_SETPOINTS"] = CONTROLLER_SETPOINT_DB
 
     return tags
 
@@ -1448,8 +2396,8 @@ class PlantOrchestrator:
         self.kpp: Dict[str, Any] = {}
         self.alarms: List[Alarm] = []
         self.sensor_tags: Dict[str, Any] = {}
-        self.comp_details: Dict[str, float] = {}
         self.dynamic_state: Dict[str, Any] = {}
+        self.comp_details: Dict[str, float] = {}
 
     def solve_static(self, inp: PlantInputs) -> Dict[str, Any]:
         """
@@ -1499,20 +2447,26 @@ class PlantOrchestrator:
         streams[8] = whb_streams["s8a"]
         streams[9] = whb_streams["s9"]
 
-        # ── [6] To Converter — Stream 10 = Pass 1 inlet ─────────────────
-        # Stream 9 → cooling → Stream 10 (Pass 1 inlet)
-        s10 = InterpassHX.cool_stream(
-            streams[9],
-            target_temp_F=inp.pass1_inlet_temp_C * 9.0 / 5.0 + 32.0,
-            stream_id=10, tag="GP10", label="Stream 10 — Pass 1 Inlet",
-            dp_inwc=2.0,
-        )
-        streams[10] = s10
+        # ══════════════════════════════════════════════════════════════════
+        # CONVERTER SECTION — correct MECS 3:1 double-absorption topology
+        #
+        # Process flow (stream numbers NOT sequential per MECS convention):
+        #   9 → Pass 1 → 11 → SH1B → 10 → Pass 2 → 13 → HIP hot → 12
+        #   → Pass 3 → 14 → CIP hot → 15 → EC3B → 16 → IPAT → 17
+        #   → CIP cold → 18 → HIP cold → 19 → Pass 4 → 20
+        #   → SH4A → 21 → EC4C → 22 → EC4A → 23 → FAT → 24
+        #
+        # Even/odd pairing: (10,11) (12,13) share composition;
+        #   even = cooled (post-HX), odd = hot (pass outlet)
+        # ══════════════════════════════════════════════════════════════════
 
-        # ── [7] Converter Pass 1 ─────────────────────────────────────────
+        s9 = streams[9]
+
+        # ── Pass 1: Stream 9 → Converter → Stream 11 (hot outlet) ──────
+        pass1_inlet_C = (s9.temperature_F - 32.0) * 5.0 / 9.0
         s11 = CatalyticPass.calculate(
-            s10, pass_number=1,
-            inlet_temp_C=inp.pass1_inlet_temp_C,
+            s9, pass_number=1,
+            inlet_temp_C=pass1_inlet_C,
             catalyst_name=inp.pass1_catalyst,
             catalyst_liters=inp.pass1_liters,
             activity_pct=inp.pass1_activity,
@@ -1520,22 +2474,24 @@ class PlantOrchestrator:
         )
         s11.stream_id = 11
         s11.tag = "G11"
-        s11.label = "Stream 11 — Pass 1 Outlet"
+        s11.label = "Stream 11 — Pass 1 Outlet (Hot)"
+        s11.pressure_inwc = s9.pressure_inwc - 34.0   # ref: 179→145
+        s11.recalc_total()
         streams[11] = s11
 
-        # ── [8] Hot Interpass HX (HIP) hot side → Stream 12 (cooled) ────
-        #     Duty saved for cold-side reheat after IPAT
-        s12, hip_duty_btu = InterpassHX.cool_stream_with_duty(
+        # ── SH1B: Stream 11 → cool → Stream 10 (Pass 2 inlet) ─────────
+        s10, sh1b_duty = InterpassHX.cool_stream_with_duty(
             s11,
             target_temp_F=inp.pass2_inlet_temp_C * 9.0 / 5.0 + 32.0,
-            stream_id=12, tag="G12", label="Stream 12 — HIP Outlet / Pass 2 Inlet",
+            stream_id=10, tag="GP10",
+            label="Stream 10 — SH1B Outlet / Pass 2 Inlet",
             dp_inwc=4.0,
         )
-        streams[12] = s12
+        streams[10] = s10
 
-        # ── [9] Converter Pass 2 ─────────────────────────────────────────
+        # ── Pass 2: Stream 10 → Converter → Stream 13 (hot outlet) ────
         s13 = CatalyticPass.calculate(
-            s12, pass_number=2,
+            s10, pass_number=2,
             inlet_temp_C=inp.pass2_inlet_temp_C,
             catalyst_name=inp.pass2_catalyst,
             catalyst_liters=inp.pass2_liters,
@@ -1544,115 +2500,110 @@ class PlantOrchestrator:
         )
         s13.stream_id = 13
         s13.tag = "G13"
-        s13.label = "Stream 13 — Pass 2 Outlet"
+        s13.label = "Stream 13 — Pass 2 Outlet (Hot)"
+        s13.pressure_inwc = s10.pressure_inwc - 16.0   # ref: ~16 inwc
+        s13.recalc_total()
         streams[13] = s13
 
-        # ── [10] Cold Interpass HX (CIP) hot side → Stream 14 ──────────
-        #      Duty saved for cold-side reheat after IPAT
-        s14, cip_duty_btu = InterpassHX.cool_stream_with_duty(
+        # ── HIP hot: Stream 13 → cool → Stream 12 (Pass 3 inlet) ──────
+        s12, hip_duty = InterpassHX.cool_stream_with_duty(
             s13,
             target_temp_F=inp.pass3_inlet_temp_C * 9.0 / 5.0 + 32.0,
-            stream_id=14, tag="G14", label="Stream 14 — CIP Outlet / Pass 3 Inlet",
+            stream_id=12, tag="G12",
+            label="Stream 12 — HIP Outlet / Pass 3 Inlet",
             dp_inwc=4.0,
         )
-        streams[14] = s14
+        streams[12] = s12
 
-        # ── [11] Converter Pass 3 ────────────────────────────────────────
-        s15 = CatalyticPass.calculate(
-            s14, pass_number=3,
+        # ── Pass 3: Stream 12 → Converter → Stream 14 (hot outlet) ────
+        s14 = CatalyticPass.calculate(
+            s12, pass_number=3,
             inlet_temp_C=inp.pass3_inlet_temp_C,
             catalyst_name=inp.pass3_catalyst,
             catalyst_liters=inp.pass3_liters,
             activity_pct=inp.pass3_activity,
             barometric_psia=inp.barometric_psia,
         )
-        s15.stream_id = 15
-        s15.tag = "G15"
-        s15.label = "Stream 15 — Pass 3 Outlet"
+        s14.stream_id = 14
+        s14.tag = "G14"
+        s14.label = "Stream 14 — Pass 3 Outlet (Hot)"
+        s14.pressure_inwc = s12.pressure_inwc - 14.0   # ref: ~14 inwc
+        s14.recalc_total()
+        streams[14] = s14
+
+        # ── CIP hot: Stream 14 → cool → Stream 15 ─────────────────────
+        s15, cip_duty = InterpassHX.cool_stream_with_duty(
+            s14,
+            target_temp_F=inp.cip_hot_outlet_F,
+            stream_id=15, tag="G15",
+            label="Stream 15 — CIP Outlet",
+            dp_inwc=4.0,
+        )
         streams[15] = s15
 
-        # ── [12] EC3B cooling ────────────────────────────────────────────
+        # ── EC3B: Stream 15 → EC3B → Stream 16 ────────────────────────
         s16 = EC3B.calculate(s15, target_temp_F=inp.ec3b_ipat_setpt_F)
         s16.stream_id = 16
         s16.label = "Stream 16 — EC3B Outlet / IPAT Gas Inlet"
         streams[16] = s16
 
-        # ── [13] IPAT ────────────────────────────────────────────────────
+        # ── IPAT: Stream 16 → IPAT → Stream 17 (SO3 removed) ──────────
         s17 = IPATower.calculate(s16, inp)
         streams[17] = s17
 
-        # ── [14] CIP Cold Side + HIP Cold Side (reheat IPAT outlet) ─────
-        #     Physical path: IPAT outlet → CIP cold → HIP cold → Pass 4
-        #     No bypasses → cold-side duty = hot-side duty for each HX
-        #     Total cold-side duty = CIP duty + HIP duty
-        #
-        #     Stream 17 (IPAT out, ~180°F) → heated → Stream 18 (Pass 4 inlet)
-
-        # Apply CIP cold-side duty first (smaller HX, lower duty)
-        s17a = InterpassHX.heat_stream_with_duty(
-            s17, cip_duty_btu,
-            stream_id=17, tag="GCC1",
-            label="Stream 17A — CIP Cold Side Outlet",
-            dp_inwc=3.0,
-        )
-        # Override stream_id to not collide — use 17 in internal tracking only
-        # (This is an intermediate point; final Pass 4 inlet is Stream 18)
-
-        # Apply HIP cold-side duty second (larger HX, higher duty)
+        # ── CIP cold: Stream 17 → heated by CIP duty → Stream 18 ──────
         s18 = InterpassHX.heat_stream_with_duty(
-            s17a, hip_duty_btu,
+            s17, cip_duty,
             stream_id=18, tag="G18",
-            label="Stream 18 — HIP Cold Side Outlet / Pass 4 Inlet",
-            dp_inwc=3.0,
+            label="Stream 18 — CIP Cold Outlet",
+            dp_inwc=8.0,    # ref: 69→61
         )
         streams[18] = s18
 
-        s19 = CatalyticPass.calculate(
-            s18, pass_number=4,
-            inlet_temp_C=inp.pass4_inlet_temp_C,
+        # ── HIP cold: Stream 18 → heated by HIP duty → Stream 19 ──────
+        s19 = InterpassHX.heat_stream_with_duty(
+            s18, hip_duty,
+            stream_id=19, tag="G19",
+            label="Stream 19 — HIP Cold Outlet / Pass 4 Inlet",
+            dp_inwc=9.0,    # ref: 61→52
+        )
+        streams[19] = s19
+
+        # ── Pass 4: Stream 19 → Converter → Stream 20 ─────────────────
+        pass4_inlet_C = (s19.temperature_F - 32.0) * 5.0 / 9.0
+        s20 = CatalyticPass.calculate(
+            s19, pass_number=4,
+            inlet_temp_C=pass4_inlet_C,
             catalyst_name=inp.pass4_catalyst,
             catalyst_liters=inp.pass4_liters,
             activity_pct=inp.pass4_activity,
             barometric_psia=inp.barometric_psia,
         )
-        s19.stream_id = 19
-        s19.tag = "G19"
-        s19.label = "Stream 19 — Pass 4 Outlet"
-        streams[19] = s19
+        s20.stream_id = 20
+        s20.tag = "G20"
+        s20.label = "Stream 20 — Pass 4 Outlet"
+        s20.pressure_inwc = s19.pressure_inwc - 8.0    # ref: ~8 inwc
+        s20.recalc_total()
+        streams[20] = s20
 
-        # ── [15] SH4A / EC4C / EC4A ─────────────────────────────────────
-        sh_streams = SH4A_EC4C_EC4A.calculate(s19, inp)
-        streams[20] = sh_streams["s20"]
+        # ── SH4A / EC4C / EC4A ─────────────────────────────────────────
+        sh_streams = SH4A_EC4C_EC4A.calculate(s20, inp)
         streams[21] = sh_streams["s21"]
         streams[22] = sh_streams["s22"]
         streams[23] = sh_streams["s23"]
 
-        # ── [16] FAT ─────────────────────────────────────────────────────
+        # ── FAT ─────────────────────────────────────────────────────────
         s24 = FATower.calculate(streams[23], inp)
 
-        # ── Converter bypass leakage (O2/SO2-ratio dependent) ──────────
-        # Real packed beds have 0.1-0.2% gas bypass through wall channeling,
-        # seal gaps, and catalyst bed edge effects.  When the gas is richer
-        # (higher SO2 %, lower O2/SO2 ratio), equilibrium approach degrades
-        # and effective bypass increases — matching real plant behaviour.
-        #
-        # Model: bypass = base × (so2_pct / DESIGN_SO2_PCT)^4
-        #   Pass 1 SO2 mol% is the true independent variable — determined by
-        #   both sulfur flow AND air flow (compressor RPM).
-        #   At design (11.5% SO2): bypass = base → 99.85%
-        #   Below design SO2 %: bypass shrinks → conversion rises (leaner gas)
-        #   Above design SO2 %: bypass grows → conversion drops (richer gas)
-        #   Floor: 0.0002 (irreducible wall channeling / seal leakage)
+        # ── Converter bypass leakage ────────────────────────────────────
         DESIGN_SO2_PCT = 11.5
         MIN_BYPASS = 0.0002
         base_bypass = inp.converter_bypass_frac
         if inp.plant_condition == "dirty":
             base_bypass = max(base_bypass, 0.0020)
-
-        so2_pct = s10.SO2 / max(s10.TOTAL, 1.0) * 100.0
+        so2_pct = s9.SO2 / max(s9.TOTAL, 1.0) * 100.0
         strength_factor = (so2_pct / DESIGN_SO2_PCT) ** 4.0
         bypass = max(MIN_BYPASS, base_bypass * strength_factor)
-
         s24.SO2 += s5.SO2 * bypass
         s24.recalc_total()
 
