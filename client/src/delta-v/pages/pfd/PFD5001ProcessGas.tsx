@@ -204,10 +204,82 @@ export default function PFD5001ProcessGas() {
     try {
       if (isOrchestratorCase(spCase.id)) {
         const mode = spCase.id === "current-static" ? "static" : "dynamic";
+
+        const [pvRes, spRes] = await Promise.all([
+          fetch('/api/process-variables', { signal: controller.signal }),
+          fetch('/api/setpoint-variables', { signal: controller.signal }),
+        ]);
+        const pvData = await pvRes.json();
+        const spData = await spRes.json();
+
+        let rpmPercent = 78.5;
+        let inletTemp = 70;
+        let barometricPressure = 0.850;
+        let plantCondition = "clean";
+        let sulfurFlowGpm = 72;
+        let jugValvePct = 4.5;
+        let damperOpenPct = 100;
+        const caseId = "case1";
+
+        const extractCaseValue = (variables: any[], tagPatterns: string[]): number | null => {
+          if (!variables) return null;
+          for (const pattern of tagPatterns) {
+            const lowerPattern = pattern.toLowerCase();
+            const variable = variables.find((v: any) =>
+              v.tag === pattern ||
+              v.tagNumber === pattern ||
+              v.tag?.toLowerCase().includes(lowerPattern) ||
+              v.description?.toLowerCase().includes(lowerPattern)
+            );
+            if (variable?.cases?.[caseId]) {
+              const val = parseFloat(String(variable.cases[caseId]).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(val)) return val;
+            }
+          }
+          return null;
+        };
+
+        if (pvData?.variables) {
+          const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor']);
+          if (rpmVal !== null) rpmPercent = rpmVal;
+          const tempVal = extractCaseValue(pvData.variables, ['Ambient Temperature', 'dt_inlet_temp', 'TI-4', 'inlet temp']);
+          if (tempVal !== null) inletTemp = tempVal;
+          const baroVal = extractCaseValue(pvData.variables, ['Ambient Pressure', 'ambient_pressure', 'barometric']);
+          if (baroVal !== null) barometricPressure = baroVal;
+          const plantVar = pvData.variables.find((v: any) =>
+            v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
+          );
+          if (plantVar?.cases?.[caseId]) {
+            const val = String(plantVar.cases[caseId]).toLowerCase();
+            if (val === 'dirty' || val === 'clean') plantCondition = val;
+          }
+          const sulfurVal = extractCaseValue(pvData.variables, ['1530-F-2602', 'sulfur_flow', 'sulfur flow']);
+          if (sulfurVal !== null) sulfurFlowGpm = sulfurVal;
+          const jugVal = extractCaseValue(pvData.variables, ['1540-H-4282', 'jug_valve', 'jug valve']);
+          if (jugVal !== null) jugValvePct = jugVal;
+          const damperVal = extractCaseValue(pvData.variables, ['1540-H-4283', 'damper', 'whb_dp']);
+          if (damperVal !== null) damperOpenPct = damperVal;
+        }
+        if (spData?.variables) {
+          const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030']);
+          if (rpmSpVal !== null && rpmPercent === 78.5) rpmPercent = rpmSpVal;
+        }
+
+        const orchInput = {
+          compressor_rpm_pct: rpmPercent,
+          barometric_atm: barometricPressure,
+          plant_condition: plantCondition,
+          sulfur_flow_sp_gpm: sulfurFlowGpm,
+          jug_valve_pct: jugValvePct,
+          damper_open_pct: damperOpenPct,
+          dt_acid_inlet_temp_F: inletTemp,
+          mode,
+        };
+
         const response = await fetch('/api/plant-orchestrator', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode }),
+          body: JSON.stringify(orchInput),
           signal: controller.signal,
         });
         if (!response.ok) {
