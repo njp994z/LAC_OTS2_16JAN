@@ -308,6 +308,12 @@ const HomeScreen = () => {
   }, [dynamicRunning, dynamicDt, dynamicSpeed]);
 
   const dynamicOrchInFlightRef = useRef(false);
+  const dynamicOrchInputsRef = useRef({
+    compressor_rpm_pct: 0,
+    sulfur_flow_sp_gpm: 0,
+    jug_valve_pct: 0,
+    damper_open_pct: 0,
+  });
 
   // Auto-start simulation when entering Dynamic/Start-Up/Emergency modes
   useEffect(() => {
@@ -1006,20 +1012,28 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const tempSensor4820Config = getControllerConfig('1540-TI-4820');
 
   useEffect(() => {
+    dynamicOrchInputsRef.current = {
+      compressor_rpm_pct: handControllerSyncState.syncedPV,
+      sulfur_flow_sp_gpm: sulfurSyncState.syncedPV,
+      jug_valve_pct: jugValveHandControllerSyncState.syncedSP,
+      damper_open_pct: whbHandControllerSyncState.syncedSP,
+    };
+  }, [handControllerSyncState.syncedPV, sulfurSyncState.syncedPV,
+      jugValveHandControllerSyncState.syncedSP, whbHandControllerSyncState.syncedSP]);
+
+  useEffect(() => {
     if (!dynamicRunning) return;
     const intervalMs = dynamicDt * 1000 / dynamicSpeed;
     const tick = async () => {
       if (dynamicOrchInFlightRef.current) return;
       dynamicOrchInFlightRef.current = true;
       try {
+        const inputs = dynamicOrchInputsRef.current;
         const res = await fetch('/api/plant-orchestrator', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            compressor_rpm_pct: handControllerSyncState.syncedPV,
-            sulfur_flow_sp_gpm: sulfurSyncState.syncedPV,
-            jug_valve_pct: jugValveHandControllerSyncState.syncedSP,
-            damper_open_pct: whbHandControllerSyncState.syncedSP,
+            ...inputs,
             barometric_atm: 1.0,
             plant_condition: "clean",
             dt_acid_inlet_temp_F: 70,
@@ -1047,11 +1061,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       }
     };
     tick();
-    const id = setInterval(tick, Math.max(intervalMs, 500));
+    const id = setInterval(tick, Math.max(intervalMs, 1000));
     return () => clearInterval(id);
-  }, [dynamicRunning, dynamicDt, dynamicSpeed,
-      handControllerSyncState.syncedPV, sulfurSyncState.syncedPV,
-      jugValveHandControllerSyncState.syncedSP, whbHandControllerSyncState.syncedSP]);
+  }, [dynamicRunning, dynamicDt, dynamicSpeed]);
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
@@ -1659,38 +1671,35 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     vfdConfig,
   } = useCompressor();
 
-  // Update compressor context when static mode is active — use orchestrator compressor data
   useEffect(() => {
-    if (selectedMode === "Static") {
-      const comp = orchestratorResult?.compressor;
-      if (comp && comp.compressor_rpm) {
-        const speedPercent = orchestratorResult?.sensor_tags?.["1540-SIC-4030"] ?? (comp.speed_ratio ?? 0) * 100;
-        setStaticValues({
-          speedPV: speedPercent,
-          speedSP: speedPercent,
-          motorSpeedRPM: comp.driver_rpm ?? 0,
-          compressorSpeedRPM: comp.compressor_rpm ?? 0,
-          motorPowerHP: comp.motor_power_hp ?? 0,
-          vfdCurrentAmps: comp.vfd_current_amps ?? 0,
-          currentPV: comp.vfd_current_amps ?? 0,
-          powerPV: comp.motor_power_hp ?? 0,
-          state: "RUNNING",
-          deviceState: "Static Mode",
-        });
-      } else if (loadedCaseValue1540H4030 !== null) {
-        const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
-        const estimatedCurrent = (loadedCaseValue1540H4030 / 100) * 50;
-        setStaticValues({
-          speedPV: loadedCaseValue1540H4030,
-          speedSP: loadedCaseValue1540H4030,
-          motorSpeedRPM: speedRPM,
-          compressorSpeedRPM: speedRPM,
-          motorPowerHP: 0,
-          currentPV: estimatedCurrent,
-          state: "RUNNING",
-          deviceState: "Static Mode",
-        });
-      }
+    const comp = orchestratorResult?.compressor;
+    if (comp && comp.compressor_rpm) {
+      const speedPercent = orchestratorResult?.sensor_tags?.["1540-SIC-4030"] ?? (comp.speed_ratio ?? 0) * 100;
+      setStaticValues({
+        speedSP: speedPercent,
+        motorSpeedRPM: comp.driver_rpm ?? 0,
+        compressorSpeedRPM: comp.compressor_rpm ?? 0,
+        motorPowerHP: comp.motor_power_hp ?? 0,
+        vfdCurrentAmps: comp.vfd_current_amps ?? 0,
+        currentPV: comp.vfd_current_amps ?? 0,
+        powerPV: comp.motor_power_hp ?? 0,
+        state: "RUNNING",
+        deviceState: selectedMode === "Static" ? "Static Mode" : "Dynamic Mode",
+        ...(selectedMode === "Static" ? { speedPV: speedPercent } : {}),
+      });
+    } else if (selectedMode === "Static" && loadedCaseValue1540H4030 !== null) {
+      const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
+      const estimatedCurrent = (loadedCaseValue1540H4030 / 100) * 50;
+      setStaticValues({
+        speedPV: loadedCaseValue1540H4030,
+        speedSP: loadedCaseValue1540H4030,
+        motorSpeedRPM: speedRPM,
+        compressorSpeedRPM: speedRPM,
+        motorPowerHP: 0,
+        currentPV: estimatedCurrent,
+        state: "RUNNING",
+        deviceState: "Static Mode",
+      });
     }
   }, [selectedMode, orchestratorResult, loadedCaseValue1540H4030, setStaticValues]);
 

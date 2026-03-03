@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -122,6 +122,7 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const handleStop = () => {
+    orchOverrideRef.current = false;
     setCompressorData(prev => ({ ...prev, state: "STOPPING", deviceState: "Stopping..." }));
     setTimeout(() => {
       setCompressorData(prev => ({ 
@@ -159,23 +160,27 @@ export const CompressorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setCompressorData(prev => ({ ...prev, failAlarm: active }));
   };
 
-  // Set static values from simulation results (used in Static mode)
+  const orchOverrideRef = useRef(false);
+
   const setStaticValues = (values: Partial<CompressorData>) => {
+    orchOverrideRef.current = true;
     setCompressorData(prev => ({ ...prev, ...values }));
   };
 
-  // Simulate speed PV tracking speed SP when running - always fluctuate
   useEffect(() => {
     if (compressorData.state === "RUNNING") {
       const interval = setInterval(() => {
         setCompressorData(prev => {
           const diff = prev.speedSP - prev.speedPV;
-          // Approach setpoint with damping, plus small jitter for continuous fluctuation
           const approach = diff * 0.1;
-          const jitter = (Math.random() - 0.5) * 0.3; // Small continuous jitter
+          const jitter = (Math.random() - 0.5) * 0.3;
           const newSpeedPV = Math.max(0, Math.min(100, prev.speedPV + approach + jitter));
+
+          if (orchOverrideRef.current) {
+            return { ...prev, speedPV: newSpeedPV };
+          }
+
           const speedRatio = newSpeedPV / 100;
-          
           return {
             ...prev,
             speedPV: newSpeedPV,
