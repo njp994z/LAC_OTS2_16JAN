@@ -486,6 +486,14 @@ const HomeScreen = () => {
           const raw7225 = tags["1540-TI-7225"];
           updateTempSensor7225PV(typeof raw7225 === 'object' && raw7225 !== null ? (raw7225 as any).value : raw7225);
         }
+        if (tags["1520-TIC-6622"] !== undefined) {
+          const raw6622 = tags["1520-TIC-6622"];
+          updateTempSensor6623PV(typeof raw6622 === 'object' && raw6622 !== null ? (raw6622 as any).value : raw6622);
+        }
+        if (tags["1520-TIC-6722"] !== undefined) {
+          const raw6722 = tags["1520-TIC-6722"];
+          updateTempSensor8464PV(typeof raw6722 === 'object' && raw6722 !== null ? (raw6722 as any).value : raw6722);
+        }
       }
       
     } catch (error) {
@@ -831,6 +839,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // L2_1520 ACID: Acid Tower 2 position and size
   const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
   const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
+  const [faceplate6623L21520Position, setFaceplate6623L21520Position] = useState({ x: 1250, y: 500 });
+  const [faceplate6623L21520Size, setFaceplate6623L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary6623L21520, setShowSecondary6623L21520] = useState(false);
+  const [faceplate8464L21520Position, setFaceplate8464L21520Position] = useState({ x: 2150, y: 500 });
+  const [faceplate8464L21520Size, setFaceplate8464L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary8464L21520, setShowSecondary8464L21520] = useState(false);
   const [isLockedL21520, setIsLockedL21520] = useState(true);
   const [isSavingL21520, setIsSavingL21520] = useState(false);
   const [isL21520Dirty, setIsL21520Dirty] = useState(false);
@@ -1169,6 +1183,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               const raw7225 = tags["1540-TI-7225"];
               updateTempSensor7225PV(typeof raw7225 === 'object' && raw7225 !== null ? (raw7225 as any).value : raw7225);
             }
+            if (tags["1520-TIC-6622"] !== undefined) {
+              const raw6622 = tags["1520-TIC-6622"];
+              updateTempSensor6623PV(typeof raw6622 === 'object' && raw6622 !== null ? (raw6622 as any).value : raw6622);
+            }
+            if (tags["1520-TIC-6722"] !== undefined) {
+              const raw6722 = tags["1520-TIC-6722"];
+              updateTempSensor8464PV(typeof raw6722 === 'object' && raw6722 !== null ? (raw6722 as any).value : raw6722);
+            }
           }
         }
       } catch (e) {
@@ -1194,7 +1216,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const tempSensor5231Config = getControllerConfig('1540-TI-5231');
   const { state: tempSensor7225SyncState, initializeController: initTempSensor7225, updateAlarmLimits: updateTempSensor7225AlarmLimits, updateSyncedPV: updateTempSensor7225PV } = useControllerSync('1540-TI-7225');
   const tempSensor7225Config = getControllerConfig('1540-TI-7225');
-  
+
+  const { state: tempSensor6623SyncState, initializeController: initTempSensor6623, updateAlarmLimits: updateTempSensor6623AlarmLimits, updateSyncedPV: updateTempSensor6623PV } = useControllerSync('1520-TI-6623');
+  const tempSensor6623Config = getControllerConfig('1520-TI-6623');
+  const { state: tempSensor8464SyncState, initializeController: initTempSensor8464, updateAlarmLimits: updateTempSensor8464AlarmLimits, updateSyncedPV: updateTempSensor8464PV } = useControllerSync('1520-TI-8464');
+  const tempSensor8464Config = getControllerConfig('1520-TI-8464');
+
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
     if (tempSensorConfig.TYPICAL_PV !== undefined) {
@@ -1370,6 +1397,30 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor7225Config.ALM_HH_LIM ?? 0,
     });
   }, [tempSensor7225Config.TYPICAL_PV, tempSensor7225Config.ALM_LL_LIM, tempSensor7225Config.ALM_L_LIM, tempSensor7225Config.ALM_H_LIM, tempSensor7225Config.ALM_HH_LIM, initTempSensor7225, updateTempSensor7225AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor6623Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 500) ? configPV : 172;
+    initTempSensor6623(typicalPV, typicalPV, 100, 300);
+    updateTempSensor6623AlarmLimits({
+      LL: tempSensor6623Config.ALM_LL_LIM ?? 0,
+      L: tempSensor6623Config.ALM_L_LIM ?? 165,
+      H: tempSensor6623Config.ALM_H_LIM ?? 180,
+      HH: tempSensor6623Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor6623Config.TYPICAL_PV, tempSensor6623Config.ALM_LL_LIM, tempSensor6623Config.ALM_L_LIM, tempSensor6623Config.ALM_H_LIM, tempSensor6623Config.ALM_HH_LIM, initTempSensor6623, updateTempSensor6623AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor8464Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 500) ? configPV : 180;
+    initTempSensor8464(typicalPV, typicalPV, 100, 300);
+    updateTempSensor8464AlarmLimits({
+      LL: tempSensor8464Config.ALM_LL_LIM ?? 0,
+      L: tempSensor8464Config.ALM_L_LIM ?? 165,
+      H: tempSensor8464Config.ALM_H_LIM ?? 190,
+      HH: tempSensor8464Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor8464Config.TYPICAL_PV, tempSensor8464Config.ALM_LL_LIM, tempSensor8464Config.ALM_L_LIM, tempSensor8464Config.ALM_H_LIM, tempSensor8464Config.ALM_HH_LIM, initTempSensor8464, updateTempSensor8464AlarmLimits]);
 
   useEffect(() => {
     const configPV = pass2ControllerConfig.TYPICAL_PV;
@@ -2639,6 +2690,138 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     UNIT: tempSensor7225Config.UNIT || 'U-505',
   };
 
+  // Build 1520-TI-6623 (FAT Acid Temp) PV from orchestrator
+  const rawTag6623 = orchestratorResult?.sensor_tags?.["1520-TIC-6622"];
+  const orchestratorFATAcidTemp = rawTag6623 != null
+    ? (typeof rawTag6623 === 'object' && rawTag6623 !== null ? (rawTag6623 as any).value : rawTag6623)
+    : null;
+  const tempSensor6623PV = orchestratorFATAcidTemp ?? tempSensor6623SyncState.syncedPV;
+  const ts6623HHLim = tempSensor6623Config.ALM_HH_LIM ?? 0;
+  const ts6623HLim = tempSensor6623Config.ALM_H_LIM ?? 180;
+  const ts6623LLim = tempSensor6623Config.ALM_L_LIM ?? 165;
+  const ts6623LLLim = tempSensor6623Config.ALM_LL_LIM ?? 0;
+  const ts6623AlarmHH = ts6623HHLim > 0 && tempSensor6623PV >= ts6623HHLim;
+  const ts6623AlarmH = ts6623HLim > 0 && tempSensor6623PV >= ts6623HLim;
+  const ts6623AlarmL = ts6623LLim > 0 && tempSensor6623PV <= ts6623LLim;
+  const ts6623AlarmLL = ts6623LLLim > 0 && tempSensor6623PV <= ts6623LLLim;
+  const ts6623AlarmActive = ts6623AlarmHH || ts6623AlarmH || ts6623AlarmL || ts6623AlarmLL;
+  const ts6623AlarmColor = (ts6623AlarmHH || ts6623AlarmLL) ? 'red' as const
+    : (ts6623AlarmH || ts6623AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor6623Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor6623Config.TAGNAME || '1520-TI-6623',
+    description: tempSensor6623Config.DESC || 'FAT Acid Temp',
+    pv: tempSensor6623PV,
+    sp: tempSensor6623SyncState.syncedSP,
+    out: tempSensor6623SyncState.syncedOUT,
+    mode: tempSensor6623SyncState.syncedMode,
+    pvUnits: tempSensor6623Config.EU || '°F',
+    pvRangeMin: tempSensor6623Config.SP_LIM_LO ?? 100,
+    pvRangeMax: tempSensor6623Config.SP_LIM_HI ?? 300,
+    alarmActive: ts6623AlarmActive,
+    alarmColor: ts6623AlarmColor,
+    alarmLL: ts6623LLLim,
+    alarmL: ts6623LLim,
+    alarmH: ts6623HLim,
+    alarmHH: ts6623HHLim,
+  };
+
+  const tempSensor6623SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor6623PV,
+    SP: tempSensor6623SyncState.syncedSP,
+    TSP: tempSensor6623SyncState.syncedSP,
+    OUT_PCT: tempSensor6623SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor6623SyncState.syncedMode === 'AUTO' || tempSensor6623SyncState.syncedMode === 'MAN' ? tempSensor6623SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts6623AlarmHH,
+    ALM_H_ACT: ts6623AlarmH,
+    ALM_L_ACT: ts6623AlarmL,
+    ALM_LL_ACT: ts6623AlarmLL,
+  };
+
+  const tempSensor6623SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor6623Config.TAGNAME || '1520-TI-6623',
+    DESC: tempSensor6623Config.DESC || 'FAT Acid Temp',
+    EU: tempSensor6623Config.EU || '°F',
+    PV_SCALE_LO: tempSensor6623Config.PV_SCALE_LO ?? 100,
+    PV_SCALE_HI: tempSensor6623Config.PV_SCALE_HI ?? 300,
+    SP_LIM_LO: tempSensor6623Config.SP_LIM_LO ?? 100,
+    SP_LIM_HI: tempSensor6623Config.SP_LIM_HI ?? 300,
+    ALM_LL_LIM: tempSensor6623Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor6623Config.ALM_L_LIM ?? 165,
+    ALM_H_LIM: tempSensor6623Config.ALM_H_LIM ?? 180,
+    ALM_HH_LIM: tempSensor6623Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor6623Config.UNIT || '1520',
+  };
+
+  // Build 1520-TI-8464 (IPAT Acid Temp) PV from orchestrator
+  const rawTag8464 = orchestratorResult?.sensor_tags?.["1520-TIC-6722"];
+  const orchestratorIPATAcidTemp = rawTag8464 != null
+    ? (typeof rawTag8464 === 'object' && rawTag8464 !== null ? (rawTag8464 as any).value : rawTag8464)
+    : null;
+  const tempSensor8464PV = orchestratorIPATAcidTemp ?? tempSensor8464SyncState.syncedPV;
+  const ts8464HHLim = tempSensor8464Config.ALM_HH_LIM ?? 0;
+  const ts8464HLim = tempSensor8464Config.ALM_H_LIM ?? 190;
+  const ts8464LLim = tempSensor8464Config.ALM_L_LIM ?? 165;
+  const ts8464LLLim = tempSensor8464Config.ALM_LL_LIM ?? 0;
+  const ts8464AlarmHH = ts8464HHLim > 0 && tempSensor8464PV >= ts8464HHLim;
+  const ts8464AlarmH = ts8464HLim > 0 && tempSensor8464PV >= ts8464HLim;
+  const ts8464AlarmL = ts8464LLim > 0 && tempSensor8464PV <= ts8464LLim;
+  const ts8464AlarmLL = ts8464LLLim > 0 && tempSensor8464PV <= ts8464LLLim;
+  const ts8464AlarmActive = ts8464AlarmHH || ts8464AlarmH || ts8464AlarmL || ts8464AlarmLL;
+  const ts8464AlarmColor = (ts8464AlarmHH || ts8464AlarmLL) ? 'red' as const
+    : (ts8464AlarmH || ts8464AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor8464Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor8464Config.TAGNAME || '1520-TI-8464',
+    description: tempSensor8464Config.DESC || 'IPAT Acid Temp',
+    pv: tempSensor8464PV,
+    sp: tempSensor8464SyncState.syncedSP,
+    out: tempSensor8464SyncState.syncedOUT,
+    mode: tempSensor8464SyncState.syncedMode,
+    pvUnits: tempSensor8464Config.EU || '°F',
+    pvRangeMin: tempSensor8464Config.SP_LIM_LO ?? 100,
+    pvRangeMax: tempSensor8464Config.SP_LIM_HI ?? 300,
+    alarmActive: ts8464AlarmActive,
+    alarmColor: ts8464AlarmColor,
+    alarmLL: ts8464LLLim,
+    alarmL: ts8464LLim,
+    alarmH: ts8464HLim,
+    alarmHH: ts8464HHLim,
+  };
+
+  const tempSensor8464SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor8464PV,
+    SP: tempSensor8464SyncState.syncedSP,
+    TSP: tempSensor8464SyncState.syncedSP,
+    OUT_PCT: tempSensor8464SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor8464SyncState.syncedMode === 'AUTO' || tempSensor8464SyncState.syncedMode === 'MAN' ? tempSensor8464SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts8464AlarmHH,
+    ALM_H_ACT: ts8464AlarmH,
+    ALM_L_ACT: ts8464AlarmL,
+    ALM_LL_ACT: ts8464AlarmLL,
+  };
+
+  const tempSensor8464SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor8464Config.TAGNAME || '1520-TI-8464',
+    DESC: tempSensor8464Config.DESC || 'IPAT Acid Temp',
+    EU: tempSensor8464Config.EU || '°F',
+    PV_SCALE_LO: tempSensor8464Config.PV_SCALE_LO ?? 100,
+    PV_SCALE_HI: tempSensor8464Config.PV_SCALE_HI ?? 300,
+    SP_LIM_LO: tempSensor8464Config.SP_LIM_LO ?? 100,
+    SP_LIM_HI: tempSensor8464Config.SP_LIM_HI ?? 300,
+    ALM_LL_LIM: tempSensor8464Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor8464Config.ALM_L_LIM ?? 165,
+    ALM_H_LIM: tempSensor8464Config.ALM_H_LIM ?? 190,
+    ALM_HH_LIM: tempSensor8464Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor8464Config.UNIT || '1520',
+  };
+
   // Build Hand Controller 1540-H-4030 secondary faceplate data
   const handControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
@@ -3267,6 +3450,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setKppFaceplateL21520Position({ x: kppFaceplate.x, y: kppFaceplate.y });
       setKppFaceplateL21520Size({ width: kppFaceplate.width, height: kppFaceplate.height });
     }
+
+    const fp6623 = positionMap.get('faceplate6623_l2_1520');
+    if (fp6623) {
+      setFaceplate6623L21520Position({ x: fp6623.x, y: fp6623.y });
+      setFaceplate6623L21520Size({ width: fp6623.width, height: fp6623.height });
+    }
+
+    const fp8464 = positionMap.get('faceplate8464_l2_1520');
+    if (fp8464) {
+      setFaceplate8464L21520Position({ x: fp8464.x, y: fp8464.y });
+      setFaceplate8464L21520Size({ width: fp8464.width, height: fp8464.height });
+    }
   }, [layoutDataL21520, isL21520Dirty]);
 
   // Apply loaded positions to state when data arrives
@@ -3722,6 +3917,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'acid_tower_1_l2_1520', positionX: Math.round(acidTower1Position.x), positionY: Math.round(acidTower1Position.y), width: acidTower1Size.width, height: acidTower1Size.height, rotation: 0 },
         { elementId: 'acid_tower_2_l2_1520', positionX: Math.round(acidTower2Position.x), positionY: Math.round(acidTower2Position.y), width: acidTower2Size.width, height: acidTower2Size.height, rotation: 0 },
         { elementId: 'kpp_faceplate_l2_1520', positionX: Math.round(kppFaceplateL21520Position.x), positionY: Math.round(kppFaceplateL21520Position.y), width: kppFaceplateL21520Size.width, height: kppFaceplateL21520Size.height, rotation: 0 },
+        { elementId: 'faceplate6623_l2_1520', positionX: Math.round(faceplate6623L21520Position.x), positionY: Math.round(faceplate6623L21520Position.y), width: faceplate6623L21520Size.width, height: faceplate6623L21520Size.height, rotation: 0 },
+        { elementId: 'faceplate8464_l2_1520', positionX: Math.round(faceplate8464L21520Position.x), positionY: Math.round(faceplate8464L21520Position.y), width: faceplate8464L21520Size.width, height: faceplate8464L21520Size.height, rotation: 0 },
       ];
 
       await apiRequest('PUT', '/api/homescreen-layout/L2_1520', { layouts });
@@ -6732,6 +6929,96 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 data-testid="img-acid-tower-2-l2-1520"
               />
             </Rnd>
+
+            {/* 1520-TI-6623 FAT Acid Temp Faceplate */}
+            <Rnd
+              key="faceplate6623-l2-1520"
+              data-testid="rnd-faceplate-6623-l2-1520"
+              position={faceplate6623L21520Position}
+              size={faceplate6623L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate6623L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate6623L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate6623L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-6623-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary6623L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor6623Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary6623L21520} onOpenChange={setShowSecondary6623L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1520-TI-6623 FAT Acid Temp</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor6623SecondaryData}
+                  config={tempSensor6623SecondaryConfig}
+                  sensorId="1520-TI-6623"
+                  onClose={() => setShowSecondary6623L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1520-TI-8464 IPAT Acid Temp Faceplate */}
+            <Rnd
+              key="faceplate8464-l2-1520"
+              data-testid="rnd-faceplate-8464-l2-1520"
+              position={faceplate8464L21520Position}
+              size={faceplate8464L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate8464L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate8464L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate8464L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-8464-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary8464L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor8464Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary8464L21520} onOpenChange={setShowSecondary8464L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1520-TI-8464 IPAT Acid Temp</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor8464SecondaryData}
+                  config={tempSensor8464SecondaryConfig}
+                  sensorId="1520-TI-8464"
+                  onClose={() => setShowSecondary8464L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
 
             {orchestratorResult?.kpp && (
               <Rnd

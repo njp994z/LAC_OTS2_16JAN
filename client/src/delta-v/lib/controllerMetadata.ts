@@ -91,6 +91,16 @@ export const CONTROLLER_METADATA: Record<string, ControllerMetadata> = {
     backRoute: '/temp-sensor/1540-TI-7225',
     label: '1540-TI-7225 Pass 4 Catalyst Out',
   },
+  '1520-TI-6623': {
+    name: '1520-TI-6623',
+    backRoute: '/temp-sensor/1520-TI-6623',
+    label: '1520-TI-6623 FAT Acid Temp',
+  },
+  '1520-TI-8464': {
+    name: '1520-TI-8464',
+    backRoute: '/temp-sensor/1520-TI-8464',
+    label: '1520-TI-8464 IPAT Acid Temp',
+  },
   '1540-TI-4200C': {
     name: '1540-TI-4200C',
     backRoute: '/temp-sensor/1540-TI-4200C',
