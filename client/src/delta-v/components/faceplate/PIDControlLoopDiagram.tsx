@@ -1,4 +1,4 @@
-import pidDiagram from '@assets/image_1769495138671.png';
+import pidDiagram from '@assets/image_1772638428798.png';
 
 const PIDControlLoopDiagram = () => {
   return (
