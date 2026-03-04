@@ -1182,10 +1182,21 @@ class InterpassHX:
 
 
 class IPATower:
-    """Unit Op [13]: Interpass Absorption Tower — removes SO3."""
+    """Unit Op [13]: Interpass Absorption Tower — removes SO3.
+
+    Acid outlet temperature rises above inlet based on SO3 duty.
+    The acid circulating loop includes an acid cooler that removes most
+    of the absorption heat; the acid temp instrument reads the hot acid
+    leaving the tower before the cooler.  Design basis: at ~13000 scfm
+    SO3 absorbed with 900 gpm acid flow, acid rises ~20°F above inlet.
+    """
+
+    DESIGN_SO3_SCFM = 13000.0
+    DESIGN_ACID_FLOW_GPM = 900.0
+    DESIGN_ACID_DT = 20.0
 
     @staticmethod
-    def calculate(inlet: GasStream, inp: PlantInputs) -> GasStream:
+    def calculate(inlet: GasStream, inp: PlantInputs) -> Tuple[GasStream, float]:
         removal_frac = min(inp.ipat_so3_removal_pct / 100.0, 1.0)
         so3_removed = inlet.SO3 * removal_frac
 
@@ -1194,23 +1205,43 @@ class IPATower:
         outlet.tag = "GI1"
         outlet.label = "Stream 17 — IPAT Outlet (SO3 Removed)"
         outlet.SO3 = inlet.SO3 - so3_removed
-        outlet.pressure_inwc = inlet.pressure_inwc - 23.0  # IPAT ΔP (ref: 92→69)
-        # Gas cools in IPAT (typically to ~180°F)
+        outlet.pressure_inwc = inlet.pressure_inwc - 23.0
         outlet.temperature_F = 180.0
         outlet.recalc_total()
-        return outlet
+
+        so3_ratio = so3_removed / max(IPATower.DESIGN_SO3_SCFM, 1.0)
+        flow_ratio = max(inp.ipat_acid_flow_gpm, 1.0) / IPATower.DESIGN_ACID_FLOW_GPM
+        acid_dt = IPATower.DESIGN_ACID_DT * so3_ratio / max(flow_ratio, 0.3)
+        ipat_acid_out_F = inp.ipat_acid_temp_F + acid_dt
+
+        return outlet, ipat_acid_out_F
 
 
 class EC3B:
-    """Unit Op [12]: Economizer 3B — gas cooling before IPAT."""
+    """Unit Op [12]: Economizer 3B — gas cooling before IPAT.
+
+    Flow-dependent ΔT model matching the SH4A/EC4C/EC4A approach.
+    Design basis: gas inlet 548°F, outlet 330°F (ΔT=218°F),
+    gas flow ~109k scfm total.  At off-design flows the ΔT scales
+    inversely with flow ratio^0.4 (higher flow → less cooling per unit).
+    """
+
+    DESIGN_GAS_FLOW_SCFM = 109000.0
+    DESIGN_DT = 218.0
 
     @staticmethod
-    def calculate(inlet: GasStream, target_temp_F: float) -> GasStream:
+    def calculate(inlet: GasStream, inp: PlantInputs) -> GasStream:
+        flow_ratio = max(inlet.TOTAL, 1.0) / EC3B.DESIGN_GAS_FLOW_SCFM
+        eff_factor = max(flow_ratio, 0.3) ** (-0.4)
+        dt = EC3B.DESIGN_DT * eff_factor
+        T_cold_approach = inp.ec3b_water_temp_F + 20.0
+        T_g_out = max(inlet.temperature_F - dt, T_cold_approach)
+
         cooled = inlet.copy()
         cooled.tag = "GEB1"
         cooled.label = "EC3B Gas Outlet → IPAT Inlet"
-        cooled.temperature_F = target_temp_F
-        cooled.pressure_inwc = inlet.pressure_inwc - 9.0   # EC3B ΔP (ref: 101→92)
+        cooled.temperature_F = T_g_out
+        cooled.pressure_inwc = inlet.pressure_inwc - 9.0
         cooled.recalc_total()
         return cooled
 
@@ -1219,33 +1250,47 @@ class SH4A_EC4C_EC4A:
     """Unit Op [15]: Superheater 4A / Economizer 4C / Economizer 4A train.
 
     Receives Stream 20 (Pass 4 outlet) → SH4A → 21 → EC4C → 22 → EC4A → 23.
+    Flow-dependent ΔT model: at design gas flow (~109k scfm), ΔT matches
+    reference values.  Higher flow → less cooling (reduced effectiveness).
     """
+
+    DESIGN_GAS_FLOW_SCFM = 109000.0
+    DESIGN_DT_SH4A = 170.0
+    DESIGN_DT_EC4C = 177.0
+    DESIGN_DT_EC4A = 186.0
 
     @staticmethod
     def calculate(inlet: GasStream, inp: PlantInputs) -> Dict[str, GasStream]:
-        # SH4A: superheat steam (ref: 808→638°F, ΔT≈170°F)
+        flow_ratio = max(inlet.TOTAL, 1.0) / SH4A_EC4C_EC4A.DESIGN_GAS_FLOW_SCFM
+        eff_factor = max(flow_ratio, 0.3) ** (-0.4)
+
+        dt_sh4a = SH4A_EC4C_EC4A.DESIGN_DT_SH4A * eff_factor
+        dt_ec4c = SH4A_EC4C_EC4A.DESIGN_DT_EC4C * eff_factor
+        dt_ec4a = SH4A_EC4C_EC4A.DESIGN_DT_EC4A * eff_factor
+
+        T_steam_approach = inp.sh_steam_temp_F + 20.0
+        T_bfw_approach = inp.ec3b_water_temp_F + 20.0
+
         s21 = inlet.copy()
         s21.stream_id = 21
         s21.tag = "GSA1"
         s21.label = "Stream 21 — SH4A Outlet / EC4C Inlet"
-        s21.temperature_F = inlet.temperature_F - 170.0
-        s21.pressure_inwc = inlet.pressure_inwc - 8.0    # ref: 47→39
+        s21.temperature_F = max(inlet.temperature_F - dt_sh4a, T_steam_approach)
+        s21.pressure_inwc = inlet.pressure_inwc - 8.0
 
-        # EC4C: economizer (ref: 638→461°F, ΔT≈177°F)
         s22 = s21.copy()
         s22.stream_id = 22
         s22.tag = "GEC1"
         s22.label = "Stream 22 — EC4C Outlet / EC4A Inlet"
-        s22.temperature_F = s21.temperature_F - 177.0
-        s22.pressure_inwc = s21.pressure_inwc - 3.0      # ref: 39→36
+        s22.temperature_F = max(s21.temperature_F - dt_ec4c, T_bfw_approach)
+        s22.pressure_inwc = s21.pressure_inwc - 3.0
 
-        # EC4A: cools to setpoint (ref: 461→275°F)
         s23 = s22.copy()
         s23.stream_id = 23
         s23.tag = "GEA1"
         s23.label = "Stream 23 — EC4A Outlet / FAT Gas Inlet"
-        s23.temperature_F = inp.ec4a_gas_setpt_F
-        s23.pressure_inwc = s22.pressure_inwc - 4.0      # ref: 36→32
+        s23.temperature_F = max(s22.temperature_F - dt_ec4a, T_bfw_approach)
+        s23.pressure_inwc = s22.pressure_inwc - 4.0
 
         for s in (s21, s22, s23):
             s.recalc_total()
@@ -1254,11 +1299,18 @@ class SH4A_EC4C_EC4A:
 
 
 class FATower:
-    """Unit Op [16]: Final Absorption Tower."""
+    """Unit Op [16]: Final Absorption Tower.
+
+    Same proportional acid-temp model as IPATower.  FAT sees much less SO3
+    (only Pass 4 product ≈ 600-700 scfm at design).  Design acid rise ~8°F.
+    """
+
+    DESIGN_SO3_SCFM = 650.0
+    DESIGN_ACID_FLOW_GPM = 950.0
+    DESIGN_ACID_DT = 8.0
 
     @staticmethod
-    def calculate(inlet: GasStream, inp: PlantInputs) -> GasStream:
-        # FAT removes remaining SO3 (>99.8% efficiency)
+    def calculate(inlet: GasStream, inp: PlantInputs) -> Tuple[GasStream, float]:
         efficiency = 0.998
         so3_removed = inlet.SO3 * efficiency
 
@@ -1267,10 +1319,16 @@ class FATower:
         s24.tag = "GF1"
         s24.label = "Stream 24 — FAT Outlet (Stack Gas)"
         s24.SO3 = inlet.SO3 - so3_removed
-        s24.pressure_inwc = inlet.pressure_inwc - 15.0  # FAT ΔP (ref: 32→17)
-        s24.temperature_F = 160.0  # gas exits cool
+        s24.pressure_inwc = inlet.pressure_inwc - 15.0
+        s24.temperature_F = 160.0
         s24.recalc_total()
-        return s24
+
+        so3_ratio = so3_removed / max(FATower.DESIGN_SO3_SCFM, 1.0)
+        flow_ratio = max(inp.fat_acid_flow_gpm, 1.0) / FATower.DESIGN_ACID_FLOW_GPM
+        acid_dt = FATower.DESIGN_ACID_DT * so3_ratio / max(flow_ratio, 0.3)
+        fat_acid_out_F = inp.fat_acid_temp_F + acid_dt
+
+        return s24, fat_acid_out_F
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2094,7 +2152,7 @@ def _check_limit(
         ))
 
 
-def check_alarms(streams: Dict[int, GasStream], inp: PlantInputs) -> List[Alarm]:
+def check_alarms(streams: Dict[int, GasStream], inp: PlantInputs, **kwargs) -> List[Alarm]:
     """
     Check all alarm conditions from Doc 102-008.00 alarm setpoint list
     against computed process values and return active alarms.
@@ -2149,16 +2207,16 @@ def check_alarms(streams: Dict[int, GasStream], inp: PlantInputs) -> List[Alarm]
     _check_limit(alarms, "TIC-5823", inp.dt_acid_inlet_temp_F,
                  ALARM_SETPOINT_DB["TIC-5823"], now)
 
-    # TIC-6722  Interpass Tower Acid Inlet Temperature
-    _check_limit(alarms, "TIC-6722", inp.ipat_acid_temp_F,
+    # TIC-6722  Interpass Tower Acid Outlet Temperature
+    _check_limit(alarms, "TIC-6722", kwargs.get("ipat_acid_out_F", inp.ipat_acid_temp_F),
                  ALARM_SETPOINT_DB["TIC-6722"], now)
 
     # TIC-7221  Final Tower Gas Inlet Temperature (EC4A outlet → FAT inlet)
     _check_limit(alarms, "TIC-7221", s23.temperature_F,
                  ALARM_SETPOINT_DB["TIC-7221"], now)
 
-    # TIC-7224  Interpass Tower Gas Inlet Temperature (EC3B setpoint)
-    _check_limit(alarms, "TIC-7224", inp.ec3b_ipat_setpt_F,
+    # TIC-7224  Interpass Tower Gas Inlet Temperature (EC3B outlet)
+    _check_limit(alarms, "TIC-7224", s16.temperature_F,
                  ALARM_SETPOINT_DB["TIC-7224"], now)
 
     # TI-8421  Interpass Tower Gas Outlet Temperature
@@ -2237,6 +2295,8 @@ def build_sensor_tags(
     streams: Dict[int, GasStream],
     inp: PlantInputs,
     kpp: Dict[str, Any],
+    ipat_acid_out_F: float = 180.0,
+    fat_acid_out_F: float = 180.0,
 ) -> Dict[str, Any]:
     """
     Build a flat dict keyed by instrument tag number.
@@ -2362,13 +2422,13 @@ def build_sensor_tags(
 
     # --- Interpass Tower Acid ---
     tags["1520-TIC-6722"] = _tag_with_alarms(
-        inp.ipat_acid_temp_F, "TIC-6722")                           # IPAT acid inlet T
+        ipat_acid_out_F, "TIC-6722")                                # IPAT acid outlet T
     tags["1520-FIC-6770"] = _tag_with_alarms(
         inp.ipat_acid_flow_gpm, "FIC-6770")                         # IPAT acid flow
 
     # --- Final Tower Acid ---
     tags["1520-TIC-6622"] = _tag_with_alarms(
-        inp.fat_acid_temp_F, "TIC-6622")                            # FAT acid inlet T  (TI-6622)
+        fat_acid_out_F, "TIC-6622")                                 # FAT acid outlet T  (TI-6622)
     tags["1520-FIC-6670"] = _tag_with_alarms(
         inp.fat_acid_flow_gpm, "FIC-6670")                          # FAT acid flow
     tags["1520-AIC-6063"] = _tag_with_alarms(
@@ -2376,7 +2436,7 @@ def build_sensor_tags(
 
     # --- EC3B / IPAT Gas ---
     tags["1540-TIC-7224"] = _tag_with_alarms(
-        inp.ec3b_ipat_setpt_F, "TIC-7224")                          # IPAT gas inlet T
+        s.get(16, GasStream()).temperature_F, "TIC-7224")            # EC3B outlet / IPAT gas inlet T
     tags["1540-TI-8421"] = _tag_with_alarms(
         s.get(17, GasStream()).temperature_F, "TI-8421")             # IPAT gas outlet T
 
@@ -2577,13 +2637,13 @@ class PlantOrchestrator:
         streams[15] = s15
 
         # ── EC3B: Stream 15 → EC3B → Stream 16 ────────────────────────
-        s16 = EC3B.calculate(s15, target_temp_F=inp.ec3b_ipat_setpt_F)
+        s16 = EC3B.calculate(s15, inp)
         s16.stream_id = 16
         s16.label = "Stream 16 — EC3B Outlet / IPAT Gas Inlet"
         streams[16] = s16
 
         # ── IPAT: Stream 16 → IPAT → Stream 17 (SO3 removed) ──────────
-        s17 = IPATower.calculate(s16, inp)
+        s17, ipat_acid_out_F = IPATower.calculate(s16, inp)
         streams[17] = s17
 
         # ── CIP cold: Stream 17 → heated by CIP duty → Stream 18 ──────
@@ -2628,7 +2688,7 @@ class PlantOrchestrator:
         streams[23] = sh_streams["s23"]
 
         # ── FAT ─────────────────────────────────────────────────────────
-        s24 = FATower.calculate(streams[23], inp)
+        s24, fat_acid_out_F = FATower.calculate(streams[23], inp)
 
         # ── Converter bypass leakage ────────────────────────────────────
         DESIGN_SO2_PCT = 11.5
@@ -2646,9 +2706,15 @@ class PlantOrchestrator:
 
         # ── Post-processing ──────────────────────────────────────────────
         self.streams = streams
+        self.ipat_acid_out_F = ipat_acid_out_F
+        self.fat_acid_out_F = fat_acid_out_F
         self.kpp = compute_kpp(streams, inp)
-        self.alarms = check_alarms(streams, inp)
-        self.sensor_tags = build_sensor_tags(streams, inp, self.kpp)
+        self.alarms = check_alarms(streams, inp, ipat_acid_out_F=ipat_acid_out_F)
+        self.sensor_tags = build_sensor_tags(
+            streams, inp, self.kpp,
+            ipat_acid_out_F=ipat_acid_out_F,
+            fat_acid_out_F=fat_acid_out_F,
+        )
 
         return self._build_response(inp)
 
