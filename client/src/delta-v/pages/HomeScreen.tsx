@@ -470,6 +470,22 @@ const HomeScreen = () => {
           const raw4820 = tags["1540-TI-4820"];
           updateTempSensor4820PV(typeof raw4820 === 'object' && raw4820 !== null ? (raw4820 as any).value : raw4820);
         }
+        if (tags["1540-TI-4827"] !== undefined) {
+          const raw4827 = tags["1540-TI-4827"];
+          updateTempSensor4827PV(typeof raw4827 === 'object' && raw4827 !== null ? (raw4827 as any).value : raw4827);
+        }
+        if (tags["1540-TI-4841"] !== undefined) {
+          const raw4841 = tags["1540-TI-4841"];
+          updateTempSensor4841PV(typeof raw4841 === 'object' && raw4841 !== null ? (raw4841 as any).value : raw4841);
+        }
+        if (tags["1540-TI-5231"] !== undefined) {
+          const raw5231 = tags["1540-TI-5231"];
+          updateTempSensor5231PV(typeof raw5231 === 'object' && raw5231 !== null ? (raw5231 as any).value : raw5231);
+        }
+        if (tags["1540-TI-7225"] !== undefined) {
+          const raw7225 = tags["1540-TI-7225"];
+          updateTempSensor7225PV(typeof raw7225 === 'object' && raw7225 !== null ? (raw7225 as any).value : raw7225);
+        }
       }
       
     } catch (error) {
@@ -1137,6 +1153,22 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               const raw4820 = tags["1540-TI-4820"];
               updateTempSensor4820PV(typeof raw4820 === 'object' && raw4820 !== null ? (raw4820 as any).value : raw4820);
             }
+            if (tags["1540-TI-4827"] !== undefined) {
+              const raw4827 = tags["1540-TI-4827"];
+              updateTempSensor4827PV(typeof raw4827 === 'object' && raw4827 !== null ? (raw4827 as any).value : raw4827);
+            }
+            if (tags["1540-TI-4841"] !== undefined) {
+              const raw4841 = tags["1540-TI-4841"];
+              updateTempSensor4841PV(typeof raw4841 === 'object' && raw4841 !== null ? (raw4841 as any).value : raw4841);
+            }
+            if (tags["1540-TI-5231"] !== undefined) {
+              const raw5231 = tags["1540-TI-5231"];
+              updateTempSensor5231PV(typeof raw5231 === 'object' && raw5231 !== null ? (raw5231 as any).value : raw5231);
+            }
+            if (tags["1540-TI-7225"] !== undefined) {
+              const raw7225 = tags["1540-TI-7225"];
+              updateTempSensor7225PV(typeof raw7225 === 'object' && raw7225 !== null ? (raw7225 as any).value : raw7225);
+            }
           }
         }
       } catch (e) {
@@ -1154,13 +1186,13 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
   const tempSensor4825Config = getControllerConfig('1540-TI-4825');
 
-  const { state: tempSensor4827SyncState, initializeController: initTempSensor4827, updateAlarmLimits: updateTempSensor4827AlarmLimits } = useControllerSync('1540-TI-4827');
+  const { state: tempSensor4827SyncState, initializeController: initTempSensor4827, updateAlarmLimits: updateTempSensor4827AlarmLimits, updateSyncedPV: updateTempSensor4827PV } = useControllerSync('1540-TI-4827');
   const tempSensor4827Config = getControllerConfig('1540-TI-4827');
-  const { state: tempSensor4841SyncState, initializeController: initTempSensor4841, updateAlarmLimits: updateTempSensor4841AlarmLimits } = useControllerSync('1540-TI-4841');
+  const { state: tempSensor4841SyncState, initializeController: initTempSensor4841, updateAlarmLimits: updateTempSensor4841AlarmLimits, updateSyncedPV: updateTempSensor4841PV } = useControllerSync('1540-TI-4841');
   const tempSensor4841Config = getControllerConfig('1540-TI-4841');
-  const { state: tempSensor5231SyncState, initializeController: initTempSensor5231, updateAlarmLimits: updateTempSensor5231AlarmLimits } = useControllerSync('1540-TI-5231');
+  const { state: tempSensor5231SyncState, initializeController: initTempSensor5231, updateAlarmLimits: updateTempSensor5231AlarmLimits, updateSyncedPV: updateTempSensor5231PV } = useControllerSync('1540-TI-5231');
   const tempSensor5231Config = getControllerConfig('1540-TI-5231');
-  const { state: tempSensor7225SyncState, initializeController: initTempSensor7225, updateAlarmLimits: updateTempSensor7225AlarmLimits } = useControllerSync('1540-TI-7225');
+  const { state: tempSensor7225SyncState, initializeController: initTempSensor7225, updateAlarmLimits: updateTempSensor7225AlarmLimits, updateSyncedPV: updateTempSensor7225PV } = useControllerSync('1540-TI-7225');
   const tempSensor7225Config = getControllerConfig('1540-TI-7225');
   
   // Initialize temperature sensor with configured Typical PV
@@ -2345,7 +2377,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Build 1540-TI-4827 (Pass 1 Catalyst Out A) PV from orchestrator
   const rawTag4827 = orchestratorResult?.sensor_tags?.["1540-TI-4827"];
-  const orchestratorPass1OutTemp = selectedMode === 'Static' && rawTag4827 != null
+  const orchestratorPass1OutTemp = rawTag4827 != null
     ? (typeof rawTag4827 === 'object' && rawTag4827 !== null ? (rawTag4827 as any).value : rawTag4827)
     : null;
   const tempSensor4827PV = orchestratorPass1OutTemp ?? tempSensor4827SyncState.syncedPV;
@@ -2411,7 +2443,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Build 1540-TI-4841 (Pass 2 Catalyst Out) PV from orchestrator
   const rawTag4841 = orchestratorResult?.sensor_tags?.["1540-TI-4841"];
-  const orchestratorPass2OutTemp = selectedMode === 'Static' && rawTag4841 != null
+  const orchestratorPass2OutTemp = rawTag4841 != null
     ? (typeof rawTag4841 === 'object' && rawTag4841 !== null ? (rawTag4841 as any).value : rawTag4841)
     : null;
   const tempSensor4841PV = orchestratorPass2OutTemp ?? tempSensor4841SyncState.syncedPV;
@@ -2477,7 +2509,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Build 1540-TI-5231 (Pass 3 Duct Outlet) PV from orchestrator
   const rawTag5231 = orchestratorResult?.sensor_tags?.["1540-TI-5231"];
-  const orchestratorPass3OutTemp = selectedMode === 'Static' && rawTag5231 != null
+  const orchestratorPass3OutTemp = rawTag5231 != null
     ? (typeof rawTag5231 === 'object' && rawTag5231 !== null ? (rawTag5231 as any).value : rawTag5231)
     : null;
   const tempSensor5231PV = orchestratorPass3OutTemp ?? tempSensor5231SyncState.syncedPV;
@@ -2543,7 +2575,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   // Build 1540-TI-7225 (Pass 4 Catalyst Out) PV from orchestrator
   const rawTag7225 = orchestratorResult?.sensor_tags?.["1540-TI-7225"];
-  const orchestratorPass4OutTemp = selectedMode === 'Static' && rawTag7225 != null
+  const orchestratorPass4OutTemp = rawTag7225 != null
     ? (typeof rawTag7225 === 'object' && rawTag7225 !== null ? (rawTag7225 as any).value : rawTag7225)
     : null;
   const tempSensor7225PV = orchestratorPass4OutTemp ?? tempSensor7225SyncState.syncedPV;
