@@ -474,7 +474,7 @@ const TempSensorMain = () => {
             "text-3xl font-bold mb-3 tracking-tight",
             "bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent"
           )}>
-            {activeControllerId} Furnace Temp Out A
+            {activeControllerId} Converter Pass 1 Outlet
           </h1>
           <p className="text-muted-foreground text-sm tracking-wide">
             Temperature Sensor Faceplate (Primary & Secondary)
