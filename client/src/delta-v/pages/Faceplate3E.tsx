@@ -154,7 +154,7 @@ const Faceplate3E = () => {
     return getControllerMetadata(activeControllerId).label;
   };
   
-  const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits, updatePvRange, initializeController } = useControllerSync(activeControllerId);
+  const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits, updatePvRange, initializeController } = useControllerSync(activeControllerId);
   const { getControllerConfig, updateControllerConfig, getControllerData, updateControllerData, saveController } = useControllerConfig();
   
   // Separate state for string fields (stable, no sync)
@@ -217,6 +217,19 @@ const Faceplate3E = () => {
       HH: defaults.ALM_HH_LIM ?? cfg.ALM_HH_LIM ?? 0,
     });
   }, [activeControllerId, getControllerConfig, initializeController, updatePvRange, updateAlarmLimits]);
+
+  useEffect(() => {
+    setData(prev => {
+      const next = {
+        ...prev,
+        PV: syncState.syncedPV,
+        SP: syncState.syncedSP,
+        OUT_PCT: syncState.syncedOUT,
+      };
+      dataRef.current = next;
+      return next;
+    });
+  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT]);
 
   const updateConfigField = useCallback(<K extends keyof SecondaryControllerConfig>(
     key: K, 
