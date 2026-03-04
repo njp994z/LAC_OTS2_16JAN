@@ -2575,9 +2575,18 @@ class PlantOrchestrator:
         streams[11] = s11
 
         # ── SH1B: Stream 11 → cool → Stream 10 (Pass 2 inlet) ─────────
+        # Flow-dependent cooling: design ΔT at ~87% RPM (119k scfm).
+        # At off-design flow, ΔT scales with flow_ratio^(-0.4).
+        DESIGN_FLOW_HX = 119000.0
+        sh1b_design_dt = 383.0
+        sh1b_flow_ratio = max(s11.TOTAL, 1.0) / DESIGN_FLOW_HX
+        sh1b_eff = max(sh1b_flow_ratio, 0.3) ** (-0.4)
+        sh1b_dt = sh1b_design_dt * sh1b_eff
+        sh1b_approach = max(inp.sh_steam_temp_F + 20.0, 700.0)
+        sh1b_target = max(s11.temperature_F - sh1b_dt, sh1b_approach)
         s10, sh1b_duty = InterpassHX.cool_stream_with_duty(
             s11,
-            target_temp_F=inp.pass2_inlet_temp_C * 9.0 / 5.0 + 32.0,
+            target_temp_F=sh1b_target,
             stream_id=10, tag="GP10",
             label="Stream 10 — SH1B Outlet / Pass 2 Inlet",
             dp_inwc=4.0,
@@ -2585,9 +2594,10 @@ class PlantOrchestrator:
         streams[10] = s10
 
         # ── Pass 2: Stream 10 → Converter → Stream 13 (hot outlet) ────
+        pass2_inlet_C = (s10.temperature_F - 32.0) * 5.0 / 9.0
         s13 = CatalyticPass.calculate(
             s10, pass_number=2,
-            inlet_temp_C=inp.pass2_inlet_temp_C,
+            inlet_temp_C=pass2_inlet_C,
             catalyst_name=inp.pass2_catalyst,
             catalyst_liters=inp.pass2_liters,
             activity_pct=inp.pass2_activity,
@@ -2601,9 +2611,15 @@ class PlantOrchestrator:
         streams[13] = s13
 
         # ── HIP hot: Stream 13 → cool → Stream 12 (Pass 3 inlet) ──────
+        hip_design_dt = 160.0
+        hip_flow_ratio = max(s13.TOTAL, 1.0) / DESIGN_FLOW_HX
+        hip_eff = max(hip_flow_ratio, 0.3) ** (-0.4)
+        hip_dt = hip_design_dt * hip_eff
+        hip_approach = max(inp.cip_cold_feed_F + 40.0, 700.0)
+        hip_target = max(s13.temperature_F - hip_dt, hip_approach)
         s12, hip_duty = InterpassHX.cool_stream_with_duty(
             s13,
-            target_temp_F=inp.pass3_inlet_temp_C * 9.0 / 5.0 + 32.0,
+            target_temp_F=hip_target,
             stream_id=12, tag="G12",
             label="Stream 12 — HIP Outlet / Pass 3 Inlet",
             dp_inwc=4.0,
@@ -2611,9 +2627,10 @@ class PlantOrchestrator:
         streams[12] = s12
 
         # ── Pass 3: Stream 12 → Converter → Stream 14 (hot outlet) ────
+        pass3_inlet_C = (s12.temperature_F - 32.0) * 5.0 / 9.0
         s14 = CatalyticPass.calculate(
             s12, pass_number=3,
-            inlet_temp_C=inp.pass3_inlet_temp_C,
+            inlet_temp_C=pass3_inlet_C,
             catalyst_name=inp.pass3_catalyst,
             catalyst_liters=inp.pass3_liters,
             activity_pct=inp.pass3_activity,
@@ -2627,9 +2644,15 @@ class PlantOrchestrator:
         streams[14] = s14
 
         # ── CIP hot: Stream 14 → cool → Stream 15 ─────────────────────
+        cip_design_dt = 297.0
+        cip_flow_ratio = max(s14.TOTAL, 1.0) / DESIGN_FLOW_HX
+        cip_eff = max(cip_flow_ratio, 0.3) ** (-0.4)
+        cip_dt = cip_design_dt * cip_eff
+        cip_approach = max(inp.cip_cold_feed_F + 20.0, 350.0)
+        cip_target = max(s14.temperature_F - cip_dt, cip_approach)
         s15, cip_duty = InterpassHX.cool_stream_with_duty(
             s14,
-            target_temp_F=inp.cip_hot_outlet_F,
+            target_temp_F=cip_target,
             stream_id=15, tag="G15",
             label="Stream 15 — CIP Outlet",
             dp_inwc=4.0,
