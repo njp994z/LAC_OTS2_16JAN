@@ -74,6 +74,83 @@ const getRouteForSensor = (basePath: string, sensorId?: string): string => {
     };
     return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
   }
+  if (sensorId === '1540-TI-7823') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1540-TI-4840') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1540-TI-5231') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1540-TI-7225') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1520-TI-8421') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1520-TI-8464') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1520-TI-6624') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
   return `/${basePath}${sensorId ? `/${sensorId}` : ''}`;
 };
 

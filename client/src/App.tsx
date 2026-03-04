@@ -190,6 +190,11 @@ import TempSensor4841Faceplate3C from "@/delta-v/pages/TempSensor4841Faceplate3C
 import TempSensor4841Faceplate3D from "@/delta-v/pages/TempSensor4841Faceplate3D";
 import TempSensor4841Faceplate3E from "@/delta-v/pages/TempSensor4841Faceplate3E";
 import TempSensor4841Faceplate3F from "@/delta-v/pages/TempSensor4841Faceplate3F";
+import TempSensor5231Faceplate3E from "@/delta-v/pages/TempSensor5231Faceplate3E";
+import TempSensor7225Faceplate3E from "@/delta-v/pages/TempSensor7225Faceplate3E";
+import TempSensor8421Faceplate3E from "@/delta-v/pages/TempSensor8421Faceplate3E";
+import TempSensor8464Faceplate3E from "@/delta-v/pages/TempSensor8464Faceplate3E";
+import TempSensor6624Faceplate3E from "@/delta-v/pages/TempSensor6624Faceplate3E";
 import {
   PFD5001ProcessGas,
   PFD5002StrongAcid,
@@ -656,6 +661,11 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3d" component={TempSensor4841Faceplate3D} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3e" component={TempSensor4841Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3f" component={TempSensor4841Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5231-faceplate-3e" component={TempSensor5231Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7225-faceplate-3e" component={TempSensor7225Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-8421-faceplate-3e" component={TempSensor8421Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-8464-faceplate-3e" component={TempSensor8464Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-6624-faceplate-3e" component={TempSensor6624Faceplate3E} />
       
       {/* Delta-V Valve Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/valve/:valveType" component={ValveTypeDetail} />
