@@ -71,6 +71,26 @@ export const CONTROLLER_METADATA: Record<string, ControllerMetadata> = {
     backRoute: '/jug-valve-positioner',
     label: '1540-HCV-4281 Jug Valve Positioner',
   },
+  '1540-TI-4827': {
+    name: '1540-TI-4827',
+    backRoute: '/temp-sensor/1540-TI-4827',
+    label: '1540-TI-4827 Pass 1 Catalyst Out A',
+  },
+  '1540-TI-4841': {
+    name: '1540-TI-4841',
+    backRoute: '/temp-sensor/1540-TI-4841',
+    label: '1540-TI-4841 Pass 2 Catalyst Out',
+  },
+  '1540-TI-5231': {
+    name: '1540-TI-5231',
+    backRoute: '/temp-sensor/1540-TI-5231',
+    label: '1540-TI-5231 Pass 3 Duct Outlet',
+  },
+  '1540-TI-7225': {
+    name: '1540-TI-7225',
+    backRoute: '/temp-sensor/1540-TI-7225',
+    label: '1540-TI-7225 Pass 4 Catalyst Out',
+  },
   '1540-TI-4200C': {
     name: '1540-TI-4200C',
     backRoute: '/temp-sensor/1540-TI-4200C',

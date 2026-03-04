@@ -1326,7 +1326,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   useEffect(() => {
     const configPV = tempSensor4827Config.TYPICAL_PV;
     const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 1144;
-    initTempSensor4827(typicalPV, typicalPV, tempSensor4827Config.SP_LIM_LO ?? 0, tempSensor4827Config.SP_LIM_HI ?? 2000);
+    initTempSensor4827(typicalPV, typicalPV, 800, 1300);
     updateTempSensor4827AlarmLimits({
       LL: tempSensor4827Config.ALM_LL_LIM ?? 0,
       L: tempSensor4827Config.ALM_L_LIM ?? 0,
@@ -1338,7 +1338,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   useEffect(() => {
     const configPV = tempSensor4841Config.TYPICAL_PV;
     const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 900;
-    initTempSensor4841(typicalPV, typicalPV, tempSensor4841Config.SP_LIM_LO ?? 0, tempSensor4841Config.SP_LIM_HI ?? 2000);
+    initTempSensor4841(typicalPV, typicalPV, 700, 1100);
     updateTempSensor4841AlarmLimits({
       LL: tempSensor4841Config.ALM_LL_LIM ?? 0,
       L: tempSensor4841Config.ALM_L_LIM ?? 0,
@@ -1350,7 +1350,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   useEffect(() => {
     const configPV = tempSensor5231Config.TYPICAL_PV;
     const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 880;
-    initTempSensor5231(typicalPV, typicalPV, tempSensor5231Config.SP_LIM_LO ?? 0, tempSensor5231Config.SP_LIM_HI ?? 2000);
+    initTempSensor5231(typicalPV, typicalPV, 700, 1000);
     updateTempSensor5231AlarmLimits({
       LL: tempSensor5231Config.ALM_LL_LIM ?? 0,
       L: tempSensor5231Config.ALM_L_LIM ?? 0,
@@ -1362,7 +1362,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   useEffect(() => {
     const configPV = tempSensor7225Config.TYPICAL_PV;
     const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 810;
-    initTempSensor7225(typicalPV, typicalPV, tempSensor7225Config.SP_LIM_LO ?? 0, tempSensor7225Config.SP_LIM_HI ?? 2000);
+    initTempSensor7225(typicalPV, typicalPV, 600, 950);
     updateTempSensor7225AlarmLimits({
       LL: tempSensor7225Config.ALM_LL_LIM ?? 0,
       L: tempSensor7225Config.ALM_L_LIM ?? 0,
