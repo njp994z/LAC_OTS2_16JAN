@@ -151,7 +151,10 @@ const getRouteForSensor = (basePath: string, sensorId?: string): string => {
     };
     return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
   }
-  return `/${basePath}${sensorId ? `/${sensorId}` : ''}`;
+  if (sensorId) {
+    return `${FACEPLATE_BASE}/temperature-sensor/${sensorId}/${basePath}`;
+  }
+  return `/${basePath}`;
 };
 
 interface TempSensorSecondaryFaceplateProps {
@@ -414,7 +417,7 @@ const ToolbarButton = ({
   to: string;
 }) => (
   <Link 
-    to={to}
+    href={to}
     title={title} 
     className={cn(
       "w-8 h-8 flex items-center justify-center rounded",
