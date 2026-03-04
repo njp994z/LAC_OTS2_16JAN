@@ -320,16 +320,24 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
     const safeRangeMin = toFiniteNumber(pvRangeMin, 0);
     const safeRangeMax = toFiniteNumber(pvRangeMax, 100);
     
-    // Skip if already initialized AND has valid (finite) PV/SP/OUT values
-    // If existing state has NaN values, allow re-initialization to repair
+    // If already initialized with valid PV/SP/OUT, only update the pvRange
+    // (range may change when code defaults are corrected) but keep existing PV/SP/OUT
     if (existing?.initialized) {
       const hasValidState = Number.isFinite(existing.syncedPV) && 
                            Number.isFinite(existing.syncedSP) && 
                            Number.isFinite(existing.syncedOUT);
       if (hasValidState) {
-        return prev;
+        return {
+          controllers: {
+            ...prev.controllers,
+            [controllerId]: {
+              ...existing,
+              pvRangeMin: safeRangeMin,
+              pvRangeMax: safeRangeMax,
+            },
+          },
+        };
       }
-      // State is corrupted with NaN, allow re-initialization
       console.log(`[ControllerSync] Re-initializing ${controllerId} due to invalid state`);
     }
       
