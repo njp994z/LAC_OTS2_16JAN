@@ -557,6 +557,9 @@ const HomeScreen = () => {
 const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false);
   const [isJugValveHandControllerModalOpen, setIsJugValveHandControllerModalOpen] = useState(false);
   const [isWhbHandControllerModalOpen, setIsWhbHandControllerModalOpen] = useState(false);
+  const [isPass2ControllerModalOpen, setIsPass2ControllerModalOpen] = useState(false);
+  const [isPass3ControllerModalOpen, setIsPass3ControllerModalOpen] = useState(false);
+  const [isPass4ControllerModalOpen, setIsPass4ControllerModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Sulfur Flow Controller position/size
@@ -681,6 +684,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({ width: 160, height: 240 });
   const [tempSensor4820L4Position, setTempSensor4820L4Position] = useState({ x: 2800, y: 500 });
   const [tempSensor4820L4Size, setTempSensor4820L4Size] = useState({ width: 180, height: 120 });
+  const [faceplate4822L4Position, setFaceplate4822L4Position] = useState({ x: 800, y: 50 });
+  const [faceplate4822L4Size, setFaceplate4822L4Size] = useState({ width: 220, height: 200 });
+  const [faceplate5220L4Position, setFaceplate5220L4Position] = useState({ x: 800, y: 280 });
+  const [faceplate5220L4Size, setFaceplate5220L4Size] = useState({ width: 220, height: 200 });
+  const [faceplate5224L4Position, setFaceplate5224L4Position] = useState({ x: 800, y: 510 });
+  const [faceplate5224L4Size, setFaceplate5224L4Size] = useState({ width: 220, height: 200 });
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
@@ -1017,7 +1026,37 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     updateSyncedMode: updateJugValveHandControllerMode
   } = useControllerSync('1540-H-4282');
   const jugValveHandControllerConfig = getControllerConfig('1540-H-4282');
-  
+
+  const { 
+    state: pass2ControllerSyncState,
+    initializeController: initPass2Controller,
+    updateAlarmLimits: updatePass2ControllerAlarmLimits,
+    updateSyncedSP: updatePass2ControllerSP,
+    updateSyncedOUT: updatePass2ControllerOUT,
+    updateSyncedMode: updatePass2ControllerMode
+  } = useControllerSync('1540-T-4822');
+  const pass2ControllerConfig = getControllerConfig('1540-T-4822');
+
+  const { 
+    state: pass3ControllerSyncState,
+    initializeController: initPass3Controller,
+    updateAlarmLimits: updatePass3ControllerAlarmLimits,
+    updateSyncedSP: updatePass3ControllerSP,
+    updateSyncedOUT: updatePass3ControllerOUT,
+    updateSyncedMode: updatePass3ControllerMode
+  } = useControllerSync('1540-T-5220');
+  const pass3ControllerConfig = getControllerConfig('1540-T-5220');
+
+  const { 
+    state: pass4ControllerSyncState,
+    initializeController: initPass4Controller,
+    updateAlarmLimits: updatePass4ControllerAlarmLimits,
+    updateSyncedSP: updatePass4ControllerSP,
+    updateSyncedOUT: updatePass4ControllerOUT,
+    updateSyncedMode: updatePass4ControllerMode
+  } = useControllerSync('1540-T-5224');
+  const pass4ControllerConfig = getControllerConfig('1540-T-5224');
+
   // Get real-time synced state for Temperature Sensor 1520-TI-5821
   const { state: tempSensorSyncState, initializeController: initTempSensor } = useControllerSync('1520-TI-5821');
   const tempSensorConfig = getControllerConfig('1520-TI-5821');
@@ -1224,7 +1263,43 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
     });
   }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
-  
+
+  useEffect(() => {
+    const configPV = pass2ControllerConfig.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 700 && configPV <= 900) ? configPV : 806;
+    initPass2Controller(typicalPV, typicalPV, pass2ControllerConfig.SP_LIM_LO ?? 700, pass2ControllerConfig.SP_LIM_HI ?? 900);
+    updatePass2ControllerAlarmLimits({
+      LL: pass2ControllerConfig.ALM_LL_LIM ?? 0,
+      L: pass2ControllerConfig.ALM_L_LIM ?? 797,
+      H: pass2ControllerConfig.ALM_H_LIM ?? 824,
+      HH: pass2ControllerConfig.ALM_HH_LIM ?? 0,
+    });
+  }, [pass2ControllerConfig.TYPICAL_PV, pass2ControllerConfig.SP_LIM_LO, pass2ControllerConfig.SP_LIM_HI, pass2ControllerConfig.ALM_LL_LIM, pass2ControllerConfig.ALM_L_LIM, pass2ControllerConfig.ALM_H_LIM, pass2ControllerConfig.ALM_HH_LIM, initPass2Controller, updatePass2ControllerAlarmLimits]);
+
+  useEffect(() => {
+    const configPV = pass3ControllerConfig.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 700 && configPV <= 900) ? configPV : 806;
+    initPass3Controller(typicalPV, typicalPV, pass3ControllerConfig.SP_LIM_LO ?? 700, pass3ControllerConfig.SP_LIM_HI ?? 900);
+    updatePass3ControllerAlarmLimits({
+      LL: pass3ControllerConfig.ALM_LL_LIM ?? 0,
+      L: pass3ControllerConfig.ALM_L_LIM ?? 797,
+      H: pass3ControllerConfig.ALM_H_LIM ?? 824,
+      HH: pass3ControllerConfig.ALM_HH_LIM ?? 0,
+    });
+  }, [pass3ControllerConfig.TYPICAL_PV, pass3ControllerConfig.SP_LIM_LO, pass3ControllerConfig.SP_LIM_HI, pass3ControllerConfig.ALM_LL_LIM, pass3ControllerConfig.ALM_L_LIM, pass3ControllerConfig.ALM_H_LIM, pass3ControllerConfig.ALM_HH_LIM, initPass3Controller, updatePass3ControllerAlarmLimits]);
+
+  useEffect(() => {
+    const configPV = pass4ControllerConfig.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 680 && configPV <= 880) ? configPV : 797;
+    initPass4Controller(typicalPV, typicalPV, pass4ControllerConfig.SP_LIM_LO ?? 680, pass4ControllerConfig.SP_LIM_HI ?? 880);
+    updatePass4ControllerAlarmLimits({
+      LL: pass4ControllerConfig.ALM_LL_LIM ?? 0,
+      L: pass4ControllerConfig.ALM_L_LIM ?? 770,
+      H: pass4ControllerConfig.ALM_H_LIM ?? 797,
+      HH: pass4ControllerConfig.ALM_HH_LIM ?? 0,
+    });
+  }, [pass4ControllerConfig.TYPICAL_PV, pass4ControllerConfig.SP_LIM_LO, pass4ControllerConfig.SP_LIM_HI, pass4ControllerConfig.ALM_LL_LIM, pass4ControllerConfig.ALM_L_LIM, pass4ControllerConfig.ALM_H_LIM, pass4ControllerConfig.ALM_HH_LIM, initPass4Controller, updatePass4ControllerAlarmLimits]);
+
   // Function to call sulfur furnace API and update furnace outlet temperature (4200A)
   const calculateFurnaceTemperature = useCallback(async (sulfurFlowGpm: number) => {
     if (!sulfurFlowGpm || sulfurFlowGpm <= 0) return;
@@ -1538,6 +1613,69 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     alarmHH: jugValveHandControllerConfig.ALM_HH_LIM ?? 0,
   };
 
+  const pass2ControllerData: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: pass2ControllerConfig.TAGNAME || '1540-T-4822',
+    description: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
+    pv: pass2ControllerSyncState.syncedPV,
+    sp: pass2ControllerSyncState.syncedSP,
+    out: pass2ControllerSyncState.syncedOUT,
+    mode: pass2ControllerSyncState.syncedMode,
+    pvUnits: pass2ControllerConfig.EU || '°F',
+    pvRangeMin: pass2ControllerConfig.PV_SCALE_LO ?? 700,
+    pvRangeMax: pass2ControllerConfig.PV_SCALE_HI ?? 900,
+    alarmActive: pass2ControllerSyncState.alarmStates.HH || pass2ControllerSyncState.alarmStates.H || 
+                 pass2ControllerSyncState.alarmStates.L || pass2ControllerSyncState.alarmStates.LL,
+    alarmColor: (pass2ControllerSyncState.alarmStates.HH || pass2ControllerSyncState.alarmStates.LL) ? 'red' : 
+                (pass2ControllerSyncState.alarmStates.H || pass2ControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: pass2ControllerConfig.ALM_LL_LIM ?? 0,
+    alarmL: pass2ControllerConfig.ALM_L_LIM ?? 797,
+    alarmH: pass2ControllerConfig.ALM_H_LIM ?? 824,
+    alarmHH: pass2ControllerConfig.ALM_HH_LIM ?? 0,
+  };
+
+  const pass3ControllerData: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: pass3ControllerConfig.TAGNAME || '1540-T-5220',
+    description: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
+    pv: pass3ControllerSyncState.syncedPV,
+    sp: pass3ControllerSyncState.syncedSP,
+    out: pass3ControllerSyncState.syncedOUT,
+    mode: pass3ControllerSyncState.syncedMode,
+    pvUnits: pass3ControllerConfig.EU || '°F',
+    pvRangeMin: pass3ControllerConfig.PV_SCALE_LO ?? 700,
+    pvRangeMax: pass3ControllerConfig.PV_SCALE_HI ?? 900,
+    alarmActive: pass3ControllerSyncState.alarmStates.HH || pass3ControllerSyncState.alarmStates.H || 
+                 pass3ControllerSyncState.alarmStates.L || pass3ControllerSyncState.alarmStates.LL,
+    alarmColor: (pass3ControllerSyncState.alarmStates.HH || pass3ControllerSyncState.alarmStates.LL) ? 'red' : 
+                (pass3ControllerSyncState.alarmStates.H || pass3ControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: pass3ControllerConfig.ALM_LL_LIM ?? 0,
+    alarmL: pass3ControllerConfig.ALM_L_LIM ?? 797,
+    alarmH: pass3ControllerConfig.ALM_H_LIM ?? 824,
+    alarmHH: pass3ControllerConfig.ALM_HH_LIM ?? 0,
+  };
+
+  const pass4ControllerData: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: pass4ControllerConfig.TAGNAME || '1540-T-5224',
+    description: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
+    pv: pass4ControllerSyncState.syncedPV,
+    sp: pass4ControllerSyncState.syncedSP,
+    out: pass4ControllerSyncState.syncedOUT,
+    mode: pass4ControllerSyncState.syncedMode,
+    pvUnits: pass4ControllerConfig.EU || '°F',
+    pvRangeMin: pass4ControllerConfig.PV_SCALE_LO ?? 680,
+    pvRangeMax: pass4ControllerConfig.PV_SCALE_HI ?? 880,
+    alarmActive: pass4ControllerSyncState.alarmStates.HH || pass4ControllerSyncState.alarmStates.H || 
+                 pass4ControllerSyncState.alarmStates.L || pass4ControllerSyncState.alarmStates.LL,
+    alarmColor: (pass4ControllerSyncState.alarmStates.HH || pass4ControllerSyncState.alarmStates.LL) ? 'red' : 
+                (pass4ControllerSyncState.alarmStates.H || pass4ControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmLL: pass4ControllerConfig.ALM_LL_LIM ?? 0,
+    alarmL: pass4ControllerConfig.ALM_L_LIM ?? 770,
+    alarmH: pass4ControllerConfig.ALM_H_LIM ?? 797,
+    alarmHH: pass4ControllerConfig.ALM_HH_LIM ?? 0,
+  };
+
   // Build Temperature Sensor 1520-TI-5821 data from synced state
   const tempSensorData: ControllerData = {
     ...defaultControllerData,
@@ -1754,6 +1892,24 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const handleSulfurValveL2Click = () => {
     if (isLockedL2) {
       setLocation('/unit-operation/sulfur-control-hydraulics?from=l2-furnace');
+    }
+  };
+
+  const handlePass2ControllerClick = () => {
+    if (isLockedL4) {
+      setIsPass2ControllerModalOpen(true);
+    }
+  };
+
+  const handlePass3ControllerClick = () => {
+    if (isLockedL4) {
+      setIsPass3ControllerModalOpen(true);
+    }
+  };
+
+  const handlePass4ControllerClick = () => {
+    if (isLockedL4) {
+      setIsPass4ControllerModalOpen(true);
     }
   };
 
@@ -2167,6 +2323,102 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     UNIT: whbHandControllerConfig.UNIT || 'U-505',
   };
 
+  const pass2ControllerSecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: pass2ControllerSyncState.syncedPV,
+    SP: pass2ControllerSyncState.syncedSP,
+    TSP: pass2ControllerSyncState.syncedSP,
+    OUT_PCT: pass2ControllerSyncState.syncedOUT,
+    MODE_AUTOMAN: pass2ControllerSyncState.syncedMode === 'AUTO' || pass2ControllerSyncState.syncedMode === 'MAN' 
+      ? pass2ControllerSyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: pass2ControllerSyncState.alarmStates.HH,
+    ALM_H_ACT: pass2ControllerSyncState.alarmStates.H,
+    ALM_L_ACT: pass2ControllerSyncState.alarmStates.L,
+    ALM_LL_ACT: pass2ControllerSyncState.alarmStates.LL,
+  };
+  const pass2ControllerSecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: pass2ControllerConfig.TAGNAME || '1540-T-4822',
+    DESC: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
+    EU: pass2ControllerConfig.EU || '°F',
+    PV_SCALE_LO: pass2ControllerConfig.PV_SCALE_LO ?? 700,
+    PV_SCALE_HI: pass2ControllerConfig.PV_SCALE_HI ?? 900,
+    SP_LIM_LO: pass2ControllerConfig.SP_LIM_LO ?? 700,
+    SP_LIM_HI: pass2ControllerConfig.SP_LIM_HI ?? 900,
+    ALM_LL_LIM: pass2ControllerConfig.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: pass2ControllerConfig.ALM_L_LIM ?? 797,
+    ALM_DL_LIM: 0,
+    ALM_DH_LIM: 0,
+    ALM_H_LIM: pass2ControllerConfig.ALM_H_LIM ?? 824,
+    ALM_HH_LIM: pass2ControllerConfig.ALM_HH_LIM ?? 0,
+    UNIT: pass2ControllerConfig.UNIT || 'U-505',
+  };
+
+  const pass3ControllerSecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: pass3ControllerSyncState.syncedPV,
+    SP: pass3ControllerSyncState.syncedSP,
+    TSP: pass3ControllerSyncState.syncedSP,
+    OUT_PCT: pass3ControllerSyncState.syncedOUT,
+    MODE_AUTOMAN: pass3ControllerSyncState.syncedMode === 'AUTO' || pass3ControllerSyncState.syncedMode === 'MAN' 
+      ? pass3ControllerSyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: pass3ControllerSyncState.alarmStates.HH,
+    ALM_H_ACT: pass3ControllerSyncState.alarmStates.H,
+    ALM_L_ACT: pass3ControllerSyncState.alarmStates.L,
+    ALM_LL_ACT: pass3ControllerSyncState.alarmStates.LL,
+  };
+  const pass3ControllerSecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: pass3ControllerConfig.TAGNAME || '1540-T-5220',
+    DESC: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
+    EU: pass3ControllerConfig.EU || '°F',
+    PV_SCALE_LO: pass3ControllerConfig.PV_SCALE_LO ?? 700,
+    PV_SCALE_HI: pass3ControllerConfig.PV_SCALE_HI ?? 900,
+    SP_LIM_LO: pass3ControllerConfig.SP_LIM_LO ?? 700,
+    SP_LIM_HI: pass3ControllerConfig.SP_LIM_HI ?? 900,
+    ALM_LL_LIM: pass3ControllerConfig.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: pass3ControllerConfig.ALM_L_LIM ?? 797,
+    ALM_DL_LIM: 0,
+    ALM_DH_LIM: 0,
+    ALM_H_LIM: pass3ControllerConfig.ALM_H_LIM ?? 824,
+    ALM_HH_LIM: pass3ControllerConfig.ALM_HH_LIM ?? 0,
+    UNIT: pass3ControllerConfig.UNIT || 'U-505',
+  };
+
+  const pass4ControllerSecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: pass4ControllerSyncState.syncedPV,
+    SP: pass4ControllerSyncState.syncedSP,
+    TSP: pass4ControllerSyncState.syncedSP,
+    OUT_PCT: pass4ControllerSyncState.syncedOUT,
+    MODE_AUTOMAN: pass4ControllerSyncState.syncedMode === 'AUTO' || pass4ControllerSyncState.syncedMode === 'MAN' 
+      ? pass4ControllerSyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: pass4ControllerSyncState.alarmStates.HH,
+    ALM_H_ACT: pass4ControllerSyncState.alarmStates.H,
+    ALM_L_ACT: pass4ControllerSyncState.alarmStates.L,
+    ALM_LL_ACT: pass4ControllerSyncState.alarmStates.LL,
+  };
+  const pass4ControllerSecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: pass4ControllerConfig.TAGNAME || '1540-T-5224',
+    DESC: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
+    EU: pass4ControllerConfig.EU || '°F',
+    PV_SCALE_LO: pass4ControllerConfig.PV_SCALE_LO ?? 680,
+    PV_SCALE_HI: pass4ControllerConfig.PV_SCALE_HI ?? 880,
+    SP_LIM_LO: pass4ControllerConfig.SP_LIM_LO ?? 680,
+    SP_LIM_HI: pass4ControllerConfig.SP_LIM_HI ?? 880,
+    ALM_LL_LIM: pass4ControllerConfig.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: pass4ControllerConfig.ALM_L_LIM ?? 770,
+    ALM_DL_LIM: 0,
+    ALM_DH_LIM: 0,
+    ALM_H_LIM: pass4ControllerConfig.ALM_H_LIM ?? 797,
+    ALM_HH_LIM: pass4ControllerConfig.ALM_HH_LIM ?? 0,
+    UNIT: pass4ControllerConfig.UNIT || 'U-505',
+  };
+
   // Fetch saved layout positions from database
   const { data: layoutData, isLoading: isLoadingLayout } = useQuery<{ layouts: Array<{
     elementId: string;
@@ -2246,6 +2498,24 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (ts4820L4) {
       setTempSensor4820L4Position({ x: ts4820L4.x, y: ts4820L4.y });
       setTempSensor4820L4Size({ width: ts4820L4.width, height: ts4820L4.height });
+    }
+
+    const fp4822L4 = positionMap.get('faceplate4822_l4');
+    if (fp4822L4) {
+      setFaceplate4822L4Position({ x: fp4822L4.x, y: fp4822L4.y });
+      setFaceplate4822L4Size({ width: fp4822L4.width, height: fp4822L4.height });
+    }
+
+    const fp5220L4 = positionMap.get('faceplate5220_l4');
+    if (fp5220L4) {
+      setFaceplate5220L4Position({ x: fp5220L4.x, y: fp5220L4.y });
+      setFaceplate5220L4Size({ width: fp5220L4.width, height: fp5220L4.height });
+    }
+
+    const fp5224L4 = positionMap.get('faceplate5224_l4');
+    if (fp5224L4) {
+      setFaceplate5224L4Position({ x: fp5224L4.x, y: fp5224L4.y });
+      setFaceplate5224L4Size({ width: fp5224L4.width, height: fp5224L4.height });
     }
 
     // Restore vertical arrows for L4-Converter
@@ -2892,6 +3162,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
         { elementId: 'kpp_faceplate_l4', positionX: Math.round(kppFaceplateL4Position.x), positionY: Math.round(kppFaceplateL4Position.y), width: kppFaceplateL4Size.width, height: kppFaceplateL4Size.height, rotation: 0 },
         { elementId: 'temp_sensor_4820_l4', positionX: Math.round(tempSensor4820L4Position.x), positionY: Math.round(tempSensor4820L4Position.y), width: tempSensor4820L4Size.width, height: tempSensor4820L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4822_l4', positionX: Math.round(faceplate4822L4Position.x), positionY: Math.round(faceplate4822L4Position.y), width: faceplate4822L4Size.width, height: faceplate4822L4Size.height, rotation: 0 },
+        { elementId: 'faceplate5220_l4', positionX: Math.round(faceplate5220L4Position.x), positionY: Math.round(faceplate5220L4Position.y), width: faceplate5220L4Size.width, height: faceplate5220L4Size.height, rotation: 0 },
+        { elementId: 'faceplate5224_l4', positionX: Math.round(faceplate5224L4Position.x), positionY: Math.round(faceplate5224L4Position.y), width: faceplate5224L4Size.width, height: faceplate5224L4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -3777,6 +4050,120 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   data={jugValveHandControllerData}
                   isTransparent={true}
                   controllerId="1540-H-4282"
+                />
+              </div>
+            </Rnd>
+
+            <Rnd
+              key="faceplate4822-l4"
+              position={faceplate4822L4Position}
+              size={faceplate4822L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4822L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4822L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate4822L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
+              data-testid="faceplate4822-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handlePass2ControllerClick}
+                style={{
+                  transform: `scale(${Math.min(faceplate4822L4Size.width / 220, faceplate4822L4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={pass2ControllerData}
+                  isTransparent={true}
+                  controllerId="1540-T-4822"
+                />
+              </div>
+            </Rnd>
+
+            <Rnd
+              key="faceplate5220-l4"
+              position={faceplate5220L4Position}
+              size={faceplate5220L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate5220L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate5220L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate5220L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
+              data-testid="faceplate5220-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handlePass3ControllerClick}
+                style={{
+                  transform: `scale(${Math.min(faceplate5220L4Size.width / 220, faceplate5220L4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={pass3ControllerData}
+                  isTransparent={true}
+                  controllerId="1540-T-5220"
+                />
+              </div>
+            </Rnd>
+
+            <Rnd
+              key="faceplate5224-l4"
+              position={faceplate5224L4Position}
+              size={faceplate5224L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate5224L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate5224L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate5224L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
+              data-testid="faceplate5224-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handlePass4ControllerClick}
+                style={{
+                  transform: `scale(${Math.min(faceplate5224L4Size.width / 220, faceplate5224L4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={pass4ControllerData}
+                  isTransparent={true}
+                  controllerId="1540-T-5224"
                 />
               </div>
             </Rnd>
@@ -6002,6 +6389,66 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             fromSource="home-screen"
             selectedMode={selectedMode}
             loadedCaseValue={loadedCaseValueWHBdP}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPass2ControllerModalOpen} onOpenChange={setIsPass2ControllerModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Pass 2 Inlet Temperature Controller 1540-T-4822</DialogTitle>
+          </VisuallyHidden>
+          <SecondaryControllerFaceplate
+            data={pass2ControllerSecondaryData}
+            config={pass2ControllerSecondaryConfig}
+            controllerId="1540-T-4822"
+            onClose={() => setIsPass2ControllerModalOpen(false)}
+            onModeChange={(mode) => updatePass2ControllerMode(mode)}
+            onSpChange={(value) => updatePass2ControllerSP(value)}
+            onOutChange={(value) => updatePass2ControllerOUT(value)}
+            fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={null}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPass3ControllerModalOpen} onOpenChange={setIsPass3ControllerModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Pass 3 Inlet Temperature Controller 1540-T-5220</DialogTitle>
+          </VisuallyHidden>
+          <SecondaryControllerFaceplate
+            data={pass3ControllerSecondaryData}
+            config={pass3ControllerSecondaryConfig}
+            controllerId="1540-T-5220"
+            onClose={() => setIsPass3ControllerModalOpen(false)}
+            onModeChange={(mode) => updatePass3ControllerMode(mode)}
+            onSpChange={(value) => updatePass3ControllerSP(value)}
+            onOutChange={(value) => updatePass3ControllerOUT(value)}
+            fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={null}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPass4ControllerModalOpen} onOpenChange={setIsPass4ControllerModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Pass 4 Inlet Temperature Controller 1540-T-5224</DialogTitle>
+          </VisuallyHidden>
+          <SecondaryControllerFaceplate
+            data={pass4ControllerSecondaryData}
+            config={pass4ControllerSecondaryConfig}
+            controllerId="1540-T-5224"
+            onClose={() => setIsPass4ControllerModalOpen(false)}
+            onModeChange={(mode) => updatePass4ControllerMode(mode)}
+            onSpChange={(value) => updatePass4ControllerSP(value)}
+            onOutChange={(value) => updatePass4ControllerOUT(value)}
+            fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={null}
           />
         </DialogContent>
       </Dialog>
