@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { AlarmLogEntry } from "@/delta-v/types/secondaryController";
 
 type SyncedMode = "AUTO" | "MAN" | "BYPASS" | "RCAS" | "ROUT";
@@ -44,7 +44,6 @@ interface ControllerSyncContextType {
   updateSyncedOUT: (controllerId: string, value: number) => void;
   updateSyncedMode: (controllerId: string, mode: SyncedMode) => void;
   updateAlarmStates: (controllerId: string, alarms: AlarmStates) => void;
-  updatePvRange: (controllerId: string, pvRangeMin: number, pvRangeMax: number) => void;
   updateAlarmLimits: (controllerId: string, limits: AlarmLimits) => void;
   addAlarmLogEntry: (controllerId: string, entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => void;
   acknowledgeAlarm: (controllerId: string, id: string) => void;
@@ -440,27 +439,6 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
     channel.close();
   }, []);
 
-  const updatePvRange = useCallback((controllerId: string, pvRangeMin: number, pvRangeMax: number) => {
-    const safeMin = toFiniteNumber(pvRangeMin, 0);
-    const safeMax = toFiniteNumber(pvRangeMax, 100);
-    setState((prev) => {
-      const currentController = prev.controllers[controllerId] || createDefaultControllerState();
-      if (currentController.pvRangeMin === safeMin && currentController.pvRangeMax === safeMax) {
-        return prev;
-      }
-      const updated = { ...currentController, pvRangeMin: safeMin, pvRangeMax: safeMax };
-      if (currentController.syncedPV < safeMin || currentController.syncedPV > safeMax) {
-        updated.syncedPV = Math.max(safeMin, Math.min(safeMax, currentController.syncedPV));
-      }
-      return {
-        controllers: {
-          ...prev.controllers,
-          [controllerId]: updated,
-        },
-      };
-    });
-  }, []);
-
   const updateAlarmLimits = useCallback((controllerId: string, limits: AlarmLimits) => {
     setState((prev) => {
       const currentController = prev.controllers[controllerId] || createDefaultControllerState();
@@ -549,7 +527,6 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
         updateSyncedOUT,
         updateSyncedMode,
         updateAlarmStates,
-        updatePvRange,
         updateAlarmLimits,
         addAlarmLogEntry,
         acknowledgeAlarm,
@@ -568,27 +545,22 @@ export const useControllerSync = (controllerId: string) => {
     throw new Error("useControllerSync must be used within a ControllerSyncProvider");
   }
 
-  const contextRef = useRef(context);
-  contextRef.current = context;
-
   const state = context.getControllerState(controllerId);
 
-  const actions = useMemo(() => ({
+  return {
+    state,
     initializeController: (initialPV: number, initialSP?: number, pvRangeMin?: number, pvRangeMax?: number) => 
-      contextRef.current.initializeController(controllerId, initialPV, initialSP, pvRangeMin, pvRangeMax),
-    updateSyncedPV: (value: number) => contextRef.current.updateSyncedPV(controllerId, value),
-    updateSyncedSP: (value: number) => contextRef.current.updateSyncedSP(controllerId, value),
-    updateSyncedOUT: (value: number) => contextRef.current.updateSyncedOUT(controllerId, value),
-    updateSyncedMode: (mode: SyncedMode) => contextRef.current.updateSyncedMode(controllerId, mode),
-    updateAlarmStates: (alarms: AlarmStates) => contextRef.current.updateAlarmStates(controllerId, alarms),
-    updatePvRange: (pvRangeMin: number, pvRangeMax: number) => contextRef.current.updatePvRange(controllerId, pvRangeMin, pvRangeMax),
-    updateAlarmLimits: (limits: AlarmLimits) => contextRef.current.updateAlarmLimits(controllerId, limits),
-    addAlarmLogEntry: (entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => contextRef.current.addAlarmLogEntry(controllerId, entry),
-    acknowledgeAlarm: (id: string) => contextRef.current.acknowledgeAlarm(controllerId, id),
-    acknowledgeAllAlarms: () => contextRef.current.acknowledgeAllAlarms(controllerId),
-  }), [controllerId]);
-
-  return { state, ...actions };
+      context.initializeController(controllerId, initialPV, initialSP, pvRangeMin, pvRangeMax),
+    updateSyncedPV: (value: number) => context.updateSyncedPV(controllerId, value),
+    updateSyncedSP: (value: number) => context.updateSyncedSP(controllerId, value),
+    updateSyncedOUT: (value: number) => context.updateSyncedOUT(controllerId, value),
+    updateSyncedMode: (mode: SyncedMode) => context.updateSyncedMode(controllerId, mode),
+    updateAlarmStates: (alarms: AlarmStates) => context.updateAlarmStates(controllerId, alarms),
+    updateAlarmLimits: (limits: AlarmLimits) => context.updateAlarmLimits(controllerId, limits),
+    addAlarmLogEntry: (entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => context.addAlarmLogEntry(controllerId, entry),
+    acknowledgeAlarm: (id: string) => context.acknowledgeAlarm(controllerId, id),
+    acknowledgeAllAlarms: () => context.acknowledgeAllAlarms(controllerId),
+  };
 };
 
 // Export types for external use
