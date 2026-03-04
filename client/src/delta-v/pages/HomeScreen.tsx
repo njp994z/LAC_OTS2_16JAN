@@ -1613,67 +1613,112 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     alarmHH: jugValveHandControllerConfig.ALM_HH_LIM ?? 0,
   };
 
+  const rawTag4822 = orchestratorResult?.sensor_tags?.["1540-TIC-4822"];
+  const orchestratorPass2Temp = selectedMode === 'Static' && rawTag4822 != null
+    ? (typeof rawTag4822 === 'object' && rawTag4822 !== null ? (rawTag4822 as any).value : rawTag4822)
+    : null;
+  const pass2PV = orchestratorPass2Temp ?? pass2ControllerSyncState.syncedPV;
+  const pass2HHLim = pass2ControllerConfig.ALM_HH_LIM ?? 0;
+  const pass2HLim = pass2ControllerConfig.ALM_H_LIM ?? 824;
+  const pass2LLim = pass2ControllerConfig.ALM_L_LIM ?? 797;
+  const pass2LLLim = pass2ControllerConfig.ALM_LL_LIM ?? 0;
+  const pass2AlarmHH = pass2HHLim > 0 && pass2PV >= pass2HHLim;
+  const pass2AlarmH = pass2HLim > 0 && pass2PV >= pass2HLim;
+  const pass2AlarmL = pass2LLim > 0 && pass2PV <= pass2LLim;
+  const pass2AlarmLL = pass2LLLim > 0 && pass2PV <= pass2LLLim;
+  const pass2AlarmActive = pass2AlarmHH || pass2AlarmH || pass2AlarmL || pass2AlarmLL;
+  const pass2AlarmColor = (pass2AlarmHH || pass2AlarmLL) ? 'red' as const
+    : (pass2AlarmH || pass2AlarmL) ? 'yellow' as const : undefined;
+
   const pass2ControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: pass2ControllerConfig.TAGNAME || '1540-T-4822',
     description: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
-    pv: pass2ControllerSyncState.syncedPV,
-    sp: pass2ControllerSyncState.syncedSP,
+    pv: pass2PV,
+    sp: orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
     out: pass2ControllerSyncState.syncedOUT,
     mode: pass2ControllerSyncState.syncedMode,
     pvUnits: pass2ControllerConfig.EU || '°F',
     pvRangeMin: pass2ControllerConfig.PV_SCALE_LO ?? 700,
     pvRangeMax: pass2ControllerConfig.PV_SCALE_HI ?? 900,
-    alarmActive: pass2ControllerSyncState.alarmStates.HH || pass2ControllerSyncState.alarmStates.H || 
-                 pass2ControllerSyncState.alarmStates.L || pass2ControllerSyncState.alarmStates.LL,
-    alarmColor: (pass2ControllerSyncState.alarmStates.HH || pass2ControllerSyncState.alarmStates.LL) ? 'red' : 
-                (pass2ControllerSyncState.alarmStates.H || pass2ControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: pass2ControllerConfig.ALM_LL_LIM ?? 0,
-    alarmL: pass2ControllerConfig.ALM_L_LIM ?? 797,
-    alarmH: pass2ControllerConfig.ALM_H_LIM ?? 824,
-    alarmHH: pass2ControllerConfig.ALM_HH_LIM ?? 0,
+    alarmActive: pass2AlarmActive,
+    alarmColor: pass2AlarmColor,
+    alarmLL: pass2LLLim,
+    alarmL: pass2LLim,
+    alarmH: pass2HLim,
+    alarmHH: pass2HHLim,
   };
+
+  const rawTag5220 = orchestratorResult?.sensor_tags?.["1540-TIC-5220"];
+  const orchestratorPass3Temp = selectedMode === 'Static' && rawTag5220 != null
+    ? (typeof rawTag5220 === 'object' && rawTag5220 !== null ? (rawTag5220 as any).value : rawTag5220)
+    : null;
+  const pass3PV = orchestratorPass3Temp ?? pass3ControllerSyncState.syncedPV;
+  const pass3HHLim = pass3ControllerConfig.ALM_HH_LIM ?? 0;
+  const pass3HLim = pass3ControllerConfig.ALM_H_LIM ?? 824;
+  const pass3LLim = pass3ControllerConfig.ALM_L_LIM ?? 797;
+  const pass3LLLim = pass3ControllerConfig.ALM_LL_LIM ?? 0;
+  const pass3AlarmHH = pass3HHLim > 0 && pass3PV >= pass3HHLim;
+  const pass3AlarmH = pass3HLim > 0 && pass3PV >= pass3HLim;
+  const pass3AlarmL = pass3LLim > 0 && pass3PV <= pass3LLim;
+  const pass3AlarmLL = pass3LLLim > 0 && pass3PV <= pass3LLLim;
+  const pass3AlarmActive = pass3AlarmHH || pass3AlarmH || pass3AlarmL || pass3AlarmLL;
+  const pass3AlarmColor = (pass3AlarmHH || pass3AlarmLL) ? 'red' as const
+    : (pass3AlarmH || pass3AlarmL) ? 'yellow' as const : undefined;
 
   const pass3ControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: pass3ControllerConfig.TAGNAME || '1540-T-5220',
     description: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
-    pv: pass3ControllerSyncState.syncedPV,
-    sp: pass3ControllerSyncState.syncedSP,
+    pv: pass3PV,
+    sp: orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
     out: pass3ControllerSyncState.syncedOUT,
     mode: pass3ControllerSyncState.syncedMode,
     pvUnits: pass3ControllerConfig.EU || '°F',
     pvRangeMin: pass3ControllerConfig.PV_SCALE_LO ?? 700,
     pvRangeMax: pass3ControllerConfig.PV_SCALE_HI ?? 900,
-    alarmActive: pass3ControllerSyncState.alarmStates.HH || pass3ControllerSyncState.alarmStates.H || 
-                 pass3ControllerSyncState.alarmStates.L || pass3ControllerSyncState.alarmStates.LL,
-    alarmColor: (pass3ControllerSyncState.alarmStates.HH || pass3ControllerSyncState.alarmStates.LL) ? 'red' : 
-                (pass3ControllerSyncState.alarmStates.H || pass3ControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: pass3ControllerConfig.ALM_LL_LIM ?? 0,
-    alarmL: pass3ControllerConfig.ALM_L_LIM ?? 797,
-    alarmH: pass3ControllerConfig.ALM_H_LIM ?? 824,
-    alarmHH: pass3ControllerConfig.ALM_HH_LIM ?? 0,
+    alarmActive: pass3AlarmActive,
+    alarmColor: pass3AlarmColor,
+    alarmLL: pass3LLLim,
+    alarmL: pass3LLim,
+    alarmH: pass3HLim,
+    alarmHH: pass3HHLim,
   };
+
+  const rawTag5224 = orchestratorResult?.sensor_tags?.["1540-TIC-5224"];
+  const orchestratorPass4Temp = selectedMode === 'Static' && rawTag5224 != null
+    ? (typeof rawTag5224 === 'object' && rawTag5224 !== null ? (rawTag5224 as any).value : rawTag5224)
+    : null;
+  const pass4PV = orchestratorPass4Temp ?? pass4ControllerSyncState.syncedPV;
+  const pass4HHLim = pass4ControllerConfig.ALM_HH_LIM ?? 0;
+  const pass4HLim = pass4ControllerConfig.ALM_H_LIM ?? 797;
+  const pass4LLim = pass4ControllerConfig.ALM_L_LIM ?? 770;
+  const pass4LLLim = pass4ControllerConfig.ALM_LL_LIM ?? 0;
+  const pass4AlarmHH = pass4HHLim > 0 && pass4PV >= pass4HHLim;
+  const pass4AlarmH = pass4HLim > 0 && pass4PV >= pass4HLim;
+  const pass4AlarmL = pass4LLim > 0 && pass4PV <= pass4LLim;
+  const pass4AlarmLL = pass4LLLim > 0 && pass4PV <= pass4LLLim;
+  const pass4AlarmActive = pass4AlarmHH || pass4AlarmH || pass4AlarmL || pass4AlarmLL;
+  const pass4AlarmColor = (pass4AlarmHH || pass4AlarmLL) ? 'red' as const
+    : (pass4AlarmH || pass4AlarmL) ? 'yellow' as const : undefined;
 
   const pass4ControllerData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: pass4ControllerConfig.TAGNAME || '1540-T-5224',
     description: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
-    pv: pass4ControllerSyncState.syncedPV,
-    sp: pass4ControllerSyncState.syncedSP,
+    pv: pass4PV,
+    sp: orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
     out: pass4ControllerSyncState.syncedOUT,
     mode: pass4ControllerSyncState.syncedMode,
     pvUnits: pass4ControllerConfig.EU || '°F',
     pvRangeMin: pass4ControllerConfig.PV_SCALE_LO ?? 680,
     pvRangeMax: pass4ControllerConfig.PV_SCALE_HI ?? 880,
-    alarmActive: pass4ControllerSyncState.alarmStates.HH || pass4ControllerSyncState.alarmStates.H || 
-                 pass4ControllerSyncState.alarmStates.L || pass4ControllerSyncState.alarmStates.LL,
-    alarmColor: (pass4ControllerSyncState.alarmStates.HH || pass4ControllerSyncState.alarmStates.LL) ? 'red' : 
-                (pass4ControllerSyncState.alarmStates.H || pass4ControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: pass4ControllerConfig.ALM_LL_LIM ?? 0,
-    alarmL: pass4ControllerConfig.ALM_L_LIM ?? 770,
-    alarmH: pass4ControllerConfig.ALM_H_LIM ?? 797,
-    alarmHH: pass4ControllerConfig.ALM_HH_LIM ?? 0,
+    alarmActive: pass4AlarmActive,
+    alarmColor: pass4AlarmColor,
+    alarmLL: pass4LLLim,
+    alarmL: pass4LLim,
+    alarmH: pass4HLim,
+    alarmHH: pass4HHLim,
   };
 
   // Build Temperature Sensor 1520-TI-5821 data from synced state
@@ -2325,17 +2370,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   const pass2ControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: pass2ControllerSyncState.syncedPV,
-    SP: pass2ControllerSyncState.syncedSP,
-    TSP: pass2ControllerSyncState.syncedSP,
+    PV: pass2PV,
+    SP: orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    TSP: orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
     OUT_PCT: pass2ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass2ControllerSyncState.syncedMode === 'AUTO' || pass2ControllerSyncState.syncedMode === 'MAN' 
       ? pass2ControllerSyncState.syncedMode 
       : 'AUTO',
-    ALM_HH_ACT: pass2ControllerSyncState.alarmStates.HH,
-    ALM_H_ACT: pass2ControllerSyncState.alarmStates.H,
-    ALM_L_ACT: pass2ControllerSyncState.alarmStates.L,
-    ALM_LL_ACT: pass2ControllerSyncState.alarmStates.LL,
+    ALM_HH_ACT: pass2AlarmHH,
+    ALM_H_ACT: pass2AlarmH,
+    ALM_L_ACT: pass2AlarmL,
+    ALM_LL_ACT: pass2AlarmLL,
   };
   const pass2ControllerSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
@@ -2357,17 +2402,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   const pass3ControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: pass3ControllerSyncState.syncedPV,
-    SP: pass3ControllerSyncState.syncedSP,
-    TSP: pass3ControllerSyncState.syncedSP,
+    PV: pass3PV,
+    SP: orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    TSP: orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
     OUT_PCT: pass3ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass3ControllerSyncState.syncedMode === 'AUTO' || pass3ControllerSyncState.syncedMode === 'MAN' 
       ? pass3ControllerSyncState.syncedMode 
       : 'AUTO',
-    ALM_HH_ACT: pass3ControllerSyncState.alarmStates.HH,
-    ALM_H_ACT: pass3ControllerSyncState.alarmStates.H,
-    ALM_L_ACT: pass3ControllerSyncState.alarmStates.L,
-    ALM_LL_ACT: pass3ControllerSyncState.alarmStates.LL,
+    ALM_HH_ACT: pass3AlarmHH,
+    ALM_H_ACT: pass3AlarmH,
+    ALM_L_ACT: pass3AlarmL,
+    ALM_LL_ACT: pass3AlarmLL,
   };
   const pass3ControllerSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
@@ -2389,17 +2434,17 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
 
   const pass4ControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: pass4ControllerSyncState.syncedPV,
-    SP: pass4ControllerSyncState.syncedSP,
-    TSP: pass4ControllerSyncState.syncedSP,
+    PV: pass4PV,
+    SP: orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    TSP: orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
     OUT_PCT: pass4ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass4ControllerSyncState.syncedMode === 'AUTO' || pass4ControllerSyncState.syncedMode === 'MAN' 
       ? pass4ControllerSyncState.syncedMode 
       : 'AUTO',
-    ALM_HH_ACT: pass4ControllerSyncState.alarmStates.HH,
-    ALM_H_ACT: pass4ControllerSyncState.alarmStates.H,
-    ALM_L_ACT: pass4ControllerSyncState.alarmStates.L,
-    ALM_LL_ACT: pass4ControllerSyncState.alarmStates.LL,
+    ALM_HH_ACT: pass4AlarmHH,
+    ALM_H_ACT: pass4AlarmH,
+    ALM_L_ACT: pass4AlarmL,
+    ALM_LL_ACT: pass4AlarmLL,
   };
   const pass4ControllerSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
