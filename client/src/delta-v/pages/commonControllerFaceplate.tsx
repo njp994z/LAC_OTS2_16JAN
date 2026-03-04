@@ -934,20 +934,21 @@ const CommonControllerFaceplatePage = () => {
     const defaults = getDefaultSecondaryControllerConfig(activeControllerId!);
     const scaleLo = defaults.PV_SCALE_LO ?? cfg.PV_SCALE_LO;
     const scaleHi = defaults.PV_SCALE_HI ?? cfg.PV_SCALE_HI;
-    const typicalPV = defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? cfg.PV_INIT_VAL;
-    if (typicalPV != null && typicalPV > 0) {
-      initializeController(typicalPV, typicalPV, scaleLo, scaleHi);
+    const pvInitInRange = cfg.PV_INIT_VAL > 0 && scaleLo != null && scaleHi != null && cfg.PV_INIT_VAL >= scaleLo && cfg.PV_INIT_VAL <= scaleHi;
+    const initPV = pvInitInRange ? cfg.PV_INIT_VAL : (defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? 0);
+    if (initPV > 0) {
+      initializeController(initPV, initPV, scaleLo, scaleHi);
     }
     if (scaleLo != null && scaleHi != null) {
       updatePvRange(scaleLo, scaleHi);
-      if (typicalPV != null && typicalPV > 0) {
+      if (initPV > 0) {
         const currentSP = syncState.syncedSP;
         const currentPV = syncState.syncedPV;
         if (!Number.isFinite(currentSP) || currentSP < scaleLo || currentSP > scaleHi) {
-          updateSyncedSP(typicalPV);
+          updateSyncedSP(initPV);
         }
         if (!Number.isFinite(currentPV) || currentPV < scaleLo || currentPV > scaleHi) {
-          updateSyncedPV(typicalPV);
+          updateSyncedPV(initPV);
         }
       }
     }

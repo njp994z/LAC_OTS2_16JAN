@@ -203,20 +203,21 @@ const Faceplate3E = () => {
     const cfg = getControllerConfig(activeControllerId);
     const scaleLo = defaults.PV_SCALE_LO ?? cfg.PV_SCALE_LO;
     const scaleHi = defaults.PV_SCALE_HI ?? cfg.PV_SCALE_HI;
-    const typicalPV = defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? cfg.PV_INIT_VAL;
-    if (typicalPV != null && typicalPV > 0) {
-      initializeController(typicalPV, typicalPV, scaleLo, scaleHi);
+    const pvInitInRange = cfg.PV_INIT_VAL > 0 && scaleLo != null && scaleHi != null && cfg.PV_INIT_VAL >= scaleLo && cfg.PV_INIT_VAL <= scaleHi;
+    const initPV = pvInitInRange ? cfg.PV_INIT_VAL : (defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? 0);
+    if (initPV > 0) {
+      initializeController(initPV, initPV, scaleLo, scaleHi);
     }
     if (scaleLo != null && scaleHi != null) {
       updatePvRange(scaleLo, scaleHi);
-      if (typicalPV != null && typicalPV > 0) {
+      if (initPV > 0) {
         const currentSP = syncState.syncedSP;
         const currentPV = syncState.syncedPV;
         if (!Number.isFinite(currentSP) || currentSP < scaleLo || currentSP > scaleHi) {
-          updateSyncedSP(typicalPV);
+          updateSyncedSP(initPV);
         }
         if (!Number.isFinite(currentPV) || currentPV < scaleLo || currentPV > scaleHi) {
-          updateSyncedPV(typicalPV);
+          updateSyncedPV(initPV);
         }
       }
     }
@@ -288,11 +289,14 @@ const Faceplate3E = () => {
     updateControllerData(activeControllerId, latestData);
     saveController(activeControllerId);
     
-    const typicalPV = finalConfig.TYPICAL_PV ?? latestData.PV;
+    const pvScaleLo = finalConfig.PV_SCALE_LO ?? 0;
+    const pvScaleHi = finalConfig.PV_SCALE_HI ?? 100;
+    const pvInitInRange = finalConfig.PV_INIT_VAL > 0 && finalConfig.PV_INIT_VAL >= pvScaleLo && finalConfig.PV_INIT_VAL <= pvScaleHi;
+    const initPV = pvInitInRange ? finalConfig.PV_INIT_VAL : (finalConfig.TYPICAL_PV ?? latestData.PV);
     
     updatePvRange(finalConfig.PV_SCALE_LO ?? 0, finalConfig.PV_SCALE_HI ?? 100);
-    updateSyncedPV(typicalPV);
-    updateSyncedSP(typicalPV);
+    updateSyncedPV(initPV);
+    updateSyncedSP(initPV);
     updateSyncedOUT(latestData.OUT_PCT);
     updateSyncedMode(latestData.MODE_AUTOMAN);
     
@@ -304,7 +308,7 @@ const Faceplate3E = () => {
     });
     
     toast.success(`Configuration saved for ${latestStringFields.TAGNAME || activeControllerId}`);
-    console.log(`[Faceplate3E] Applied config for ${activeControllerId}, TYPICAL_PV=${typicalPV}`);
+    console.log(`[Faceplate3E] Applied config for ${activeControllerId}, initPV=${initPV}`);
   }, [
     activeControllerId,
     updateControllerConfig, updateControllerData, saveController,
