@@ -1642,7 +1642,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     description: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
     pv: pass2PV,
     sp: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
-    out: pass2ControllerSyncState.syncedOUT,
+    out: selectedMode === 'Static' ? 50 : pass2ControllerSyncState.syncedOUT,
     mode: pass2ControllerSyncState.syncedMode,
     pvUnits: pass2ControllerConfig.EU || '°F',
     pvRangeMin: pass2ControllerConfig.PV_SCALE_LO ?? 700,
@@ -1678,7 +1678,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     description: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
     pv: pass3PV,
     sp: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
-    out: pass3ControllerSyncState.syncedOUT,
+    out: selectedMode === 'Static' ? 50 : pass3ControllerSyncState.syncedOUT,
     mode: pass3ControllerSyncState.syncedMode,
     pvUnits: pass3ControllerConfig.EU || '°F',
     pvRangeMin: pass3ControllerConfig.PV_SCALE_LO ?? 700,
@@ -1714,7 +1714,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     description: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
     pv: pass4PV,
     sp: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
-    out: pass4ControllerSyncState.syncedOUT,
+    out: selectedMode === 'Static' ? 50 : pass4ControllerSyncState.syncedOUT,
     mode: pass4ControllerSyncState.syncedMode,
     pvUnits: pass4ControllerConfig.EU || '°F',
     pvRangeMin: pass4ControllerConfig.PV_SCALE_LO ?? 680,
@@ -2379,7 +2379,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     PV: pass2PV,
     SP: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
     TSP: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
-    OUT_PCT: pass2ControllerSyncState.syncedOUT,
+    OUT_PCT: selectedMode === 'Static' ? 50 : pass2ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass2ControllerSyncState.syncedMode === 'AUTO' || pass2ControllerSyncState.syncedMode === 'MAN' 
       ? pass2ControllerSyncState.syncedMode 
       : 'AUTO',
@@ -2411,7 +2411,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     PV: pass3PV,
     SP: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
     TSP: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
-    OUT_PCT: pass3ControllerSyncState.syncedOUT,
+    OUT_PCT: selectedMode === 'Static' ? 50 : pass3ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass3ControllerSyncState.syncedMode === 'AUTO' || pass3ControllerSyncState.syncedMode === 'MAN' 
       ? pass3ControllerSyncState.syncedMode 
       : 'AUTO',
@@ -2443,7 +2443,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     PV: pass4PV,
     SP: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
     TSP: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
-    OUT_PCT: pass4ControllerSyncState.syncedOUT,
+    OUT_PCT: selectedMode === 'Static' ? 50 : pass4ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass4ControllerSyncState.syncedMode === 'AUTO' || pass4ControllerSyncState.syncedMode === 'MAN' 
       ? pass4ControllerSyncState.syncedMode 
       : 'AUTO',

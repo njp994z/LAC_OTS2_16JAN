@@ -143,9 +143,7 @@ export const SecondaryControllerFaceplate = ({
   const safeSP = isStaticMode && loadedCaseValue !== null 
     ? staticValue 
     : (Number.isFinite(data.SP) ? data.SP : rangeMin);
-  const safeOUT = isStaticMode && loadedCaseValue !== null 
-    ? staticValue 
-    : (Number.isFinite(data.OUT_PCT) ? data.OUT_PCT : 0);
+  const safeOUT = Number.isFinite(data.OUT_PCT) ? data.OUT_PCT : 0;
   
   const pvPercent = ((safePV - rangeMin) / safeRangeDenom) * 100;
   const outPercent = safeOUT;
