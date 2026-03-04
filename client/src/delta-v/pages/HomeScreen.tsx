@@ -494,6 +494,14 @@ const HomeScreen = () => {
           const raw6722 = tags["1520-TIC-6722"];
           updateTempSensor8464PV(typeof raw6722 === 'object' && raw6722 !== null ? (raw6722 as any).value : raw6722);
         }
+        if (tags["1540-TIC-7221"] !== undefined) {
+          const raw7221 = tags["1540-TIC-7221"];
+          updateTempSensor7221PV(typeof raw7221 === 'object' && raw7221 !== null ? (raw7221 as any).value : raw7221);
+        }
+        if (tags["1540-TIC-7224"] !== undefined) {
+          const raw7224 = tags["1540-TIC-7224"];
+          updateTempSensor7224PV(typeof raw7224 === 'object' && raw7224 !== null ? (raw7224 as any).value : raw7224);
+        }
       }
       
     } catch (error) {
@@ -845,6 +853,12 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate8464L21520Position, setFaceplate8464L21520Position] = useState({ x: 2150, y: 500 });
   const [faceplate8464L21520Size, setFaceplate8464L21520Size] = useState({ width: 160, height: 240 });
   const [showSecondary8464L21520, setShowSecondary8464L21520] = useState(false);
+  const [faceplate7221L21520Position, setFaceplate7221L21520Position] = useState({ x: 550, y: 500 });
+  const [faceplate7221L21520Size, setFaceplate7221L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary7221L21520, setShowSecondary7221L21520] = useState(false);
+  const [faceplate7224L21520Position, setFaceplate7224L21520Position] = useState({ x: 1700, y: 500 });
+  const [faceplate7224L21520Size, setFaceplate7224L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary7224L21520, setShowSecondary7224L21520] = useState(false);
   const [isLockedL21520, setIsLockedL21520] = useState(true);
   const [isSavingL21520, setIsSavingL21520] = useState(false);
   const [isL21520Dirty, setIsL21520Dirty] = useState(false);
@@ -1191,6 +1205,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
               const raw6722 = tags["1520-TIC-6722"];
               updateTempSensor8464PV(typeof raw6722 === 'object' && raw6722 !== null ? (raw6722 as any).value : raw6722);
             }
+            if (tags["1540-TIC-7221"] !== undefined) {
+              const raw7221 = tags["1540-TIC-7221"];
+              updateTempSensor7221PV(typeof raw7221 === 'object' && raw7221 !== null ? (raw7221 as any).value : raw7221);
+            }
+            if (tags["1540-TIC-7224"] !== undefined) {
+              const raw7224 = tags["1540-TIC-7224"];
+              updateTempSensor7224PV(typeof raw7224 === 'object' && raw7224 !== null ? (raw7224 as any).value : raw7224);
+            }
           }
         }
       } catch (e) {
@@ -1221,6 +1243,11 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const tempSensor6623Config = getControllerConfig('1520-TI-6623');
   const { state: tempSensor8464SyncState, initializeController: initTempSensor8464, updateAlarmLimits: updateTempSensor8464AlarmLimits, updateSyncedPV: updateTempSensor8464PV } = useControllerSync('1520-TI-8464');
   const tempSensor8464Config = getControllerConfig('1520-TI-8464');
+
+  const { state: tempSensor7221SyncState, initializeController: initTempSensor7221, updateAlarmLimits: updateTempSensor7221AlarmLimits, updateSyncedPV: updateTempSensor7221PV } = useControllerSync('1540-T-7221');
+  const tempSensor7221Config = getControllerConfig('1540-T-7221');
+  const { state: tempSensor7224SyncState, initializeController: initTempSensor7224, updateAlarmLimits: updateTempSensor7224AlarmLimits, updateSyncedPV: updateTempSensor7224PV } = useControllerSync('1540-T-7224');
+  const tempSensor7224Config = getControllerConfig('1540-T-7224');
 
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
@@ -1421,6 +1448,30 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor8464Config.ALM_HH_LIM ?? 0,
     });
   }, [tempSensor8464Config.TYPICAL_PV, tempSensor8464Config.ALM_LL_LIM, tempSensor8464Config.ALM_L_LIM, tempSensor8464Config.ALM_H_LIM, tempSensor8464Config.ALM_HH_LIM, initTempSensor8464, updateTempSensor8464AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor7221Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 100 && configPV <= 500) ? configPV : 275;
+    initTempSensor7221(typicalPV, typicalPV, 200, 400);
+    updateTempSensor7221AlarmLimits({
+      LL: tempSensor7221Config.ALM_LL_LIM ?? 0,
+      L: tempSensor7221Config.ALM_L_LIM ?? 265,
+      H: tempSensor7221Config.ALM_H_LIM ?? 315,
+      HH: tempSensor7221Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor7221Config.TYPICAL_PV, tempSensor7221Config.ALM_LL_LIM, tempSensor7221Config.ALM_L_LIM, tempSensor7221Config.ALM_H_LIM, tempSensor7221Config.ALM_HH_LIM, initTempSensor7221, updateTempSensor7221AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor7224Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 100 && configPV <= 600) ? configPV : 330;
+    initTempSensor7224(typicalPV, typicalPV, 250, 450);
+    updateTempSensor7224AlarmLimits({
+      LL: tempSensor7224Config.ALM_LL_LIM ?? 0,
+      L: tempSensor7224Config.ALM_L_LIM ?? 320,
+      H: tempSensor7224Config.ALM_H_LIM ?? 370,
+      HH: tempSensor7224Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor7224Config.TYPICAL_PV, tempSensor7224Config.ALM_LL_LIM, tempSensor7224Config.ALM_L_LIM, tempSensor7224Config.ALM_H_LIM, tempSensor7224Config.ALM_HH_LIM, initTempSensor7224, updateTempSensor7224AlarmLimits]);
 
   useEffect(() => {
     const configPV = pass2ControllerConfig.TYPICAL_PV;
@@ -2822,6 +2873,138 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     UNIT: tempSensor8464Config.UNIT || '1520',
   };
 
+  // Build 1540-T-7221 (Final Tower Gas Inlet Temperature) PV from orchestrator
+  const rawTag7221 = orchestratorResult?.sensor_tags?.["1540-TIC-7221"];
+  const orchestratorFATGasInletTemp = rawTag7221 != null
+    ? (typeof rawTag7221 === 'object' && rawTag7221 !== null ? (rawTag7221 as any).value : rawTag7221)
+    : null;
+  const tempSensor7221PV = orchestratorFATGasInletTemp ?? tempSensor7221SyncState.syncedPV;
+  const ts7221HHLim = tempSensor7221Config.ALM_HH_LIM ?? 0;
+  const ts7221HLim = tempSensor7221Config.ALM_H_LIM ?? 315;
+  const ts7221LLim = tempSensor7221Config.ALM_L_LIM ?? 265;
+  const ts7221LLLim = tempSensor7221Config.ALM_LL_LIM ?? 0;
+  const ts7221AlarmHH = ts7221HHLim > 0 && tempSensor7221PV >= ts7221HHLim;
+  const ts7221AlarmH = ts7221HLim > 0 && tempSensor7221PV >= ts7221HLim;
+  const ts7221AlarmL = ts7221LLim > 0 && tempSensor7221PV <= ts7221LLim;
+  const ts7221AlarmLL = ts7221LLLim > 0 && tempSensor7221PV <= ts7221LLLim;
+  const ts7221AlarmActive = ts7221AlarmHH || ts7221AlarmH || ts7221AlarmL || ts7221AlarmLL;
+  const ts7221AlarmColor = (ts7221AlarmHH || ts7221AlarmLL) ? 'red' as const
+    : (ts7221AlarmH || ts7221AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor7221Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor7221Config.TAGNAME || '1540-T-7221',
+    description: tempSensor7221Config.DESC || 'Final Tower Gas Inlet Temperature',
+    pv: tempSensor7221PV,
+    sp: tempSensor7221SyncState.syncedSP,
+    out: tempSensor7221SyncState.syncedOUT,
+    mode: tempSensor7221SyncState.syncedMode,
+    pvUnits: tempSensor7221Config.EU || '°F',
+    pvRangeMin: tempSensor7221Config.SP_LIM_LO ?? 200,
+    pvRangeMax: tempSensor7221Config.SP_LIM_HI ?? 400,
+    alarmActive: ts7221AlarmActive,
+    alarmColor: ts7221AlarmColor,
+    alarmLL: ts7221LLLim,
+    alarmL: ts7221LLim,
+    alarmH: ts7221HLim,
+    alarmHH: ts7221HHLim,
+  };
+
+  const tempSensor7221SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor7221PV,
+    SP: tempSensor7221SyncState.syncedSP,
+    TSP: tempSensor7221SyncState.syncedSP,
+    OUT_PCT: tempSensor7221SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor7221SyncState.syncedMode === 'AUTO' || tempSensor7221SyncState.syncedMode === 'MAN' ? tempSensor7221SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts7221AlarmHH,
+    ALM_H_ACT: ts7221AlarmH,
+    ALM_L_ACT: ts7221AlarmL,
+    ALM_LL_ACT: ts7221AlarmLL,
+  };
+
+  const tempSensor7221SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor7221Config.TAGNAME || '1540-T-7221',
+    DESC: tempSensor7221Config.DESC || 'Final Tower Gas Inlet Temperature',
+    EU: tempSensor7221Config.EU || '°F',
+    PV_SCALE_LO: tempSensor7221Config.PV_SCALE_LO ?? 200,
+    PV_SCALE_HI: tempSensor7221Config.PV_SCALE_HI ?? 400,
+    SP_LIM_LO: tempSensor7221Config.SP_LIM_LO ?? 200,
+    SP_LIM_HI: tempSensor7221Config.SP_LIM_HI ?? 400,
+    ALM_LL_LIM: tempSensor7221Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor7221Config.ALM_L_LIM ?? 265,
+    ALM_H_LIM: tempSensor7221Config.ALM_H_LIM ?? 315,
+    ALM_HH_LIM: tempSensor7221Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor7221Config.UNIT || '1540',
+  };
+
+  // Build 1540-T-7224 (Interpass Tower Gas Inlet Temperature) PV from orchestrator
+  const rawTag7224 = orchestratorResult?.sensor_tags?.["1540-TIC-7224"];
+  const orchestratorIPATGasInletTemp = rawTag7224 != null
+    ? (typeof rawTag7224 === 'object' && rawTag7224 !== null ? (rawTag7224 as any).value : rawTag7224)
+    : null;
+  const tempSensor7224PV = orchestratorIPATGasInletTemp ?? tempSensor7224SyncState.syncedPV;
+  const ts7224HHLim = tempSensor7224Config.ALM_HH_LIM ?? 0;
+  const ts7224HLim = tempSensor7224Config.ALM_H_LIM ?? 370;
+  const ts7224LLim = tempSensor7224Config.ALM_L_LIM ?? 320;
+  const ts7224LLLim = tempSensor7224Config.ALM_LL_LIM ?? 0;
+  const ts7224AlarmHH = ts7224HHLim > 0 && tempSensor7224PV >= ts7224HHLim;
+  const ts7224AlarmH = ts7224HLim > 0 && tempSensor7224PV >= ts7224HLim;
+  const ts7224AlarmL = ts7224LLim > 0 && tempSensor7224PV <= ts7224LLim;
+  const ts7224AlarmLL = ts7224LLLim > 0 && tempSensor7224PV <= ts7224LLLim;
+  const ts7224AlarmActive = ts7224AlarmHH || ts7224AlarmH || ts7224AlarmL || ts7224AlarmLL;
+  const ts7224AlarmColor = (ts7224AlarmHH || ts7224AlarmLL) ? 'red' as const
+    : (ts7224AlarmH || ts7224AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor7224Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor7224Config.TAGNAME || '1540-T-7224',
+    description: tempSensor7224Config.DESC || 'Interpass Tower Gas Inlet Temperature',
+    pv: tempSensor7224PV,
+    sp: tempSensor7224SyncState.syncedSP,
+    out: tempSensor7224SyncState.syncedOUT,
+    mode: tempSensor7224SyncState.syncedMode,
+    pvUnits: tempSensor7224Config.EU || '°F',
+    pvRangeMin: tempSensor7224Config.SP_LIM_LO ?? 250,
+    pvRangeMax: tempSensor7224Config.SP_LIM_HI ?? 450,
+    alarmActive: ts7224AlarmActive,
+    alarmColor: ts7224AlarmColor,
+    alarmLL: ts7224LLLim,
+    alarmL: ts7224LLim,
+    alarmH: ts7224HLim,
+    alarmHH: ts7224HHLim,
+  };
+
+  const tempSensor7224SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor7224PV,
+    SP: tempSensor7224SyncState.syncedSP,
+    TSP: tempSensor7224SyncState.syncedSP,
+    OUT_PCT: tempSensor7224SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor7224SyncState.syncedMode === 'AUTO' || tempSensor7224SyncState.syncedMode === 'MAN' ? tempSensor7224SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts7224AlarmHH,
+    ALM_H_ACT: ts7224AlarmH,
+    ALM_L_ACT: ts7224AlarmL,
+    ALM_LL_ACT: ts7224AlarmLL,
+  };
+
+  const tempSensor7224SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor7224Config.TAGNAME || '1540-T-7224',
+    DESC: tempSensor7224Config.DESC || 'Interpass Tower Gas Inlet Temperature',
+    EU: tempSensor7224Config.EU || '°F',
+    PV_SCALE_LO: tempSensor7224Config.PV_SCALE_LO ?? 250,
+    PV_SCALE_HI: tempSensor7224Config.PV_SCALE_HI ?? 450,
+    SP_LIM_LO: tempSensor7224Config.SP_LIM_LO ?? 250,
+    SP_LIM_HI: tempSensor7224Config.SP_LIM_HI ?? 450,
+    ALM_LL_LIM: tempSensor7224Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor7224Config.ALM_L_LIM ?? 320,
+    ALM_H_LIM: tempSensor7224Config.ALM_H_LIM ?? 370,
+    ALM_HH_LIM: tempSensor7224Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor7224Config.UNIT || '1540',
+  };
+
   // Build Hand Controller 1540-H-4030 secondary faceplate data
   const handControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
@@ -3462,6 +3645,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setFaceplate8464L21520Position({ x: fp8464.x, y: fp8464.y });
       setFaceplate8464L21520Size({ width: fp8464.width, height: fp8464.height });
     }
+
+    const fp7221 = positionMap.get('faceplate7221_l2_1520');
+    if (fp7221) {
+      setFaceplate7221L21520Position({ x: fp7221.x, y: fp7221.y });
+      setFaceplate7221L21520Size({ width: fp7221.width, height: fp7221.height });
+    }
+
+    const fp7224 = positionMap.get('faceplate7224_l2_1520');
+    if (fp7224) {
+      setFaceplate7224L21520Position({ x: fp7224.x, y: fp7224.y });
+      setFaceplate7224L21520Size({ width: fp7224.width, height: fp7224.height });
+    }
   }, [layoutDataL21520, isL21520Dirty]);
 
   // Apply loaded positions to state when data arrives
@@ -3919,6 +4114,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'kpp_faceplate_l2_1520', positionX: Math.round(kppFaceplateL21520Position.x), positionY: Math.round(kppFaceplateL21520Position.y), width: kppFaceplateL21520Size.width, height: kppFaceplateL21520Size.height, rotation: 0 },
         { elementId: 'faceplate6623_l2_1520', positionX: Math.round(faceplate6623L21520Position.x), positionY: Math.round(faceplate6623L21520Position.y), width: faceplate6623L21520Size.width, height: faceplate6623L21520Size.height, rotation: 0 },
         { elementId: 'faceplate8464_l2_1520', positionX: Math.round(faceplate8464L21520Position.x), positionY: Math.round(faceplate8464L21520Position.y), width: faceplate8464L21520Size.width, height: faceplate8464L21520Size.height, rotation: 0 },
+        { elementId: 'faceplate7221_l2_1520', positionX: Math.round(faceplate7221L21520Position.x), positionY: Math.round(faceplate7221L21520Position.y), width: faceplate7221L21520Size.width, height: faceplate7221L21520Size.height, rotation: 0 },
+        { elementId: 'faceplate7224_l2_1520', positionX: Math.round(faceplate7224L21520Position.x), positionY: Math.round(faceplate7224L21520Position.y), width: faceplate7224L21520Size.width, height: faceplate7224L21520Size.height, rotation: 0 },
       ];
 
       await apiRequest('PUT', '/api/homescreen-layout/L2_1520', { layouts });
@@ -7016,6 +7213,96 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   config={tempSensor8464SecondaryConfig}
                   sensorId="1520-TI-8464"
                   onClose={() => setShowSecondary8464L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-T-7221 Final Tower Gas Inlet Temperature Faceplate */}
+            <Rnd
+              key="faceplate7221-l2-1520"
+              data-testid="rnd-faceplate-7221-l2-1520"
+              position={faceplate7221L21520Position}
+              size={faceplate7221L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate7221L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate7221L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate7221L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-7221-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary7221L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor7221Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary7221L21520} onOpenChange={setShowSecondary7221L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-T-7221 Final Tower Gas Inlet Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor7221SecondaryData}
+                  config={tempSensor7221SecondaryConfig}
+                  sensorId="1540-T-7221"
+                  onClose={() => setShowSecondary7221L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-T-7224 Interpass Tower Gas Inlet Temperature Faceplate */}
+            <Rnd
+              key="faceplate7224-l2-1520"
+              data-testid="rnd-faceplate-7224-l2-1520"
+              position={faceplate7224L21520Position}
+              size={faceplate7224L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate7224L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate7224L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate7224L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-7224-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary7224L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor7224Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary7224L21520} onOpenChange={setShowSecondary7224L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-T-7224 Interpass Tower Gas Inlet Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor7224SecondaryData}
+                  config={tempSensor7224SecondaryConfig}
+                  sensorId="1540-T-7224"
+                  onClose={() => setShowSecondary7224L21520(false)}
                 />
               </DialogContent>
             </Dialog>
