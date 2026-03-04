@@ -1015,13 +1015,13 @@ const CommonControllerFaceplatePage = () => {
         PV: newPV,
         SP: syncState.syncedSP,
         OUT_PCT: syncState.syncedOUT,
-        ALM_LL_ACT: newPV <= almLL,
-        ALM_L_ACT: newPV <= almL,
-        ALM_DL_ACT: dev <= almDL,
-        ALM_DH_ACT: dev >= almDH,
-        ALM_H_ACT: newPV >= almH,
-        ALM_HH_ACT: newPV >= almHH,
-        PV_OK: !(newPV <= almLL || newPV >= almHH),
+        ALM_LL_ACT: almLL > 0 && newPV <= almLL,
+        ALM_L_ACT: almL > 0 && newPV <= almL,
+        ALM_DL_ACT: almDL !== 0 && dev <= almDL,
+        ALM_DH_ACT: almDH !== 0 && dev >= almDH,
+        ALM_H_ACT: almH > 0 && newPV >= almH,
+        ALM_HH_ACT: almHH > 0 && newPV >= almHH,
+        PV_OK: !((almLL > 0 && newPV <= almLL) || (almHH > 0 && newPV >= almHH)),
       };
     });
   }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, almLL, almL, almDL, almDH, almH, almHH]);

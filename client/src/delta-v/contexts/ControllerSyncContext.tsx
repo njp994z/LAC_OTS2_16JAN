@@ -43,6 +43,7 @@ interface ControllerSyncContextType {
   updateSyncedSP: (controllerId: string, value: number) => void;
   updateSyncedOUT: (controllerId: string, value: number) => void;
   updateSyncedMode: (controllerId: string, mode: SyncedMode) => void;
+  updatePvRange: (controllerId: string, min: number, max: number) => void;
   updateAlarmStates: (controllerId: string, alarms: AlarmStates) => void;
   updateAlarmLimits: (controllerId: string, limits: AlarmLimits) => void;
   addAlarmLogEntry: (controllerId: string, entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => void;
@@ -349,6 +350,20 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
     });
   }, []);
 
+  const updatePvRange = useCallback((controllerId: string, min: number, max: number) => {
+    const safeMin = toFiniteNumber(min, 0);
+    const safeMax = toFiniteNumber(max, 100);
+    setState((prev) => {
+      const currentController = prev.controllers[controllerId] || createDefaultControllerState();
+      return {
+        controllers: {
+          ...prev.controllers,
+          [controllerId]: { ...currentController, pvRangeMin: safeMin, pvRangeMax: safeMax },
+        },
+      };
+    });
+  }, []);
+
   const updateSyncedPV = useCallback((controllerId: string, value: number) => {
     // Reject non-finite values to prevent NaN from entering state
     if (!Number.isFinite(value)) {
@@ -522,6 +537,7 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
       value={{
         getControllerState,
         initializeController,
+        updatePvRange,
         updateSyncedPV,
         updateSyncedSP,
         updateSyncedOUT,
@@ -551,6 +567,7 @@ export const useControllerSync = (controllerId: string) => {
     state,
     initializeController: (initialPV: number, initialSP?: number, pvRangeMin?: number, pvRangeMax?: number) => 
       context.initializeController(controllerId, initialPV, initialSP, pvRangeMin, pvRangeMax),
+    updatePvRange: (min: number, max: number) => context.updatePvRange(controllerId, min, max),
     updateSyncedPV: (value: number) => context.updateSyncedPV(controllerId, value),
     updateSyncedSP: (value: number) => context.updateSyncedSP(controllerId, value),
     updateSyncedOUT: (value: number) => context.updateSyncedOUT(controllerId, value),

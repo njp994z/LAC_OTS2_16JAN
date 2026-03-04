@@ -3,6 +3,7 @@ import { Link, useParams, useSearch } from 'wouter';
 import { ArrowLeft, Sliders, Save } from 'lucide-react';
 import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
+import { getDefaultSecondaryControllerConfig } from '@/delta-v/lib/controllerDefaults';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -153,7 +154,7 @@ const Faceplate3E = () => {
     return getControllerMetadata(activeControllerId).label;
   };
   
-  const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits, updatePvRange } = useControllerSync(activeControllerId);
+  const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits, updatePvRange, initializeController } = useControllerSync(activeControllerId);
   const { getControllerConfig, updateControllerConfig, getControllerData, updateControllerData, saveController } = useControllerConfig();
   
   // Separate state for string fields (stable, no sync)
@@ -196,6 +197,26 @@ const Faceplate3E = () => {
     
     console.log(`Loaded config for controller: ${activeControllerId}`, savedConfig);
   }, [activeControllerId, getControllerConfig, getControllerData]);
+
+  useEffect(() => {
+    const defaults = getDefaultSecondaryControllerConfig(activeControllerId);
+    const cfg = getControllerConfig(activeControllerId);
+    const scaleLo = defaults.PV_SCALE_LO ?? cfg.PV_SCALE_LO;
+    const scaleHi = defaults.PV_SCALE_HI ?? cfg.PV_SCALE_HI;
+    const typicalPV = defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? cfg.PV_INIT_VAL;
+    if (typicalPV != null && typicalPV > 0) {
+      initializeController(typicalPV, typicalPV, scaleLo, scaleHi);
+    }
+    if (scaleLo != null && scaleHi != null) {
+      updatePvRange(scaleLo, scaleHi);
+    }
+    updateAlarmLimits({
+      LL: defaults.ALM_LL_LIM ?? cfg.ALM_LL_LIM ?? 0,
+      L: defaults.ALM_L_LIM ?? cfg.ALM_L_LIM ?? 0,
+      H: defaults.ALM_H_LIM ?? cfg.ALM_H_LIM ?? 0,
+      HH: defaults.ALM_HH_LIM ?? cfg.ALM_HH_LIM ?? 0,
+    });
+  }, [activeControllerId, getControllerConfig, initializeController, updatePvRange, updateAlarmLimits]);
 
   const updateConfigField = useCallback(<K extends keyof SecondaryControllerConfig>(
     key: K, 
