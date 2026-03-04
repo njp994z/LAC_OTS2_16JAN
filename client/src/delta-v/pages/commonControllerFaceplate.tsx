@@ -940,6 +940,16 @@ const CommonControllerFaceplatePage = () => {
     }
     if (scaleLo != null && scaleHi != null) {
       updatePvRange(scaleLo, scaleHi);
+      if (typicalPV != null && typicalPV > 0) {
+        const currentSP = syncState.syncedSP;
+        const currentPV = syncState.syncedPV;
+        if (!Number.isFinite(currentSP) || currentSP < scaleLo || currentSP > scaleHi) {
+          updateSyncedSP(typicalPV);
+        }
+        if (!Number.isFinite(currentPV) || currentPV < scaleLo || currentPV > scaleHi) {
+          updateSyncedPV(typicalPV);
+        }
+      }
     }
   }, [activeControllerId, getControllerConfig, initializeController, updatePvRange]);
 
