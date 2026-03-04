@@ -690,6 +690,18 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [faceplate5220L4Size, setFaceplate5220L4Size] = useState({ width: 220, height: 200 });
   const [faceplate5224L4Position, setFaceplate5224L4Position] = useState({ x: 800, y: 510 });
   const [faceplate5224L4Size, setFaceplate5224L4Size] = useState({ width: 220, height: 200 });
+  const [faceplate4827L4Position, setFaceplate4827L4Position] = useState({ x: 600, y: 400 });
+  const [faceplate4827L4Size, setFaceplate4827L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate4841L4Position, setFaceplate4841L4Position] = useState({ x: 600, y: 700 });
+  const [faceplate4841L4Size, setFaceplate4841L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate5231L4Position, setFaceplate5231L4Position] = useState({ x: 600, y: 1000 });
+  const [faceplate5231L4Size, setFaceplate5231L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate7225L4Position, setFaceplate7225L4Position] = useState({ x: 600, y: 1300 });
+  const [faceplate7225L4Size, setFaceplate7225L4Size] = useState({ width: 160, height: 240 });
+  const [showSecondary4827L4, setShowSecondary4827L4] = useState(false);
+  const [showSecondary4841L4, setShowSecondary4841L4] = useState(false);
+  const [showSecondary5231L4, setShowSecondary5231L4] = useState(false);
+  const [showSecondary7225L4, setShowSecondary7225L4] = useState(false);
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
@@ -1141,6 +1153,15 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
   const tempSensor4825Config = getControllerConfig('1540-TI-4825');
+
+  const { state: tempSensor4827SyncState, initializeController: initTempSensor4827, updateAlarmLimits: updateTempSensor4827AlarmLimits } = useControllerSync('1540-TI-4827');
+  const tempSensor4827Config = getControllerConfig('1540-TI-4827');
+  const { state: tempSensor4841SyncState, initializeController: initTempSensor4841, updateAlarmLimits: updateTempSensor4841AlarmLimits } = useControllerSync('1540-TI-4841');
+  const tempSensor4841Config = getControllerConfig('1540-TI-4841');
+  const { state: tempSensor5231SyncState, initializeController: initTempSensor5231, updateAlarmLimits: updateTempSensor5231AlarmLimits } = useControllerSync('1540-TI-5231');
+  const tempSensor5231Config = getControllerConfig('1540-TI-5231');
+  const { state: tempSensor7225SyncState, initializeController: initTempSensor7225, updateAlarmLimits: updateTempSensor7225AlarmLimits } = useControllerSync('1540-TI-7225');
+  const tempSensor7225Config = getControllerConfig('1540-TI-7225');
   
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
@@ -1269,6 +1290,54 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
     });
   }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor4827Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 1144;
+    initTempSensor4827(typicalPV, typicalPV, tempSensor4827Config.SP_LIM_LO ?? 0, tempSensor4827Config.SP_LIM_HI ?? 2000);
+    updateTempSensor4827AlarmLimits({
+      LL: tempSensor4827Config.ALM_LL_LIM ?? 0,
+      L: tempSensor4827Config.ALM_L_LIM ?? 0,
+      H: tempSensor4827Config.ALM_H_LIM ?? 1171,
+      HH: tempSensor4827Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor4827Config.TYPICAL_PV, tempSensor4827Config.ALM_LL_LIM, tempSensor4827Config.ALM_L_LIM, tempSensor4827Config.ALM_H_LIM, tempSensor4827Config.ALM_HH_LIM, initTempSensor4827, updateTempSensor4827AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor4841Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 900;
+    initTempSensor4841(typicalPV, typicalPV, tempSensor4841Config.SP_LIM_LO ?? 0, tempSensor4841Config.SP_LIM_HI ?? 2000);
+    updateTempSensor4841AlarmLimits({
+      LL: tempSensor4841Config.ALM_LL_LIM ?? 0,
+      L: tempSensor4841Config.ALM_L_LIM ?? 0,
+      H: tempSensor4841Config.ALM_H_LIM ?? 920,
+      HH: tempSensor4841Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor4841Config.TYPICAL_PV, tempSensor4841Config.ALM_LL_LIM, tempSensor4841Config.ALM_L_LIM, tempSensor4841Config.ALM_H_LIM, tempSensor4841Config.ALM_HH_LIM, initTempSensor4841, updateTempSensor4841AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor5231Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 880;
+    initTempSensor5231(typicalPV, typicalPV, tempSensor5231Config.SP_LIM_LO ?? 0, tempSensor5231Config.SP_LIM_HI ?? 2000);
+    updateTempSensor5231AlarmLimits({
+      LL: tempSensor5231Config.ALM_LL_LIM ?? 0,
+      L: tempSensor5231Config.ALM_L_LIM ?? 0,
+      H: tempSensor5231Config.ALM_H_LIM ?? 900,
+      HH: tempSensor5231Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor5231Config.TYPICAL_PV, tempSensor5231Config.ALM_LL_LIM, tempSensor5231Config.ALM_L_LIM, tempSensor5231Config.ALM_H_LIM, tempSensor5231Config.ALM_HH_LIM, initTempSensor5231, updateTempSensor5231AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor7225Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 810;
+    initTempSensor7225(typicalPV, typicalPV, tempSensor7225Config.SP_LIM_LO ?? 0, tempSensor7225Config.SP_LIM_HI ?? 2000);
+    updateTempSensor7225AlarmLimits({
+      LL: tempSensor7225Config.ALM_LL_LIM ?? 0,
+      L: tempSensor7225Config.ALM_L_LIM ?? 0,
+      H: tempSensor7225Config.ALM_H_LIM ?? 830,
+      HH: tempSensor7225Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor7225Config.TYPICAL_PV, tempSensor7225Config.ALM_LL_LIM, tempSensor7225Config.ALM_L_LIM, tempSensor7225Config.ALM_H_LIM, tempSensor7225Config.ALM_HH_LIM, initTempSensor7225, updateTempSensor7225AlarmLimits]);
 
   useEffect(() => {
     const configPV = pass2ControllerConfig.TYPICAL_PV;
@@ -2274,6 +2343,270 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     UNIT: tempSensor4825Config.UNIT || 'U-505',
   };
 
+  // Build 1540-TI-4827 (Pass 1 Catalyst Out A) PV from orchestrator
+  const rawTag4827 = orchestratorResult?.sensor_tags?.["1540-TI-4827"];
+  const orchestratorPass1OutTemp = selectedMode === 'Static' && rawTag4827 != null
+    ? (typeof rawTag4827 === 'object' && rawTag4827 !== null ? (rawTag4827 as any).value : rawTag4827)
+    : null;
+  const tempSensor4827PV = orchestratorPass1OutTemp ?? tempSensor4827SyncState.syncedPV;
+  const ts4827HHLim = tempSensor4827Config.ALM_HH_LIM ?? 0;
+  const ts4827HLim = tempSensor4827Config.ALM_H_LIM ?? 1171;
+  const ts4827LLim = tempSensor4827Config.ALM_L_LIM ?? 0;
+  const ts4827LLLim = tempSensor4827Config.ALM_LL_LIM ?? 0;
+  const ts4827AlarmHH = ts4827HHLim > 0 && tempSensor4827PV >= ts4827HHLim;
+  const ts4827AlarmH = ts4827HLim > 0 && tempSensor4827PV >= ts4827HLim;
+  const ts4827AlarmL = ts4827LLim > 0 && tempSensor4827PV <= ts4827LLim;
+  const ts4827AlarmLL = ts4827LLLim > 0 && tempSensor4827PV <= ts4827LLLim;
+  const ts4827AlarmActive = ts4827AlarmHH || ts4827AlarmH || ts4827AlarmL || ts4827AlarmLL;
+  const ts4827AlarmColor = (ts4827AlarmHH || ts4827AlarmLL) ? 'red' as const
+    : (ts4827AlarmH || ts4827AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor4827Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor4827Config.TAGNAME || '1540-TI-4827',
+    description: tempSensor4827Config.DESC || 'Pass 1 Catalyst Out A',
+    pv: tempSensor4827PV,
+    sp: tempSensor4827SyncState.syncedSP,
+    out: tempSensor4827SyncState.syncedOUT,
+    mode: tempSensor4827SyncState.syncedMode,
+    pvUnits: tempSensor4827Config.EU || '°F',
+    pvRangeMin: tempSensor4827Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor4827Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts4827AlarmActive,
+    alarmColor: ts4827AlarmColor,
+    alarmLL: ts4827LLLim,
+    alarmL: ts4827LLim,
+    alarmH: ts4827HLim,
+    alarmHH: ts4827HHLim,
+  };
+
+  const tempSensor4827SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4827PV,
+    SP: tempSensor4827SyncState.syncedSP,
+    TSP: tempSensor4827SyncState.syncedSP,
+    OUT_PCT: tempSensor4827SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4827SyncState.syncedMode === 'AUTO' || tempSensor4827SyncState.syncedMode === 'MAN' ? tempSensor4827SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts4827AlarmHH,
+    ALM_H_ACT: ts4827AlarmH,
+    ALM_L_ACT: ts4827AlarmL,
+    ALM_LL_ACT: ts4827AlarmLL,
+  };
+
+  const tempSensor4827SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4827Config.TAGNAME || '1540-TI-4827',
+    DESC: tempSensor4827Config.DESC || 'Pass 1 Catalyst Out A',
+    EU: tempSensor4827Config.EU || '°F',
+    PV_SCALE_LO: tempSensor4827Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4827Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4827Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4827Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4827Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor4827Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor4827Config.ALM_H_LIM ?? 1171,
+    ALM_HH_LIM: tempSensor4827Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor4827Config.UNIT || 'U-505',
+  };
+
+  // Build 1540-TI-4841 (Pass 2 Catalyst Out) PV from orchestrator
+  const rawTag4841 = orchestratorResult?.sensor_tags?.["1540-TI-4841"];
+  const orchestratorPass2OutTemp = selectedMode === 'Static' && rawTag4841 != null
+    ? (typeof rawTag4841 === 'object' && rawTag4841 !== null ? (rawTag4841 as any).value : rawTag4841)
+    : null;
+  const tempSensor4841PV = orchestratorPass2OutTemp ?? tempSensor4841SyncState.syncedPV;
+  const ts4841HHLim = tempSensor4841Config.ALM_HH_LIM ?? 0;
+  const ts4841HLim = tempSensor4841Config.ALM_H_LIM ?? 920;
+  const ts4841LLim = tempSensor4841Config.ALM_L_LIM ?? 0;
+  const ts4841LLLim = tempSensor4841Config.ALM_LL_LIM ?? 0;
+  const ts4841AlarmHH = ts4841HHLim > 0 && tempSensor4841PV >= ts4841HHLim;
+  const ts4841AlarmH = ts4841HLim > 0 && tempSensor4841PV >= ts4841HLim;
+  const ts4841AlarmL = ts4841LLim > 0 && tempSensor4841PV <= ts4841LLim;
+  const ts4841AlarmLL = ts4841LLLim > 0 && tempSensor4841PV <= ts4841LLLim;
+  const ts4841AlarmActive = ts4841AlarmHH || ts4841AlarmH || ts4841AlarmL || ts4841AlarmLL;
+  const ts4841AlarmColor = (ts4841AlarmHH || ts4841AlarmLL) ? 'red' as const
+    : (ts4841AlarmH || ts4841AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor4841Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor4841Config.TAGNAME || '1540-TI-4841',
+    description: tempSensor4841Config.DESC || 'Pass 2 Catalyst Out',
+    pv: tempSensor4841PV,
+    sp: tempSensor4841SyncState.syncedSP,
+    out: tempSensor4841SyncState.syncedOUT,
+    mode: tempSensor4841SyncState.syncedMode,
+    pvUnits: tempSensor4841Config.EU || '°F',
+    pvRangeMin: tempSensor4841Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor4841Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts4841AlarmActive,
+    alarmColor: ts4841AlarmColor,
+    alarmLL: ts4841LLLim,
+    alarmL: ts4841LLim,
+    alarmH: ts4841HLim,
+    alarmHH: ts4841HHLim,
+  };
+
+  const tempSensor4841SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4841PV,
+    SP: tempSensor4841SyncState.syncedSP,
+    TSP: tempSensor4841SyncState.syncedSP,
+    OUT_PCT: tempSensor4841SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4841SyncState.syncedMode === 'AUTO' || tempSensor4841SyncState.syncedMode === 'MAN' ? tempSensor4841SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts4841AlarmHH,
+    ALM_H_ACT: ts4841AlarmH,
+    ALM_L_ACT: ts4841AlarmL,
+    ALM_LL_ACT: ts4841AlarmLL,
+  };
+
+  const tempSensor4841SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4841Config.TAGNAME || '1540-TI-4841',
+    DESC: tempSensor4841Config.DESC || 'Pass 2 Catalyst Out',
+    EU: tempSensor4841Config.EU || '°F',
+    PV_SCALE_LO: tempSensor4841Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4841Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4841Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4841Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4841Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor4841Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor4841Config.ALM_H_LIM ?? 920,
+    ALM_HH_LIM: tempSensor4841Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor4841Config.UNIT || 'U-505',
+  };
+
+  // Build 1540-TI-5231 (Pass 3 Duct Outlet) PV from orchestrator
+  const rawTag5231 = orchestratorResult?.sensor_tags?.["1540-TI-5231"];
+  const orchestratorPass3OutTemp = selectedMode === 'Static' && rawTag5231 != null
+    ? (typeof rawTag5231 === 'object' && rawTag5231 !== null ? (rawTag5231 as any).value : rawTag5231)
+    : null;
+  const tempSensor5231PV = orchestratorPass3OutTemp ?? tempSensor5231SyncState.syncedPV;
+  const ts5231HHLim = tempSensor5231Config.ALM_HH_LIM ?? 0;
+  const ts5231HLim = tempSensor5231Config.ALM_H_LIM ?? 900;
+  const ts5231LLim = tempSensor5231Config.ALM_L_LIM ?? 0;
+  const ts5231LLLim = tempSensor5231Config.ALM_LL_LIM ?? 0;
+  const ts5231AlarmHH = ts5231HHLim > 0 && tempSensor5231PV >= ts5231HHLim;
+  const ts5231AlarmH = ts5231HLim > 0 && tempSensor5231PV >= ts5231HLim;
+  const ts5231AlarmL = ts5231LLim > 0 && tempSensor5231PV <= ts5231LLim;
+  const ts5231AlarmLL = ts5231LLLim > 0 && tempSensor5231PV <= ts5231LLLim;
+  const ts5231AlarmActive = ts5231AlarmHH || ts5231AlarmH || ts5231AlarmL || ts5231AlarmLL;
+  const ts5231AlarmColor = (ts5231AlarmHH || ts5231AlarmLL) ? 'red' as const
+    : (ts5231AlarmH || ts5231AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor5231Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor5231Config.TAGNAME || '1540-TI-5231',
+    description: tempSensor5231Config.DESC || 'Pass 3 Duct Outlet',
+    pv: tempSensor5231PV,
+    sp: tempSensor5231SyncState.syncedSP,
+    out: tempSensor5231SyncState.syncedOUT,
+    mode: tempSensor5231SyncState.syncedMode,
+    pvUnits: tempSensor5231Config.EU || '°F',
+    pvRangeMin: tempSensor5231Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor5231Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts5231AlarmActive,
+    alarmColor: ts5231AlarmColor,
+    alarmLL: ts5231LLLim,
+    alarmL: ts5231LLim,
+    alarmH: ts5231HLim,
+    alarmHH: ts5231HHLim,
+  };
+
+  const tempSensor5231SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor5231PV,
+    SP: tempSensor5231SyncState.syncedSP,
+    TSP: tempSensor5231SyncState.syncedSP,
+    OUT_PCT: tempSensor5231SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor5231SyncState.syncedMode === 'AUTO' || tempSensor5231SyncState.syncedMode === 'MAN' ? tempSensor5231SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts5231AlarmHH,
+    ALM_H_ACT: ts5231AlarmH,
+    ALM_L_ACT: ts5231AlarmL,
+    ALM_LL_ACT: ts5231AlarmLL,
+  };
+
+  const tempSensor5231SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor5231Config.TAGNAME || '1540-TI-5231',
+    DESC: tempSensor5231Config.DESC || 'Pass 3 Duct Outlet',
+    EU: tempSensor5231Config.EU || '°F',
+    PV_SCALE_LO: tempSensor5231Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor5231Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor5231Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor5231Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor5231Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor5231Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor5231Config.ALM_H_LIM ?? 900,
+    ALM_HH_LIM: tempSensor5231Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor5231Config.UNIT || 'U-505',
+  };
+
+  // Build 1540-TI-7225 (Pass 4 Catalyst Out) PV from orchestrator
+  const rawTag7225 = orchestratorResult?.sensor_tags?.["1540-TI-7225"];
+  const orchestratorPass4OutTemp = selectedMode === 'Static' && rawTag7225 != null
+    ? (typeof rawTag7225 === 'object' && rawTag7225 !== null ? (rawTag7225 as any).value : rawTag7225)
+    : null;
+  const tempSensor7225PV = orchestratorPass4OutTemp ?? tempSensor7225SyncState.syncedPV;
+  const ts7225HHLim = tempSensor7225Config.ALM_HH_LIM ?? 0;
+  const ts7225HLim = tempSensor7225Config.ALM_H_LIM ?? 830;
+  const ts7225LLim = tempSensor7225Config.ALM_L_LIM ?? 0;
+  const ts7225LLLim = tempSensor7225Config.ALM_LL_LIM ?? 0;
+  const ts7225AlarmHH = ts7225HHLim > 0 && tempSensor7225PV >= ts7225HHLim;
+  const ts7225AlarmH = ts7225HLim > 0 && tempSensor7225PV >= ts7225HLim;
+  const ts7225AlarmL = ts7225LLim > 0 && tempSensor7225PV <= ts7225LLim;
+  const ts7225AlarmLL = ts7225LLLim > 0 && tempSensor7225PV <= ts7225LLLim;
+  const ts7225AlarmActive = ts7225AlarmHH || ts7225AlarmH || ts7225AlarmL || ts7225AlarmLL;
+  const ts7225AlarmColor = (ts7225AlarmHH || ts7225AlarmLL) ? 'red' as const
+    : (ts7225AlarmH || ts7225AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor7225Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor7225Config.TAGNAME || '1540-TI-7225',
+    description: tempSensor7225Config.DESC || 'Pass 4 Catalyst Out',
+    pv: tempSensor7225PV,
+    sp: tempSensor7225SyncState.syncedSP,
+    out: tempSensor7225SyncState.syncedOUT,
+    mode: tempSensor7225SyncState.syncedMode,
+    pvUnits: tempSensor7225Config.EU || '°F',
+    pvRangeMin: tempSensor7225Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor7225Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts7225AlarmActive,
+    alarmColor: ts7225AlarmColor,
+    alarmLL: ts7225LLLim,
+    alarmL: ts7225LLim,
+    alarmH: ts7225HLim,
+    alarmHH: ts7225HHLim,
+  };
+
+  const tempSensor7225SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor7225PV,
+    SP: tempSensor7225SyncState.syncedSP,
+    TSP: tempSensor7225SyncState.syncedSP,
+    OUT_PCT: tempSensor7225SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor7225SyncState.syncedMode === 'AUTO' || tempSensor7225SyncState.syncedMode === 'MAN' ? tempSensor7225SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts7225AlarmHH,
+    ALM_H_ACT: ts7225AlarmH,
+    ALM_L_ACT: ts7225AlarmL,
+    ALM_LL_ACT: ts7225AlarmLL,
+  };
+
+  const tempSensor7225SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor7225Config.TAGNAME || '1540-TI-7225',
+    DESC: tempSensor7225Config.DESC || 'Pass 4 Catalyst Out',
+    EU: tempSensor7225Config.EU || '°F',
+    PV_SCALE_LO: tempSensor7225Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor7225Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor7225Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor7225Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor7225Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor7225Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor7225Config.ALM_H_LIM ?? 830,
+    ALM_HH_LIM: tempSensor7225Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor7225Config.UNIT || 'U-505',
+  };
+
   // Build Hand Controller 1540-H-4030 secondary faceplate data
   const handControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
@@ -2567,6 +2900,30 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     if (fp5224L4) {
       setFaceplate5224L4Position({ x: fp5224L4.x, y: fp5224L4.y });
       setFaceplate5224L4Size({ width: fp5224L4.width, height: fp5224L4.height });
+    }
+
+    const fp4827L4 = positionMap.get('faceplate4827_l4');
+    if (fp4827L4) {
+      setFaceplate4827L4Position({ x: fp4827L4.x, y: fp4827L4.y });
+      setFaceplate4827L4Size({ width: fp4827L4.width, height: fp4827L4.height });
+    }
+
+    const fp4841L4 = positionMap.get('faceplate4841_l4');
+    if (fp4841L4) {
+      setFaceplate4841L4Position({ x: fp4841L4.x, y: fp4841L4.y });
+      setFaceplate4841L4Size({ width: fp4841L4.width, height: fp4841L4.height });
+    }
+
+    const fp5231L4 = positionMap.get('faceplate5231_l4');
+    if (fp5231L4) {
+      setFaceplate5231L4Position({ x: fp5231L4.x, y: fp5231L4.y });
+      setFaceplate5231L4Size({ width: fp5231L4.width, height: fp5231L4.height });
+    }
+
+    const fp7225L4 = positionMap.get('faceplate7225_l4');
+    if (fp7225L4) {
+      setFaceplate7225L4Position({ x: fp7225L4.x, y: fp7225L4.y });
+      setFaceplate7225L4Size({ width: fp7225L4.width, height: fp7225L4.height });
     }
 
     // Restore vertical arrows for L4-Converter
@@ -3216,6 +3573,10 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         { elementId: 'faceplate4822_l4', positionX: Math.round(faceplate4822L4Position.x), positionY: Math.round(faceplate4822L4Position.y), width: faceplate4822L4Size.width, height: faceplate4822L4Size.height, rotation: 0 },
         { elementId: 'faceplate5220_l4', positionX: Math.round(faceplate5220L4Position.x), positionY: Math.round(faceplate5220L4Position.y), width: faceplate5220L4Size.width, height: faceplate5220L4Size.height, rotation: 0 },
         { elementId: 'faceplate5224_l4', positionX: Math.round(faceplate5224L4Position.x), positionY: Math.round(faceplate5224L4Position.y), width: faceplate5224L4Size.width, height: faceplate5224L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4827_l4', positionX: Math.round(faceplate4827L4Position.x), positionY: Math.round(faceplate4827L4Position.y), width: faceplate4827L4Size.width, height: faceplate4827L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4841_l4', positionX: Math.round(faceplate4841L4Position.x), positionY: Math.round(faceplate4841L4Position.y), width: faceplate4841L4Size.width, height: faceplate4841L4Size.height, rotation: 0 },
+        { elementId: 'faceplate5231_l4', positionX: Math.round(faceplate5231L4Position.x), positionY: Math.round(faceplate5231L4Position.y), width: faceplate5231L4Size.width, height: faceplate5231L4Size.height, rotation: 0 },
+        { elementId: 'faceplate7225_l4', positionX: Math.round(faceplate7225L4Position.x), positionY: Math.round(faceplate7225L4Position.y), width: faceplate7225L4Size.width, height: faceplate7225L4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -4458,6 +4819,198 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                   config={tempSensor4825SecondaryConfig}
                   sensorId="1540-TI-4825"
                   onClose={() => setShowSecondaryConverter4L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-4827 Primary Faceplate (Pass 1 Catalyst Out A) */}
+            <Rnd
+              key="faceplate4827-l4"
+              position={faceplate4827L4Position}
+              size={faceplate4827L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4827L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4827L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate4827L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-4827-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary4827L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor4827Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary4827L4} onOpenChange={setShowSecondary4827L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4827 Pass 1 Catalyst Out A</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4827SecondaryData}
+                  config={tempSensor4827SecondaryConfig}
+                  sensorId="1540-TI-4827"
+                  onClose={() => setShowSecondary4827L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-4841 Primary Faceplate (Pass 2 Catalyst Out) */}
+            <Rnd
+              key="faceplate4841-l4"
+              position={faceplate4841L4Position}
+              size={faceplate4841L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4841L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4841L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate4841L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-4841-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary4841L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor4841Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary4841L4} onOpenChange={setShowSecondary4841L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4841 Pass 2 Catalyst Out</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4841SecondaryData}
+                  config={tempSensor4841SecondaryConfig}
+                  sensorId="1540-TI-4841"
+                  onClose={() => setShowSecondary4841L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-5231 Primary Faceplate (Pass 3 Duct Outlet) */}
+            <Rnd
+              key="faceplate5231-l4"
+              position={faceplate5231L4Position}
+              size={faceplate5231L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate5231L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate5231L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate5231L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-5231-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary5231L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor5231Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary5231L4} onOpenChange={setShowSecondary5231L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-5231 Pass 3 Duct Outlet</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor5231SecondaryData}
+                  config={tempSensor5231SecondaryConfig}
+                  sensorId="1540-TI-5231"
+                  onClose={() => setShowSecondary5231L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-7225 Primary Faceplate (Pass 4 Catalyst Out) */}
+            <Rnd
+              key="faceplate7225-l4"
+              position={faceplate7225L4Position}
+              size={faceplate7225L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate7225L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate7225L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate7225L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-7225-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary7225L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor7225Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary7225L4} onOpenChange={setShowSecondary7225L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-7225 Pass 4 Catalyst Out</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor7225SecondaryData}
+                  config={tempSensor7225SecondaryConfig}
+                  sensorId="1540-TI-7225"
+                  onClose={() => setShowSecondary7225L4(false)}
                 />
               </DialogContent>
             </Dialog>

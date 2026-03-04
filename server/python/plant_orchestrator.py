@@ -1770,6 +1770,26 @@ ALARM_SETPOINT_DB: Dict[str, Dict[str, Any]] = {
         "desc": "Pass 1 Outlet Duct Gas Temperature",
         "units": "°F", "LL": None, "L": None, "N": 1144, "H": 1171, "HH": None,
     },
+    "TI-4827": {
+        "pid": "1540-PR-PID-0000-EXP-5048",
+        "desc": "Pass 1 Catalyst Outlet Temperature A",
+        "units": "°F", "LL": None, "L": None, "N": 1144, "H": 1171, "HH": None,
+    },
+    "TI-4841": {
+        "pid": "1540-PR-PID-0000-EXP-5048",
+        "desc": "Pass 2 Catalyst Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 900, "H": 920, "HH": None,
+    },
+    "TI-5231": {
+        "pid": "1540-PR-PID-0000-EXP-5052",
+        "desc": "Pass 3 Duct Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 880, "H": 900, "HH": None,
+    },
+    "TI-7225": {
+        "pid": "1540-PR-PID-0000-EXP-5072",
+        "desc": "Pass 4 Catalyst Outlet Temperature",
+        "units": "°F", "LL": None, "L": None, "N": 810, "H": 830, "HH": None,
+    },
     "TI-8421": {
         "pid": "1520-PR-PID-0000-EXP-5084",
         "desc": "Interpass Tower Gas Outlet Temperature",
@@ -2314,6 +2334,16 @@ def build_sensor_tags(
     # Pass 4 inlet — Stream 19 (HIP cold outlet)
     tags["1540-TIC-5224"] = _tag_with_alarms(
         s.get(19, GasStream()).temperature_F, "TIC-5224")
+
+    # Pass outlet temperatures (catalyst out)
+    tags["1540-TI-4827"] = _tag_with_alarms(
+        s.get(11, GasStream()).temperature_F, "TI-4827")            # Pass 1 catalyst out A
+    tags["1540-TI-4841"] = _tag_with_alarms(
+        s.get(13, GasStream()).temperature_F, "TI-4841")            # Pass 2 catalyst out
+    tags["1540-TI-5231"] = _tag_with_alarms(
+        s.get(14, GasStream()).temperature_F, "TI-5231")            # Pass 3 duct outlet
+    tags["1540-TI-7225"] = _tag_with_alarms(
+        s.get(20, GasStream()).temperature_F, "TI-7225")            # Pass 4 catalyst out
 
     # Legacy pass tags (backward compatibility)
     pass_inlet  = {1: 9, 2: 10, 3: 12, 4: 19}
