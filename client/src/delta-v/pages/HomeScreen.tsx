@@ -818,6 +818,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const [loadedCaseValueJugValve, setLoadedCaseValueJugValve] = useState<number | null>(null);
   // Loaded PV case value for 1540-H-4283 WHB dP controller (used in Static mode)
   const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<number | null>(null);
+  const [loadedCaseValuePass2Temp, setLoadedCaseValuePass2Temp] = useState<number | null>(null);
+  const [loadedCaseValuePass3Temp, setLoadedCaseValuePass3Temp] = useState<number | null>(null);
+  const [loadedCaseValuePass4Temp, setLoadedCaseValuePass4Temp] = useState<number | null>(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
   
   // Furnace outlet temperature from sulfur furnace simulation (linked to 1540-TI-4200A)
@@ -931,6 +934,9 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
       setLoadedCaseValueSulfurFlow(null);
       setLoadedCaseValueJugValve(null);
       setLoadedCaseValueWHBdP(null);
+      setLoadedCaseValuePass2Temp(null);
+      setLoadedCaseValuePass3Temp(null);
+      setLoadedCaseValuePass4Temp(null);
     }
   }, [selectedMode, activePVCaseId]);
 
@@ -949,7 +955,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
         clearTimeout(staticAutoCalcTimerRef.current);
       }
     };
-  }, [selectedMode, activePVCaseId, loadedCaseValue1540H4030, loadedCaseValueSulfurFlow, loadedCaseValueJugValve, loadedCaseValueWHBdP]);
+  }, [selectedMode, activePVCaseId, loadedCaseValue1540H4030, loadedCaseValueSulfurFlow, loadedCaseValueJugValve, loadedCaseValueWHBdP, loadedCaseValuePass2Temp, loadedCaseValuePass3Temp, loadedCaseValuePass4Temp]);
   
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
@@ -1617,7 +1623,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const orchestratorPass2Temp = selectedMode === 'Static' && rawTag4822 != null
     ? (typeof rawTag4822 === 'object' && rawTag4822 !== null ? (rawTag4822 as any).value : rawTag4822)
     : null;
-  const pass2PV = orchestratorPass2Temp ?? pass2ControllerSyncState.syncedPV;
+  const pass2PV = loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedPV;
   const pass2HHLim = pass2ControllerConfig.ALM_HH_LIM ?? 0;
   const pass2HLim = pass2ControllerConfig.ALM_H_LIM ?? 824;
   const pass2LLim = pass2ControllerConfig.ALM_L_LIM ?? 797;
@@ -1635,7 +1641,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     instrumentTag: pass2ControllerConfig.TAGNAME || '1540-T-4822',
     description: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
     pv: pass2PV,
-    sp: orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    sp: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
     out: pass2ControllerSyncState.syncedOUT,
     mode: pass2ControllerSyncState.syncedMode,
     pvUnits: pass2ControllerConfig.EU || '°F',
@@ -1653,7 +1659,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const orchestratorPass3Temp = selectedMode === 'Static' && rawTag5220 != null
     ? (typeof rawTag5220 === 'object' && rawTag5220 !== null ? (rawTag5220 as any).value : rawTag5220)
     : null;
-  const pass3PV = orchestratorPass3Temp ?? pass3ControllerSyncState.syncedPV;
+  const pass3PV = loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedPV;
   const pass3HHLim = pass3ControllerConfig.ALM_HH_LIM ?? 0;
   const pass3HLim = pass3ControllerConfig.ALM_H_LIM ?? 824;
   const pass3LLim = pass3ControllerConfig.ALM_L_LIM ?? 797;
@@ -1671,7 +1677,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     instrumentTag: pass3ControllerConfig.TAGNAME || '1540-T-5220',
     description: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
     pv: pass3PV,
-    sp: orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    sp: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
     out: pass3ControllerSyncState.syncedOUT,
     mode: pass3ControllerSyncState.syncedMode,
     pvUnits: pass3ControllerConfig.EU || '°F',
@@ -1689,7 +1695,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const orchestratorPass4Temp = selectedMode === 'Static' && rawTag5224 != null
     ? (typeof rawTag5224 === 'object' && rawTag5224 !== null ? (rawTag5224 as any).value : rawTag5224)
     : null;
-  const pass4PV = orchestratorPass4Temp ?? pass4ControllerSyncState.syncedPV;
+  const pass4PV = loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedPV;
   const pass4HHLim = pass4ControllerConfig.ALM_HH_LIM ?? 0;
   const pass4HLim = pass4ControllerConfig.ALM_H_LIM ?? 797;
   const pass4LLim = pass4ControllerConfig.ALM_L_LIM ?? 770;
@@ -1707,7 +1713,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     instrumentTag: pass4ControllerConfig.TAGNAME || '1540-T-5224',
     description: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
     pv: pass4PV,
-    sp: orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    sp: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
     out: pass4ControllerSyncState.syncedOUT,
     mode: pass4ControllerSyncState.syncedMode,
     pvUnits: pass4ControllerConfig.EU || '°F',
@@ -2371,8 +2377,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const pass2ControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
     PV: pass2PV,
-    SP: orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
-    TSP: orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    SP: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    TSP: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
     OUT_PCT: pass2ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass2ControllerSyncState.syncedMode === 'AUTO' || pass2ControllerSyncState.syncedMode === 'MAN' 
       ? pass2ControllerSyncState.syncedMode 
@@ -2403,8 +2409,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const pass3ControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
     PV: pass3PV,
-    SP: orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
-    TSP: orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    SP: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    TSP: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
     OUT_PCT: pass3ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass3ControllerSyncState.syncedMode === 'AUTO' || pass3ControllerSyncState.syncedMode === 'MAN' 
       ? pass3ControllerSyncState.syncedMode 
@@ -2435,8 +2441,8 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
   const pass4ControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
     PV: pass4PV,
-    SP: orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
-    TSP: orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    SP: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    TSP: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
     OUT_PCT: pass4ControllerSyncState.syncedOUT,
     MODE_AUTOMAN: pass4ControllerSyncState.syncedMode === 'AUTO' || pass4ControllerSyncState.syncedMode === 'MAN' 
       ? pass4ControllerSyncState.syncedMode 
@@ -6449,11 +6455,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             controllerId="1540-T-4822"
             onClose={() => setIsPass2ControllerModalOpen(false)}
             onModeChange={(mode) => updatePass2ControllerMode(mode)}
-            onSpChange={(value) => updatePass2ControllerSP(value)}
+            onSpChange={(value) => {
+              updatePass2ControllerSP(value);
+              setLoadedCaseValuePass2Temp(value);
+            }}
             onOutChange={(value) => updatePass2ControllerOUT(value)}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={loadedCaseValuePass2Temp}
           />
         </DialogContent>
       </Dialog>
@@ -6469,11 +6478,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             controllerId="1540-T-5220"
             onClose={() => setIsPass3ControllerModalOpen(false)}
             onModeChange={(mode) => updatePass3ControllerMode(mode)}
-            onSpChange={(value) => updatePass3ControllerSP(value)}
+            onSpChange={(value) => {
+              updatePass3ControllerSP(value);
+              setLoadedCaseValuePass3Temp(value);
+            }}
             onOutChange={(value) => updatePass3ControllerOUT(value)}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={loadedCaseValuePass3Temp}
           />
         </DialogContent>
       </Dialog>
@@ -6489,11 +6501,14 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
             controllerId="1540-T-5224"
             onClose={() => setIsPass4ControllerModalOpen(false)}
             onModeChange={(mode) => updatePass4ControllerMode(mode)}
-            onSpChange={(value) => updatePass4ControllerSP(value)}
+            onSpChange={(value) => {
+              updatePass4ControllerSP(value);
+              setLoadedCaseValuePass4Temp(value);
+            }}
             onOutChange={(value) => updatePass4ControllerOUT(value)}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
+            loadedCaseValue={loadedCaseValuePass4Temp}
           />
         </DialogContent>
       </Dialog>
