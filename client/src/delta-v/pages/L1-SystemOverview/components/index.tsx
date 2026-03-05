@@ -170,6 +170,7 @@ export enum ElementType {
     TurboGenerator,
     KPI,
     SulfurFlowController,
+    SulfurFurnace,
     HandController,
     JugValveHandController,
     WhbHandController,
@@ -1309,7 +1310,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         },
         "FurnaceWhbt": {
             tag: L1SystemElement["FurnaceWhbt"],
-            type: ElementType.Image,
+            type: ElementType.SulfurFurnace,
             blockType: BlockType.Image,
             description: "Furnace Whbt", component: <FurnaceWhbt />
         },

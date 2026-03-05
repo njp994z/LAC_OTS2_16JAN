@@ -743,6 +743,9 @@ const L1SystemOverview = ({
                                                     else if (elData?.type === ElementType.KPI) {
                                                         setLocation('/settings/controller-outputs/faceplates/kpi');
                                                     }
+                                                    else if (elData?.type === ElementType.SulfurFurnace) {
+                                                        setLocation('/unit-operation/sulfur-furnace?sulfurFlowGpm');
+                                                    }
                                                     else if (elData?.type === ElementType.Compressor) {
                                                         setIsVFDModalOpen(true);
                                                     }
