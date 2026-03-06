@@ -128,7 +128,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import L1SystemOverview from "./L1-SystemOverview";
+import L1SystemOverview from "./Templates/L1-SystemOverview";
+import L2Converter from "./Templates/L2-Converter";
+import L2_1520_ACID from "./Templates/L2-1520-Acid";
 import { PFDNavigation } from "../components/PFDNavigation";
 
 interface Arrow {
@@ -154,10 +156,12 @@ const toolbarItems = [
 ];
 
 const homescreenOptions = [
-  { id: "L1", label: "L1 – System Overview" },
-  { id: "L2", label: "L2 – Furnace Area", isReady: true },
+  { id: "L1", label: "L1 – System Overview", isReady: true },
+  { id: "L2", label: "L2 – Furnace Area" },
+  { id: "L2-Converter", label: "L2 – Converter", isReady: true },
+  { id: "L2_1520_ACID", label: "L2 1520 ACID" , isReady: false},
   { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4-Converter", isReady: true },
+  { id: "L4", label: "L4-Converter" },
   // L2_1500 SULFUR UTILITY
   { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
   { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
@@ -171,7 +175,7 @@ const homescreenOptions = [
   { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
   { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
   // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID", isReady: true },
+  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
   { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
   { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
   { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
@@ -5136,6 +5140,8 @@ const HomeScreen = () => {
         {/* L1 - System Overview - Fixed-size canvas for scrollable content */}
         
         {selectedScreen === "L1 – System Overview" && <L1SystemOverview simulationTriggerRef={l1SimTriggerRef} />}
+        {selectedScreen === "L2 – Converter" && <L2Converter />}
+        {selectedScreen === "L2 1520 ACID" && <L2_1520_ACID />}
       </div>
 
       {/* Alarm Banner - always visible at bottom */}
