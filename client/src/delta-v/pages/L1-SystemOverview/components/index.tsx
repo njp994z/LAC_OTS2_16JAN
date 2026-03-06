@@ -1,7 +1,10 @@
 import { TempSensorPrimaryFaceplate } from "@/delta-v/components/faceplate/TempSensorPrimaryFaceplate";
 import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { SecondaryControllerConfig } from "@/delta-v/types/secondaryController";
-import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
+import {
+  defaultControllerData,
+  type ControllerData,
+} from "@/delta-v/types/controller";
 
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import jugValveImage from "./assets/jug-valve.png";
@@ -27,136 +30,138 @@ import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext
 import KPICard from "@/pages/unit-operation/kpi-card";
 
 export enum L1SystemElement {
-    '1540-PI-4072' = '1540-PI-4072',
-    '1540-TI-4200A' = '1540-TI-4200A',
-    '1540-H-4030' = '1540-H-4030',
-    '1540-GB-001' = '1540-GB-001',
-    '1540-PI-4002' = '1540-PI-4002',
-    '1540-VCF-2602' = '1540-VCF-2602',
-    '1540-F-2602' = '1540-F-2602',
-    '1540-PI-2604' = '1540-PI-2604',
-    '1540-TI-4020' = '1540-TI-4020',
-    '1540-HCV-4282' = '1540-HCV-4282',
-    '1540-H-4282' = '1540-H-4282',
-    '1540-TIC-4822' = '1540-TIC-4822',
-    '1540-TI-8721' = '1540-TI-8721',
-    '1560-TG-001' = '1560-TG-001',
-    '1540-TIC-5224' = '1540-TIC-5224',
-    '1540-TI-7225' = '1540-TI-7225',
-    '1540-TIC-5220' = '1540-TIC-5220',
-    '1540-TI-5232' = '1540-TI-5232',
-    '1540-TIC-7221' = '1540-TIC-7221',
-    '1540-TI-5231' = '1540-TI-5231',
-    '1540-TI-8421' = '1540-TI-8421',
-    '1540-TIC-7224' = '1540-TIC-7224',
-    '1520-TI-6624' = '1520-TI-6624',
-    '1540-TI-7821' = '1540-TI-7821',
-    'KPICard' = 'KPICard',
+  "1540-PI-4072" = "1540-PI-4072",
+  "1540-TI-4200A" = "1540-TI-4200A",
+  "1540-H-4030" = "1540-H-4030",
+  "1540-GB-001" = "1540-GB-001",
+  "1540-PI-4002" = "1540-PI-4002",
+  "1540-VCF-2602" = "1540-VCF-2602",
+  "1540-F-2602" = "1540-F-2602",
+  "1540-PI-2604" = "1540-PI-2604",
+  "1540-TI-4020" = "1540-TI-4020",
+  "1540-HCV-4282" = "1540-HCV-4282",
+  "1540-H-4282" = "1540-H-4282",
+  "1540-TIC-4822" = "1540-TIC-4822",
+  "1540-TI-8721" = "1540-TI-8721",
+  "1560-TG-001" = "1560-TG-001",
+  "1540-TIC-5224" = "1540-TIC-5224",
+  "1540-TI-7225" = "1540-TI-7225",
+  "1540-TIC-5220" = "1540-TIC-5220",
+  "1540-TI-5232" = "1540-TI-5232",
+  "1540-TIC-7221" = "1540-TIC-7221",
+  "1540-TI-5231" = "1540-TI-5231",
+  "1540-TI-8421" = "1540-TI-8421",
+  "1540-TIC-7224" = "1540-TIC-7224",
+  "1520-TI-6624" = "1520-TI-6624",
+  "1540-TI-7821" = "1540-TI-7821",
+  "1540-TI-4200A-1" = "1540-TI-4200A-1",
+  "KPICard" = "KPICard",
 
-    // Image Elements
-    "IPAT" = "IPAT",
-    "FAT" = "FAT",
-    "CIP" = "CIP",
-    "SH42EC4cEC4a" = "SH42EC4cEC4a",
-    "HIP" = "HIP",
-    "EC3B" = "EC3B",
-    "SH1B" = "SH1B",
-    "Converter4" = "Converter4",
-    "IndustrialFilter" = "IndustrialFilter",
-    "DT" = "DT",
-    "FurnaceWhbt" = "FurnaceWhbt",
+  // Image Elements
+  "IPAT" = "IPAT",
+  "FAT" = "FAT",
+  "CIP" = "CIP",
+  "SH42EC4cEC4a" = "SH42EC4cEC4a",
+  "HIP" = "HIP",
+  "EC3B" = "EC3B",
+  "SH1B" = "SH1B",
+  "Converter4" = "Converter4",
+  "IndustrialFilter" = "IndustrialFilter",
+  "DT" = "DT",
+  "FurnaceWhbt" = "FurnaceWhbt",
 
-    //Text Elements
-    "To Acid Pump Tank" = "To Acid Pump Tank",
-    "From Acid System" = "From Acid System",
-    "Ambient Air" = "Ambient Air",
-    "SUPERHEATER 1B 1540-HX-003" = "SUPERHEATER 1B 1540-HX-003",
-    "HOT INTERPASS HX 1540-HX-009" = "HOT INTERPASS HX 1540-HX-009",
-    "COLD INTERPASS HX 1540-HX-008" = "COLD INTERPASS HX 1540-HX-008",
-    "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007" = "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
-    "ECONOMIZER 3B 1540-HX-002" = "ECONOMIZER 3B 1540-HX-002",
-    "To Condenser" = "To Condenser",
-    "SULFUR FURNACE 1540-ZM-001" = "SULFUR FURNACE 1540-ZM-001",
-    "WASTE HEAT BOILER (WHB) 1540-HX-001" = "WASTE HEAT BOILER (WHB) 1540-HX-001",
-    "DRYING TOWER 1520-TW-001" = "DRYING TOWER 1520-TW-001",
-    "INLET AIR FILTER 1520-FL-001" = "INLET AIR FILTER 1520-FL-001",
-    "FINAL TOWER 1520-TW-002" = "FINAL TOWER 1520-TW-002",
-    "INTERPASS TOWER 1520-TW-003" = "INTERPASS TOWER 1520-TW-003",
+  //Text Elements
+  "To Acid Pump Tank" = "To Acid Pump Tank",
+  "From Acid System" = "From Acid System",
+  "Ambient Air" = "Ambient Air",
+  "SUPERHEATER 1B 1540-HX-003" = "SUPERHEATER 1B 1540-HX-003",
+  "HOT INTERPASS HX 1540-HX-009" = "HOT INTERPASS HX 1540-HX-009",
+  "COLD INTERPASS HX 1540-HX-008" = "COLD INTERPASS HX 1540-HX-008",
+  "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007" = "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
+  "ECONOMIZER 3B 1540-HX-002" = "ECONOMIZER 3B 1540-HX-002",
+  "To Condenser" = "To Condenser",
+  "SULFUR FURNACE 1540-ZM-001" = "SULFUR FURNACE 1540-ZM-001",
+  "WASTE HEAT BOILER (WHB) 1540-HX-001" = "WASTE HEAT BOILER (WHB) 1540-HX-001",
+  "DRYING TOWER 1520-TW-001" = "DRYING TOWER 1520-TW-001",
+  "INLET AIR FILTER 1520-FL-001" = "INLET AIR FILTER 1520-FL-001",
+  "FINAL TOWER 1520-TW-002" = "FINAL TOWER 1520-TW-002",
+  "INTERPASS TOWER 1520-TW-003" = "INTERPASS TOWER 1520-TW-003",
 
-    "To Acid Pump Tank 2" = "To Acid Pump Tank 2",
-    "From Acid System 2" = "From Acid System 2",
+  "To Acid Pump Tank 2" = "To Acid Pump Tank 2",
+  "From Acid System 2" = "From Acid System 2",
 
-    "To Acid Pump Tank 3" = "To Acid Pump Tank 3",
-    "From Acid System 3" = "From Acid System 3",
+  "To Acid Pump Tank 3" = "To Acid Pump Tank 3",
+  "From Acid System 3" = "From Acid System 3",
 
-    "From Sulfer Tank 1" = "From Sulfer Tank 1",
-    "To SO2 Scrubber" = "To SO2 Scrubber",
+  "From Sulfer Tank 1" = "From Sulfer Tank 1",
+  "To SO2 Scrubber" = "To SO2 Scrubber",
 }
 
 export const L1SystemElements = [
-    L1SystemElement['1540-PI-4072'],
-    L1SystemElement['1540-TI-4200A'],
-    L1SystemElement['1540-H-4030'],
-    L1SystemElement['1540-GB-001'],
-    L1SystemElement['1540-PI-4002'],
-    L1SystemElement['1540-VCF-2602'],
-    L1SystemElement['1540-F-2602'],
-    L1SystemElement['1540-PI-2604'],
-    L1SystemElement['1540-TI-4020'],
-    L1SystemElement['1540-HCV-4282'],
-    L1SystemElement['1540-H-4282'],
-    L1SystemElement['1540-TIC-4822'],
-    L1SystemElement['1540-TI-8721'],
-    L1SystemElement['1560-TG-001'],
-    L1SystemElement['1540-TIC-5224'],
-    L1SystemElement['1540-TI-7225'],
-    L1SystemElement['1540-TIC-5220'],
-    L1SystemElement['1540-TI-5232'],
-    L1SystemElement['1540-TIC-7221'],
-    L1SystemElement['1540-TI-5231'],
-    L1SystemElement['1540-TI-8421'],
-    L1SystemElement['1540-TIC-7224'],
-    L1SystemElement['1520-TI-6624'],
-    L1SystemElement['1540-TI-7821'],
+  L1SystemElement["1540-PI-4072"],
+  L1SystemElement["1540-TI-4200A"],
+  L1SystemElement["1540-H-4030"],
+  L1SystemElement["1540-GB-001"],
+  L1SystemElement["1540-PI-4002"],
+  L1SystemElement["1540-VCF-2602"],
+  L1SystemElement["1540-F-2602"],
+  L1SystemElement["1540-PI-2604"],
+  L1SystemElement["1540-TI-4020"],
+  L1SystemElement["1540-HCV-4282"],
+  L1SystemElement["1540-H-4282"],
+  L1SystemElement["1540-TIC-4822"],
+  L1SystemElement["1540-TI-8721"],
+  L1SystemElement["1560-TG-001"],
+  L1SystemElement["1540-TIC-5224"],
+  L1SystemElement["1540-TI-7225"],
+  L1SystemElement["1540-TIC-5220"],
+  L1SystemElement["1540-TI-5232"],
+  L1SystemElement["1540-TIC-7221"],
+  L1SystemElement["1540-TI-5231"],
+  L1SystemElement["1540-TI-8421"],
+  L1SystemElement["1540-TIC-7224"],
+  L1SystemElement["1520-TI-6624"],
+  L1SystemElement["1540-TI-7821"],
+  L1SystemElement["1540-TI-4200A-1"],
 
-    L1SystemElement['KPICard'],
+  L1SystemElement["KPICard"],
 
-    // Image Elements
-    L1SystemElement['IPAT'],
-    L1SystemElement['FAT'],
-    L1SystemElement['CIP'],
-    L1SystemElement['SH42EC4cEC4a'],
-    L1SystemElement['HIP'],
-    L1SystemElement['EC3B'],
-    L1SystemElement['SH1B'],
-    L1SystemElement['Converter4'],
-    L1SystemElement['IndustrialFilter'],
-    L1SystemElement['DT'],
-    L1SystemElement['FurnaceWhbt'],
+  // Image Elements
+  L1SystemElement["IPAT"],
+  L1SystemElement["FAT"],
+  L1SystemElement["CIP"],
+  L1SystemElement["SH42EC4cEC4a"],
+  L1SystemElement["HIP"],
+  L1SystemElement["EC3B"],
+  L1SystemElement["SH1B"],
+  L1SystemElement["Converter4"],
+  L1SystemElement["IndustrialFilter"],
+  L1SystemElement["DT"],
+  L1SystemElement["FurnaceWhbt"],
 
-    //Text Elements
-    L1SystemElement['To Acid Pump Tank'],
-    L1SystemElement['From Acid System'],
-    L1SystemElement['Ambient Air'],
-    L1SystemElement['SUPERHEATER 1B 1540-HX-003'],
-    L1SystemElement['HOT INTERPASS HX 1540-HX-009'],
-    L1SystemElement['COLD INTERPASS HX 1540-HX-008'],
-    L1SystemElement['HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007'],
-    L1SystemElement['ECONOMIZER 3B 1540-HX-002'],
-    L1SystemElement['To Condenser'],
-    L1SystemElement['SULFUR FURNACE 1540-ZM-001'],
-    L1SystemElement['WASTE HEAT BOILER (WHB) 1540-HX-001'],
-    L1SystemElement['DRYING TOWER 1520-TW-001'],
-    L1SystemElement['INLET AIR FILTER 1520-FL-001'],
-    L1SystemElement['FINAL TOWER 1520-TW-002'],
-    L1SystemElement['INTERPASS TOWER 1520-TW-003'],
+  //Text Elements
+  L1SystemElement["To Acid Pump Tank"],
+  L1SystemElement["From Acid System"],
+  L1SystemElement["Ambient Air"],
+  L1SystemElement["SUPERHEATER 1B 1540-HX-003"],
+  L1SystemElement["HOT INTERPASS HX 1540-HX-009"],
+  L1SystemElement["COLD INTERPASS HX 1540-HX-008"],
+  L1SystemElement["HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007"],
+  L1SystemElement["ECONOMIZER 3B 1540-HX-002"],
+  L1SystemElement["To Condenser"],
+  L1SystemElement["SULFUR FURNACE 1540-ZM-001"],
+  L1SystemElement["WASTE HEAT BOILER (WHB) 1540-HX-001"],
+  L1SystemElement["DRYING TOWER 1520-TW-001"],
+  L1SystemElement["INLET AIR FILTER 1520-FL-001"],
+  L1SystemElement["FINAL TOWER 1520-TW-002"],
+  L1SystemElement["INTERPASS TOWER 1520-TW-003"],
 
-    L1SystemElement['To Acid Pump Tank 2'],
-    L1SystemElement['From Acid System 2'],
-    L1SystemElement['To Acid Pump Tank 3'],
-    L1SystemElement['From Acid System 3'],
-    L1SystemElement['From Sulfer Tank 1'],  
-    L1SystemElement['To SO2 Scrubber'],
+  L1SystemElement["To Acid Pump Tank 2"],
+  L1SystemElement["From Acid System 2"],
+  L1SystemElement["To Acid Pump Tank 3"],
+  L1SystemElement["From Acid System 3"],
+  L1SystemElement["From Sulfer Tank 1"],
+  L1SystemElement["To SO2 Scrubber"],
 ];
 
 export enum ElementType {
@@ -179,141 +184,233 @@ export enum ElementType {
 }
 
 export enum BlockType {
-    Controller = 'controller',
-    Sensor = 'sensor',
-    Image = 'image',
-    Text = 'text',
+  Controller = "controller",
+  Sensor = "sensor",
+  Image = "image",
+  Text = "text",
 }
 
-const L1SystemElementsMap = (getControllerConfig: (
-    controllerId: string) => SecondaryControllerConfig,
-    isLocked: boolean, compressor: CompressorContextType
+const L1SystemElementsMap = (
+  getControllerConfig: (controllerId: string) => SecondaryControllerConfig,
+  isLocked: boolean,
+  compressor: CompressorContextType,
 ) => {
+  //1540-PI-4072
+  //Compressor Inlet Pressure
+  const compressorInletPressure4072Config = getControllerConfig(
+    L1SystemElement["1540-PI-4072"],
+  );
+  const compressorInletPressure4072Data = useControllerSync(
+    L1SystemElement["1540-PI-4072"],
+  );
 
-    //1540-PI-4072
-    //Compressor Inlet Pressure
-    const compressorInletPressure4072Config = getControllerConfig(L1SystemElement['1540-PI-4072']);
-    const compressorInletPressure4072Data = useControllerSync(L1SystemElement['1540-PI-4072']);
+  //1540-TI-4200A
+  //Furnace Outlet Temperature A
+  const furnaceOutletTemperature4200AConfig = getControllerConfig(
+    L1SystemElement["1540-TI-4200A"],
+  );
+  const furnaceOutletTemperature4200AData = useControllerSync(
+    L1SystemElement["1540-TI-4200A"],
+  );
 
+  //1540-H-4030
+  //1540-H-4030 Main Compressor Controller
+  const compressorController4030Config = getControllerConfig(
+    L1SystemElement["1540-H-4030"],
+  );
+  const compressorController4030Data = useControllerSync(
+    L1SystemElement["1540-H-4030"],
+  );
 
-    //1540-TI-4200A
-    //Furnace Outlet Temperature A
-    const furnaceOutletTemperature4200AConfig = getControllerConfig(L1SystemElement['1540-TI-4200A']);
-    const furnaceOutletTemperature4200AData = useControllerSync(L1SystemElement['1540-TI-4200A']);
+  //1540-GB-001
+  //Main Compressor
+  const mainCompressor001Config = getControllerConfig(
+    L1SystemElement["1540-GB-001"],
+  );
+  const mainCompressor001Data = useControllerSync(
+    L1SystemElement["1540-GB-001"],
+  );
+  const { vfdConfig, setVFDConfigLocal, saveVFDConfig } = compressor;
 
-    //1540-H-4030
-    //1540-H-4030 Main Compressor Controller
-    const compressorController4030Config = getControllerConfig(L1SystemElement['1540-H-4030']);
-    const compressorController4030Data = useControllerSync(L1SystemElement['1540-H-4030']);
+  //1540-PI-4002
+  // compressor outlet pressure
+  const compressorOutletPressure4002Config = getControllerConfig(
+    L1SystemElement["1540-PI-4002"],
+  );
+  const compressorOutletPressure4002Data = useControllerSync(
+    L1SystemElement["1540-PI-4002"],
+  );
 
+  //1540-VCF-2602
+  // Sulpur Controller Valve
+  const sulfurControllerValve2602Config = getControllerConfig(
+    L1SystemElement["1540-VCF-2602"],
+  );
+  const sulfurControllerValve2602Data = useControllerSync(
+    L1SystemElement["1540-VCF-2602"],
+  );
 
-    //1540-GB-001
-    //Main Compressor
-    const mainCompressor001Config = getControllerConfig(L1SystemElement['1540-GB-001']);
-    const mainCompressor001Data = useControllerSync(L1SystemElement['1540-GB-001']);
+  //1540-F-2602
+  //Sulphuric Flow Controller
+  const sulphuricFlowController2602Config = getControllerConfig(
+    L1SystemElement["1540-F-2602"],
+  );
+  const sulphuricFlowController2602Data = useControllerSync(
+    L1SystemElement["1540-F-2602"],
+  );
 
-    //1540-PI-4002
-    // compressor outlet pressure
-    const compressorOutletPressure4002Config = getControllerConfig(L1SystemElement['1540-PI-4002']);
-    const compressorOutletPressure4002Data = useControllerSync(L1SystemElement['1540-PI-4002']);
+  //1540-PI-2604
+  //Furnace Sulfur Inlet Pressure
+  const furnaceSulfurInletPressure2604Config = getControllerConfig(
+    L1SystemElement["1540-PI-2604"],
+  );
+  const furnaceSulfurInletPressure2604Data = useControllerSync(
+    L1SystemElement["1540-PI-2604"],
+  );
 
-    //1540-VCF-2602
-    // Sulpur Controller Valve
-    const sulfurControllerValve2602Config = getControllerConfig(L1SystemElement['1540-VCF-2602']);
-    const sulfurControllerValve2602Data = useControllerSync(L1SystemElement['1540-VCF-2602']);
+  //1540-TI-4020
+  //Furnace Inlet Temperature
+  const furnaceInletTemperature4020Config = getControllerConfig(
+    L1SystemElement["1540-TI-4020"],
+  );
+  const furnaceInletTemperature4020Data = useControllerSync(
+    L1SystemElement["1540-TI-4020"],
+  );
 
+  //1540-HCV-4282
+  //Jug Controller Valve
+  const jugControllerValve4282Config = getControllerConfig(
+    L1SystemElement["1540-HCV-4282"],
+  );
+  const jugControllerValve4282Data = useControllerSync(
+    L1SystemElement["1540-HCV-4282"],
+  );
 
-    //1540-F-2602
-    //Sulphuric Flow Controller
-    const sulphuricFlowController2602Config = getControllerConfig(L1SystemElement['1540-F-2602']);
-    const sulphuricFlowController2602Data = useControllerSync(L1SystemElement['1540-F-2602']);
+  //1540-H-4282
+  //Jug Controller
+  const jugController4282Config = getControllerConfig(
+    L1SystemElement["1540-H-4282"],
+  );
+  const jugController4282Data = useControllerSync(
+    L1SystemElement["1540-H-4282"],
+  );
 
-    //1540-PI-2604
-    //Furnace Sulfur Inlet Pressure
-    const furnaceSulfurInletPressure2604Config = getControllerConfig(L1SystemElement['1540-PI-2604']);
-    const furnaceSulfurInletPressure2604Data = useControllerSync(L1SystemElement['1540-PI-2604']);
+  //1540-TIC-4822
+  // Pass 2 Inlet Temperature
+  const pass2InletTemperature4822Config = getControllerConfig(
+    L1SystemElement["1540-TIC-4822"],
+  );
+  const pass2InletTemperature4822Data = useControllerSync(
+    L1SystemElement["1540-TIC-4822"],
+  );
 
-    //1540-TI-4020
-    //Furnace Inlet Temperature
-    const furnaceInletTemperature4020Config = getControllerConfig(L1SystemElement['1540-TI-4020']);
-    const furnaceInletTemperature4020Data = useControllerSync(L1SystemElement['1540-TI-4020']);
+  //1540-TI-8721
+  //Pass 1 Outlet Temperature
+  const pass1OutletTemperature8721Config = getControllerConfig(
+    L1SystemElement["1540-TI-8721"],
+  );
+  const pass1OutletTemperature8721Data = useControllerSync(
+    L1SystemElement["1540-TI-8721"],
+  );
 
+  //1560-TG-001
+  //Pass 2 Turbo Generator Set
+  const pass2TurboGeneratorSet001Config = getControllerConfig(
+    L1SystemElement["1560-TG-001"],
+  );
+  const pass2TurboGeneratorSet001Data = useControllerSync(
+    L1SystemElement["1560-TG-001"],
+  );
 
+  //1540-TIC-5224
+  //Pass 4 Inlet Temperature
+  const pass4InletTemperature5224Config = getControllerConfig(
+    L1SystemElement["1540-TIC-5224"],
+  );
+  const pass4InletTemperature5224Data = useControllerSync(
+    L1SystemElement["1540-TIC-5224"],
+  );
 
-    //1540-HCV-4282
-    //Jug Controller Valve
-    const jugControllerValve4282Config = getControllerConfig(L1SystemElement['1540-HCV-4282']);
-    const jugControllerValve4282Data = useControllerSync(L1SystemElement['1540-HCV-4282']);
+  //1540-TI-7225
+  //Pass 4 Outlet Temperature
+  const pass4OutletTemperature7225Config = getControllerConfig(
+    L1SystemElement["1540-TI-7225"],
+  );
+  const pass4OutletTemperature7225Data = useControllerSync(
+    L1SystemElement["1540-TI-7225"],
+  );
 
-    //1540-H-4282
-    //Jug Controller
-    const jugController4282Config = getControllerConfig(L1SystemElement['1540-H-4282']);
-    const jugController4282Data = useControllerSync(L1SystemElement['1540-H-4282']);
+  //1540-TIC-5220
+  //Pass 2 Inlet Temperature
+  const pass2InletTemperature5220Config = getControllerConfig(
+    L1SystemElement["1540-TIC-5220"],
+  );
+  const pass2InletTemperature5220Data = useControllerSync(
+    L1SystemElement["1540-TIC-5220"],
+  );
 
-    //1540-TIC-4822
-    // Pass 2 Inlet Temperature
-    const pass2InletTemperature4822Config = getControllerConfig(L1SystemElement['1540-TIC-4822']);
-    const pass2InletTemperature4822Data = useControllerSync(L1SystemElement['1540-TIC-4822']);
+  //1540-TI-5232
+  //Pass 2 Outlet Temperature
+  const pass2OutletTemperature5232Config = getControllerConfig(
+    L1SystemElement["1540-TI-5232"],
+  );
+  const pass2OutletTemperature5232Data = useControllerSync(
+    L1SystemElement["1540-TI-5232"],
+  );
 
-    //1540-TI-8721
-    //Pass 1 Outlet Temperature
-    const pass1OutletTemperature8721Config = getControllerConfig(L1SystemElement['1540-TI-8721']);
-    const pass1OutletTemperature8721Data = useControllerSync(L1SystemElement['1540-TI-8721']);
+  //1540-TIC-7221
+  //Economizer 4A Outlet Temp.
+  const economizer4AOutletTemp7221Config = getControllerConfig(
+    L1SystemElement["1540-TIC-7221"],
+  );
+  const economizer4AOutletTemp7221Data = useControllerSync(
+    L1SystemElement["1540-TIC-7221"],
+  );
 
-    //1560-TG-001
-    //Pass 2 Turbo Generator Set
-    const pass2TurboGeneratorSet001Config = getControllerConfig(L1SystemElement['1560-TG-001']);
-    const pass2TurboGeneratorSet001Data = useControllerSync(L1SystemElement['1560-TG-001']);
+  //1540-TI-5231
+  //Pass 3 Outlet Temperature
+  const pass3OutletTemperature5231Config = getControllerConfig(
+    L1SystemElement["1540-TI-5231"],
+  );
+  const pass3OutletTemperature5231Data = useControllerSync(
+    L1SystemElement["1540-TI-5231"],
+  );
 
-    //1540-TIC-5224
-    //Pass 4 Inlet Temperature
-    const pass4InletTemperature5224Config = getControllerConfig(L1SystemElement['1540-TIC-5224']);
-    const pass4InletTemperature5224Data = useControllerSync(L1SystemElement['1540-TIC-5224']);
+  //1540-TI-8421
+  //CIP Inlet Temperature
+  const cipInletTemperature8421Config = getControllerConfig(
+    L1SystemElement["1540-TI-8421"],
+  );
+  const cipInletTemperature8421Data = useControllerSync(
+    L1SystemElement["1540-TI-8421"],
+  );
 
-    //1540-TI-7225
-    //Pass 4 Outlet Temperature
-    const pass4OutletTemperature7225Config = getControllerConfig(L1SystemElement['1540-TI-7225']);
-    const pass4OutletTemperature7225Data = useControllerSync(L1SystemElement['1540-TI-7225']);
+  //1540-TIC-7224
+  //Economizer 3B Outlet Temp.
+  const economizer3BOutletTemp7224Config = getControllerConfig(
+    L1SystemElement["1540-TIC-7224"],
+  );
+  const economizer3BOutletTemp7224Data = useControllerSync(
+    L1SystemElement["1540-TIC-7224"],
+  );
 
-    //1540-TIC-5220
-    //Pass 2 Inlet Temperature
-    const pass2InletTemperature5220Config = getControllerConfig(L1SystemElement['1540-TIC-5220']);
-    const pass2InletTemperature5220Data = useControllerSync(L1SystemElement['1540-TIC-5220']);
+  //1520-TI-6624
+  //FAT Outlet Temperature
+  const fatOutletTemperature6624Config = getControllerConfig(
+    L1SystemElement["1520-TI-6624"],
+  );
+  const fatOutletTemperature6624Data = useControllerSync(
+    L1SystemElement["1520-TI-6624"],
+  );
 
-    //1540-TI-5232
-    //Pass 2 Outlet Temperature
-    const pass2OutletTemperature5232Config = getControllerConfig(L1SystemElement['1540-TI-5232']);
-    const pass2OutletTemperature5232Data = useControllerSync(L1SystemElement['1540-TI-5232']);
-
-    //1540-TIC-7221
-    //Economizer 4A Outlet Temp.
-    const economizer4AOutletTemp7221Config = getControllerConfig(L1SystemElement['1540-TIC-7221']);
-    const economizer4AOutletTemp7221Data = useControllerSync(L1SystemElement['1540-TIC-7221']);
-
-    //1540-TI-5231
-    //Pass 3 Outlet Temperature
-    const pass3OutletTemperature5231Config = getControllerConfig(L1SystemElement['1540-TI-5231']);
-    const pass3OutletTemperature5231Data = useControllerSync(L1SystemElement['1540-TI-5231']);
-
-    //1540-TI-8421
-    //CIP Inlet Temperature
-    const cipInletTemperature8421Config = getControllerConfig(L1SystemElement['1540-TI-8421']);
-    const cipInletTemperature8421Data = useControllerSync(L1SystemElement['1540-TI-8421']);
-
-    //1540-TIC-7224
-    //Economizer 3B Outlet Temp.
-    const economizer3BOutletTemp7224Config = getControllerConfig(L1SystemElement['1540-TIC-7224']);
-    const economizer3BOutletTemp7224Data = useControllerSync(L1SystemElement['1540-TIC-7224']);
-
-    //1520-TI-6624
-    //FAT Outlet Temperature
-    const fatOutletTemperature6624Config = getControllerConfig(L1SystemElement['1520-TI-6624']);
-    const fatOutletTemperature6624Data = useControllerSync(L1SystemElement['1520-TI-6624']);
-
-    //1540-TI-7821
-    //IPAT Outlet Temperature
-    const ipatOutletTemperature7821Config = getControllerConfig(L1SystemElement['1540-TI-7821']);
-    const ipatOutletTemperature7821Data = useControllerSync(L1SystemElement['1540-TI-7821']);
+  //1540-TI-7821
+  //IPAT Outlet Temperature
+  const ipatOutletTemperature7821Config = getControllerConfig(
+    L1SystemElement["1540-TI-7821"],
+  );
+  const ipatOutletTemperature7821Data = useControllerSync(
+    L1SystemElement["1540-TI-7821"],
+  );
 
     return {
         "1540-H-4282": {
@@ -1317,277 +1414,326 @@ const L1SystemElementsMap = (getControllerConfig: (
             description: "Furnace Whbt", component: <FurnaceWhbt />
         },
 
-        "To Acid Pump Tank": {
-            tag: L1SystemElement["To Acid Pump Tank"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "To Acid Pump Tank",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    To Acid
-                    <br />
-                    Pump Tank
-                </p>
-            </div>
-        },
-        "From Acid System": {
-            tag: L1SystemElement["From Acid System"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "From Acid System",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>From Acid
-                    <br />
-                    System</p>
-            </div>
-        },
-        "Ambient Air": {
-            tag: L1SystemElement["Ambient Air"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "Ambient Air",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>Ambient
-                    <br />
-                    Air</p>
-            </div>
-        },
+    "To Acid Pump Tank": {
+      tag: L1SystemElement["To Acid Pump Tank"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "To Acid Pump Tank",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            To Acid
+            <br />
+            Pump Tank
+          </p>
+        </div>
+      ),
+    },
+    "From Acid System": {
+      tag: L1SystemElement["From Acid System"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "From Acid System",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            From Acid
+            <br />
+            System
+          </p>
+        </div>
+      ),
+    },
+    "Ambient Air": {
+      tag: L1SystemElement["Ambient Air"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "Ambient Air",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            Ambient
+            <br />
+            Air
+          </p>
+        </div>
+      ),
+    },
 
-        "SUPERHEATER 1B 1540-HX-003": {
-            tag: L1SystemElement["SUPERHEATER 1B 1540-HX-003"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "SUPERHEATER 1B 1540-HX-003",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    SUPERHEATER 1B
-                    <br />
-                    1540-HX-003
-                </p>
-            </div>
-        },
-        "HOT INTERPASS HX 1540-HX-009": {
-            tag: L1SystemElement["HOT INTERPASS HX 1540-HX-009"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "HOT INTERPASS HX 1540-HX-009",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    HOT INTERPASS HX
-                    <br />
-                    1540-HX-009
-                </p>
-            </div>
-        },
-        "COLD INTERPASS HX 1540-HX-008": {
-            tag: L1SystemElement["COLD INTERPASS HX 1540-HX-008"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "COLD INTERPASS HX 1540-HX-008",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    COLD INTERPASS HX
-                    <br />
-                    1540-HX-008
-                </p>
-            </div>
-        },
-        "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007": {
-            tag: L1SystemElement["HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    HP SUPERHEATER 4A
-                    <br />
-                    ECONOMIZER 4C / 4A
-                    <br />
-                    1540-HX-004/006/007
-                </p>
-            </div>
-        },
-        "ECONOMIZER 3B 1540-HX-002": {
-            tag: L1SystemElement["ECONOMIZER 3B 1540-HX-002"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "ECONOMIZER 3B 1540-HX-002",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    ECONOMIZER 3B
-                    <br />
-                    1540-HX-002
-                </p>
-            </div>
-        },
-        "To Condenser": {
-            tag: L1SystemElement["To Condenser"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "To Condenser",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    To Condenser
-                </p>
-            </div>
-        },
-        "SULFUR FURNACE 1540-ZM-001": {
-            tag: L1SystemElement["SULFUR FURNACE 1540-ZM-001"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "SULFUR FURNACE 1540-ZM-001",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    SULFUR FURNACE
-                    <br />
-                    1540-ZM-001
-                </p>
-            </div>
-        },
-        "WASTE HEAT BOILER (WHB) 1540-HX-001": {
-            tag: L1SystemElement["WASTE HEAT BOILER (WHB) 1540-HX-001"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "WASTE HEAT BOILER (WHB) 1540-HX-001",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    WASTE HEAT BOILER
-                    <br />
-                    {`(WHB)`}
-                    <br />
-                    1540-HX-001
-                </p>
-            </div>
-        },
-        "DRYING TOWER 1520-TW-001": {
-            tag: L1SystemElement["DRYING TOWER 1520-TW-001"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "DRYING TOWER 1520-TW-001",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p className=" text-center text-lg self-end font-bold">
-                    DRYING TOWER
-                    <br />
-                    1520-TW-001
-                </p>
-            </div>
-        },
-        "INLET AIR FILTER 1520-FL-001": {
-            tag: L1SystemElement["INLET AIR FILTER 1520-FL-001"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "INLET AIR FILTER 1520-FL-001",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p className=" text-center text-lg self-end font-bold">
-                    INLET AIR FILTER
-                    <br />
-                    1520-FL-001
-                </p>
-            </div>
-        },
-        "FINAL TOWER 1520-TW-002": {
-            tag: L1SystemElement["FINAL TOWER 1520-TW-002"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "FINAL TOWER 1520-TW-002",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p className=" text-center text-lg self-end font-bold">
-                    FINAL TOWER
-                    <br />
-                    1520-TW-002
-                </p>
-            </div>
-        },
-        "INTERPASS TOWER 1520-TW-003": {
-            tag: L1SystemElement["INTERPASS TOWER 1520-TW-003"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "INTERPASS TOWER 1520-TW-003",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p className=" text-center text-lg self-end font-bold">
-                    INTERPASS TOWER
-                    <br />
-                    1520-TW-003
-                </p>
-            </div>
-        },
-        "To Acid Pump Tank 2": {
-            tag: L1SystemElement["To Acid Pump Tank 2"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "To Acid Pump Tank",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    To Acid
-                    <br />
-                    Pump Tank
-                </p>
-            </div>
-        },
-        "From Acid System 2": {
-            tag: L1SystemElement["From Acid System 2"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "From Acid System",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>From Acid
-                    <br />
-                    System</p>
-            </div>
-        },
+    "SUPERHEATER 1B 1540-HX-003": {
+      tag: L1SystemElement["SUPERHEATER 1B 1540-HX-003"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "SUPERHEATER 1B 1540-HX-003",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            SUPERHEATER 1B
+            <br />
+            1540-HX-003
+          </p>
+        </div>
+      ),
+    },
+    "HOT INTERPASS HX 1540-HX-009": {
+      tag: L1SystemElement["HOT INTERPASS HX 1540-HX-009"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "HOT INTERPASS HX 1540-HX-009",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            HOT INTERPASS HX
+            <br />
+            1540-HX-009
+          </p>
+        </div>
+      ),
+    },
+    "COLD INTERPASS HX 1540-HX-008": {
+      tag: L1SystemElement["COLD INTERPASS HX 1540-HX-008"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "COLD INTERPASS HX 1540-HX-008",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            COLD INTERPASS HX
+            <br />
+            1540-HX-008
+          </p>
+        </div>
+      ),
+    },
+    "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007": {
+      tag: L1SystemElement[
+        "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007"
+      ],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "HP SUPERHEATER 4A ECONOMIZER 4C / 4A 1540-HX-004/006/007",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            HP SUPERHEATER 4A
+            <br />
+            ECONOMIZER 4C / 4A
+            <br />
+            1540-HX-004/006/007
+          </p>
+        </div>
+      ),
+    },
+    "ECONOMIZER 3B 1540-HX-002": {
+      tag: L1SystemElement["ECONOMIZER 3B 1540-HX-002"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "ECONOMIZER 3B 1540-HX-002",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            ECONOMIZER 3B
+            <br />
+            1540-HX-002
+          </p>
+        </div>
+      ),
+    },
+    "To Condenser": {
+      tag: L1SystemElement["To Condenser"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "To Condenser",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>To Condenser</p>
+        </div>
+      ),
+    },
+    "SULFUR FURNACE 1540-ZM-001": {
+      tag: L1SystemElement["SULFUR FURNACE 1540-ZM-001"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "SULFUR FURNACE 1540-ZM-001",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            SULFUR FURNACE
+            <br />
+            1540-ZM-001
+          </p>
+        </div>
+      ),
+    },
+    "WASTE HEAT BOILER (WHB) 1540-HX-001": {
+      tag: L1SystemElement["WASTE HEAT BOILER (WHB) 1540-HX-001"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "WASTE HEAT BOILER (WHB) 1540-HX-001",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            WASTE HEAT BOILER
+            <br />
+            {`(WHB)`}
+            <br />
+            1540-HX-001
+          </p>
+        </div>
+      ),
+    },
+    "DRYING TOWER 1520-TW-001": {
+      tag: L1SystemElement["DRYING TOWER 1520-TW-001"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "DRYING TOWER 1520-TW-001",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p className=" text-center text-lg self-end font-bold">
+            DRYING TOWER
+            <br />
+            1520-TW-001
+          </p>
+        </div>
+      ),
+    },
+    "INLET AIR FILTER 1520-FL-001": {
+      tag: L1SystemElement["INLET AIR FILTER 1520-FL-001"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "INLET AIR FILTER 1520-FL-001",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p className=" text-center text-lg self-end font-bold">
+            INLET AIR FILTER
+            <br />
+            1520-FL-001
+          </p>
+        </div>
+      ),
+    },
+    "FINAL TOWER 1520-TW-002": {
+      tag: L1SystemElement["FINAL TOWER 1520-TW-002"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "FINAL TOWER 1520-TW-002",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p className=" text-center text-lg self-end font-bold">
+            FINAL TOWER
+            <br />
+            1520-TW-002
+          </p>
+        </div>
+      ),
+    },
+    "INTERPASS TOWER 1520-TW-003": {
+      tag: L1SystemElement["INTERPASS TOWER 1520-TW-003"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "INTERPASS TOWER 1520-TW-003",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p className=" text-center text-lg self-end font-bold">
+            INTERPASS TOWER
+            <br />
+            1520-TW-003
+          </p>
+        </div>
+      ),
+    },
+    "To Acid Pump Tank 2": {
+      tag: L1SystemElement["To Acid Pump Tank 2"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "To Acid Pump Tank",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            To Acid
+            <br />
+            Pump Tank
+          </p>
+        </div>
+      ),
+    },
+    "From Acid System 2": {
+      tag: L1SystemElement["From Acid System 2"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "From Acid System",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            From Acid
+            <br />
+            System
+          </p>
+        </div>
+      ),
+    },
 
-        "To Acid Pump Tank 3": {
-            tag: L1SystemElement["To Acid Pump Tank 3"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "To Acid Pump Tank",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    To Acid
-                    <br />
-                    Pump Tank
-                </p>
-            </div>
-        },
-        "From Acid System 3": {
-            tag: L1SystemElement["From Acid System 3"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "From Acid System",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>From Acid
-                    <br />
-                    System</p>
-            </div>
-        },
-        "From Sulfer Tank 1": {
-            tag: L1SystemElement["From Sulfer Tank 1"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "From Sulfer Tank 1",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    From Sulfer
-                    <br />
-                    Tank
-                </p>
-            </div>
-        },
-        "To SO2 Scrubber": {
-            tag: L1SystemElement["To SO2 Scrubber"],
-            type: ElementType.Text,
-            blockType: BlockType.Text,
-            description: "To SO2 Scrubber",
-            component: <div className=" text-black text-lg font-semibold text-center">
-                <p>
-                    To SO2
-                    <br />
-                    Scrubber
-                </p>
-            </div>
-        },
-    }
-
-}
+    "To Acid Pump Tank 3": {
+      tag: L1SystemElement["To Acid Pump Tank 3"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "To Acid Pump Tank",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            To Acid
+            <br />
+            Pump Tank
+          </p>
+        </div>
+      ),
+    },
+    "From Acid System 3": {
+      tag: L1SystemElement["From Acid System 3"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "From Acid System",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            From Acid
+            <br />
+            System
+          </p>
+        </div>
+      ),
+    },
+    "From Sulfer Tank 1": {
+      tag: L1SystemElement["From Sulfer Tank 1"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "From Sulfer Tank 1",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            From Sulfer
+            <br />
+            Tank
+          </p>
+        </div>
+      ),
+    },
+    "To SO2 Scrubber": {
+      tag: L1SystemElement["To SO2 Scrubber"],
+      type: ElementType.Text,
+      blockType: BlockType.Text,
+      description: "To SO2 Scrubber",
+      component: (
+        <div className=" text-black text-lg font-semibold text-center">
+          <p>
+            To SO2
+            <br />
+            Scrubber
+          </p>
+        </div>
+      ),
+    },
+  };
+};
 
 export default L1SystemElementsMap;
