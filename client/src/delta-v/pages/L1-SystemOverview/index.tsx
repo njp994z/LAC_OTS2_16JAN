@@ -78,8 +78,18 @@ const L1SystemOverview = ({
   /** Optional ref that HomeScreen can populate with the L1 start-simulation function */
   simulationTriggerRef?: React.MutableRefObject<(() => void) | null>;
 }) => {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
+    const { toast } = useToast();
+    const [, setLocation] = useLocation();
+
+    const [commonSecondaryControllerDialog, setCommonSecondaryControllerDialog] = useState<{
+        isModalOpen: boolean;
+        data?: SecondaryControllerData;
+        config?: SecondaryControllerConfig;
+        controllerId?: string;
+        description?: string;
+    }>({
+        isModalOpen: false,
+    });
 
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);
@@ -894,104 +904,103 @@ const L1SystemOverview = ({
                 );
               };
 
-              return (
-                <div
-                  key={`${elData.tag}-${index}`}
-                  className="absolute pointer-events-auto"
-                  style={{
-                    display:
-                      instBlockFilter === "all" ||
-                      (instBlockFilter === "controllers" &&
-                        elData?.blockType !== BlockType.Sensor) ||
-                      (instBlockFilter === "sensors" &&
-                        elData?.blockType !== BlockType.Controller)
-                        ? "block"
-                        : "none",
-                    left: pos.x,
-                    top: pos.y,
-                    zIndex: pos.z || 1,
-                    width: pos.w ? pos.w : undefined,
-                    height: pos.h ? pos.h : undefined,
-                    boxSizing: "border-box",
-                    outline: inComponentEdit
-                      ? "1.5px dashed #93c5fd"
-                      : undefined,
-                  }}
-                  onMouseDown={(e) => {
-                    if (inComponentEdit) {
-                      e.stopPropagation();
-                      setDraggingId(element);
-                    }
-                  }}
-                >
-                  <div
-                    className="bg-transparent rounded flex flex-col items-center w-full h-full"
-                    style={{
-                      cursor: inComponentEdit ? "move" : "pointer",
-                      overflow: pos.w || pos.h ? "hidden" : undefined,
-                    }}
-                  >
-                    <div
-                      className={[
-                        inComponentEdit
-                          ? "pointer-events-none w-full h-full"
-                          : "cursor-pointer",
-                        // When a custom size is set, force all child images/SVGs to fill the container
-                        pos.w || pos.h
-                          ? "[&_img]:!w-full [&_img]:!h-full [&_img]:object-contain [&_img]:max-w-none [&_svg]:!w-full [&_svg]:!h-full [&_video]:!w-full [&_video]:!h-full w-full h-full"
-                          : "",
-                      ].join(" ")}
-                      style={{ width: "100%", height: "100%" }}
-                      onClick={(e) => {
-                        if (elData.tag === "1530-F-2602") {
-                          setIsSulfurFlowModalOpen(true);
-                        } else if (elData.tag === "1540-H-4030") {
-                          setIsHandControllerModalOpen(true);
-                        } else if (elData.tag === "1540-H-4282") {
-                          setIsJugValveHandControllerModalOpen(true);
-                        } else if (elData.tag === "1540-HCV-4282") {
-                          setLocation("/unit-operation/jug-valve-whb");
-                        } else if (elData.tag === "1540-VCF-2602") {
-                          setLocation(
-                            "/unit-operation/sulfur-control-hydraulics",
-                          );
-                        } else if (
-                          elData?.type === ElementType.TemperatureController
-                        ) {
-                          setTempSensor({
-                            id: elData.tag as string,
-                            data: (elData as any)?.data,
-                            config: (elData as any)?.config,
-                          });
-                        } else if (
-                          elData?.type === ElementType.TurboGenerator
-                        ) {
-                          setLocation(
-                            "/settings/controller-outputs/faceplates/turbo-generator-faceplate",
-                          );
-                        } else if (elData?.type === ElementType.KPI) {
-                          setLocation(
-                            "/settings/controller-outputs/faceplates/kpi",
-                          );
-                        } else if (elData?.type === ElementType.Compressor) {
-                          setIsVFDModalOpen(true);
-                        } else if (
-                          elData?.type === ElementType.SulfurFlowController
-                        ) {
-                          setIsSulfurFlowModalOpen(true);
-                        } else if (
-                          elData?.type === ElementType.HandController
-                        ) {
-                          setIsHandControllerModalOpen(true);
-                        } else if (
-                          elData?.type === ElementType.JugValveHandController
-                        ) {
-                          setIsJugValveHandControllerModalOpen(true);
-                        } else if (
-                          elData?.type === ElementType.WhbHandController
-                        ) {
-                          setIsWhbHandControllerModalOpen(true);
-                        }
+                                return (
+                                    <div
+                                        key={`${elData.tag}-${index}`}
+                                        className="absolute pointer-events-auto"
+                                        style={{
+                                            display: (instBlockFilter === "all" ||
+                                                (instBlockFilter === "controllers" && elData?.blockType !== BlockType.Sensor) ||
+                                                (instBlockFilter === "sensors" && elData?.blockType !== BlockType.Controller))
+                                                ? "block"
+                                                : "none",
+                                            left: pos.x,
+                                            top: pos.y,
+                                            zIndex: pos.z || 1,
+                                            width: pos.w ? pos.w : undefined,
+                                            height: pos.h ? pos.h : undefined,
+                                            boxSizing: 'border-box',
+                                            outline: inComponentEdit ? '1.5px dashed #93c5fd' : undefined,
+                                        }}
+                                        onMouseDown={(e) => {
+                                            if (inComponentEdit) {
+                                                e.stopPropagation();
+                                                setDraggingId(element);
+                                            }
+                                        }}
+                                    >
+                                        <div
+                                            className="bg-transparent rounded flex flex-col items-center w-full h-full"
+                                            style={{
+                                                cursor: inComponentEdit ? 'move' : 'pointer',
+                                                overflow: pos.w || pos.h ? 'hidden' : undefined
+                                            }}
+                                        >
+                                            <div
+                                                className={[
+                                                    inComponentEdit ? "pointer-events-none w-full h-full" : "cursor-pointer",
+                                                    // When a custom size is set, force all child images/SVGs to fill the container
+                                                    (pos.w || pos.h)
+                                                        ? "[&_img]:!w-full [&_img]:!h-full [&_img]:object-contain [&_img]:max-w-none [&_svg]:!w-full [&_svg]:!h-full [&_video]:!w-full [&_video]:!h-full w-full h-full"
+                                                        : ""
+                                                ].join(" ")}
+                                                style={{ width: '100%', height: '100%' }}
+                                                onClick={(e) => {
+                                                    if (elData.tag === '1530-F-2602') {
+                                                        setIsSulfurFlowModalOpen(true);
+                                                    }
+                                                    else if (elData.tag === '1540-H-4030') {
+                                                        setIsHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData.tag === '1540-H-4282') {
+                                                        setIsJugValveHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData.tag === '1540-HCV-4282') {
+                                                        setLocation('/unit-operation/jug-valve-whb');
+                                                    }
+                                                    else if (elData.tag === '1540-VCF-2602') {
+                                                        setLocation('/unit-operation/sulfur-control-hydraulics');
+                                                    }
+                                                    else if (elData?.type === ElementType.TemparatureSensor) {
+                                                        setTempSensor({
+                                                            id: element,
+                                                            data: (elData as any)?.data,
+                                                            config: (elData as any)?.config,
+                                                        });
+                                                    }
+                                                    else if (elData?.type === ElementType.TurboGenerator) {
+                                                        setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
+                                                    }
+                                                    else if (elData?.type === ElementType.KPI) {
+                                                        setLocation('/settings/controller-outputs/faceplates/kpi');
+                                                    }
+                                                    else if (elData?.type === ElementType.SulfurFurnace) {
+                                                        setLocation('/unit-operation/sulfur-furnace?sulfurFlowGpm');
+                                                    }
+                                                    else if (elData?.type === ElementType.Compressor) {
+                                                        setIsVFDModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.SulfurFlowController) {
+                                                        setIsSulfurFlowModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.HandController) {
+                                                        setIsHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.JugValveHandController) {
+                                                        setIsJugValveHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData?.type === ElementType.WhbHandController) {
+                                                        setIsWhbHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData?.blockType === BlockType.Controller) {
+                                                        setCommonSecondaryControllerDialog({
+                                                            isModalOpen: true,
+                                                            data: (elData as any)?.data,
+                                                            config: (elData as any)?.config,
+                                                            controllerId: elData?.tag,
+                                                            description: elData?.description
+                                                        });
+                                                    }
 
                         // /unit-operation/jug-valve-whb
                         // /unit-operation/sulfur-control-hydraulics?from=l2-furnace
@@ -1076,26 +1085,56 @@ const L1SystemOverview = ({
         </DialogContent>
       </Dialog>
 
-      {/* VFD Faceplate Modal */}
-      <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen}>
-        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
-          <VisuallyHidden>
-            <DialogTitle>VFD Faceplate</DialogTitle>
-          </VisuallyHidden>
-          <VFDFaceplate
-            data={compressorData}
-            onStart={handleStart}
-            onStop={handleStop}
-            onModeChange={handleVFDModeChange}
-            onSpeedSPChange={handleSpeedSPChange}
-            onClearAlarm={handleClearAlarm}
-            onClose={() => setIsVFDModalOpen(false)}
-            configTagName={vfdConfig?.tagName}
-            configDescription={vfdConfig?.description}
-            configUnit={vfdConfig?.unit}
-          />
-        </DialogContent>
-      </Dialog>
+            {/* VFD Faceplate Modal */}
+            <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>VFD Faceplate</DialogTitle>
+                    </VisuallyHidden>
+                    <VFDFaceplate
+                        data={compressorData}
+                        onStart={handleStart}
+                        onStop={handleStop}
+                        onModeChange={handleVFDModeChange}
+                        onSpeedSPChange={handleSpeedSPChange}
+                        onClearAlarm={handleClearAlarm}
+                        onClose={() => setIsVFDModalOpen(false)}
+                        configTagName={vfdConfig?.tagName}
+                        configDescription={vfdConfig?.description}
+                        configUnit={vfdConfig?.unit}
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* Common Secondary Controllers Faceplate Modal */}
+            <Dialog open={commonSecondaryControllerDialog.isModalOpen} onOpenChange={(open) => setCommonSecondaryControllerDialog({ isModalOpen: open, data: undefined, config: undefined })}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>{commonSecondaryControllerDialog.description}</DialogTitle>
+                    </VisuallyHidden>
+                    {commonSecondaryControllerDialog.data && commonSecondaryControllerDialog.config && commonSecondaryControllerDialog.controllerId && (
+                        <SecondaryControllerFaceplate
+                        data={commonSecondaryControllerDialog.data}
+                        config={commonSecondaryControllerDialog.config}
+                        controllerId={commonSecondaryControllerDialog.controllerId}
+                        onClose={() => {
+                            setCommonSecondaryControllerDialog({ isModalOpen: false, data: undefined, config: undefined });
+                        }}
+                        onModeChange={(mode) => {
+                            // updateJugValveHandControllerMode(mode)
+                        }}
+                        onSpChange={(value) => {
+                            // updateJugValveHandControllerSP(value);
+                            // setJugValveHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                        }}
+                        onOutChange={(value) => {
+                            // updateJugValveHandControllerOUT(value);
+                            // setJugValveHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                        }}
+                        fromSource="home-screen"
+                    />)}
+                </DialogContent>
+            </Dialog>
 
       {/* Sulfur Flow Controller Secondary Faceplate Modal */}
       <Dialog
