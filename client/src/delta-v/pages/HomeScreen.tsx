@@ -1544,14 +1544,14 @@ const HomeScreen = () => {
 
   const handleSulfurValveClick = () => {
     if (isLocked) {
-      setLocation('/unit-operation/sulfur-control-hydraulics?from=home-screen');
+      setLocation('/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=home-screen');
     }
   };
 
   // L2 Sulfur Valve click handler - navigates to sulfur hydraulics page
   const handleSulfurValveL2Click = () => {
     if (isLockedL2) {
-      setLocation('/unit-operation/sulfur-control-hydraulics?from=l2-furnace');
+      setLocation('/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=l2-furnace');
     }
   };
 

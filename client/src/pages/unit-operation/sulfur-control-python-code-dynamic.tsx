@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useParams } from "wouter";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy, Check, Gauge } from "lucide-react";
@@ -286,6 +286,7 @@ class DynamicSulfurSprayHydraulics:
 export default function SulfurControlPythonCodeDynamic() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { id } = useParams();
 
   const handleCopy = async () => {
     try {
@@ -311,7 +312,7 @@ export default function SulfurControlPythonCodeDynamic() {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Link href="/unit-operation/sulfur-control-hydraulics">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}`}>
                 <Button variant="ghost" size="icon" data-testid="button-back">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>

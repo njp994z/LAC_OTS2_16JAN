@@ -1,4 +1,4 @@
-import { Link, useLocation, useSearch } from "wouter";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
+import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 
 interface ProcessNode {
   tagId: string;
@@ -109,14 +110,18 @@ interface DynamicState {
 export default function SulfurControlHydraulics() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
+  const { id } = useParams();
   const searchParams = new URLSearchParams(searchString);
   const fromHomeScreen = searchParams.get('from') === 'home-screen' || searchParams.get('from') === 'l2-furnace';
   const { toast } = useToast();
 
   // Valve faceplate configuration (NOT using sync context for static mode)
-  const VALVE_CONTROLLER_ID = '1540-FCV-2602';
-  const { getControllerConfig } = useControllerConfig();
+  const VALVE_CONTROLLER_ID = id ?? '1540-FCV-2602';
+  const { getControllerConfig, getControllerData } = useControllerConfig();
+
   const valveConfig = getControllerConfig(VALVE_CONTROLLER_ID);
+  const valveData = getControllerData(VALVE_CONTROLLER_ID);
+  const { state: valveState } = useControllerSync(VALVE_CONTROLLER_ID);
 
   // Static valve position state - this is the master value for static mode (PV = SP = OUT)
   const [staticValvePosition, setStaticValvePosition] = useState<number>(50);
@@ -248,15 +253,10 @@ export default function SulfurControlHydraulics() {
     };
   }, []);
 
-  // Update valve faceplate data when static valve position changes
-  // Static mode: PV = SP = OUT (all equal to valve position %)
+  // Sync config fields (tag, EU, alarms, indicators) from DB/ControllerConfigContext
   useEffect(() => {
     setValveFaceplateData(prev => ({
       ...prev,
-      pv: staticValvePosition,
-      sp: staticValvePosition,  // PV = SP in static mode
-      out: staticValvePosition, // OUT = valve position in static mode
-      mode: 'AUTO',
       instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
       description: valveConfig.DESC || 'Sulfur Feed Control Valve',
       pvUnits: valveConfig.EU || '%',
@@ -275,7 +275,29 @@ export default function SulfurControlHydraulics() {
       showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
       holdActive: valveConfig.HOLD_ACTIVE ?? false,
     }));
-  }, [staticValvePosition, JSON.stringify(valveConfig)]); // Stabilize dependency by stringifying the config object
+  }, [JSON.stringify(valveConfig)]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync live PV / SP / OUT / mode from ControllerSyncContext (DB-backed)
+  useEffect(() => {
+    setValveFaceplateData(prev => ({
+      ...prev,
+      pv: valveState.syncedPV,
+      sp: valveState.syncedSP,
+      out: valveState.syncedOUT,
+      mode: valveState.syncedMode,
+    }));
+  }, [valveState.syncedPV, valveState.syncedSP, valveState.syncedOUT, valveState.syncedMode]);
+
+  // Update valve faceplate PV/SP/OUT from static calculation result
+  // (only in static simulation mode — overrides the sync state for display)
+  useEffect(() => {
+    setValveFaceplateData(prev => ({
+      ...prev,
+      pv: staticValvePosition,
+      sp: staticValvePosition,
+      out: staticValvePosition,
+    }));
+  }, [staticValvePosition]);
 
   const runStaticCalculation = async () => {
     setIsCalculating(true);
@@ -628,19 +650,19 @@ export default function SulfurControlHydraulics() {
               >
                 Sulfur Pump Motor
               </Button>
-              <Link href="/unit-operation/sulfur-control-hydraulics/python-code/gui">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}/python-code/gui`}>
                 <Button variant="outline" size="sm" data-testid="button-view-gui-code">
                   <Code className="h-4 w-4 mr-2" />
                   GUI Code
                 </Button>
               </Link>
-              <Link href="/unit-operation/sulfur-control-hydraulics/python-code/static">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}/python-code/static`}>
                 <Button variant="outline" size="sm" data-testid="button-view-static-code">
                   <Code className="h-4 w-4 mr-2" />
                   Static Code
                 </Button>
               </Link>
-              <Link href="/unit-operation/sulfur-control-hydraulics/python-code/dynamic">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}/python-code/dynamic`}>
                 <Button variant="outline" size="sm" data-testid="button-view-dynamic-code">
                   <Code className="h-4 w-4 mr-2" />
                   Dynamic Code
@@ -688,7 +710,7 @@ export default function SulfurControlHydraulics() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Gauge className="h-5 w-5" />
-                1540-FCV-2602 - Sulfur Feed Control Valve
+                {VALVE_CONTROLLER_ID} - Sulfur Feed Control Valve
               </CardTitle>
             </CardHeader>
             <CardContent>
