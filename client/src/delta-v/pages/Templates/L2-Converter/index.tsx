@@ -37,6 +37,7 @@ import {
   type SecondaryControllerData,
   type SecondaryControllerConfig,
 } from "@/delta-v/types/secondaryController";
+import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -92,9 +93,10 @@ const L2Converter = () => {
 
   const [updateLayout, { isLoading: isUpdatingLayout }] =
     useUpdateLayoutMutation();
+  const { getControllerConfig } = useControllerConfig();
 
   // ── elements ────────────────────────────────────────────────────────────
-  const L2ConverterElements_map = L2ConverterElementsMap();
+  const L2ConverterElements_map = L2ConverterElementsMap(getControllerConfig, false);
 
   // ── canvas state ────────────────────────────────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -290,9 +292,9 @@ const L2Converter = () => {
       if (!arrowKeys.includes(e.key)) return;
       e.preventDefault();
       const dist = e.shiftKey ? step * 10 : step;
-      if (e.key === "ArrowUp")    moveEdge(selectedEdge, 0, -dist);
-      if (e.key === "ArrowDown")  moveEdge(selectedEdge, 0, dist);
-      if (e.key === "ArrowLeft")  moveEdge(selectedEdge, -dist, 0);
+      if (e.key === "ArrowUp") moveEdge(selectedEdge, 0, -dist);
+      if (e.key === "ArrowDown") moveEdge(selectedEdge, 0, dist);
+      if (e.key === "ArrowLeft") moveEdge(selectedEdge, -dist, 0);
       if (e.key === "ArrowRight") moveEdge(selectedEdge, dist, 0);
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -588,8 +590,8 @@ const L2Converter = () => {
             {isLoading || isUpdatingLayout
               ? "Saving..."
               : mode === Mode.Edit
-              ? "Save Layout"
-              : "Edit Layout"}
+                ? "Save Layout"
+                : "Edit Layout"}
           </button>
         </div>
 
@@ -668,11 +670,11 @@ const L2Converter = () => {
                     isShiftHeldRef.current
                       ? `M ${drawingEdge.x1} ${drawingEdge.y1} L ${drawingEdge.x2} ${drawingEdge.y2}`
                       : orthogonalPath(
-                          drawingEdge.x1,
-                          drawingEdge.y1,
-                          drawingEdge.x2,
-                          drawingEdge.y2,
-                        )
+                        drawingEdge.x1,
+                        drawingEdge.y1,
+                        drawingEdge.x2,
+                        drawingEdge.y2,
+                      )
                   }
                   stroke="gray"
                   strokeDasharray="5 5"
@@ -905,9 +907,9 @@ const L2Converter = () => {
                     config: undefined,
                   })
                 }
-                onModeChange={() => {}}
-                onSpChange={() => {}}
-                onOutChange={() => {}}
+                onModeChange={() => { }}
+                onSpChange={() => { }}
+                onOutChange={() => { }}
                 fromSource="home-screen"
               />
             )}
