@@ -20,6 +20,7 @@ import DryingTower from "./dryingTower";
 import FurnaceWhbt from "./furnace-whb";
 import { PrimaryCompressorFaceplate } from "@/delta-v/components/faceplate/PrimaryCompressorFaceplate";
 import { CompressorContextType } from "@/delta-v/contexts/CompressorContext";
+import { ControllerFaceplate } from "@/delta-v/components/faceplate/ControllerFaceplate";
 
 import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
 import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
@@ -161,6 +162,7 @@ export const L1SystemElements = [
 export enum ElementType {
     Text,
     Image,
+    TemparatureSensor,
     TemperatureController,
     PressureController,
     FlowController,
@@ -329,7 +331,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: jugController4282Config?.TAGNAME,
@@ -357,7 +359,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-7821": {
             tag: L1SystemElement["1540-TI-7821"],
             description: "Pass 1 Outlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: ipatOutletTemperature7821Data,
             config: ipatOutletTemperature7821Config,
@@ -448,26 +450,26 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: compressorController4030Config?.TAGNAME,
-                        description: compressorController4030Config?.DESC || 'Main Compressor Controller',
-                        pv: compressorController4030Data?.state?.syncedPV ?? 0,
-                        sp: compressorController4030Data?.state?.syncedSP ?? 0,
-                        out: compressorController4030Data?.state?.syncedOUT ?? 0,
-                        mode: compressorController4030Data?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: compressorController4030Config?.EU || '°C',
-                        pvRangeMin: compressorController4030Config?.SP_LIM_LO ?? 0,
-                        pvRangeMax: compressorController4030Config?.SP_LIM_HI ?? 500,
-                        alarmActive: compressorController4030Data?.state?.alarmStates?.HH || compressorController4030Data?.state?.alarmStates?.H ||
-                            compressorController4030Data?.state?.alarmStates?.L || compressorController4030Data?.state?.alarmStates?.LL || false,
-                        alarmColor: (compressorController4030Data?.state?.alarmStates?.HH || compressorController4030Data?.state?.alarmStates?.LL) ? 'red' :
-                            (compressorController4030Data?.state?.alarmStates?.H || compressorController4030Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: compressorInletPressure4072Config?.ALM_LL_LIM,
-                        alarmL: compressorInletPressure4072Config?.ALM_L_LIM,
-                        alarmH: compressorInletPressure4072Config?.ALM_H_LIM,
-                        alarmHH: compressorInletPressure4072Config?.ALM_HH_LIM,
+                        instrumentTag: compressorController4030Config.TAGNAME,
+                        description: compressorController4030Config.DESC,
+                        pv: compressorController4030Data.state.syncedPV,
+                        sp: compressorController4030Data.state.syncedSP,
+                        out: compressorController4030Data.state.syncedOUT,
+                        mode: compressorController4030Data.state.syncedMode,
+                        pvUnits: compressorController4030Config.EU || '%',
+                        pvRangeMin: compressorController4030Config.SP_LIM_LO ?? 0,
+                        pvRangeMax: compressorController4030Config.SP_LIM_HI ?? 30,
+                        alarmActive: compressorController4030Data.state.alarmStates.HH || compressorController4030Data.state.alarmStates.H ||
+                            compressorController4030Data.state.alarmStates.L || compressorController4030Data.state.alarmStates.LL,
+                        alarmColor: (compressorController4030Data.state.alarmStates.HH || compressorController4030Data.state.alarmStates.LL) ? 'red' :
+                            (compressorController4030Data.state.alarmStates.H || compressorController4030Data.state.alarmStates.L) ? 'yellow' : undefined,
+                        alarmLL: compressorController4030Config.ALM_LL_LIM ?? 0,
+                        alarmL: compressorController4030Config.ALM_L_LIM ?? 0,
+                        alarmH: compressorController4030Config.ALM_H_LIM ?? 0,
+                        alarmHH: compressorController4030Config.ALM_HH_LIM ?? 0,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -593,26 +595,26 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
-                        instrumentTag: sulphuricFlowController2602Config?.TAGNAME,
-                        description: sulphuricFlowController2602Config?.DESC || 'DT Gas Out Temperature',
-                        pv: sulphuricFlowController2602Data?.state?.syncedPV ?? 0,
-                        sp: sulphuricFlowController2602Data?.state?.syncedSP ?? 0,
-                        out: sulphuricFlowController2602Data?.state?.syncedOUT ?? 0,
-                        mode: sulphuricFlowController2602Data?.state?.syncedMode ?? 'AUTO',
-                        pvUnits: sulphuricFlowController2602Config?.EU || '°C',
-                        pvRangeMin: sulphuricFlowController2602Config?.SP_LIM_LO ?? 0,
-                        pvRangeMax: sulphuricFlowController2602Config?.SP_LIM_HI ?? 500,
-                        alarmActive: sulphuricFlowController2602Data?.state?.alarmStates?.HH || sulphuricFlowController2602Data?.state?.alarmStates?.H ||
-                            sulphuricFlowController2602Data?.state?.alarmStates?.L || sulphuricFlowController2602Data?.state?.alarmStates?.LL || false,
-                        alarmColor: (sulphuricFlowController2602Data?.state?.alarmStates?.HH || sulphuricFlowController2602Data?.state?.alarmStates?.LL) ? 'red' :
-                            (sulphuricFlowController2602Data?.state?.alarmStates?.H || sulphuricFlowController2602Data?.state?.alarmStates?.L) ? 'yellow' : undefined,
-                        alarmLL: sulphuricFlowController2602Config?.ALM_LL_LIM,
-                        alarmL: sulphuricFlowController2602Config?.ALM_L_LIM,
-                        alarmH: sulphuricFlowController2602Config?.ALM_H_LIM,
-                        alarmHH: sulphuricFlowController2602Config?.ALM_HH_LIM,
+                        instrumentTag: sulphuricFlowController2602Config.TAGNAME,
+                        description: sulphuricFlowController2602Config.DESC,
+                        pv: sulphuricFlowController2602Data.state.syncedPV,
+                        sp: sulphuricFlowController2602Data.state.syncedSP,
+                        out: sulphuricFlowController2602Data.state.syncedOUT,
+                        mode: sulphuricFlowController2602Data.state.syncedMode,
+                        pvUnits: sulphuricFlowController2602Config.EU || '%',
+                        pvRangeMin: sulphuricFlowController2602Config.SP_LIM_LO ?? 0,
+                        pvRangeMax: sulphuricFlowController2602Config.SP_LIM_HI ?? 30,
+                        alarmActive: sulphuricFlowController2602Data.state.alarmStates.HH || sulphuricFlowController2602Data.state.alarmStates.H ||
+                            sulphuricFlowController2602Data.state.alarmStates.L || sulphuricFlowController2602Data.state.alarmStates.LL,
+                        alarmColor: (sulphuricFlowController2602Data.state.alarmStates.HH || sulphuricFlowController2602Data.state.alarmStates.LL) ? 'red' :
+                            (sulphuricFlowController2602Data.state.alarmStates.H || sulphuricFlowController2602Data.state.alarmStates.L) ? 'yellow' : undefined,
+                        alarmLL: sulphuricFlowController2602Config.ALM_LL_LIM ?? 0,
+                        alarmL: sulphuricFlowController2602Config.ALM_L_LIM ?? 0,
+                        alarmH: sulphuricFlowController2602Config.ALM_H_LIM ?? 0,
+                        alarmHH: sulphuricFlowController2602Config.ALM_HH_LIM ?? 0,
                     } as ControllerData}
                     isTransparent={true}
                 />
@@ -661,7 +663,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-4020": {
             tag: "1540-TI-4020",
             description: "Furnace Inlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: furnaceInletTemperature4020Data,
             config: furnaceInletTemperature4020Config,
@@ -754,7 +756,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: pass2InletTemperature4822Config?.TAGNAME,
@@ -782,7 +784,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-8721": {
             tag: "1540-TI-8721",
             description: "Pass 1 Outlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: pass1OutletTemperature8721Data,
             config: pass1OutletTemperature8721Config,
@@ -857,7 +859,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: pass4InletTemperature5224Config?.TAGNAME,
@@ -885,7 +887,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-7225": {
             tag: "1540-TI-7225",
             description: "Pass 4 Outlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: pass4OutletTemperature7225Data,
             config: pass4OutletTemperature7225Config,
@@ -937,7 +939,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: pass2InletTemperature5220Config?.TAGNAME,
@@ -965,7 +967,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-5232": {
             tag: "1540-TI-5232",
             description: "Pass 2 Outlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: pass2OutletTemperature5232Data,
             config: pass2OutletTemperature5232Config,
@@ -1017,7 +1019,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: economizer4AOutletTemp7221Config?.TAGNAME,
@@ -1045,7 +1047,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-5231": {
             tag: "1540-TI-5231",
             description: "Pass 3 Outlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: pass3OutletTemperature5231Data,
             config: pass3OutletTemperature5231Config,
@@ -1085,7 +1087,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-8421": {
             tag: "1540-TI-8421",
             description: "CIP Inlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: cipInletTemperature8421Data,
             config: cipInletTemperature8421Config,
@@ -1137,7 +1139,7 @@ const L1SystemElementsMap = (getControllerConfig: (
                     transformOrigin: 'center center'
                 }}
             >
-                <TempSensorPrimaryFaceplate
+                <ControllerFaceplate
                     data={{
                         ...defaultControllerData,
                         instrumentTag: economizer3BOutletTemp7224Config?.TAGNAME,
@@ -1165,7 +1167,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1520-TI-6624": {
             tag: "1520-TI-6624",
             description: "FAT Outlet Temperature",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: fatOutletTemperature6624Data,
             config: fatOutletTemperature6624Config,
@@ -1205,7 +1207,7 @@ const L1SystemElementsMap = (getControllerConfig: (
         "1540-TI-4200A": {
             tag: "1540-TI-4200A",
             description: "Furnace Outlet Temperature A",
-            type: ElementType.TemperatureController,
+            type: ElementType.TemparatureSensor,
             blockType: BlockType.Sensor,
             data: furnaceOutletTemperature4200AData,
             config: furnaceOutletTemperature4200AConfig,

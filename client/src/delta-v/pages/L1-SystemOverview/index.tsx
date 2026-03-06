@@ -66,6 +66,16 @@ const L1SystemOverview = ({
     const { toast } = useToast();
     const [, setLocation] = useLocation();
 
+    const [commonSecondaryControllerDialog, setCommonSecondaryControllerDialog] = useState<{
+        isModalOpen: boolean;
+        data?: SecondaryControllerData;
+        config?: SecondaryControllerConfig;
+        controllerId?: string;
+        description?: string;
+    }>({
+        isModalOpen: false,
+    });
+
     const searchString = useSearch();
     const searchParams = new URLSearchParams(searchString);
     const rawFilter = searchParams.get("filter");
@@ -730,7 +740,7 @@ const L1SystemOverview = ({
                                                     else if (elData.tag === '1540-VCF-2602') {
                                                         setLocation('/unit-operation/sulfur-control-hydraulics');
                                                     }
-                                                    else if (elData?.type === ElementType.TemperatureController) {
+                                                    else if (elData?.type === ElementType.TemparatureSensor) {
                                                         setTempSensor({
                                                             id: element,
                                                             data: (elData as any)?.data,
@@ -760,6 +770,15 @@ const L1SystemOverview = ({
                                                     }
                                                     else if (elData?.type === ElementType.WhbHandController) {
                                                         setIsWhbHandControllerModalOpen(true);
+                                                    }
+                                                    else if (elData?.blockType === BlockType.Controller) {
+                                                        setCommonSecondaryControllerDialog({
+                                                            isModalOpen: true,
+                                                            data: (elData as any)?.data,
+                                                            config: (elData as any)?.config,
+                                                            controllerId: elData?.tag,
+                                                            description: elData?.description
+                                                        });
                                                     }
 
                                                     // /unit-operation/jug-valve-whb
@@ -837,6 +856,36 @@ const L1SystemOverview = ({
                         configDescription={vfdConfig?.description}
                         configUnit={vfdConfig?.unit}
                     />
+                </DialogContent>
+            </Dialog>
+
+            {/* Common Secondary Controllers Faceplate Modal */}
+            <Dialog open={commonSecondaryControllerDialog.isModalOpen} onOpenChange={(open) => setCommonSecondaryControllerDialog({ isModalOpen: open, data: undefined, config: undefined })}>
+                <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                    <VisuallyHidden>
+                        <DialogTitle>{commonSecondaryControllerDialog.description}</DialogTitle>
+                    </VisuallyHidden>
+                    {commonSecondaryControllerDialog.data && commonSecondaryControllerDialog.config && commonSecondaryControllerDialog.controllerId && (
+                        <SecondaryControllerFaceplate
+                        data={commonSecondaryControllerDialog.data}
+                        config={commonSecondaryControllerDialog.config}
+                        controllerId={commonSecondaryControllerDialog.controllerId}
+                        onClose={() => {
+                            setCommonSecondaryControllerDialog({ isModalOpen: false, data: undefined, config: undefined });
+                        }}
+                        onModeChange={(mode) => {
+                            // updateJugValveHandControllerMode(mode)
+                        }}
+                        onSpChange={(value) => {
+                            // updateJugValveHandControllerSP(value);
+                            // setJugValveHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                        }}
+                        onOutChange={(value) => {
+                            // updateJugValveHandControllerOUT(value);
+                            // setJugValveHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                        }}
+                        fromSource="home-screen"
+                    />)}
                 </DialogContent>
             </Dialog>
 
