@@ -2090,6 +2090,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
     handleClearAlarm,
     setStaticValues,
     vfdConfig,
+    updateVFDConfig,
   } = useCompressor();
 
   useEffect(() => {
@@ -5658,6 +5659,7 @@ const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false
                 <PrimaryCompressorFaceplate 
                   data={compressorData} 
                   transparentBackground={vfdConfig?.transparentBackground ?? true}
+                  onToggleTransparency={(transparent) => updateVFDConfig({ transparentBackground: transparent })}
                   configTagName={vfdConfig?.tagName}
                   configDescription={vfdConfig?.description}
                   configUnit={vfdConfig?.unit}
