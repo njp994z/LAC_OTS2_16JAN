@@ -380,10 +380,10 @@ function Router() {
       <Route path="/unit-operation/inlet-air-filter/simulation-code" component={InletAirFilterSimCode} />
       <Route path="/unit-operation/acid-hydraulics/absorbing-tower-circuit" component={AbsorbingTowerCircuit} />
       <Route path="/unit-operation/acid-hydraulics/drying-tower-circuit/python-code" component={DryingTowerCircuitPythonCode} />
-      <Route path="/unit-operation/sulfur-control-hydraulics" component={SulfurControlHydraulics} />
-      <Route path="/unit-operation/sulfur-control-hydraulics/python-code/gui" component={SulfurControlPythonCodeGui} />
-      <Route path="/unit-operation/sulfur-control-hydraulics/python-code/static" component={SulfurControlPythonCodeStatic} />
-      <Route path="/unit-operation/sulfur-control-hydraulics/python-code/dynamic" component={SulfurControlPythonCodeDynamic} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id" component={SulfurControlHydraulics} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id/python-code/gui" component={SulfurControlPythonCodeGui} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id/python-code/static" component={SulfurControlPythonCodeStatic} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id/python-code/dynamic" component={SulfurControlPythonCodeDynamic} />
       <Route path="/unit-operation/acid-hydraulics/drying-tower-circuit" component={DryingTowerCircuit} />
       <Route path="/unit-operation/acid-hydraulics" component={AcidHydraulics} />
       <Route path="/unit-operation/drying-tower/python-code" component={DryingTowerPythonCode} />
