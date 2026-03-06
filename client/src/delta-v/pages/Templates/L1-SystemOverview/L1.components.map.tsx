@@ -7,20 +7,20 @@ import {
 } from "@/delta-v/types/controller";
 
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
-import jugValveImage from "./assets/jug-valve.png";
-import SulferControllerValveImage from "./assets/open-valve-dark.png";
+import jugValveImage from "../components/assets/jug-valve.png";
+import SulferControllerValveImage from "../components/assets/open-valve-dark.png";
 
-import IPAT from "./ipat";
-import FAT from "./fat";
-import CIP from "./cip";
-import SH42EC4cEC4a from "./sh42ec4cec4a";
-import HIP from "./hip";
-import EC3B from "./ec3b";
-import SH1B from "./sh1b";
-import Converter4 from "./converter4";
-import IndustrialFilter from "./industrialFilter";
-import DryingTower from "./dryingTower";
-import FurnaceWhbt from "./furnace-whb";
+import IPAT from "../components/ipat";
+import FAT from "../components/fat";
+import CIP from "../components/cip";
+import SH42EC4cEC4a from "../components/sh42ec4cec4a";
+import HIP from "../components/hip";
+import EC3B from "../components/ec3b";
+import SH1B from "../components/sh1b";
+import Converter4 from "../components/converter4";
+import IndustrialFilter from "../components/industrialFilter";
+import DryingTower from "../components/dryingTower";
+import FurnaceWhbt from "../components/furnace-whb";
 import { PrimaryCompressorFaceplate } from "@/delta-v/components/faceplate/PrimaryCompressorFaceplate";
 import { CompressorContextType } from "@/delta-v/contexts/CompressorContext";
 import { ControllerFaceplate } from "@/delta-v/components/faceplate/ControllerFaceplate";
