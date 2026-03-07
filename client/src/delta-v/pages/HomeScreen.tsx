@@ -2,7 +2,6 @@
 // Prefer local (HEAD) version over remote changes unless upstream contains critical fixes
 // Reviewed and resolved manually - do not blindly overwrite in future merges
 
-
 import { Link, useLocation, useSearch } from "wouter";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Rnd } from "react-rnd";
@@ -67,8 +66,14 @@ import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 import type { ControllerData } from "@/delta-v/types/controller";
 import { defaultControllerData } from "@/delta-v/types/controller";
-import type { SecondaryControllerData, SecondaryControllerConfig } from "@/delta-v/types/secondaryController";
-import { defaultSecondaryData, defaultSecondaryConfig } from "@/delta-v/types/secondaryController";
+import type {
+  SecondaryControllerData,
+  SecondaryControllerConfig,
+} from "@/delta-v/types/secondaryController";
+import {
+  defaultSecondaryData,
+  defaultSecondaryConfig,
+} from "@/delta-v/types/secondaryController";
 import { useToast } from "@/hooks/use-toast";
 import { VerticalArrow } from "@/delta-v/components/VerticalArrow";
 import { pfdConfigs } from "@/delta-v/config/pfdConfig";
@@ -140,7 +145,7 @@ interface Arrow {
   width: number;
   height: number;
   rotation: number;
-  color: 'blue' | 'yellow' | 'purple' | 'black' | 'red' | 'green';
+  color: "blue" | "yellow" | "purple" | "black" | "red" | "green";
 }
 const toolbarItems = [
   { icon: Search, label: "Search" },
@@ -159,7 +164,6 @@ const homescreenOptions = [
   { id: "L1", label: "L1 – System Overview", isReady: true },
   { id: "L2", label: "L2 – Furnace Area" },
   { id: "L2-Converter", label: "L2 – Converter", isReady: true },
-  { id: "L2_1520_ACID", label: "L2 1520 ACID" , isReady: false},
   { id: "L3", label: "L3 – Compressor Area" },
   { id: "L4", label: "L4-Converter" },
   // L2_1500 SULFUR UTILITY
@@ -175,7 +179,7 @@ const homescreenOptions = [
   { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
   { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
   // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID" },
+  { id: "L2_1520_ACID", label: "L2 1520 ACID" },
   { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
   { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
   { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
@@ -203,101 +207,409 @@ const homescreenOptions = [
 ];
 
 const resizeHandleStyle = {
-  width: '10px',
-  height: '10px',
-  background: '#3b82f6',
-  borderRadius: '2px',
-  border: '1px solid #1d4ed8',
+  width: "10px",
+  height: "10px",
+  background: "#3b82f6",
+  borderRadius: "2px",
+  border: "1px solid #1d4ed8",
 };
 
 const resizeHandleStyles = {
-  bottomRight: { ...resizeHandleStyle, right: '-5px', bottom: '-5px' },
-  bottomLeft: { ...resizeHandleStyle, left: '-5px', bottom: '-5px' },
-  topRight: { ...resizeHandleStyle, right: '-5px', top: '-5px' },
-  topLeft: { ...resizeHandleStyle, left: '-5px', top: '-5px' },
+  bottomRight: { ...resizeHandleStyle, right: "-5px", bottom: "-5px" },
+  bottomLeft: { ...resizeHandleStyle, left: "-5px", bottom: "-5px" },
+  topRight: { ...resizeHandleStyle, right: "-5px", top: "-5px" },
+  topLeft: { ...resizeHandleStyle, left: "-5px", top: "-5px" },
 };
 
 const HomeScreen = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [furnacePosition, setFurnacePosition] = useState({ x: 100, y: 100 });
   const [furnaceSize, setFurnaceSize] = useState({ width: 400, height: 150 });
-  const [compressorPosition, setCompressorPosition] = useState({ x: 520, y: 100 });
-  const [compressorSize, setCompressorSize] = useState({ width: 200, height: 180 });
+  const [compressorPosition, setCompressorPosition] = useState({
+    x: 520,
+    y: 100,
+  });
+  const [compressorSize, setCompressorSize] = useState({
+    width: 200,
+    height: 180,
+  });
   // Array of arrows with position, size, and rotation
   const [arrows, setArrows] = useState<Array<Arrow>>([
-    { id: 'arrow_1', x: 180, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_2', x: 180, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_3', x: 180, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_4', x: 180, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_5', x: 450, y: 280, width: 250, height: 60, rotation: 0, color: 'yellow' as const },
-    { id: 'arrow_6', x: 450, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_7', x: 450, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_8', x: 450, y: 520, width: 250, height: 60, rotation: 0, color: 'purple' as const },
-    { id: 'arrow_9', x: 720, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_10', x: 720, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_11', x: 720, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_12', x: 720, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_13', x: 990, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_14', x: 990, y: 360, width: 250, height: 60, rotation: 0, color: 'purple' as const },
-    { id: 'arrow_15', x: 1260, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_16', x: 1260, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_17', x: 1260, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_18', x: 1260, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_19', x: 1530, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_20', x: 1530, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_21', x: 1530, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_22', x: 1530, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_23', x: 1800, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_24', x: 1800, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_25', x: 1800, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_26', x: 1800, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_27', x: 2070, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_28', x: 2070, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_29', x: 2070, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_30', x: 2070, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_31', x: 2340, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_32', x: 2340, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_33', x: 2340, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_34', x: 2340, y: 520, width: 250, height: 60, rotation: 0, color: 'blue' as const },
-    { id: 'arrow_35', x: 2610, y: 280, width: 250, height: 60, rotation: 0, color: 'purple' as const },
+    {
+      id: "arrow_1",
+      x: 180,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_2",
+      x: 180,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_3",
+      x: 180,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_4",
+      x: 180,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_5",
+      x: 450,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "yellow" as const,
+    },
+    {
+      id: "arrow_6",
+      x: 450,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_7",
+      x: 450,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_8",
+      x: 450,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "purple" as const,
+    },
+    {
+      id: "arrow_9",
+      x: 720,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_10",
+      x: 720,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_11",
+      x: 720,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_12",
+      x: 720,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_13",
+      x: 990,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_14",
+      x: 990,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "purple" as const,
+    },
+    {
+      id: "arrow_15",
+      x: 1260,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_16",
+      x: 1260,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_17",
+      x: 1260,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_18",
+      x: 1260,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_19",
+      x: 1530,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_20",
+      x: 1530,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_21",
+      x: 1530,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_22",
+      x: 1530,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_23",
+      x: 1800,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_24",
+      x: 1800,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_25",
+      x: 1800,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_26",
+      x: 1800,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_27",
+      x: 2070,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_28",
+      x: 2070,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_29",
+      x: 2070,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_30",
+      x: 2070,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_31",
+      x: 2340,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_32",
+      x: 2340,
+      y: 360,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_33",
+      x: 2340,
+      y: 440,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_34",
+      x: 2340,
+      y: 520,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "blue" as const,
+    },
+    {
+      id: "arrow_35",
+      x: 2610,
+      y: 280,
+      width: 250,
+      height: 60,
+      rotation: 0,
+      color: "purple" as const,
+    },
   ]);
 
   // Vertical arrows - narrow width, variable height, positioned near edges
   // Each arrow has a 'screen' property to track which view it belongs to
   // Rotation is stored in degrees (0, 90, 180, 270)
-  const [verticalArrows, setVerticalArrows] = useState<Array<{
-    id: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    screen: string;
-    rotation: number;
-  }>>([
-    { id: 'v_arrow_1', x: 50, y: 200, width: 24, height: 150, screen: 'L1 – System Overview', rotation: 0 },
+  const [verticalArrows, setVerticalArrows] = useState<
+    Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      screen: string;
+      rotation: number;
+    }>
+  >([
+    {
+      id: "v_arrow_1",
+      x: 50,
+      y: 200,
+      width: 24,
+      height: 150,
+      screen: "L1 – System Overview",
+      rotation: 0,
+    },
   ]);
 
   // Vertical lines (without arrowheads) - narrow width, variable height
   // Each line has a 'screen' property to track which view it belongs to
-  const [verticalLines, setVerticalLines] = useState<Array<{
-    id: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    screen: string;
-  }>>([]);
+  const [verticalLines, setVerticalLines] = useState<
+    Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      screen: string;
+    }>
+  >([]);
 
   const [isLocked, setIsLocked] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedScreen, setSelectedScreen] = useState(() => {
-    const saved = localStorage.getItem('deltaV_selectedScreen');
-    return saved || "L1 – System Overview";
+    const searchParams = new URLSearchParams(window.location.search);
+    const screenParam = searchParams.get("screen");
+    const saved = localStorage.getItem("deltaV_selectedScreen");
+    return screenParam || saved || "L1 – System Overview";
   });
+  const [highlightedBlock, setHighlightedBlock] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState("Static");
-  const [handControllerModelockOverride, setHandControllerModelockOverride] = useState(false);
-  const [jugValveHandControllerModelockOverride, setJugValveHandControllerModelockOverride] = useState(false);
-  const [whbHandControllerModelockOverride, setWhbHandControllerModelockOverride] = useState(false);
+  const [handControllerModelockOverride, setHandControllerModelockOverride] =
+    useState(false);
+  const [
+    jugValveHandControllerModelockOverride,
+    setJugValveHandControllerModelockOverride,
+  ] = useState(false);
+  const [
+    whbHandControllerModelockOverride,
+    setWhbHandControllerModelockOverride,
+  ] = useState(false);
 
   // Derive instBlockFilter from URL query param ?filter=all|controllers|sensors
   const searchString = useSearch();
@@ -316,7 +628,7 @@ const HomeScreen = () => {
 
   // Save selected screen to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('deltaV_selectedScreen', selectedScreen);
+    localStorage.setItem("deltaV_selectedScreen", selectedScreen);
   }, [selectedScreen]);
 
   // Dynamic simulation state
@@ -330,7 +642,7 @@ const HomeScreen = () => {
     let interval: NodeJS.Timeout | null = null;
     if (dynamicRunning) {
       interval = setInterval(() => {
-        setDynamicElapsed(prev => prev + (dynamicDt * dynamicSpeed));
+        setDynamicElapsed((prev) => prev + dynamicDt * dynamicSpeed);
       }, dynamicDt * 1000);
     }
     return () => {
@@ -348,7 +660,8 @@ const HomeScreen = () => {
 
   // Static simulation state
   const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
-  const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
+  const [staticSimulationResults, setStaticSimulationResults] =
+    useState<any>(null);
 
   // Ref that L1SystemOverview populates with its startStaticSimulation function
   const l1SimTriggerRef = useRef<(() => void) | null>(null);
@@ -373,13 +686,12 @@ const HomeScreen = () => {
 
     setStaticSimulationRunning(true);
     try {
-      
       // 1. Fetch PV case data
-      const pvResponse = await fetch('/api/process-variables');
+      const pvResponse = await fetch("/api/process-variables");
       const pvData = await pvResponse.json();
 
       // 2. Fetch SP case data (for setpoint values)
-      const spResponse = await fetch('/api/setpoint-variables');
+      const spResponse = await fetch("/api/setpoint-variables");
       const spData = await spResponse.json();
 
       // 3. Extract compressor inputs from selected case or defaults
@@ -391,17 +703,24 @@ const HomeScreen = () => {
       let inletPressureInwc = -3.0; // Default in wc
 
       // Helper function to extract numeric value from case data
-      const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
+      const extractCaseValue = (
+        variables: any[],
+        tagPatterns: string[],
+        caseId: string,
+      ): number | null => {
         if (!variables || !caseId) return null;
         for (const pattern of tagPatterns) {
-          const variable = variables.find((v: any) =>
-            v.tag === pattern ||
-            v.tagNumber === pattern ||
-            v.tag?.includes(pattern) ||
-            v.description?.toLowerCase().includes(pattern.toLowerCase())
+          const variable = variables.find(
+            (v: any) =>
+              v.tag === pattern ||
+              v.tagNumber === pattern ||
+              v.tag?.includes(pattern) ||
+              v.description?.toLowerCase().includes(pattern.toLowerCase()),
           );
           if (variable?.cases?.[caseId]) {
-            const val = parseFloat(String(variable.cases[caseId]).replace(/[^0-9.-]/g, ''));
+            const val = parseFloat(
+              String(variable.cases[caseId]).replace(/[^0-9.-]/g, ""),
+            );
             if (!isNaN(val)) return val;
           }
         }
@@ -411,63 +730,95 @@ const HomeScreen = () => {
       // Extract values from PV case data
       if (pvData?.variables && activePVCaseId) {
         // Main compressor RPM (1540-H-4030)
-        const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor'], activePVCaseId);
+        const rpmVal = extractCaseValue(
+          pvData.variables,
+          ["1540-H-4030", "main_comp", "compressor"],
+          activePVCaseId,
+        );
         if (rpmVal !== null) rpmPercent = rpmVal;
 
         // DT inlet temperature
-        const tempVal = extractCaseValue(pvData.variables, ['dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
+        const tempVal = extractCaseValue(
+          pvData.variables,
+          ["dt_inlet_temp", "TI-4", "inlet temp"],
+          activePVCaseId,
+        );
         if (tempVal !== null) inletTemp = tempVal;
 
         // Barometric pressure (ambient_pressure)
-        const baroVal = extractCaseValue(pvData.variables, ['ambient_pressure', 'barometric'], activePVCaseId);
+        const baroVal = extractCaseValue(
+          pvData.variables,
+          ["ambient_pressure", "barometric"],
+          activePVCaseId,
+        );
         if (baroVal !== null) barometricPressure = baroVal;
 
         // Inlet pressure (pass_1_ash_dp or similar)
-        const pressVal = extractCaseValue(pvData.variables, ['pass_1_ash_dp', 'inlet_pressure', 'inlet press'], activePVCaseId);
+        const pressVal = extractCaseValue(
+          pvData.variables,
+          ["pass_1_ash_dp", "inlet_pressure", "inlet press"],
+          activePVCaseId,
+        );
         if (pressVal !== null) inletPressureInwc = pressVal;
 
         // Plant condition (if stored in PV data)
-        const plantVar = pvData.variables.find((v: any) =>
-          v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
+        const plantVar = pvData.variables.find(
+          (v: any) =>
+            v.tag?.includes("plant_condition") ||
+            v.description?.toLowerCase().includes("plant condition"),
         );
         if (plantVar?.cases?.[activePVCaseId]) {
           const val = String(plantVar.cases[activePVCaseId]).toLowerCase();
-          if (val === 'dirty' || val === 'clean') plantCondition = val;
+          if (val === "dirty" || val === "clean") plantCondition = val;
         }
       }
 
       // Also check SP data for setpoint overrides
       if (spData?.variables && activePVCaseId) {
         // Main compressor SP
-        const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
+        const rpmSpVal = extractCaseValue(
+          spData.variables,
+          ["main_comp_speed_sp", "1540-H-4030"],
+          activePVCaseId,
+        );
         if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal; // Use SP if PV not found
 
         // DT inlet temp SP
-        const tempSpVal = extractCaseValue(spData.variables, ['dt_inlet_temp_sp'], activePVCaseId);
+        const tempSpVal = extractCaseValue(
+          spData.variables,
+          ["dt_inlet_temp_sp"],
+          activePVCaseId,
+        );
         if (tempSpVal !== null && inletTemp === 150) inletTemp = tempSpVal; // Use SP if PV not found
       }
 
-      console.log('Static simulation inputs:', { rpmPercent, inletTemp, barometricPressure, plantCondition, inletPressureInwc });
+      console.log("Static simulation inputs:", {
+        rpmPercent,
+        inletTemp,
+        barometricPressure,
+        plantCondition,
+        inletPressureInwc,
+      });
 
       // 4. Call compressor simulation API
-      const simResponse = await fetch('/api/compressor-simulation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const simResponse = await fetch("/api/compressor-simulation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rpm_percent: rpmPercent,
           temp: inletTemp,
           barometricPressure: barometricPressure,
           plant_condition: plantCondition,
-          inlet_pressure_inwc: inletPressureInwc
-        })
+          inlet_pressure_inwc: inletPressureInwc,
+        }),
       });
 
       if (!simResponse.ok) {
-        throw new Error('Compressor simulation failed');
+        throw new Error("Compressor simulation failed");
       }
 
       const simResponseData = await simResponse.json();
-      console.log('Static simulation results:', simResponseData);
+      console.log("Static simulation results:", simResponseData);
 
       // Extract the results from the nested structure
       const simResults = simResponseData.results || simResponseData;
@@ -478,20 +829,22 @@ const HomeScreen = () => {
       // In Static mode: PV = SP = OUT = same value
       if (simResults.compressor_speed !== undefined) {
         const speedPercent = (simResults.compressor_speed / 4505) * 100;
-        console.log('Setting static case value for 1540-H-4030:', speedPercent);
+        console.log("Setting static case value for 1540-H-4030:", speedPercent);
         setLoadedCaseValue1540H4030(speedPercent);
       }
 
       toast({
         title: "Static Simulation Complete",
-        description: `Compressor: ${simResults.compressor_speed?.toFixed(0) || 'N/A'} RPM, Outlet: ${simResults.outlet_temp_F?.toFixed(1) || 'N/A'}°F, Power: ${simResults.brake_power_hp?.toFixed(1) || 'N/A'} HP`,
+        description: `Compressor: ${simResults.compressor_speed?.toFixed(0) || "N/A"} RPM, Outlet: ${simResults.outlet_temp_F?.toFixed(1) || "N/A"}°F, Power: ${simResults.brake_power_hp?.toFixed(1) || "N/A"} HP`,
       });
-
     } catch (error) {
-      console.error('Static simulation error:', error);
+      console.error("Static simulation error:", error);
       toast({
         title: "Simulation Error",
-        description: error instanceof Error ? error.message : "Failed to run static simulation",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to run static simulation",
         variant: "destructive",
       });
     } finally {
@@ -502,8 +855,8 @@ const HomeScreen = () => {
   // Toggle fullscreen mode
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.log('Fullscreen request failed:', err);
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.log("Fullscreen request failed:", err);
       });
     } else {
       document.exitFullscreen();
@@ -515,9 +868,9 @@ const HomeScreen = () => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -532,111 +885,229 @@ const HomeScreen = () => {
   // Track current search params to detect changes
   const [currentSearch, setCurrentSearch] = useState(window.location.search);
 
-  // Helper function to read mode from URL
-  const readModeFromUrl = useCallback(() => {
+  // Helper function to read mode and screen from URL
+  const readUrlParams = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const modeParam = searchParams.get('mode');
+    const modeParam = searchParams.get("mode");
     if (modeParam) {
-      const modeMatch = modeOptions.find(m => m.id.toLowerCase() === modeParam.toLowerCase());
+      const modeMatch = modeOptions.find(
+        (m) => m.id.toLowerCase() === modeParam.toLowerCase(),
+      );
       if (modeMatch) {
         setSelectedMode(modeMatch.label);
       }
     }
+
+    const screenParam = searchParams.get("screen");
+    if (
+      screenParam &&
+      homescreenOptions.some(
+        (m) => m.label === screenParam || m.id === screenParam,
+      )
+    ) {
+      setSelectedScreen(screenParam);
+    }
+
+    const highlightParam = searchParams.get("highlight");
+    if (highlightParam) {
+      setHighlightedBlock(highlightParam);
+      setTimeout(() => setHighlightedBlock(null), 4000);
+    }
   }, []);
+
+  const getHighlightClass = (id: string) => {
+    if (highlightedBlock === id) {
+      return "ring-4 ring-purple-600 ring-offset-2 ring-opacity-100 shadow-[0_0_20px_rgba(250,204,21,0.8)] transition-all duration-300 z-50 rounded-md";
+    }
+    return "transition-all duration-500";
+  };
 
   // Read mode on mount and when location/search changes
   useEffect(() => {
-    readModeFromUrl();
+    readUrlParams();
 
     // Listen for popstate events (browser back/forward)
     const handlePopState = () => {
       setCurrentSearch(window.location.search);
-      readModeFromUrl();
+      readUrlParams();
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [readModeFromUrl]);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [readUrlParams]);
 
   // Check for search param changes on every location change
   useEffect(() => {
     if (window.location.search !== currentSearch) {
       setCurrentSearch(window.location.search);
-      readModeFromUrl();
+      readUrlParams();
     }
-  }, [location, currentSearch, readModeFromUrl]);
+  }, [location, currentSearch, readUrlParams]);
   const [isVFDModalOpen, setIsVFDModalOpen] = useState(false);
   const [isSulfurFlowModalOpen, setIsSulfurFlowModalOpen] = useState(false);
-  const [sulfurFlowModelockOverride, setSulfurFlowModelockOverride] = useState(false);
-  const [sulfurFlowRoutRcas, setSulfurFlowRoutRcas] = useState<'DA' | 'ROUT' | 'RCAS'>('DA');
+  const [sulfurFlowModelockOverride, setSulfurFlowModelockOverride] =
+    useState(false);
+  const [sulfurFlowRoutRcas, setSulfurFlowRoutRcas] = useState<
+    "DA" | "ROUT" | "RCAS"
+  >("DA");
   const [sulfurFlowBypass, setSulfurFlowBypass] = useState(false);
   const [isTempSensorModalOpen, setIsTempSensorModalOpen] = useState(false);
-  const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false);
-  const [isJugValveHandControllerModalOpen, setIsJugValveHandControllerModalOpen] = useState(false);
-  const [isWhbHandControllerModalOpen, setIsWhbHandControllerModalOpen] = useState(false);
+  const [isHandControllerModalOpen, setIsHandControllerModalOpen] =
+    useState(false);
+  const [
+    isJugValveHandControllerModalOpen,
+    setIsJugValveHandControllerModalOpen,
+  ] = useState(false);
+  const [isWhbHandControllerModalOpen, setIsWhbHandControllerModalOpen] =
+    useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Sulfur Flow Controller position/size
-  const [sulfurFlowPosition, setSulfurFlowPosition] = useState({ x: 720, y: 100 });
-  const [sulfurFlowSize, setSulfurFlowSize] = useState({ width: 220, height: 200 });
+  const [sulfurFlowPosition, setSulfurFlowPosition] = useState({
+    x: 720,
+    y: 100,
+  });
+  const [sulfurFlowSize, setSulfurFlowSize] = useState({
+    width: 220,
+    height: 200,
+  });
 
   // Sulfur Flow Control Valve position/size
-  const [sulfurValvePosition, setSulfurValvePosition] = useState({ x: 950, y: 100 });
-  const [sulfurValveSize, setSulfurValveSize] = useState({ width: 120, height: 160 });
+  const [sulfurValvePosition, setSulfurValvePosition] = useState({
+    x: 950,
+    y: 100,
+  });
+  const [sulfurValveSize, setSulfurValveSize] = useState({
+    width: 120,
+    height: 160,
+  });
 
   // Jug Valve position/size
   const [jugValvePosition, setJugValvePosition] = useState({ x: 1080, y: 100 });
   const [jugValveSize, setJugValveSize] = useState({ width: 120, height: 160 });
 
   // Jug Valve Positioner position/size
-  const [jugValvePositionerPosition, setJugValvePositionerPosition] = useState({ x: 1210, y: 100 });
-  const [jugValvePositionerSize, setJugValvePositionerSize] = useState({ width: 120, height: 160 });
+  const [jugValvePositionerPosition, setJugValvePositionerPosition] = useState({
+    x: 1210,
+    y: 100,
+  });
+  const [jugValvePositionerSize, setJugValvePositionerSize] = useState({
+    width: 120,
+    height: 160,
+  });
 
   // Hand Controller 1540-H-4030 position/size
-  const [handControllerPosition, setHandControllerPosition] = useState({ x: 1340, y: 100 });
-  const [handControllerSize, setHandControllerSize] = useState({ width: 220, height: 200 });
+  const [handControllerPosition, setHandControllerPosition] = useState({
+    x: 1340,
+    y: 100,
+  });
+  const [handControllerSize, setHandControllerSize] = useState({
+    width: 220,
+    height: 200,
+  });
 
   // WHB Outlet dP Hand Controller 1540-H-4283 position/size
-  const [whbHandControllerPosition, setWhbHandControllerPosition] = useState({ x: 850, y: 400 });
-  const [whbHandControllerSize, setWhbHandControllerSize] = useState({ width: 220, height: 200 });
+  const [whbHandControllerPosition, setWhbHandControllerPosition] = useState({
+    x: 850,
+    y: 400,
+  });
+  const [whbHandControllerSize, setWhbHandControllerSize] = useState({
+    width: 220,
+    height: 200,
+  });
 
   // Jug Valve Hand Controller 1540-H-4282 position/size
-  const [jugValveHandControllerPosition, setJugValveHandControllerPosition] = useState({ x: 1100, y: 400 });
-  const [jugValveHandControllerSize, setJugValveHandControllerSize] = useState({ width: 220, height: 200 });
+  const [jugValveHandControllerPosition, setJugValveHandControllerPosition] =
+    useState({ x: 1100, y: 400 });
+  const [jugValveHandControllerSize, setJugValveHandControllerSize] = useState({
+    width: 220,
+    height: 200,
+  });
 
   // Temperature Sensor 1520-TI-5821 position/size
-  const [tempSensorPosition, setTempSensorPosition] = useState({ x: 50, y: 400 });
-  const [tempSensorSize, setTempSensorSize] = useState({ width: 180, height: 120 });
+  const [tempSensorPosition, setTempSensorPosition] = useState({
+    x: 50,
+    y: 400,
+  });
+  const [tempSensorSize, setTempSensorSize] = useState({
+    width: 180,
+    height: 120,
+  });
 
   // Temperature Sensor 1540-TI-4200A position/size
-  const [tempSensor4200APosition, setTempSensor4200APosition] = useState({ x: 250, y: 400 });
-  const [tempSensor4200ASize, setTempSensor4200ASize] = useState({ width: 180, height: 120 });
-  const [isTempSensor4200AModalOpen, setIsTempSensor4200AModalOpen] = useState(false);
+  const [tempSensor4200APosition, setTempSensor4200APosition] = useState({
+    x: 250,
+    y: 400,
+  });
+  const [tempSensor4200ASize, setTempSensor4200ASize] = useState({
+    width: 180,
+    height: 120,
+  });
+  const [isTempSensor4200AModalOpen, setIsTempSensor4200AModalOpen] =
+    useState(false);
 
   // Temperature Sensor 1540-TI-4200B position/size
-  const [tempSensor4200BPosition, setTempSensor4200BPosition] = useState({ x: 450, y: 400 });
-  const [tempSensor4200BSize, setTempSensor4200BSize] = useState({ width: 180, height: 120 });
-  const [isTempSensor4200BModalOpen, setIsTempSensor4200BModalOpen] = useState(false);
+  const [tempSensor4200BPosition, setTempSensor4200BPosition] = useState({
+    x: 450,
+    y: 400,
+  });
+  const [tempSensor4200BSize, setTempSensor4200BSize] = useState({
+    width: 180,
+    height: 120,
+  });
+  const [isTempSensor4200BModalOpen, setIsTempSensor4200BModalOpen] =
+    useState(false);
 
   // Temperature Sensor 1540-TI-4200C position/size
-  const [tempSensor4200CPosition, setTempSensor4200CPosition] = useState({ x: 650, y: 400 });
-  const [tempSensor4200CSize, setTempSensor4200CSize] = useState({ width: 180, height: 120 });
-  const [isTempSensor4200CModalOpen, setIsTempSensor4200CModalOpen] = useState(false);
+  const [tempSensor4200CPosition, setTempSensor4200CPosition] = useState({
+    x: 650,
+    y: 400,
+  });
+  const [tempSensor4200CSize, setTempSensor4200CSize] = useState({
+    width: 180,
+    height: 120,
+  });
+  const [isTempSensor4200CModalOpen, setIsTempSensor4200CModalOpen] =
+    useState(false);
 
   // Dashed Line 1 position/size
-  const [dashedLine1Position, setDashedLine1Position] = useState({ x: 100, y: 300 });
-  const [dashedLine1Size, setDashedLine1Size] = useState({ width: 200, height: 4 });
+  const [dashedLine1Position, setDashedLine1Position] = useState({
+    x: 100,
+    y: 300,
+  });
+  const [dashedLine1Size, setDashedLine1Size] = useState({
+    width: 200,
+    height: 4,
+  });
 
   // Dashed Line 2 position/size
-  const [dashedLine2Position, setDashedLine2Position] = useState({ x: 100, y: 450 });
-  const [dashedLine2Size, setDashedLine2Size] = useState({ width: 200, height: 4 });
+  const [dashedLine2Position, setDashedLine2Position] = useState({
+    x: 100,
+    y: 450,
+  });
+  const [dashedLine2Size, setDashedLine2Size] = useState({
+    width: 200,
+    height: 4,
+  });
 
   // Dashed Line 3 position/size
-  const [dashedLine3Position, setDashedLine3Position] = useState({ x: 100, y: 600 });
-  const [dashedLine3Size, setDashedLine3Size] = useState({ width: 200, height: 4 });
+  const [dashedLine3Position, setDashedLine3Position] = useState({
+    x: 100,
+    y: 600,
+  });
+  const [dashedLine3Size, setDashedLine3Size] = useState({
+    width: 200,
+    height: 4,
+  });
 
   // Dashed Line 4 position/size
-  const [dashedLine4Position, setDashedLine4Position] = useState({ x: 100, y: 750 });
-  const [dashedLine4Size, setDashedLine4Size] = useState({ width: 200, height: 4 });
+  const [dashedLine4Position, setDashedLine4Position] = useState({
+    x: 100,
+    y: 750,
+  });
+  const [dashedLine4Size, setDashedLine4Size] = useState({
+    width: 200,
+    height: 4,
+  });
 
   // Dashed Line Rotations
   const [dashedLine1Rotation, setDashedLine1Rotation] = useState(0);
@@ -645,8 +1116,14 @@ const HomeScreen = () => {
   const [dashedLine4Rotation, setDashedLine4Rotation] = useState(0);
 
   // Converter 4 position/size
-  const [converter4Position, setConverter4Position] = useState({ x: 1400, y: 300 });
-  const [converter4Size, setConverter4Size] = useState({ width: 150, height: 400 });
+  const [converter4Position, setConverter4Position] = useState({
+    x: 1400,
+    y: 300,
+  });
+  const [converter4Size, setConverter4Size] = useState({
+    width: 150,
+    height: 400,
+  });
 
   // DT2 (Drying Tower) position/size
   const [dt2Position, setDt2Position] = useState({ x: 1200, y: 300 });
@@ -685,133 +1162,335 @@ const HomeScreen = () => {
   const [filterSize, setFilterSize] = useState({ width: 80, height: 120 });
 
   // Turbo Generator position/size
-  const [turboGeneratorPosition, setTurboGeneratorPosition] = useState({ x: 1700, y: 100 });
-  const [turboGeneratorSize, setTurboGeneratorSize] = useState({ width: 220, height: 180 });
+  const [turboGeneratorPosition, setTurboGeneratorPosition] = useState({
+    x: 1700,
+    y: 100,
+  });
+  const [turboGeneratorSize, setTurboGeneratorSize] = useState({
+    width: 220,
+    height: 180,
+  });
 
   // L4-Converter: Converter 4 position/size
-  const [converter4L4Position, setConverter4L4Position] = useState({ x: 200, y: 100 });
-  const [converter4L4Size, setConverter4L4Size] = useState({ width: 300, height: 800 });
+  const [converter4L4Position, setConverter4L4Position] = useState({
+    x: 200,
+    y: 100,
+  });
+  const [converter4L4Size, setConverter4L4Size] = useState({
+    width: 300,
+    height: 800,
+  });
   // L4-Converter: 1540-TI-4825 Primary Faceplate position/size
-  const [faceplate4825L4Position, setFaceplate4825L4Position] = useState({ x: 600, y: 150 });
-  const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate4825L4Position, setFaceplate4825L4Position] = useState({
+    x: 600,
+    y: 150,
+  });
+  const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({
+    width: 160,
+    height: 240,
+  });
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
 
   // L2 Hand Controller 1540-H-4030 position and size
-  const [handControllerL2Position, setHandControllerL2Position] = useState({ x: 800, y: 200 });
-  const [handControllerL2Size, setHandControllerL2Size] = useState({ width: 220, height: 200 });
+  const [handControllerL2Position, setHandControllerL2Position] = useState({
+    x: 800,
+    y: 200,
+  });
+  const [handControllerL2Size, setHandControllerL2Size] = useState({
+    width: 220,
+    height: 200,
+  });
   // L2 VFD-001 (Variable Frequency Drive) position and size
   const [vfdL2Position, setVfdL2Position] = useState({ x: 50, y: 500 });
   const [vfdL2Size, setVfdL2Size] = useState({ width: 150, height: 160 });
   // L2 Sulfur Flow Controller 1530-F-2602 position and size
-  const [sulfurFlowL2Position, setSulfurFlowL2Position] = useState({ x: 250, y: 500 });
-  const [sulfurFlowL2Size, setSulfurFlowL2Size] = useState({ width: 180, height: 180 });
+  const [sulfurFlowL2Position, setSulfurFlowL2Position] = useState({
+    x: 250,
+    y: 500,
+  });
+  const [sulfurFlowL2Size, setSulfurFlowL2Size] = useState({
+    width: 180,
+    height: 180,
+  });
   // L2 Sulfur Flow Control Valve 1540-FCV-2602 position and size
-  const [sulfurValveL2Position, setSulfurValveL2Position] = useState({ x: 450, y: 500 });
-  const [sulfurValveL2Size, setSulfurValveL2Size] = useState({ width: 100, height: 140 });
+  const [sulfurValveL2Position, setSulfurValveL2Position] = useState({
+    x: 450,
+    y: 500,
+  });
+  const [sulfurValveL2Size, setSulfurValveL2Size] = useState({
+    width: 100,
+    height: 140,
+  });
   // L2 Jug Valve Hand Controller 1540-H-4282 position and size
-  const [jugValveHandControllerL2Position, setJugValveHandControllerL2Position] = useState({ x: 600, y: 500 });
-  const [jugValveHandControllerL2Size, setJugValveHandControllerL2Size] = useState({ width: 180, height: 180 });
+  const [
+    jugValveHandControllerL2Position,
+    setJugValveHandControllerL2Position,
+  ] = useState({ x: 600, y: 500 });
+  const [jugValveHandControllerL2Size, setJugValveHandControllerL2Size] =
+    useState({ width: 180, height: 180 });
   // L2 Jug Valve HCV 1540-HCV-4282 position and size
-  const [jugValveHcvL2Position, setJugValveHcvL2Position] = useState({ x: 800, y: 500 });
-  const [jugValveHcvL2Size, setJugValveHcvL2Size] = useState({ width: 100, height: 140 });
+  const [jugValveHcvL2Position, setJugValveHcvL2Position] = useState({
+    x: 800,
+    y: 500,
+  });
+  const [jugValveHcvL2Size, setJugValveHcvL2Size] = useState({
+    width: 100,
+    height: 140,
+  });
   // L2 Yellow Arrow position and size
-  const [yellowArrowL2Position, setYellowArrowL2Position] = useState({ x: 400, y: 700 });
-  const [yellowArrowL2Size, setYellowArrowL2Size] = useState({ width: 460, height: 60 });
+  const [yellowArrowL2Position, setYellowArrowL2Position] = useState({
+    x: 400,
+    y: 700,
+  });
+  const [yellowArrowL2Size, setYellowArrowL2Size] = useState({
+    width: 460,
+    height: 60,
+  });
   // L2 Cyan Arrow position and size
-  const [cyanArrowL2Position, setCyanArrowL2Position] = useState({ x: 400, y: 800 });
-  const [cyanArrowL2Size, setCyanArrowL2Size] = useState({ width: 540, height: 60 });
+  const [cyanArrowL2Position, setCyanArrowL2Position] = useState({
+    x: 400,
+    y: 800,
+  });
+  const [cyanArrowL2Size, setCyanArrowL2Size] = useState({
+    width: 540,
+    height: 60,
+  });
   // L2 Sulfur Furnace 1540-ZM-001 position and size
-  const [sulfurFurnaceL2Position, setSulfurFurnaceL2Position] = useState({ x: 550, y: 600 });
-  const [sulfurFurnaceL2Size, setSulfurFurnaceL2Size] = useState({ width: 300, height: 200 });
+  const [sulfurFurnaceL2Position, setSulfurFurnaceL2Position] = useState({
+    x: 550,
+    y: 600,
+  });
+  const [sulfurFurnaceL2Size, setSulfurFurnaceL2Size] = useState({
+    width: 300,
+    height: 200,
+  });
   // L2 Waste Heat Boiler 1540-HX-001 position and size
-  const [wasteHeatBoilerL2Position, setWasteHeatBoilerL2Position] = useState({ x: 850, y: 600 });
-  const [wasteHeatBoilerL2Size, setWasteHeatBoilerL2Size] = useState({ width: 350, height: 200 });
+  const [wasteHeatBoilerL2Position, setWasteHeatBoilerL2Position] = useState({
+    x: 850,
+    y: 600,
+  });
+  const [wasteHeatBoilerL2Size, setWasteHeatBoilerL2Size] = useState({
+    width: 350,
+    height: 200,
+  });
   // L2 Yellow Horizontal Arrow position and size
-  const [yellowHorizArrowL2Position, setYellowHorizArrowL2Position] = useState({ x: 350, y: 950 });
-  const [yellowHorizArrowL2Size, setYellowHorizArrowL2Size] = useState({ width: 200, height: 30 });
+  const [yellowHorizArrowL2Position, setYellowHorizArrowL2Position] = useState({
+    x: 350,
+    y: 950,
+  });
+  const [yellowHorizArrowL2Size, setYellowHorizArrowL2Size] = useState({
+    width: 200,
+    height: 30,
+  });
   // L2 Cyan Long Arrow position and size
-  const [cyanLongArrowL2Position, setCyanLongArrowL2Position] = useState({ x: 500, y: 500 });
-  const [cyanLongArrowL2Size, setCyanLongArrowL2Size] = useState({ width: 400, height: 40 });
+  const [cyanLongArrowL2Position, setCyanLongArrowL2Position] = useState({
+    x: 500,
+    y: 500,
+  });
+  const [cyanLongArrowL2Size, setCyanLongArrowL2Size] = useState({
+    width: 400,
+    height: 40,
+  });
   // L2 Cyan Up Arrow position and size
-  const [cyanUpArrowL2Position, setCyanUpArrowL2Position] = useState({ x: 600, y: 600 });
-  const [cyanUpArrowL2Size, setCyanUpArrowL2Size] = useState({ width: 40, height: 120 });
+  const [cyanUpArrowL2Position, setCyanUpArrowL2Position] = useState({
+    x: 600,
+    y: 600,
+  });
+  const [cyanUpArrowL2Size, setCyanUpArrowL2Size] = useState({
+    width: 40,
+    height: 120,
+  });
   // L2 Cyan Left Arrow position and size
-  const [cyanLeftArrowL2Position, setCyanLeftArrowL2Position] = useState({ x: 700, y: 700 });
-  const [cyanLeftArrowL2Size, setCyanLeftArrowL2Size] = useState({ width: 100, height: 40 });
+  const [cyanLeftArrowL2Position, setCyanLeftArrowL2Position] = useState({
+    x: 700,
+    y: 700,
+  });
+  const [cyanLeftArrowL2Size, setCyanLeftArrowL2Size] = useState({
+    width: 100,
+    height: 40,
+  });
   // L2 Cyan Long Left Arrow position and size
-  const [cyanLongLeftArrowL2Position, setCyanLongLeftArrowL2Position] = useState({ x: 800, y: 800 });
-  const [cyanLongLeftArrowL2Size, setCyanLongLeftArrowL2Size] = useState({ width: 400, height: 40 });
+  const [cyanLongLeftArrowL2Position, setCyanLongLeftArrowL2Position] =
+    useState({ x: 800, y: 800 });
+  const [cyanLongLeftArrowL2Size, setCyanLongLeftArrowL2Size] = useState({
+    width: 400,
+    height: 40,
+  });
   // L2 Cyan Up Arrow 2 position and size
-  const [cyanUpArrow2L2Position, setCyanUpArrow2L2Position] = useState({ x: 900, y: 900 });
-  const [cyanUpArrow2L2Size, setCyanUpArrow2L2Size] = useState({ width: 40, height: 120 });
+  const [cyanUpArrow2L2Position, setCyanUpArrow2L2Position] = useState({
+    x: 900,
+    y: 900,
+  });
+  const [cyanUpArrow2L2Size, setCyanUpArrow2L2Size] = useState({
+    width: 40,
+    height: 120,
+  });
   // L2 Cyan Up Arrow 3 position and size
-  const [cyanUpArrow3L2Position, setCyanUpArrow3L2Position] = useState({ x: 950, y: 900 });
-  const [cyanUpArrow3L2Size, setCyanUpArrow3L2Size] = useState({ width: 40, height: 120 });
+  const [cyanUpArrow3L2Position, setCyanUpArrow3L2Position] = useState({
+    x: 950,
+    y: 900,
+  });
+  const [cyanUpArrow3L2Size, setCyanUpArrow3L2Size] = useState({
+    width: 40,
+    height: 120,
+  });
   // L2 Cyan Down Arrow position and size
-  const [cyanDownArrowL2Position, setCyanDownArrowL2Position] = useState({ x: 1000, y: 900 });
-  const [cyanDownArrowL2Size, setCyanDownArrowL2Size] = useState({ width: 40, height: 200 });
+  const [cyanDownArrowL2Position, setCyanDownArrowL2Position] = useState({
+    x: 1000,
+    y: 900,
+  });
+  const [cyanDownArrowL2Size, setCyanDownArrowL2Size] = useState({
+    width: 40,
+    height: 200,
+  });
   // L2 Metal Tank position and size
-  const [metalTankL2Position, setMetalTankL2Position] = useState({ x: 1050, y: 800 });
-  const [metalTankL2Size, setMetalTankL2Size] = useState({ width: 300, height: 180 });
+  const [metalTankL2Position, setMetalTankL2Position] = useState({
+    x: 1050,
+    y: 800,
+  });
+  const [metalTankL2Size, setMetalTankL2Size] = useState({
+    width: 300,
+    height: 180,
+  });
   // L2 Gray Yellow Arrow position and size
-  const [grayYellowArrowL2Position, setGrayYellowArrowL2Position] = useState({ x: 1100, y: 700 });
-  const [grayYellowArrowL2Size, setGrayYellowArrowL2Size] = useState({ width: 300, height: 50 });
+  const [grayYellowArrowL2Position, setGrayYellowArrowL2Position] = useState({
+    x: 1100,
+    y: 700,
+  });
+  const [grayYellowArrowL2Size, setGrayYellowArrowL2Size] = useState({
+    width: 300,
+    height: 50,
+  });
   // L2 Cyan Horizontal Arrow 2 position and size
-  const [cyanHorizArrow2L2Position, setCyanHorizArrow2L2Position] = useState({ x: 1150, y: 750 });
-  const [cyanHorizArrow2L2Size, setCyanHorizArrow2L2Size] = useState({ width: 200, height: 30 });
+  const [cyanHorizArrow2L2Position, setCyanHorizArrow2L2Position] = useState({
+    x: 1150,
+    y: 750,
+  });
+  const [cyanHorizArrow2L2Size, setCyanHorizArrow2L2Size] = useState({
+    width: 200,
+    height: 30,
+  });
   // L2 Gray Arrow with Cyan Line position and size
-  const [grayArrowCyanLineL2Position, setGrayArrowCyanLineL2Position] = useState({ x: 1200, y: 600 });
-  const [grayArrowCyanLineL2Size, setGrayArrowCyanLineL2Size] = useState({ width: 400, height: 50 });
+  const [grayArrowCyanLineL2Position, setGrayArrowCyanLineL2Position] =
+    useState({ x: 1200, y: 600 });
+  const [grayArrowCyanLineL2Size, setGrayArrowCyanLineL2Size] = useState({
+    width: 400,
+    height: 50,
+  });
   // L2 Cyan Thin Line 1 position and size
-  const [cyanThinLine1L2Position, setCyanThinLine1L2Position] = useState({ x: 1250, y: 650 });
-  const [cyanThinLine1L2Size, setCyanThinLine1L2Size] = useState({ width: 300, height: 10 });
+  const [cyanThinLine1L2Position, setCyanThinLine1L2Position] = useState({
+    x: 1250,
+    y: 650,
+  });
+  const [cyanThinLine1L2Size, setCyanThinLine1L2Size] = useState({
+    width: 300,
+    height: 10,
+  });
   // L2 Cyan Thin Line 2 position and size
-  const [cyanThinLine2L2Position, setCyanThinLine2L2Position] = useState({ x: 1300, y: 700 });
-  const [cyanThinLine2L2Size, setCyanThinLine2L2Size] = useState({ width: 300, height: 10 });
+  const [cyanThinLine2L2Position, setCyanThinLine2L2Position] = useState({
+    x: 1300,
+    y: 700,
+  });
+  const [cyanThinLine2L2Size, setCyanThinLine2L2Size] = useState({
+    width: 300,
+    height: 10,
+  });
   // L2 Cyan Vertical Line 1 position and size
-  const [cyanVertLine1L2Position, setCyanVertLine1L2Position] = useState({ x: 1350, y: 500 });
-  const [cyanVertLine1L2Size, setCyanVertLine1L2Size] = useState({ width: 10, height: 150 });
+  const [cyanVertLine1L2Position, setCyanVertLine1L2Position] = useState({
+    x: 1350,
+    y: 500,
+  });
+  const [cyanVertLine1L2Size, setCyanVertLine1L2Size] = useState({
+    width: 10,
+    height: 150,
+  });
   // L2 Cyan Vertical Line 2 position and size
-  const [cyanVertLine2L2Position, setCyanVertLine2L2Position] = useState({ x: 1400, y: 550 });
-  const [cyanVertLine2L2Size, setCyanVertLine2L2Size] = useState({ width: 10, height: 150 });
+  const [cyanVertLine2L2Position, setCyanVertLine2L2Position] = useState({
+    x: 1400,
+    y: 550,
+  });
+  const [cyanVertLine2L2Size, setCyanVertLine2L2Size] = useState({
+    width: 10,
+    height: 150,
+  });
   // L2 Black Vertical Line position and size
-  const [blackVertLineL2Position, setBlackVertLineL2Position] = useState({ x: 500, y: 300 });
-  const [blackVertLineL2Size, setBlackVertLineL2Size] = useState({ width: 10, height: 200 });
+  const [blackVertLineL2Position, setBlackVertLineL2Position] = useState({
+    x: 500,
+    y: 300,
+  });
+  const [blackVertLineL2Size, setBlackVertLineL2Size] = useState({
+    width: 10,
+    height: 200,
+  });
   // L2 Temperature Sensor 1540-TI-4200A position and size
-  const [tempSensor4200AL2Position, setTempSensor4200AL2Position] = useState({ x: 1200, y: 400 });
-  const [tempSensor4200AL2Size, setTempSensor4200AL2Size] = useState({ width: 180, height: 120 });
+  const [tempSensor4200AL2Position, setTempSensor4200AL2Position] = useState({
+    x: 1200,
+    y: 400,
+  });
+  const [tempSensor4200AL2Size, setTempSensor4200AL2Size] = useState({
+    width: 180,
+    height: 120,
+  });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
 
   // L2_1520 ACID: Acid Boiler position and size
-  const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
-  const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
+  const [acidBoilerPosition, setAcidBoilerPosition] = useState({
+    x: 100,
+    y: 100,
+  });
+  const [acidBoilerSize, setAcidBoilerSize] = useState({
+    width: 1024,
+    height: 341,
+  });
   // L2_1520 ACID: Acid Tower 1 position and size
-  const [acidTower1Position, setAcidTower1Position] = useState({ x: 1200, y: 50 });
-  const [acidTower1Size, setAcidTower1Size] = useState({ width: 800, height: 400 });
+  const [acidTower1Position, setAcidTower1Position] = useState({
+    x: 1200,
+    y: 50,
+  });
+  const [acidTower1Size, setAcidTower1Size] = useState({
+    width: 800,
+    height: 400,
+  });
   // L2_1520 ACID: Acid Tower 2 position and size
-  const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
-  const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
+  const [acidTower2Position, setAcidTower2Position] = useState({
+    x: 2100,
+    y: 50,
+  });
+  const [acidTower2Size, setAcidTower2Size] = useState({
+    width: 800,
+    height: 400,
+  });
   const [isLockedL21520, setIsLockedL21520] = useState(true);
 
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
   const [selectedPVCase, setSelectedPVCase] = useState<string | null>(null);
   // Loaded PV case value for 1540-H-4030 controller (used in Static mode)
-  const [loadedCaseValue1540H4030, setLoadedCaseValue1540H4030] = useState<number | null>(null);
+  const [loadedCaseValue1540H4030, setLoadedCaseValue1540H4030] = useState<
+    number | null
+  >(null);
   // Loaded PV case value for 1530-F-2602 sulfur flow controller (used in Static mode)
-  const [loadedCaseValueSulfurFlow, setLoadedCaseValueSulfurFlow] = useState<number | null>(null);
+  const [loadedCaseValueSulfurFlow, setLoadedCaseValueSulfurFlow] = useState<
+    number | null
+  >(null);
   // Loaded PV case value for 1540-H-4282 jug valve controller (used in Static mode)
-  const [loadedCaseValueJugValve, setLoadedCaseValueJugValve] = useState<number | null>(null);
+  const [loadedCaseValueJugValve, setLoadedCaseValueJugValve] = useState<
+    number | null
+  >(null);
   // Loaded PV case value for 1540-H-4283 WHB dP controller (used in Static mode)
-  const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<number | null>(null);
+  const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<
+    number | null
+  >(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
 
   // Furnace outlet temperature from sulfur furnace simulation (linked to 1540-TI-4200A)
-  const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(null);
+  const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(
+    null,
+  );
   // Track last calculated sulfur flow to prevent duplicate API calls
   const lastCalculatedSulfurFlowRef = useRef<number | null>(null);
 
@@ -819,90 +1498,123 @@ const HomeScreen = () => {
   useEffect(() => {
     // Default to case1 if no case is selected when entering Static mode
     if (selectedMode === "Static" && !activePVCaseId) {
-      setActivePVCaseId('case1');
+      setActivePVCaseId("case1");
       return;
     }
 
     if (selectedMode === "Static" && activePVCaseId) {
       // Fetch PV data and set the static values for controllers
-      fetch('/api/process-variables')
-        .then(res => res.json())
+      fetch("/api/process-variables")
+        .then((res) => res.json())
         .then((pvData) => {
           if (pvData?.variables) {
             // Look for main compressor value in the selected case
             const compressorVar = pvData.variables.find(
-              (v: any) => v.tag === '1540-H-4030' || v.tagNumber === '1540-H-4030' ||
-                v.description?.toLowerCase().includes('main_comp') ||
-                v.description?.toLowerCase().includes('compressor')
+              (v: any) =>
+                v.tag === "1540-H-4030" ||
+                v.tagNumber === "1540-H-4030" ||
+                v.description?.toLowerCase().includes("main_comp") ||
+                v.description?.toLowerCase().includes("compressor"),
             );
             if (compressorVar?.cases?.[activePVCaseId]) {
-              const val = parseFloat(String(compressorVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              const val = parseFloat(
+                String(compressorVar.cases[activePVCaseId]).replace(
+                  /[^0-9.-]/g,
+                  "",
+                ),
+              );
               if (!isNaN(val)) {
-                console.log('Auto-loading static value for 1540-H-4030:', val);
+                console.log("Auto-loading static value for 1540-H-4030:", val);
                 setLoadedCaseValue1540H4030(val);
               }
             } else {
               // Default to 75% if no case value found
-              console.log('No case value found for 1540-H-4030, using default 75%');
+              console.log(
+                "No case value found for 1540-H-4030, using default 75%",
+              );
               setLoadedCaseValue1540H4030(75);
             }
 
             // Look for sulfur flow value in the selected case
             const sulfurFlowVar = pvData.variables.find(
-              (v: any) => v.tag === '1530-F-2602' || v.tagNumber === '1530-F-2602' ||
-                v.description?.toLowerCase().includes('sulfur_flow') ||
-                v.description?.toLowerCase().includes('sulfur flow')
+              (v: any) =>
+                v.tag === "1530-F-2602" ||
+                v.tagNumber === "1530-F-2602" ||
+                v.description?.toLowerCase().includes("sulfur_flow") ||
+                v.description?.toLowerCase().includes("sulfur flow"),
             );
             if (sulfurFlowVar?.cases?.[activePVCaseId]) {
-              const val = parseFloat(String(sulfurFlowVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              const val = parseFloat(
+                String(sulfurFlowVar.cases[activePVCaseId]).replace(
+                  /[^0-9.-]/g,
+                  "",
+                ),
+              );
               if (!isNaN(val)) {
-                console.log('Auto-loading static value for 1530-F-2602:', val);
+                console.log("Auto-loading static value for 1530-F-2602:", val);
                 setLoadedCaseValueSulfurFlow(val);
               }
             } else {
               // Default to 79 gpm if no case value found (typical sulfur flow)
-              console.log('No case value found for 1530-F-2602, using default 79 gpm');
+              console.log(
+                "No case value found for 1530-F-2602, using default 79 gpm",
+              );
               setLoadedCaseValueSulfurFlow(79);
             }
 
             // Look for jug valve value in the selected case
             const jugValveVar = pvData.variables.find(
-              (v: any) => v.tag === '1540-H-4282' || v.tagNumber === '1540-H-4282' ||
-                v.description?.toLowerCase().includes('jug_valve') ||
-                v.description?.toLowerCase().includes('jug valve')
+              (v: any) =>
+                v.tag === "1540-H-4282" ||
+                v.tagNumber === "1540-H-4282" ||
+                v.description?.toLowerCase().includes("jug_valve") ||
+                v.description?.toLowerCase().includes("jug valve"),
             );
             if (jugValveVar?.cases?.[activePVCaseId]) {
-              const val = parseFloat(String(jugValveVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              const val = parseFloat(
+                String(jugValveVar.cases[activePVCaseId]).replace(
+                  /[^0-9.-]/g,
+                  "",
+                ),
+              );
               if (!isNaN(val)) {
-                console.log('Auto-loading static value for 1540-H-4282:', val);
+                console.log("Auto-loading static value for 1540-H-4282:", val);
                 setLoadedCaseValueJugValve(val);
               }
             } else {
               // Default to 50% if no case value found
-              console.log('No case value found for 1540-H-4282, using default 50%');
+              console.log(
+                "No case value found for 1540-H-4282, using default 50%",
+              );
               setLoadedCaseValueJugValve(50);
             }
 
             // Look for WHB dP value in the selected case
             const whbVar = pvData.variables.find(
-              (v: any) => v.tag === '1540-H-4283' || v.tagNumber === '1540-H-4283' ||
-                v.description?.toLowerCase().includes('whb') ||
-                v.description?.toLowerCase().includes('outlet dp')
+              (v: any) =>
+                v.tag === "1540-H-4283" ||
+                v.tagNumber === "1540-H-4283" ||
+                v.description?.toLowerCase().includes("whb") ||
+                v.description?.toLowerCase().includes("outlet dp"),
             );
             if (whbVar?.cases?.[activePVCaseId]) {
-              const val = parseFloat(String(whbVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ''));
+              const val = parseFloat(
+                String(whbVar.cases[activePVCaseId]).replace(/[^0-9.-]/g, ""),
+              );
               if (!isNaN(val)) {
-                console.log('Auto-loading static value for 1540-H-4283:', val);
+                console.log("Auto-loading static value for 1540-H-4283:", val);
                 setLoadedCaseValueWHBdP(val);
               }
             } else {
               // Default to 50% if no case value found
-              console.log('No case value found for 1540-H-4283, using default 50%');
+              console.log(
+                "No case value found for 1540-H-4283, using default 50%",
+              );
               setLoadedCaseValueWHBdP(50);
             }
           }
         })
-        .catch(err => console.error('Error loading PV case data:', err));
+        .catch((err) => console.error("Error loading PV case data:", err));
     } else if (selectedMode !== "Static") {
       // Clear static values when not in Static mode
       setLoadedCaseValue1540H4030(null);
@@ -913,23 +1625,43 @@ const HomeScreen = () => {
   }, [selectedMode, activePVCaseId]);
 
   // 6.1 L3_1540 Converter: Converter position/size
-  const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
-  const [converter61Size, setConverter61Size] = useState({ width: 400, height: 600 });
+  const [converter61Position, setConverter61Position] = useState({
+    x: 400,
+    y: 200,
+  });
+  const [converter61Size, setConverter61Size] = useState({
+    width: 400,
+    height: 600,
+  });
   const [isLocked61, setIsLocked61] = useState(true);
   // 6.1 L3_1540 Converter: 1540-TI-4825 Primary Faceplate position/size
-  const [faceplate4825_61Position, setFaceplate4825_61Position] = useState({ x: 850, y: 200 });
-  const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({ width: 160, height: 240 });
+  const [faceplate4825_61Position, setFaceplate4825_61Position] = useState({
+    x: 850,
+    y: 200,
+  });
+  const [faceplate4825_61Size, setFaceplate4825_61Size] = useState({
+    width: 160,
+    height: 240,
+  });
   // 6.1 L3_1540 Converter: Secondary faceplate dialog visibility
   const [showSecondary4825_61, setShowSecondary4825_61] = useState(false);
   // L4 Converter 4: Secondary faceplate dialog visibility when clicking on converter image
-  const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] = useState(false);
+  const [showSecondaryConverter4L4, setShowSecondaryConverter4L4] =
+    useState(false);
   // L4-Converter: Jug Valve Hand Controller 1540-H-4282 position/size
-  const [jugValveHandControllerL4Position, setJugValveHandControllerL4Position] = useState({ x: 1100, y: 400 });
-  const [jugValveHandControllerL4Size, setJugValveHandControllerL4Size] = useState({ width: 220, height: 200 });
+  const [
+    jugValveHandControllerL4Position,
+    setJugValveHandControllerL4Position,
+  ] = useState({ x: 1100, y: 400 });
+  const [jugValveHandControllerL4Size, setJugValveHandControllerL4Size] =
+    useState({ width: 220, height: 200 });
 
   // New states for dynamic sizing support
   const [faceplatePos4825, setFaceplatePos4825] = useState({ x: 850, y: 200 });
-  const [faceplateSize4825, setFaceplateSize4825] = useState({ width: 160, height: 240 });
+  const [faceplateSize4825, setFaceplateSize4825] = useState({
+    width: 160,
+    height: 240,
+  });
   const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
 
   const { toast } = useToast();
@@ -941,30 +1673,31 @@ const HomeScreen = () => {
     state: sulfurSyncState,
     updateSyncedSP: updateSulfurSP,
     updateSyncedOUT: updateSulfurOUT,
-    updateSyncedMode: updateSulfurMode
-  } = useControllerSync('1530-F-2602');
-  const sulfurFlowConfig = getControllerConfig('1530-F-2602');
+    updateSyncedMode: updateSulfurMode,
+  } = useControllerSync("1530-F-2602");
+  const sulfurFlowConfig = getControllerConfig("1530-F-2602");
 
   // Get real-time synced state for Sulfur Flow Control Valve
-  const { state: valveSyncState } = useControllerSync('1540-FCV-2602');
-  const valveConfig = getControllerConfig('1540-FCV-2602');
+  const { state: valveSyncState } = useControllerSync("1540-FCV-2602");
+  const valveConfig = getControllerConfig("1540-FCV-2602");
 
   // Get real-time synced state for Jug Valve
-  const { state: jugValveSyncState } = useControllerSync('1540-HCV-4282');
-  const jugValveConfig = getControllerConfig('1540-HCV-4282');
+  const { state: jugValveSyncState } = useControllerSync("1540-HCV-4282");
+  const jugValveConfig = getControllerConfig("1540-HCV-4282");
 
   // Get real-time synced state for Jug Valve Positioner
-  const { state: jugValvePositionerSyncState } = useControllerSync('1540-HCV-4281');
-  const jugValvePositionerConfig = getControllerConfig('1540-HCV-4281');
+  const { state: jugValvePositionerSyncState } =
+    useControllerSync("1540-HCV-4281");
+  const jugValvePositionerConfig = getControllerConfig("1540-HCV-4281");
 
   // Get real-time synced state for Hand Controller 1540-H-4030
   const {
     state: handControllerSyncState,
     updateSyncedSP: updateHandControllerSP,
     updateSyncedOUT: updateHandControllerOUT,
-    updateSyncedMode: updateHandControllerMode
-  } = useControllerSync('1540-H-4030');
-  const handControllerConfig = getControllerConfig('1540-H-4030');
+    updateSyncedMode: updateHandControllerMode,
+  } = useControllerSync("1540-H-4030");
+  const handControllerConfig = getControllerConfig("1540-H-4030");
 
   // Get real-time synced state for WHB Outlet dP Hand Controller 1540-H-4283
   const {
@@ -973,9 +1706,9 @@ const HomeScreen = () => {
     updateAlarmLimits: updateWhbHandControllerAlarmLimits,
     updateSyncedSP: updateWhbHandControllerSP,
     updateSyncedOUT: updateWhbHandControllerOUT,
-    updateSyncedMode: updateWhbHandControllerMode
-  } = useControllerSync('1540-H-4283');
-  const whbHandControllerConfig = getControllerConfig('1540-H-4283');
+    updateSyncedMode: updateWhbHandControllerMode,
+  } = useControllerSync("1540-H-4283");
+  const whbHandControllerConfig = getControllerConfig("1540-H-4283");
 
   // Get real-time synced state for Jug Valve Hand Controller 1540-H-4282
   const {
@@ -984,29 +1717,47 @@ const HomeScreen = () => {
     updateAlarmLimits: updateJugValveHandControllerAlarmLimits,
     updateSyncedSP: updateJugValveHandControllerSP,
     updateSyncedOUT: updateJugValveHandControllerOUT,
-    updateSyncedMode: updateJugValveHandControllerMode
-  } = useControllerSync('1540-H-4282');
-  const jugValveHandControllerConfig = getControllerConfig('1540-H-4282');
+    updateSyncedMode: updateJugValveHandControllerMode,
+  } = useControllerSync("1540-H-4282");
+  const jugValveHandControllerConfig = getControllerConfig("1540-H-4282");
 
   // Get real-time synced state for Temperature Sensor 1520-TI-5821
-  const { state: tempSensorSyncState, initializeController: initTempSensor } = useControllerSync('1520-TI-5821');
-  const tempSensorConfig = getControllerConfig('1520-TI-5821');
+  const { state: tempSensorSyncState, initializeController: initTempSensor } =
+    useControllerSync("1520-TI-5821");
+  const tempSensorConfig = getControllerConfig("1520-TI-5821");
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4200A
-  const { state: tempSensor4200ASyncState, initializeController: initTempSensor4200A, updateAlarmLimits: updateTempSensor4200AAlarmLimits, updateSyncedPV: updateTempSensor4200APV } = useControllerSync('1540-TI-4200A');
-  const tempSensor4200AConfig = getControllerConfig('1540-TI-4200A');
+  const {
+    state: tempSensor4200ASyncState,
+    initializeController: initTempSensor4200A,
+    updateAlarmLimits: updateTempSensor4200AAlarmLimits,
+    updateSyncedPV: updateTempSensor4200APV,
+  } = useControllerSync("1540-TI-4200A");
+  const tempSensor4200AConfig = getControllerConfig("1540-TI-4200A");
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4200B
-  const { state: tempSensor4200BSyncState, initializeController: initTempSensor4200B, updateAlarmLimits: updateTempSensor4200BAlarmLimits } = useControllerSync('1540-TI-4200B');
-  const tempSensor4200BConfig = getControllerConfig('1540-TI-4200B');
+  const {
+    state: tempSensor4200BSyncState,
+    initializeController: initTempSensor4200B,
+    updateAlarmLimits: updateTempSensor4200BAlarmLimits,
+  } = useControllerSync("1540-TI-4200B");
+  const tempSensor4200BConfig = getControllerConfig("1540-TI-4200B");
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4200C
-  const { state: tempSensor4200CSyncState, initializeController: initTempSensor4200C, updateAlarmLimits: updateTempSensor4200CAlarmLimits } = useControllerSync('1540-TI-4200C');
-  const tempSensor4200CConfig = getControllerConfig('1540-TI-4200C');
+  const {
+    state: tempSensor4200CSyncState,
+    initializeController: initTempSensor4200C,
+    updateAlarmLimits: updateTempSensor4200CAlarmLimits,
+  } = useControllerSync("1540-TI-4200C");
+  const tempSensor4200CConfig = getControllerConfig("1540-TI-4200C");
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
-  const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
-  const tempSensor4825Config = getControllerConfig('1540-TI-4825');
+  const {
+    state: tempSensor4825SyncState,
+    initializeController: initTempSensor4825,
+    updateAlarmLimits: updateTempSensor4825AlarmLimits,
+  } = useControllerSync("1540-TI-4825");
+  const tempSensor4825Config = getControllerConfig("1540-TI-4825");
 
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
@@ -1015,19 +1766,27 @@ const HomeScreen = () => {
         tempSensorConfig.TYPICAL_PV,
         tempSensorConfig.TYPICAL_PV,
         tempSensorConfig.SP_LIM_LO ?? 100,
-        tempSensorConfig.SP_LIM_HI ?? 200
+        tempSensorConfig.SP_LIM_HI ?? 200,
       );
     }
-  }, [tempSensorConfig.TYPICAL_PV, tempSensorConfig.SP_LIM_LO, tempSensorConfig.SP_LIM_HI, initTempSensor]);
+  }, [
+    tempSensorConfig.TYPICAL_PV,
+    tempSensorConfig.SP_LIM_LO,
+    tempSensorConfig.SP_LIM_HI,
+    initTempSensor,
+  ]);
 
   // Initialize temperature sensor 1540-TI-4200A with configured Typical PV and alarm limits
   useEffect(() => {
-    if (tempSensor4200AConfig.TYPICAL_PV !== undefined && tempSensor4200AConfig.TYPICAL_PV > 0) {
+    if (
+      tempSensor4200AConfig.TYPICAL_PV !== undefined &&
+      tempSensor4200AConfig.TYPICAL_PV > 0
+    ) {
       initTempSensor4200A(
         tempSensor4200AConfig.TYPICAL_PV,
         tempSensor4200AConfig.TYPICAL_PV,
         tempSensor4200AConfig.SP_LIM_LO ?? 0,
-        tempSensor4200AConfig.SP_LIM_HI ?? 2500
+        tempSensor4200AConfig.SP_LIM_HI ?? 2500,
       );
 
       // Sync alarm limits for automatic alarm state updates
@@ -1038,16 +1797,29 @@ const HomeScreen = () => {
         HH: tempSensor4200AConfig.ALM_HH_LIM ?? 0,
       });
     }
-  }, [tempSensor4200AConfig.TYPICAL_PV, tempSensor4200AConfig.SP_LIM_LO, tempSensor4200AConfig.SP_LIM_HI, tempSensor4200AConfig.ALM_LL_LIM, tempSensor4200AConfig.ALM_L_LIM, tempSensor4200AConfig.ALM_H_LIM, tempSensor4200AConfig.ALM_HH_LIM, initTempSensor4200A, updateTempSensor4200AAlarmLimits]);
+  }, [
+    tempSensor4200AConfig.TYPICAL_PV,
+    tempSensor4200AConfig.SP_LIM_LO,
+    tempSensor4200AConfig.SP_LIM_HI,
+    tempSensor4200AConfig.ALM_LL_LIM,
+    tempSensor4200AConfig.ALM_L_LIM,
+    tempSensor4200AConfig.ALM_H_LIM,
+    tempSensor4200AConfig.ALM_HH_LIM,
+    initTempSensor4200A,
+    updateTempSensor4200AAlarmLimits,
+  ]);
 
   // Initialize temperature sensor 1540-TI-4200B with configured Typical PV and alarm limits
   useEffect(() => {
-    if (tempSensor4200BConfig.TYPICAL_PV !== undefined && tempSensor4200BConfig.TYPICAL_PV > 0) {
+    if (
+      tempSensor4200BConfig.TYPICAL_PV !== undefined &&
+      tempSensor4200BConfig.TYPICAL_PV > 0
+    ) {
       initTempSensor4200B(
         tempSensor4200BConfig.TYPICAL_PV,
         tempSensor4200BConfig.TYPICAL_PV,
         tempSensor4200BConfig.SP_LIM_LO ?? 0,
-        tempSensor4200BConfig.SP_LIM_HI ?? 2500
+        tempSensor4200BConfig.SP_LIM_HI ?? 2500,
       );
 
       // Sync alarm limits for automatic alarm state updates
@@ -1058,8 +1830,17 @@ const HomeScreen = () => {
         HH: tempSensor4200BConfig.ALM_HH_LIM ?? 0,
       });
     }
-  }, [tempSensor4200BConfig.TYPICAL_PV, tempSensor4200BConfig.SP_LIM_LO, tempSensor4200BConfig.SP_LIM_HI, tempSensor4200BConfig.ALM_LL_LIM, tempSensor4200BConfig.ALM_L_LIM, tempSensor4200BConfig.ALM_H_LIM, tempSensor4200BConfig.ALM_HH_LIM, initTempSensor4200B, updateTempSensor4200BAlarmLimits]);
-
+  }, [
+    tempSensor4200BConfig.TYPICAL_PV,
+    tempSensor4200BConfig.SP_LIM_LO,
+    tempSensor4200BConfig.SP_LIM_HI,
+    tempSensor4200BConfig.ALM_LL_LIM,
+    tempSensor4200BConfig.ALM_L_LIM,
+    tempSensor4200BConfig.ALM_H_LIM,
+    tempSensor4200BConfig.ALM_HH_LIM,
+    initTempSensor4200B,
+    updateTempSensor4200BAlarmLimits,
+  ]);
 
   // Initialize temperature sensor 1540-TI-4200C with proper furnace temperature range (1800-2300°F)
   useEffect(() => {
@@ -1070,15 +1851,18 @@ const HomeScreen = () => {
 
     // Use config values if they're in the correct range, otherwise use furnace defaults
     const configPV = tempSensor4200CConfig.TYPICAL_PV;
-    const typicalPV = (configPV && configPV >= FURNACE_C_SCALE_LO && configPV <= FURNACE_C_SCALE_HI)
-      ? configPV
-      : FURNACE_C_TYPICAL_PV;
+    const typicalPV =
+      configPV &&
+      configPV >= FURNACE_C_SCALE_LO &&
+      configPV <= FURNACE_C_SCALE_HI
+        ? configPV
+        : FURNACE_C_TYPICAL_PV;
 
     initTempSensor4200C(
       typicalPV,
       typicalPV,
       FURNACE_C_SCALE_LO,
-      FURNACE_C_SCALE_HI
+      FURNACE_C_SCALE_HI,
     );
 
     // Sync alarm limits for automatic alarm state updates
@@ -1088,21 +1872,28 @@ const HomeScreen = () => {
       H: tempSensor4200CConfig.ALM_H_LIM ?? 2200,
       HH: tempSensor4200CConfig.ALM_HH_LIM ?? 2250,
     });
-  }, [tempSensor4200CConfig.TYPICAL_PV, tempSensor4200CConfig.ALM_LL_LIM, tempSensor4200CConfig.ALM_L_LIM, tempSensor4200CConfig.ALM_H_LIM, tempSensor4200CConfig.ALM_HH_LIM, initTempSensor4200C, updateTempSensor4200CAlarmLimits]);
+  }, [
+    tempSensor4200CConfig.TYPICAL_PV,
+    tempSensor4200CConfig.ALM_LL_LIM,
+    tempSensor4200CConfig.ALM_L_LIM,
+    tempSensor4200CConfig.ALM_H_LIM,
+    tempSensor4200CConfig.ALM_HH_LIM,
+    initTempSensor4200C,
+    updateTempSensor4200CAlarmLimits,
+  ]);
 
   // Initialize temperature sensor 1540-TI-4825 (Pass 1 Catalyst In) with configured Typical PV and alarm limits
   useEffect(() => {
     // Use configured TYPICAL_PV if available and valid
     const configPV = tempSensor4825Config.TYPICAL_PV;
-    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000)
-      ? configPV
-      : 750; // Default typical value for Pass 1 Catalyst In
+    const typicalPV =
+      configPV && configPV >= 0 && configPV <= 2000 ? configPV : 750; // Default typical value for Pass 1 Catalyst In
 
     initTempSensor4825(
       typicalPV,
       typicalPV,
       tempSensor4825Config.SP_LIM_LO ?? 0,
-      tempSensor4825Config.SP_LIM_HI ?? 2000
+      tempSensor4825Config.SP_LIM_HI ?? 2000,
     );
 
     // Sync alarm limits for automatic alarm state updates
@@ -1112,57 +1903,71 @@ const HomeScreen = () => {
       H: tempSensor4825Config.ALM_H_LIM ?? 850,
       HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
     });
-  }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
+  }, [
+    tempSensor4825Config.TYPICAL_PV,
+    tempSensor4825Config.ALM_LL_LIM,
+    tempSensor4825Config.ALM_L_LIM,
+    tempSensor4825Config.ALM_H_LIM,
+    tempSensor4825Config.ALM_HH_LIM,
+    initTempSensor4825,
+    updateTempSensor4825AlarmLimits,
+  ]);
 
   // Function to call sulfur furnace API and update furnace outlet temperature (4200A)
-  const calculateFurnaceTemperature = useCallback(async (sulfurFlowGpm: number) => {
-    if (!sulfurFlowGpm || sulfurFlowGpm <= 0) return;
+  const calculateFurnaceTemperature = useCallback(
+    async (sulfurFlowGpm: number) => {
+      if (!sulfurFlowGpm || sulfurFlowGpm <= 0) return;
 
-    try {
-      // Convert gpm to klb/hr: gpm * 1.8 sg * 60 min/hr * 8.33 lb/gal / 1000 = klb/hr
-      const sulfurKlbHr = sulfurFlowGpm * 1.8 * 60 * 8.33 / 1000;
-      // Calculate air flow based on sulfur flow: klb/hr * 1624 SCFM per klb/hr
-      const airScfm = sulfurKlbHr * 1624;
+      try {
+        // Convert gpm to klb/hr: gpm * 1.8 sg * 60 min/hr * 8.33 lb/gal / 1000 = klb/hr
+        const sulfurKlbHr = (sulfurFlowGpm * 1.8 * 60 * 8.33) / 1000;
+        // Calculate air flow based on sulfur flow: klb/hr * 1624 SCFM per klb/hr
+        const airScfm = sulfurKlbHr * 1624;
 
-      const response = await fetch('/api/sulfur-furnace-simulation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          air_scfm: airScfm,
-          sulfur_klb_hr: sulfurKlbHr,
-          sulfur_temp_f: 300, // Default sulfur inlet temperature
-          mode: 'static'
-        }),
-      });
+        const response = await fetch("/api/sulfur-furnace-simulation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            air_scfm: airScfm,
+            sulfur_klb_hr: sulfurKlbHr,
+            sulfur_temp_f: 300, // Default sulfur inlet temperature
+            mode: "static",
+          }),
+        });
 
-      if (!response.ok) {
-        console.error('Sulfur furnace API error:', response.statusText);
-        return;
+        if (!response.ok) {
+          console.error("Sulfur furnace API error:", response.statusText);
+          return;
+        }
+
+        const result = await response.json();
+        // The furnace outlet temperature is in stream5.temperature_f
+        if (result.stream5?.temperature_f) {
+          const furnaceTemp = result.stream5.temperature_f;
+          setFurnaceOutletTemp(furnaceTemp);
+          // Update the 1540-TI-4200A temperature sensor PV with the furnace outlet temperature
+          updateTempSensor4200APV(furnaceTemp);
+        }
+      } catch (error) {
+        console.error("Failed to calculate furnace temperature:", error);
       }
-
-      const result = await response.json();
-      // The furnace outlet temperature is in stream5.temperature_f
-      if (result.stream5?.temperature_f) {
-        const furnaceTemp = result.stream5.temperature_f;
-        setFurnaceOutletTemp(furnaceTemp);
-        // Update the 1540-TI-4200A temperature sensor PV with the furnace outlet temperature
-        updateTempSensor4200APV(furnaceTemp);
-      }
-    } catch (error) {
-      console.error('Failed to calculate furnace temperature:', error);
-    }
-  }, [updateTempSensor4200APV]);
+    },
+    [updateTempSensor4200APV],
+  );
 
   // Auto-recalculate furnace temperature when sulfur flow static value changes
   // Only triggers on loadedCaseValueSulfurFlow changes to avoid spamming API on every synced PV update
   useEffect(() => {
     // Only recalculate when in Static mode with a loaded case value
-    if (selectedMode !== 'Static' || loadedCaseValueSulfurFlow === null) return;
+    if (selectedMode !== "Static" || loadedCaseValueSulfurFlow === null) return;
 
     // Check if sulfur flow has changed significantly (more than 0.5 gpm difference)
     const lastFlow = lastCalculatedSulfurFlowRef.current;
 
-    if (lastFlow !== null && Math.abs(loadedCaseValueSulfurFlow - lastFlow) < 0.5) {
+    if (
+      lastFlow !== null &&
+      Math.abs(loadedCaseValueSulfurFlow - lastFlow) < 0.5
+    ) {
       return; // Skip if change is too small
     }
 
@@ -1173,13 +1978,16 @@ const HomeScreen = () => {
 
   // Initialize WHB Outlet dP Hand Controller 1540-H-4283 with configured values
   useEffect(() => {
-    const typicalPV = whbHandControllerConfig.TYPICAL_PV ?? whbHandControllerConfig.PV_INIT_VAL ?? 50;
+    const typicalPV =
+      whbHandControllerConfig.TYPICAL_PV ??
+      whbHandControllerConfig.PV_INIT_VAL ??
+      50;
     if (typicalPV !== undefined && typicalPV > 0) {
       initWhbHandController(
         typicalPV,
         typicalPV,
         whbHandControllerConfig.SP_LIM_LO ?? 0,
-        whbHandControllerConfig.SP_LIM_HI ?? 100
+        whbHandControllerConfig.SP_LIM_HI ?? 100,
       );
 
       updateWhbHandControllerAlarmLimits({
@@ -1189,17 +1997,24 @@ const HomeScreen = () => {
         HH: whbHandControllerConfig.ALM_HH_LIM ?? 0,
       });
     }
-  }, [whbHandControllerConfig, initWhbHandController, updateWhbHandControllerAlarmLimits]);
+  }, [
+    whbHandControllerConfig,
+    initWhbHandController,
+    updateWhbHandControllerAlarmLimits,
+  ]);
 
   // Initialize Jug Valve Hand Controller 1540-H-4282 with configured values
   useEffect(() => {
-    const typicalPV = jugValveHandControllerConfig.TYPICAL_PV ?? jugValveHandControllerConfig.PV_INIT_VAL ?? 50;
+    const typicalPV =
+      jugValveHandControllerConfig.TYPICAL_PV ??
+      jugValveHandControllerConfig.PV_INIT_VAL ??
+      50;
     if (typicalPV !== undefined && typicalPV > 0) {
       initJugValveHandController(
         typicalPV,
         typicalPV,
         jugValveHandControllerConfig.SP_LIM_LO ?? 0,
-        jugValveHandControllerConfig.SP_LIM_HI ?? 100
+        jugValveHandControllerConfig.SP_LIM_HI ?? 100,
       );
 
       updateJugValveHandControllerAlarmLimits({
@@ -1209,26 +2024,44 @@ const HomeScreen = () => {
         HH: jugValveHandControllerConfig.ALM_HH_LIM ?? 0,
       });
     }
-  }, [jugValveHandControllerConfig, initJugValveHandController, updateJugValveHandControllerAlarmLimits]);
+  }, [
+    jugValveHandControllerConfig,
+    initJugValveHandController,
+    updateJugValveHandControllerAlarmLimits,
+  ]);
 
   // Build controller data from synced state
   // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
-  const useStaticSulfurFlow = selectedMode === "Static" && loadedCaseValueSulfurFlow !== null;
+  const useStaticSulfurFlow =
+    selectedMode === "Static" && loadedCaseValueSulfurFlow !== null;
   const sulfurFlowData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: sulfurFlowConfig.TAGNAME || '1530-F-2602',
-    description: sulfurFlowConfig.DESC || 'Sulfur Flow Controller',
-    pv: useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedPV,
-    sp: useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedSP,
-    out: useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedOUT,
+    instrumentTag: sulfurFlowConfig.TAGNAME || "1530-F-2602",
+    description: sulfurFlowConfig.DESC || "Sulfur Flow Controller",
+    pv: useStaticSulfurFlow
+      ? loadedCaseValueSulfurFlow
+      : sulfurSyncState.syncedPV,
+    sp: useStaticSulfurFlow
+      ? loadedCaseValueSulfurFlow
+      : sulfurSyncState.syncedSP,
+    out: useStaticSulfurFlow
+      ? loadedCaseValueSulfurFlow
+      : sulfurSyncState.syncedOUT,
     mode: sulfurSyncState.syncedMode,
-    pvUnits: sulfurFlowConfig.EU || 'gpm',
+    pvUnits: sulfurFlowConfig.EU || "gpm",
     pvRangeMin: sulfurFlowConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: sulfurFlowConfig.PV_SCALE_HI ?? 100,
-    alarmActive: sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.H ||
-      sulfurSyncState.alarmStates.L || sulfurSyncState.alarmStates.LL,
-    alarmColor: (sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL) ? 'red' :
-      (sulfurSyncState.alarmStates.H || sulfurSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      sulfurSyncState.alarmStates.HH ||
+      sulfurSyncState.alarmStates.H ||
+      sulfurSyncState.alarmStates.L ||
+      sulfurSyncState.alarmStates.LL,
+    alarmColor:
+      sulfurSyncState.alarmStates.HH || sulfurSyncState.alarmStates.LL
+        ? "red"
+        : sulfurSyncState.alarmStates.H || sulfurSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: sulfurFlowConfig.ALM_LL_LIM || 5,
     alarmL: sulfurFlowConfig.ALM_L_LIM || 10,
     alarmH: sulfurFlowConfig.ALM_H_LIM || 400,
@@ -1238,20 +2071,27 @@ const HomeScreen = () => {
   // Build valve faceplate data from synced state
   const sulfurValveData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: valveConfig.TAGNAME || '1540-FCV-2602',
-    description: valveConfig.DESC || 'Sulfur Feed Valve',
+    instrumentTag: valveConfig.TAGNAME || "1540-FCV-2602",
+    description: valveConfig.DESC || "Sulfur Feed Valve",
     pv: valveSyncState.syncedPV,
     sp: valveSyncState.syncedSP,
     out: valveSyncState.syncedOUT,
     mode: valveSyncState.syncedMode,
-    pvUnits: valveConfig.EU || '%',
+    pvUnits: valveConfig.EU || "%",
     pvRangeMin: valveConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: valveConfig.PV_SCALE_HI ?? 100,
-    alarmActive: valveSyncState.alarmStates.HH || valveSyncState.alarmStates.H ||
-      valveSyncState.alarmStates.L || valveSyncState.alarmStates.LL,
-    alarmColor: (valveSyncState.alarmStates.HH || valveSyncState.alarmStates.LL) ? 'red' :
-      (valveSyncState.alarmStates.H || valveSyncState.alarmStates.L) ? 'yellow' : undefined,
-    valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
+    alarmActive:
+      valveSyncState.alarmStates.HH ||
+      valveSyncState.alarmStates.H ||
+      valveSyncState.alarmStates.L ||
+      valveSyncState.alarmStates.LL,
+    alarmColor:
+      valveSyncState.alarmStates.HH || valveSyncState.alarmStates.LL
+        ? "red"
+        : valveSyncState.alarmStates.H || valveSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
+    valveTypeAction: valveConfig.VALVE_TYPE_ACTION || "DA",
     showAlarmCircle: valveConfig.SHOW_ALARM_CIRCLE,
     showNoSymbol: valveConfig.SHOW_NO_SYMBOL,
     showInterlockDiamond: valveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
@@ -1266,20 +2106,27 @@ const HomeScreen = () => {
   // Build Jug Valve faceplate data from synced state
   const jugValveData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: jugValveConfig.TAGNAME || '1540-HCV-4282',
-    description: jugValveConfig.DESC || 'Jug Valve',
+    instrumentTag: jugValveConfig.TAGNAME || "1540-HCV-4282",
+    description: jugValveConfig.DESC || "Jug Valve",
     pv: jugValveSyncState.syncedPV,
     sp: jugValveSyncState.syncedSP,
     out: jugValveSyncState.syncedOUT,
     mode: jugValveSyncState.syncedMode,
-    pvUnits: jugValveConfig.EU || '%',
+    pvUnits: jugValveConfig.EU || "%",
     pvRangeMin: jugValveConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: jugValveConfig.PV_SCALE_HI ?? 100,
-    alarmActive: jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.H ||
-      jugValveSyncState.alarmStates.L || jugValveSyncState.alarmStates.LL,
-    alarmColor: (jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.LL) ? 'red' :
-      (jugValveSyncState.alarmStates.H || jugValveSyncState.alarmStates.L) ? 'yellow' : undefined,
-    valveTypeAction: jugValveConfig.VALVE_TYPE_ACTION || 'DA',
+    alarmActive:
+      jugValveSyncState.alarmStates.HH ||
+      jugValveSyncState.alarmStates.H ||
+      jugValveSyncState.alarmStates.L ||
+      jugValveSyncState.alarmStates.LL,
+    alarmColor:
+      jugValveSyncState.alarmStates.HH || jugValveSyncState.alarmStates.LL
+        ? "red"
+        : jugValveSyncState.alarmStates.H || jugValveSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
+    valveTypeAction: jugValveConfig.VALVE_TYPE_ACTION || "DA",
     showAlarmCircle: jugValveConfig.SHOW_ALARM_CIRCLE,
     showNoSymbol: jugValveConfig.SHOW_NO_SYMBOL,
     showInterlockDiamond: jugValveConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
@@ -1294,49 +2141,76 @@ const HomeScreen = () => {
   // Build Jug Valve Positioner faceplate data from synced state
   const jugValvePositionerData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: jugValvePositionerConfig.TAGNAME || '1540-HCV-4281',
-    description: jugValvePositionerConfig.DESC || 'Jug Valve Positioner',
+    instrumentTag: jugValvePositionerConfig.TAGNAME || "1540-HCV-4281",
+    description: jugValvePositionerConfig.DESC || "Jug Valve Positioner",
     pv: jugValvePositionerSyncState.syncedPV,
     sp: jugValvePositionerSyncState.syncedSP,
     out: jugValvePositionerSyncState.syncedOUT,
     mode: jugValvePositionerSyncState.syncedMode,
-    pvUnits: jugValvePositionerConfig.EU || '%',
+    pvUnits: jugValvePositionerConfig.EU || "%",
     pvRangeMin: jugValvePositionerConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: jugValvePositionerConfig.PV_SCALE_HI ?? 100,
-    alarmActive: jugValvePositionerSyncState.alarmStates.HH || jugValvePositionerSyncState.alarmStates.H ||
-      jugValvePositionerSyncState.alarmStates.L || jugValvePositionerSyncState.alarmStates.LL,
-    alarmColor: (jugValvePositionerSyncState.alarmStates.HH || jugValvePositionerSyncState.alarmStates.LL) ? 'red' :
-      (jugValvePositionerSyncState.alarmStates.H || jugValvePositionerSyncState.alarmStates.L) ? 'yellow' : undefined,
-    valveTypeAction: jugValvePositionerConfig.VALVE_TYPE_ACTION || 'DA',
+    alarmActive:
+      jugValvePositionerSyncState.alarmStates.HH ||
+      jugValvePositionerSyncState.alarmStates.H ||
+      jugValvePositionerSyncState.alarmStates.L ||
+      jugValvePositionerSyncState.alarmStates.LL,
+    alarmColor:
+      jugValvePositionerSyncState.alarmStates.HH ||
+      jugValvePositionerSyncState.alarmStates.LL
+        ? "red"
+        : jugValvePositionerSyncState.alarmStates.H ||
+            jugValvePositionerSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
+    valveTypeAction: jugValvePositionerConfig.VALVE_TYPE_ACTION || "DA",
     showAlarmCircle: jugValvePositionerConfig.SHOW_ALARM_CIRCLE,
     showNoSymbol: jugValvePositionerConfig.SHOW_NO_SYMBOL,
-    showInterlockDiamond: jugValvePositionerConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
+    showInterlockDiamond:
+      jugValvePositionerConfig.SHOW_INTERLOCK_DIAMOND_INDICATOR,
     showBlueAlarmIndicator: jugValvePositionerConfig.SHOW_BLUE_ALARM_INDICATOR,
     showBadIOIndicator: jugValvePositionerConfig.SHOW_BAD_IO_INDICATOR,
     showModuleNotRunning: jugValvePositionerConfig.SHOW_MODULE_NOT_RUNNING,
     showValveTypeLabel: jugValvePositionerConfig.SHOW_VALVE_TYPE_LABEL,
     showLockIndicator: jugValvePositionerConfig.SHOW_LOCK_INDICATOR,
-    showOutputPathIndicator: jugValvePositionerConfig.SHOW_OUTPUT_PATH_INDICATOR,
+    showOutputPathIndicator:
+      jugValvePositionerConfig.SHOW_OUTPUT_PATH_INDICATOR,
   };
 
   // Build Hand Controller 1540-H-4030 data from synced state
   // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
-  const useStaticCaseValue = selectedMode === "Static" && loadedCaseValue1540H4030 !== null;
+  const useStaticCaseValue =
+    selectedMode === "Static" && loadedCaseValue1540H4030 !== null;
   const handControllerData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: handControllerConfig.TAGNAME || '1540-H-4030',
-    description: handControllerConfig.DESC || 'Main Compressor Hand Controller',
-    pv: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedPV,
-    sp: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedSP,
-    out: useStaticCaseValue ? loadedCaseValue1540H4030 : handControllerSyncState.syncedOUT,
+    instrumentTag: handControllerConfig.TAGNAME || "1540-H-4030",
+    description: handControllerConfig.DESC || "Main Compressor Hand Controller",
+    pv: useStaticCaseValue
+      ? loadedCaseValue1540H4030
+      : handControllerSyncState.syncedPV,
+    sp: useStaticCaseValue
+      ? loadedCaseValue1540H4030
+      : handControllerSyncState.syncedSP,
+    out: useStaticCaseValue
+      ? loadedCaseValue1540H4030
+      : handControllerSyncState.syncedOUT,
     mode: handControllerSyncState.syncedMode,
-    pvUnits: handControllerConfig.EU || '%',
+    pvUnits: handControllerConfig.EU || "%",
     pvRangeMin: handControllerConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: handControllerConfig.PV_SCALE_HI ?? 100,
-    alarmActive: handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.H ||
-      handControllerSyncState.alarmStates.L || handControllerSyncState.alarmStates.LL,
-    alarmColor: (handControllerSyncState.alarmStates.HH || handControllerSyncState.alarmStates.LL) ? 'red' :
-      (handControllerSyncState.alarmStates.H || handControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      handControllerSyncState.alarmStates.HH ||
+      handControllerSyncState.alarmStates.H ||
+      handControllerSyncState.alarmStates.L ||
+      handControllerSyncState.alarmStates.LL,
+    alarmColor:
+      handControllerSyncState.alarmStates.HH ||
+      handControllerSyncState.alarmStates.LL
+        ? "red"
+        : handControllerSyncState.alarmStates.H ||
+            handControllerSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: handControllerConfig.ALM_LL_LIM ?? 0,
     alarmL: handControllerConfig.ALM_L_LIM ?? 0,
     alarmH: handControllerConfig.ALM_H_LIM ?? 0,
@@ -1345,22 +2219,39 @@ const HomeScreen = () => {
 
   // Build WHB Outlet dP Hand Controller 1540-H-4283 data from synced state
   // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
-  const useStaticWHBdP = selectedMode === "Static" && loadedCaseValueWHBdP !== null;
+  const useStaticWHBdP =
+    selectedMode === "Static" && loadedCaseValueWHBdP !== null;
   const whbHandControllerData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: whbHandControllerConfig.TAGNAME || '1540-H-4283',
-    description: whbHandControllerConfig.DESC || 'WHB Outlet dP Hand Controller',
-    pv: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedPV,
-    sp: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
-    out: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedOUT,
+    instrumentTag: whbHandControllerConfig.TAGNAME || "1540-H-4283",
+    description:
+      whbHandControllerConfig.DESC || "WHB Outlet dP Hand Controller",
+    pv: useStaticWHBdP
+      ? loadedCaseValueWHBdP
+      : whbHandControllerSyncState.syncedPV,
+    sp: useStaticWHBdP
+      ? loadedCaseValueWHBdP
+      : whbHandControllerSyncState.syncedSP,
+    out: useStaticWHBdP
+      ? loadedCaseValueWHBdP
+      : whbHandControllerSyncState.syncedOUT,
     mode: whbHandControllerSyncState.syncedMode,
-    pvUnits: whbHandControllerConfig.EU || '%',
+    pvUnits: whbHandControllerConfig.EU || "%",
     pvRangeMin: whbHandControllerConfig.PV_SCALE_LO ?? 0,
     pvRangeMax: whbHandControllerConfig.PV_SCALE_HI ?? 100,
-    alarmActive: whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.H ||
-      whbHandControllerSyncState.alarmStates.L || whbHandControllerSyncState.alarmStates.LL,
-    alarmColor: (whbHandControllerSyncState.alarmStates.HH || whbHandControllerSyncState.alarmStates.LL) ? 'red' :
-      (whbHandControllerSyncState.alarmStates.H || whbHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      whbHandControllerSyncState.alarmStates.HH ||
+      whbHandControllerSyncState.alarmStates.H ||
+      whbHandControllerSyncState.alarmStates.L ||
+      whbHandControllerSyncState.alarmStates.LL,
+    alarmColor:
+      whbHandControllerSyncState.alarmStates.HH ||
+      whbHandControllerSyncState.alarmStates.LL
+        ? "red"
+        : whbHandControllerSyncState.alarmStates.H ||
+            whbHandControllerSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: whbHandControllerConfig.ALM_LL_LIM ?? 0,
     alarmL: whbHandControllerConfig.ALM_L_LIM ?? 0,
     alarmH: whbHandControllerConfig.ALM_H_LIM ?? 0,
@@ -1369,23 +2260,40 @@ const HomeScreen = () => {
 
   // Build Jug Valve Hand Controller 1540-H-4282 data from synced state
   // In Static mode with a loaded case, use the static case value for PV, SP, and OUT
-  const useStaticJugValve = selectedMode === "Static" && loadedCaseValueJugValve !== null;
+  const useStaticJugValve =
+    selectedMode === "Static" && loadedCaseValueJugValve !== null;
   // Use SP limits for range since this is a hand controller where SP defines the operating range
   const jugValveHandControllerData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: jugValveHandControllerConfig.TAGNAME || '1540-H-4282',
-    description: jugValveHandControllerConfig.DESC || 'Jug Valve Hand Controller',
-    pv: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedPV,
-    sp: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
-    out: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedOUT,
+    instrumentTag: jugValveHandControllerConfig.TAGNAME || "1540-H-4282",
+    description:
+      jugValveHandControllerConfig.DESC || "Jug Valve Hand Controller",
+    pv: useStaticJugValve
+      ? loadedCaseValueJugValve
+      : jugValveHandControllerSyncState.syncedPV,
+    sp: useStaticJugValve
+      ? loadedCaseValueJugValve
+      : jugValveHandControllerSyncState.syncedSP,
+    out: useStaticJugValve
+      ? loadedCaseValueJugValve
+      : jugValveHandControllerSyncState.syncedOUT,
     mode: jugValveHandControllerSyncState.syncedMode,
-    pvUnits: jugValveHandControllerConfig.EU || '%',
+    pvUnits: jugValveHandControllerConfig.EU || "%",
     pvRangeMin: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
     pvRangeMax: jugValveHandControllerConfig.SP_LIM_HI ?? 30,
-    alarmActive: jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.H ||
-      jugValveHandControllerSyncState.alarmStates.L || jugValveHandControllerSyncState.alarmStates.LL,
-    alarmColor: (jugValveHandControllerSyncState.alarmStates.HH || jugValveHandControllerSyncState.alarmStates.LL) ? 'red' :
-      (jugValveHandControllerSyncState.alarmStates.H || jugValveHandControllerSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      jugValveHandControllerSyncState.alarmStates.HH ||
+      jugValveHandControllerSyncState.alarmStates.H ||
+      jugValveHandControllerSyncState.alarmStates.L ||
+      jugValveHandControllerSyncState.alarmStates.LL,
+    alarmColor:
+      jugValveHandControllerSyncState.alarmStates.HH ||
+      jugValveHandControllerSyncState.alarmStates.LL
+        ? "red"
+        : jugValveHandControllerSyncState.alarmStates.H ||
+            jugValveHandControllerSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: jugValveHandControllerConfig.ALM_LL_LIM ?? 0,
     alarmL: jugValveHandControllerConfig.ALM_L_LIM ?? 0,
     alarmH: jugValveHandControllerConfig.ALM_H_LIM ?? 0,
@@ -1395,19 +2303,26 @@ const HomeScreen = () => {
   // Build Temperature Sensor 1520-TI-5821 data from synced state
   const tempSensorData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: tempSensorConfig.TAGNAME || '1520-TI-5821',
-    description: tempSensorConfig.DESC || 'DT Gas Out Temperature',
+    instrumentTag: tempSensorConfig.TAGNAME || "1520-TI-5821",
+    description: tempSensorConfig.DESC || "DT Gas Out Temperature",
     pv: tempSensorSyncState.syncedPV,
     sp: tempSensorSyncState.syncedSP,
     out: tempSensorSyncState.syncedOUT,
     mode: tempSensorSyncState.syncedMode,
-    pvUnits: tempSensorConfig.EU || '°C',
+    pvUnits: tempSensorConfig.EU || "°C",
     pvRangeMin: tempSensorConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensorConfig.SP_LIM_HI ?? 500,
-    alarmActive: tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.H ||
-      tempSensorSyncState.alarmStates.L || tempSensorSyncState.alarmStates.LL,
-    alarmColor: (tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.LL) ? 'red' :
-      (tempSensorSyncState.alarmStates.H || tempSensorSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      tempSensorSyncState.alarmStates.HH ||
+      tempSensorSyncState.alarmStates.H ||
+      tempSensorSyncState.alarmStates.L ||
+      tempSensorSyncState.alarmStates.LL,
+    alarmColor:
+      tempSensorSyncState.alarmStates.HH || tempSensorSyncState.alarmStates.LL
+        ? "red"
+        : tempSensorSyncState.alarmStates.H || tempSensorSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: tempSensorConfig.ALM_LL_LIM,
     alarmL: tempSensorConfig.ALM_L_LIM,
     alarmH: tempSensorConfig.ALM_H_LIM,
@@ -1416,25 +2331,35 @@ const HomeScreen = () => {
 
   // Build Temperature Sensor 1540-TI-4200A data from synced state
   // Use furnace outlet temperature from simulation when available (Static mode), otherwise use synced PV
-  const tempSensor4200APV = selectedMode === 'Static' && furnaceOutletTemp !== null
-    ? furnaceOutletTemp
-    : tempSensor4200ASyncState.syncedPV;
+  const tempSensor4200APV =
+    selectedMode === "Static" && furnaceOutletTemp !== null
+      ? furnaceOutletTemp
+      : tempSensor4200ASyncState.syncedPV;
 
   const tempSensor4200AData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: tempSensor4200AConfig.TAGNAME || '1540-TI-4200A',
-    description: tempSensor4200AConfig.DESC || 'Furnace Temp Out A',
+    instrumentTag: tempSensor4200AConfig.TAGNAME || "1540-TI-4200A",
+    description: tempSensor4200AConfig.DESC || "Furnace Temp Out A",
     pv: tempSensor4200APV,
     sp: tempSensor4200ASyncState.syncedSP,
     out: tempSensor4200ASyncState.syncedOUT,
     mode: tempSensor4200ASyncState.syncedMode,
-    pvUnits: tempSensor4200AConfig.EU || '°F',
+    pvUnits: tempSensor4200AConfig.EU || "°F",
     pvRangeMin: tempSensor4200AConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200AConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.H ||
-      tempSensor4200ASyncState.alarmStates.L || tempSensor4200ASyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.LL) ? 'red' :
-      (tempSensor4200ASyncState.alarmStates.H || tempSensor4200ASyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      tempSensor4200ASyncState.alarmStates.HH ||
+      tempSensor4200ASyncState.alarmStates.H ||
+      tempSensor4200ASyncState.alarmStates.L ||
+      tempSensor4200ASyncState.alarmStates.LL,
+    alarmColor:
+      tempSensor4200ASyncState.alarmStates.HH ||
+      tempSensor4200ASyncState.alarmStates.LL
+        ? "red"
+        : tempSensor4200ASyncState.alarmStates.H ||
+            tempSensor4200ASyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: tempSensor4200AConfig.ALM_LL_LIM,
     alarmL: tempSensor4200AConfig.ALM_L_LIM,
     alarmH: tempSensor4200AConfig.ALM_H_LIM,
@@ -1444,19 +2369,28 @@ const HomeScreen = () => {
   // Build Temperature Sensor 1540-TI-4200B data from synced state
   const tempSensor4200BData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: tempSensor4200BConfig.TAGNAME || '1540-TI-4200B',
-    description: tempSensor4200BConfig.DESC || 'Furnace Temp Out B',
+    instrumentTag: tempSensor4200BConfig.TAGNAME || "1540-TI-4200B",
+    description: tempSensor4200BConfig.DESC || "Furnace Temp Out B",
     pv: tempSensor4200BSyncState.syncedPV,
     sp: tempSensor4200BSyncState.syncedSP,
     out: tempSensor4200BSyncState.syncedOUT,
     mode: tempSensor4200BSyncState.syncedMode,
-    pvUnits: tempSensor4200BConfig.EU || '°F',
+    pvUnits: tempSensor4200BConfig.EU || "°F",
     pvRangeMin: tempSensor4200BConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200BConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.H ||
-      tempSensor4200BSyncState.alarmStates.L || tempSensor4200BSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.LL) ? 'red' :
-      (tempSensor4200BSyncState.alarmStates.H || tempSensor4200BSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      tempSensor4200BSyncState.alarmStates.HH ||
+      tempSensor4200BSyncState.alarmStates.H ||
+      tempSensor4200BSyncState.alarmStates.L ||
+      tempSensor4200BSyncState.alarmStates.LL,
+    alarmColor:
+      tempSensor4200BSyncState.alarmStates.HH ||
+      tempSensor4200BSyncState.alarmStates.LL
+        ? "red"
+        : tempSensor4200BSyncState.alarmStates.H ||
+            tempSensor4200BSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: tempSensor4200BConfig.ALM_LL_LIM,
     alarmL: tempSensor4200BConfig.ALM_L_LIM,
     alarmH: tempSensor4200BConfig.ALM_H_LIM,
@@ -1466,19 +2400,28 @@ const HomeScreen = () => {
   // Build Temperature Sensor 1540-TI-4200C data from synced state (Furnace temp 1800-2300°F)
   const tempSensor4200CData: ControllerData = {
     ...defaultControllerData,
-    instrumentTag: '1540-TI-4200C',
-    description: 'Furnace C',
+    instrumentTag: "1540-TI-4200C",
+    description: "Furnace C",
     pv: tempSensor4200CSyncState.syncedPV,
     sp: tempSensor4200CSyncState.syncedSP,
     out: tempSensor4200CSyncState.syncedOUT,
     mode: tempSensor4200CSyncState.syncedMode,
-    pvUnits: '°F',
+    pvUnits: "°F",
     pvRangeMin: 1800,
     pvRangeMax: 2300,
-    alarmActive: tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.H ||
-      tempSensor4200CSyncState.alarmStates.L || tempSensor4200CSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.LL) ? 'red' :
-      (tempSensor4200CSyncState.alarmStates.H || tempSensor4200CSyncState.alarmStates.L) ? 'yellow' : undefined,
+    alarmActive:
+      tempSensor4200CSyncState.alarmStates.HH ||
+      tempSensor4200CSyncState.alarmStates.H ||
+      tempSensor4200CSyncState.alarmStates.L ||
+      tempSensor4200CSyncState.alarmStates.LL,
+    alarmColor:
+      tempSensor4200CSyncState.alarmStates.HH ||
+      tempSensor4200CSyncState.alarmStates.LL
+        ? "red"
+        : tempSensor4200CSyncState.alarmStates.H ||
+            tempSensor4200CSyncState.alarmStates.L
+          ? "yellow"
+          : undefined,
     alarmLL: 1850,
     alarmL: 1900,
     alarmH: 2200,
@@ -1525,14 +2468,21 @@ const HomeScreen = () => {
           speedSP: loadedCaseValue1540H4030,
           motorSpeedRPM: speedRPM,
           compressorSpeedRPM: speedRPM,
-          motorPowerHP: Math.round(((loadedCaseValue1540H4030 / 100) * 150) * 10) / 10, // Match dynamic mode calculation
-          currentPV: Math.round((20 + (loadedCaseValue1540H4030 / 100) * 50) * 10) / 10, // Match dynamic mode calculation
+          motorPowerHP:
+            Math.round((loadedCaseValue1540H4030 / 100) * 150 * 10) / 10, // Match dynamic mode calculation
+          currentPV:
+            Math.round((20 + (loadedCaseValue1540H4030 / 100) * 50) * 10) / 10, // Match dynamic mode calculation
           state: "RUNNING",
           deviceState: "Static Mode",
         });
       }
     }
-  }, [selectedMode, staticSimulationResults, loadedCaseValue1540H4030, setStaticValues]);
+  }, [
+    selectedMode,
+    staticSimulationResults,
+    loadedCaseValue1540H4030,
+    setStaticValues,
+  ]);
 
   const handleCompressorClick = () => {
     if (isLocked) {
@@ -1548,20 +2498,24 @@ const HomeScreen = () => {
 
   const handleSulfurValveClick = () => {
     if (isLocked) {
-      setLocation('/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=home-screen');
+      setLocation(
+        "/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=home-screen",
+      );
     }
   };
 
   // L2 Sulfur Valve click handler - navigates to sulfur hydraulics page
   const handleSulfurValveL2Click = () => {
     if (isLockedL2) {
-      setLocation('/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=l2-furnace');
+      setLocation(
+        "/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=l2-furnace",
+      );
     }
   };
 
   const handleJugValveClick = () => {
     if (isLocked || isLockedL2) {
-      setLocation('/unit-operation/jug-valve-whb');
+      setLocation("/unit-operation/jug-valve-whb");
     }
   };
 
@@ -1569,15 +2523,19 @@ const HomeScreen = () => {
   const handleFurnaceClick = () => {
     if (isLockedL2) {
       // Get the current sulfur flow value in gpm (use static value if available, otherwise synced value)
-      const sulfurFlowGpm = useStaticSulfurFlow ? loadedCaseValueSulfurFlow : sulfurSyncState.syncedPV;
+      const sulfurFlowGpm = useStaticSulfurFlow
+        ? loadedCaseValueSulfurFlow
+        : sulfurSyncState.syncedPV;
       // Navigate with sulfur flow as URL parameter (in gpm units) - air flow will be calculated from sulfur flow
-      setLocation(`/unit-operation/sulfur-furnace?sulfurFlowGpm=${sulfurFlowGpm?.toFixed(2) || '79'}`);
+      setLocation(
+        `/unit-operation/sulfur-furnace?sulfurFlowGpm=${sulfurFlowGpm?.toFixed(2) || "79"}`,
+      );
     }
   };
 
   const handleJugValvePositionerClick = () => {
     if (isLocked) {
-      setLocation('/jug-valve-positioner/3e');
+      setLocation("/jug-valve-positioner/3e");
     }
   };
 
@@ -1601,7 +2559,9 @@ const HomeScreen = () => {
 
   const handleTurboGeneratorClick = () => {
     if (isLocked) {
-      setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
+      setLocation(
+        "/settings/controller-outputs/faceplates/turbo-generator-faceplate",
+      );
     }
   };
 
@@ -1631,9 +2591,10 @@ const HomeScreen = () => {
 
   // Build secondary faceplate data from synced state
   // In Static mode, use the loaded case value for PV, SP, and OUT to match the primary faceplate
-  const staticSulfurValue = useStaticSulfurFlow && loadedCaseValueSulfurFlow !== null
-    ? loadedCaseValueSulfurFlow
-    : null;
+  const staticSulfurValue =
+    useStaticSulfurFlow && loadedCaseValueSulfurFlow !== null
+      ? loadedCaseValueSulfurFlow
+      : null;
 
   const sulfurFlowSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
@@ -1641,9 +2602,11 @@ const HomeScreen = () => {
     SP: staticSulfurValue ?? sulfurSyncState.syncedSP,
     TSP: staticSulfurValue ?? sulfurSyncState.syncedSP,
     OUT_PCT: staticSulfurValue ?? sulfurSyncState.syncedOUT,
-    MODE_AUTOMAN: sulfurSyncState.syncedMode === 'AUTO' || sulfurSyncState.syncedMode === 'MAN'
-      ? sulfurSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      sulfurSyncState.syncedMode === "AUTO" ||
+      sulfurSyncState.syncedMode === "MAN"
+        ? sulfurSyncState.syncedMode
+        : "AUTO",
     MODE_ROUTRCAS: sulfurFlowRoutRcas,
     BYPASS_ACTIVE: sulfurFlowBypass,
     ALM_HH_ACT: sulfurSyncState.alarmStates.HH,
@@ -1655,9 +2618,9 @@ const HomeScreen = () => {
 
   const sulfurFlowSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: '1530-F-2602',
-    DESC: 'Sulfur Flow Controller',
-    EU: 'GPM',
+    TAGNAME: "1530-F-2602",
+    DESC: "Sulfur Flow Controller",
+    EU: "GPM",
     PV_SCALE_LO: 0,
     PV_SCALE_HI: 100,
     SP_LIM_LO: 0,
@@ -1678,9 +2641,11 @@ const HomeScreen = () => {
     SP: tempSensorSyncState.syncedSP,
     TSP: tempSensorSyncState.syncedSP,
     OUT_PCT: tempSensorSyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensorSyncState.syncedMode === 'AUTO' || tempSensorSyncState.syncedMode === 'MAN'
-      ? tempSensorSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      tempSensorSyncState.syncedMode === "AUTO" ||
+      tempSensorSyncState.syncedMode === "MAN"
+        ? tempSensorSyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: tempSensorSyncState.alarmStates.HH,
     ALM_H_ACT: tempSensorSyncState.alarmStates.H,
     ALM_L_ACT: tempSensorSyncState.alarmStates.L,
@@ -1689,9 +2654,9 @@ const HomeScreen = () => {
 
   const tempSensorSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: tempSensorConfig.TAGNAME || '1520-TI-5821',
-    DESC: tempSensorConfig.DESC || 'DT Gas Out Temperature',
-    EU: tempSensorConfig.EU || '°F',
+    TAGNAME: tempSensorConfig.TAGNAME || "1520-TI-5821",
+    DESC: tempSensorConfig.DESC || "DT Gas Out Temperature",
+    EU: tempSensorConfig.EU || "°F",
     PV_SCALE_LO: tempSensorConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: tempSensorConfig.PV_SCALE_HI ?? 500,
     SP_LIM_LO: tempSensorConfig.SP_LIM_LO ?? 100,
@@ -1700,7 +2665,7 @@ const HomeScreen = () => {
     ALM_L_LIM: tempSensorConfig.ALM_L_LIM ?? 0,
     ALM_H_LIM: tempSensorConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: tempSensorConfig.ALM_HH_LIM ?? 0,
-    UNIT: tempSensorConfig.UNIT || 'U-505',
+    UNIT: tempSensorConfig.UNIT || "U-505",
   };
 
   // Build temperature sensor 1540-TI-4200A secondary faceplate data
@@ -1710,9 +2675,11 @@ const HomeScreen = () => {
     SP: tempSensor4200ASyncState.syncedSP,
     TSP: tempSensor4200ASyncState.syncedSP,
     OUT_PCT: tempSensor4200ASyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4200ASyncState.syncedMode === 'AUTO' || tempSensor4200ASyncState.syncedMode === 'MAN'
-      ? tempSensor4200ASyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      tempSensor4200ASyncState.syncedMode === "AUTO" ||
+      tempSensor4200ASyncState.syncedMode === "MAN"
+        ? tempSensor4200ASyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: tempSensor4200ASyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4200ASyncState.alarmStates.H,
     ALM_L_ACT: tempSensor4200ASyncState.alarmStates.L,
@@ -1721,9 +2688,9 @@ const HomeScreen = () => {
 
   const tempSensor4200ASecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: tempSensor4200AConfig.TAGNAME || '1540-TI-4200A',
-    DESC: tempSensor4200AConfig.DESC || 'Furnace Temp Out A',
-    EU: tempSensor4200AConfig.EU || '°F',
+    TAGNAME: tempSensor4200AConfig.TAGNAME || "1540-TI-4200A",
+    DESC: tempSensor4200AConfig.DESC || "Furnace Temp Out A",
+    EU: tempSensor4200AConfig.EU || "°F",
     PV_SCALE_LO: tempSensor4200AConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: tempSensor4200AConfig.PV_SCALE_HI ?? 2500,
     SP_LIM_LO: tempSensor4200AConfig.SP_LIM_LO ?? 0,
@@ -1732,7 +2699,7 @@ const HomeScreen = () => {
     ALM_L_LIM: tempSensor4200AConfig.ALM_L_LIM ?? 0,
     ALM_H_LIM: tempSensor4200AConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: tempSensor4200AConfig.ALM_HH_LIM ?? 0,
-    UNIT: tempSensor4200AConfig.UNIT || 'U-505',
+    UNIT: tempSensor4200AConfig.UNIT || "U-505",
   };
 
   // Build temperature sensor 1540-TI-4200B secondary faceplate data
@@ -1742,9 +2709,11 @@ const HomeScreen = () => {
     SP: tempSensor4200BSyncState.syncedSP,
     TSP: tempSensor4200BSyncState.syncedSP,
     OUT_PCT: tempSensor4200BSyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4200BSyncState.syncedMode === 'AUTO' || tempSensor4200BSyncState.syncedMode === 'MAN'
-      ? tempSensor4200BSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      tempSensor4200BSyncState.syncedMode === "AUTO" ||
+      tempSensor4200BSyncState.syncedMode === "MAN"
+        ? tempSensor4200BSyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: tempSensor4200BSyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4200BSyncState.alarmStates.H,
     ALM_L_ACT: tempSensor4200BSyncState.alarmStates.L,
@@ -1753,9 +2722,9 @@ const HomeScreen = () => {
 
   const tempSensor4200BSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: tempSensor4200BConfig.TAGNAME || '1540-TI-4200B',
-    DESC: tempSensor4200BConfig.DESC || 'Furnace Temp Out B',
-    EU: tempSensor4200BConfig.EU || '°F',
+    TAGNAME: tempSensor4200BConfig.TAGNAME || "1540-TI-4200B",
+    DESC: tempSensor4200BConfig.DESC || "Furnace Temp Out B",
+    EU: tempSensor4200BConfig.EU || "°F",
     PV_SCALE_LO: tempSensor4200BConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: tempSensor4200BConfig.PV_SCALE_HI ?? 2500,
     SP_LIM_LO: tempSensor4200BConfig.SP_LIM_LO ?? 0,
@@ -1764,7 +2733,7 @@ const HomeScreen = () => {
     ALM_L_LIM: tempSensor4200BConfig.ALM_L_LIM ?? 0,
     ALM_H_LIM: tempSensor4200BConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: tempSensor4200BConfig.ALM_HH_LIM ?? 0,
-    UNIT: tempSensor4200BConfig.UNIT || 'U-505',
+    UNIT: tempSensor4200BConfig.UNIT || "U-505",
   };
 
   // Build temperature sensor 1540-TI-4200C secondary faceplate data
@@ -1774,9 +2743,11 @@ const HomeScreen = () => {
     SP: tempSensor4200CSyncState.syncedSP,
     TSP: tempSensor4200CSyncState.syncedSP,
     OUT_PCT: tempSensor4200CSyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4200CSyncState.syncedMode === 'AUTO' || tempSensor4200CSyncState.syncedMode === 'MAN'
-      ? tempSensor4200CSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      tempSensor4200CSyncState.syncedMode === "AUTO" ||
+      tempSensor4200CSyncState.syncedMode === "MAN"
+        ? tempSensor4200CSyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: tempSensor4200CSyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4200CSyncState.alarmStates.H,
     ALM_L_ACT: tempSensor4200CSyncState.alarmStates.L,
@@ -1785,9 +2756,9 @@ const HomeScreen = () => {
 
   const tempSensor4200CSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: tempSensor4200CConfig.TAGNAME || '1540-TI-4200C',
-    DESC: tempSensor4200CConfig.DESC || 'Furnace Temp Out C',
-    EU: tempSensor4200CConfig.EU || '°F',
+    TAGNAME: tempSensor4200CConfig.TAGNAME || "1540-TI-4200C",
+    DESC: tempSensor4200CConfig.DESC || "Furnace Temp Out C",
+    EU: tempSensor4200CConfig.EU || "°F",
     PV_SCALE_LO: tempSensor4200CConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: tempSensor4200CConfig.PV_SCALE_HI ?? 2500,
     SP_LIM_LO: tempSensor4200CConfig.SP_LIM_LO ?? 0,
@@ -1796,7 +2767,7 @@ const HomeScreen = () => {
     ALM_L_LIM: tempSensor4200CConfig.ALM_L_LIM ?? 0,
     ALM_H_LIM: tempSensor4200CConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: tempSensor4200CConfig.ALM_HH_LIM ?? 0,
-    UNIT: tempSensor4200CConfig.UNIT || 'U-505',
+    UNIT: tempSensor4200CConfig.UNIT || "U-505",
   };
 
   // Build temperature sensor 1540-TI-4825 secondary faceplate data
@@ -1806,9 +2777,11 @@ const HomeScreen = () => {
     SP: tempSensor4825SyncState.syncedSP,
     TSP: tempSensor4825SyncState.syncedSP,
     OUT_PCT: tempSensor4825SyncState.syncedOUT,
-    MODE_AUTOMAN: tempSensor4825SyncState.syncedMode === 'AUTO' || tempSensor4825SyncState.syncedMode === 'MAN'
-      ? tempSensor4825SyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      tempSensor4825SyncState.syncedMode === "AUTO" ||
+      tempSensor4825SyncState.syncedMode === "MAN"
+        ? tempSensor4825SyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: tempSensor4825SyncState.alarmStates.HH,
     ALM_H_ACT: tempSensor4825SyncState.alarmStates.H,
     ALM_L_ACT: tempSensor4825SyncState.alarmStates.L,
@@ -1817,9 +2790,9 @@ const HomeScreen = () => {
 
   const tempSensor4825SecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: tempSensor4825Config.TAGNAME || '1540-TI-4825',
-    DESC: tempSensor4825Config.DESC || 'Pass 1 Catalyst In',
-    EU: tempSensor4825Config.EU || '°F',
+    TAGNAME: tempSensor4825Config.TAGNAME || "1540-TI-4825",
+    DESC: tempSensor4825Config.DESC || "Pass 1 Catalyst In",
+    EU: tempSensor4825Config.EU || "°F",
     PV_SCALE_LO: tempSensor4825Config.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: tempSensor4825Config.PV_SCALE_HI ?? 2000,
     SP_LIM_LO: tempSensor4825Config.SP_LIM_LO ?? 0,
@@ -1828,7 +2801,7 @@ const HomeScreen = () => {
     ALM_L_LIM: tempSensor4825Config.ALM_L_LIM ?? 700,
     ALM_H_LIM: tempSensor4825Config.ALM_H_LIM ?? 850,
     ALM_HH_LIM: tempSensor4825Config.ALM_HH_LIM ?? 900,
-    UNIT: tempSensor4825Config.UNIT || 'U-505',
+    UNIT: tempSensor4825Config.UNIT || "U-505",
   };
 
   // Build Hand Controller 1540-H-4030 secondary faceplate data
@@ -1838,9 +2811,11 @@ const HomeScreen = () => {
     SP: handControllerSyncState.syncedSP,
     TSP: handControllerSyncState.syncedSP,
     OUT_PCT: handControllerSyncState.syncedOUT,
-    MODE_AUTOMAN: handControllerSyncState.syncedMode === 'AUTO' || handControllerSyncState.syncedMode === 'MAN'
-      ? handControllerSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      handControllerSyncState.syncedMode === "AUTO" ||
+      handControllerSyncState.syncedMode === "MAN"
+        ? handControllerSyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: handControllerSyncState.alarmStates.HH,
     ALM_H_ACT: handControllerSyncState.alarmStates.H,
     ALM_L_ACT: handControllerSyncState.alarmStates.L,
@@ -1850,9 +2825,9 @@ const HomeScreen = () => {
 
   const handControllerSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: handControllerConfig.TAGNAME || '1540-H-4030',
-    DESC: handControllerConfig.DESC || 'Main Compressor Hand Controller',
-    EU: handControllerConfig.EU || '%',
+    TAGNAME: handControllerConfig.TAGNAME || "1540-H-4030",
+    DESC: handControllerConfig.DESC || "Main Compressor Hand Controller",
+    EU: handControllerConfig.EU || "%",
     PV_SCALE_LO: handControllerConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: handControllerConfig.PV_SCALE_HI ?? 100,
     SP_LIM_LO: handControllerConfig.SP_LIM_LO ?? 0,
@@ -1861,7 +2836,7 @@ const HomeScreen = () => {
     ALM_L_LIM: handControllerConfig.ALM_L_LIM ?? 0,
     ALM_H_LIM: handControllerConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: handControllerConfig.ALM_HH_LIM ?? 0,
-    UNIT: handControllerConfig.UNIT || 'U-505',
+    UNIT: handControllerConfig.UNIT || "U-505",
   };
 
   // Build Jug Valve Hand Controller 1540-H-4282 secondary faceplate data
@@ -1871,9 +2846,11 @@ const HomeScreen = () => {
     SP: jugValveHandControllerSyncState.syncedSP,
     TSP: jugValveHandControllerSyncState.syncedSP,
     OUT_PCT: jugValveHandControllerSyncState.syncedOUT,
-    MODE_AUTOMAN: jugValveHandControllerSyncState.syncedMode === 'AUTO' || jugValveHandControllerSyncState.syncedMode === 'MAN'
-      ? jugValveHandControllerSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      jugValveHandControllerSyncState.syncedMode === "AUTO" ||
+      jugValveHandControllerSyncState.syncedMode === "MAN"
+        ? jugValveHandControllerSyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: jugValveHandControllerSyncState.alarmStates.HH,
     ALM_H_ACT: jugValveHandControllerSyncState.alarmStates.H,
     ALM_L_ACT: jugValveHandControllerSyncState.alarmStates.L,
@@ -1883,20 +2860,20 @@ const HomeScreen = () => {
 
   const jugValveHandControllerSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: jugValveHandControllerConfig.TAGNAME || '1540-H-4282',
-    DESC: jugValveHandControllerConfig.DESC || 'Jug Valve Hand Controller',
-    EU: jugValveHandControllerConfig.EU || '%',
+    TAGNAME: jugValveHandControllerConfig.TAGNAME || "1540-H-4282",
+    DESC: jugValveHandControllerConfig.DESC || "Jug Valve Hand Controller",
+    EU: jugValveHandControllerConfig.EU || "%",
     PV_SCALE_LO: jugValveHandControllerConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: jugValveHandControllerConfig.PV_SCALE_HI ?? 100,
     SP_LIM_LO: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
     SP_LIM_HI: jugValveHandControllerConfig.SP_LIM_HI ?? 100,
     ALM_LL_LIM: jugValveHandControllerConfig.ALM_LL_LIM ?? 0,
     ALM_L_LIM: jugValveHandControllerConfig.ALM_L_LIM ?? 0,
-    ALM_DL_LIM: 0,  // Explicitly set to 0 to hide DL indicator
-    ALM_DH_LIM: 0,  // Explicitly set to 0 to hide DH indicator
+    ALM_DL_LIM: 0, // Explicitly set to 0 to hide DL indicator
+    ALM_DH_LIM: 0, // Explicitly set to 0 to hide DH indicator
     ALM_H_LIM: jugValveHandControllerConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: jugValveHandControllerConfig.ALM_HH_LIM ?? 0,
-    UNIT: jugValveHandControllerConfig.UNIT || 'U-505',
+    UNIT: jugValveHandControllerConfig.UNIT || "U-505",
   };
 
   // Build WHB Hand Controller 1540-H-4283 secondary faceplate data
@@ -1906,9 +2883,11 @@ const HomeScreen = () => {
     SP: whbHandControllerSyncState.syncedSP,
     TSP: whbHandControllerSyncState.syncedSP,
     OUT_PCT: whbHandControllerSyncState.syncedOUT,
-    MODE_AUTOMAN: whbHandControllerSyncState.syncedMode === 'AUTO' || whbHandControllerSyncState.syncedMode === 'MAN'
-      ? whbHandControllerSyncState.syncedMode
-      : 'AUTO',
+    MODE_AUTOMAN:
+      whbHandControllerSyncState.syncedMode === "AUTO" ||
+      whbHandControllerSyncState.syncedMode === "MAN"
+        ? whbHandControllerSyncState.syncedMode
+        : "AUTO",
     ALM_HH_ACT: whbHandControllerSyncState.alarmStates.HH,
     ALM_H_ACT: whbHandControllerSyncState.alarmStates.H,
     ALM_L_ACT: whbHandControllerSyncState.alarmStates.L,
@@ -1918,20 +2897,20 @@ const HomeScreen = () => {
 
   const whbHandControllerSecondaryConfig: SecondaryControllerConfig = {
     ...defaultSecondaryConfig,
-    TAGNAME: whbHandControllerConfig.TAGNAME || '1540-H-4283',
-    DESC: whbHandControllerConfig.DESC || 'WHB Outlet dP Hand Controller',
-    EU: whbHandControllerConfig.EU || '%',
+    TAGNAME: whbHandControllerConfig.TAGNAME || "1540-H-4283",
+    DESC: whbHandControllerConfig.DESC || "WHB Outlet dP Hand Controller",
+    EU: whbHandControllerConfig.EU || "%",
     PV_SCALE_LO: whbHandControllerConfig.PV_SCALE_LO ?? 0,
     PV_SCALE_HI: whbHandControllerConfig.PV_SCALE_HI ?? 100,
     SP_LIM_LO: whbHandControllerConfig.SP_LIM_LO ?? 0,
     SP_LIM_HI: whbHandControllerConfig.SP_LIM_HI ?? 100,
     ALM_LL_LIM: whbHandControllerConfig.ALM_LL_LIM ?? 0,
     ALM_L_LIM: whbHandControllerConfig.ALM_L_LIM ?? 0,
-    ALM_DL_LIM: 0,  // Explicitly set to 0 to hide DL indicator
-    ALM_DH_LIM: 0,  // Explicitly set to 0 to hide DH indicator
+    ALM_DL_LIM: 0, // Explicitly set to 0 to hide DL indicator
+    ALM_DH_LIM: 0, // Explicitly set to 0 to hide DH indicator
     ALM_H_LIM: whbHandControllerConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: whbHandControllerConfig.ALM_HH_LIM ?? 0,
-    UNIT: whbHandControllerConfig.UNIT || 'U-505',
+    UNIT: whbHandControllerConfig.UNIT || "U-505",
   };
 
   // Fetch saved layout positions from database
@@ -1943,9 +2922,9 @@ const HomeScreen = () => {
       width: number;
       height: number;
       rotation: number;
-    }>
+    }>;
   }>({
-    queryKey: ['/api/homescreen-layout/L1'],
+    queryKey: ["/api/homescreen-layout/L1"],
   });
 
   // Fetch saved L4 layout positions from database
@@ -1958,17 +2937,17 @@ const HomeScreen = () => {
       height: number;
       rotation: number;
       viewScreen?: string;
-    }>
+    }>;
   }>({
-    queryKey: ['/api/homescreen-layout/L4'],
+    queryKey: ["/api/homescreen-layout/L4"],
   });
 
   // Fetch PV case columns for the Open dialog
   const { data: pvCaseData } = useQuery<{
     variables: Array<any>;
-    cases: Array<{ id: string; name: string; description: string }>
+    cases: Array<{ id: string; name: string; description: string }>;
   }>({
-    queryKey: ['/api/process-variables'],
+    queryKey: ["/api/process-variables"],
   });
 
   // Apply loaded L4 positions to state when data arrives (only when not dirty)
@@ -1977,7 +2956,17 @@ const HomeScreen = () => {
     // Only apply saved layout if user hasn't made local modifications
     if (isL4Dirty) return;
 
-    const positionMap = new Map<string, { x: number; y: number; width: number; height: number; rotation: number; viewScreen?: string }>();
+    const positionMap = new Map<
+      string,
+      {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        rotation: number;
+        viewScreen?: string;
+      }
+    >();
     layoutDataL4.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
         x: item.positionX,
@@ -1989,28 +2978,54 @@ const HomeScreen = () => {
       });
     });
 
-    const converter4L4 = positionMap.get('converter4_l4');
+    const converter4L4 = positionMap.get("converter4_l4");
     if (converter4L4) {
       setConverter4L4Position({ x: converter4L4.x, y: converter4L4.y });
-      setConverter4L4Size({ width: converter4L4.width, height: converter4L4.height });
+      setConverter4L4Size({
+        width: converter4L4.width,
+        height: converter4L4.height,
+      });
     }
 
-    const faceplate4825L4 = positionMap.get('faceplate4825_l4');
+    const faceplate4825L4 = positionMap.get("faceplate4825_l4");
     if (faceplate4825L4) {
-      setFaceplate4825L4Position({ x: faceplate4825L4.x, y: faceplate4825L4.y });
-      setFaceplate4825L4Size({ width: faceplate4825L4.width, height: faceplate4825L4.height });
+      setFaceplate4825L4Position({
+        x: faceplate4825L4.x,
+        y: faceplate4825L4.y,
+      });
+      setFaceplate4825L4Size({
+        width: faceplate4825L4.width,
+        height: faceplate4825L4.height,
+      });
     }
 
-    const jugValveHcL4 = positionMap.get('jug_valve_hc_l4');
+    const jugValveHcL4 = positionMap.get("jug_valve_hc_l4");
     if (jugValveHcL4) {
-      setJugValveHandControllerL4Position({ x: jugValveHcL4.x, y: jugValveHcL4.y });
-      setJugValveHandControllerL4Size({ width: jugValveHcL4.width, height: jugValveHcL4.height });
+      setJugValveHandControllerL4Position({
+        x: jugValveHcL4.x,
+        y: jugValveHcL4.y,
+      });
+      setJugValveHandControllerL4Size({
+        width: jugValveHcL4.width,
+        height: jugValveHcL4.height,
+      });
     }
 
     // Restore vertical arrows for L4-Converter
-    const l4Arrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
+    const l4Arrows: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      screen: string;
+      rotation: number;
+    }> = [];
     layoutDataL4.layouts.forEach((item) => {
-      if (item.elementId.startsWith('v_arrow_') && item.viewScreen === 'L4-Converter') {
+      if (
+        item.elementId.startsWith("v_arrow_") &&
+        item.viewScreen === "L4-Converter"
+      ) {
         l4Arrows.push({
           id: item.elementId,
           x: item.positionX,
@@ -2023,17 +3038,27 @@ const HomeScreen = () => {
       }
     });
     if (l4Arrows.length > 0) {
-      setVerticalArrows(prev => {
+      setVerticalArrows((prev) => {
         // Remove existing L4 arrows and add loaded ones
-        const nonL4Arrows = prev.filter(a => a.screen !== 'L4-Converter');
+        const nonL4Arrows = prev.filter((a) => a.screen !== "L4-Converter");
         return [...nonL4Arrows, ...l4Arrows];
       });
     }
 
     // Restore vertical lines for L4-Converter
-    const l4Lines: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
+    const l4Lines: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      screen: string;
+    }> = [];
     layoutDataL4.layouts.forEach((item) => {
-      if (item.elementId.startsWith('v_line_') && item.viewScreen === 'L4-Converter') {
+      if (
+        item.elementId.startsWith("v_line_") &&
+        item.viewScreen === "L4-Converter"
+      ) {
         l4Lines.push({
           id: item.elementId,
           x: item.positionX,
@@ -2045,9 +3070,9 @@ const HomeScreen = () => {
       }
     });
     if (l4Lines.length > 0) {
-      setVerticalLines(prev => {
+      setVerticalLines((prev) => {
         // Remove existing L4 lines and add loaded ones
-        const nonL4Lines = prev.filter(l => l.screen !== 'L4-Converter');
+        const nonL4Lines = prev.filter((l) => l.screen !== "L4-Converter");
         return [...nonL4Lines, ...l4Lines];
       });
     }
@@ -2063,9 +3088,9 @@ const HomeScreen = () => {
       height: number;
       rotation: number;
       viewScreen?: string;
-    }>
+    }>;
   }>({
-    queryKey: ['/api/homescreen-layout/L2'],
+    queryKey: ["/api/homescreen-layout/L2"],
   });
 
   // Apply loaded L2 positions to state when data arrives (only when not dirty)
@@ -2073,7 +3098,10 @@ const HomeScreen = () => {
     if (!layoutDataL2?.layouts || layoutDataL2.layouts.length === 0) return;
     if (isL2Dirty) return;
 
-    const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
+    const positionMap = new Map<
+      string,
+      { x: number; y: number; width: number; height: number }
+    >();
     layoutDataL2.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
         x: item.positionX,
@@ -2083,172 +3111,268 @@ const HomeScreen = () => {
       });
     });
 
-    const yellowArrow = positionMap.get('yellow_arrow_l2');
+    const yellowArrow = positionMap.get("yellow_arrow_l2");
     if (yellowArrow) {
       setYellowArrowL2Position({ x: yellowArrow.x, y: yellowArrow.y });
-      setYellowArrowL2Size({ width: yellowArrow.width, height: yellowArrow.height });
+      setYellowArrowL2Size({
+        width: yellowArrow.width,
+        height: yellowArrow.height,
+      });
     }
 
-    const cyanArrow = positionMap.get('cyan_arrow_l2');
+    const cyanArrow = positionMap.get("cyan_arrow_l2");
     if (cyanArrow) {
       setCyanArrowL2Position({ x: cyanArrow.x, y: cyanArrow.y });
       setCyanArrowL2Size({ width: cyanArrow.width, height: cyanArrow.height });
     }
 
-    const sulfurFurnace = positionMap.get('sulfur_furnace_l2');
+    const sulfurFurnace = positionMap.get("sulfur_furnace_l2");
     if (sulfurFurnace) {
       setSulfurFurnaceL2Position({ x: sulfurFurnace.x, y: sulfurFurnace.y });
-      setSulfurFurnaceL2Size({ width: sulfurFurnace.width, height: sulfurFurnace.height });
+      setSulfurFurnaceL2Size({
+        width: sulfurFurnace.width,
+        height: sulfurFurnace.height,
+      });
     }
 
-    const wasteHeatBoiler = positionMap.get('waste_heat_boiler_l2');
+    const wasteHeatBoiler = positionMap.get("waste_heat_boiler_l2");
     if (wasteHeatBoiler) {
-      setWasteHeatBoilerL2Position({ x: wasteHeatBoiler.x, y: wasteHeatBoiler.y });
-      setWasteHeatBoilerL2Size({ width: wasteHeatBoiler.width, height: wasteHeatBoiler.height });
+      setWasteHeatBoilerL2Position({
+        x: wasteHeatBoiler.x,
+        y: wasteHeatBoiler.y,
+      });
+      setWasteHeatBoilerL2Size({
+        width: wasteHeatBoiler.width,
+        height: wasteHeatBoiler.height,
+      });
     }
 
-    const yellowHorizArrow = positionMap.get('yellow_horiz_arrow_l2');
+    const yellowHorizArrow = positionMap.get("yellow_horiz_arrow_l2");
     if (yellowHorizArrow) {
-      setYellowHorizArrowL2Position({ x: yellowHorizArrow.x, y: yellowHorizArrow.y });
-      setYellowHorizArrowL2Size({ width: yellowHorizArrow.width, height: yellowHorizArrow.height });
+      setYellowHorizArrowL2Position({
+        x: yellowHorizArrow.x,
+        y: yellowHorizArrow.y,
+      });
+      setYellowHorizArrowL2Size({
+        width: yellowHorizArrow.width,
+        height: yellowHorizArrow.height,
+      });
     }
 
-    const cyanLongArrow = positionMap.get('cyan_long_arrow_l2');
+    const cyanLongArrow = positionMap.get("cyan_long_arrow_l2");
     if (cyanLongArrow) {
       setCyanLongArrowL2Position({ x: cyanLongArrow.x, y: cyanLongArrow.y });
-      setCyanLongArrowL2Size({ width: cyanLongArrow.width, height: cyanLongArrow.height });
+      setCyanLongArrowL2Size({
+        width: cyanLongArrow.width,
+        height: cyanLongArrow.height,
+      });
     }
 
-    const cyanUpArrow = positionMap.get('cyan_up_arrow_l2');
+    const cyanUpArrow = positionMap.get("cyan_up_arrow_l2");
     if (cyanUpArrow) {
       setCyanUpArrowL2Position({ x: cyanUpArrow.x, y: cyanUpArrow.y });
-      setCyanUpArrowL2Size({ width: cyanUpArrow.width, height: cyanUpArrow.height });
+      setCyanUpArrowL2Size({
+        width: cyanUpArrow.width,
+        height: cyanUpArrow.height,
+      });
     }
 
-    const cyanLeftArrow = positionMap.get('cyan_left_arrow_l2');
+    const cyanLeftArrow = positionMap.get("cyan_left_arrow_l2");
     if (cyanLeftArrow) {
       setCyanLeftArrowL2Position({ x: cyanLeftArrow.x, y: cyanLeftArrow.y });
-      setCyanLeftArrowL2Size({ width: cyanLeftArrow.width, height: cyanLeftArrow.height });
+      setCyanLeftArrowL2Size({
+        width: cyanLeftArrow.width,
+        height: cyanLeftArrow.height,
+      });
     }
 
-    const cyanLongLeftArrow = positionMap.get('cyan_long_left_arrow_l2');
+    const cyanLongLeftArrow = positionMap.get("cyan_long_left_arrow_l2");
     if (cyanLongLeftArrow) {
-      setCyanLongLeftArrowL2Position({ x: cyanLongLeftArrow.x, y: cyanLongLeftArrow.y });
-      setCyanLongLeftArrowL2Size({ width: cyanLongLeftArrow.width, height: cyanLongLeftArrow.height });
+      setCyanLongLeftArrowL2Position({
+        x: cyanLongLeftArrow.x,
+        y: cyanLongLeftArrow.y,
+      });
+      setCyanLongLeftArrowL2Size({
+        width: cyanLongLeftArrow.width,
+        height: cyanLongLeftArrow.height,
+      });
     }
 
-    const cyanUpArrow2 = positionMap.get('cyan_up_arrow_2_l2');
+    const cyanUpArrow2 = positionMap.get("cyan_up_arrow_2_l2");
     if (cyanUpArrow2) {
       setCyanUpArrow2L2Position({ x: cyanUpArrow2.x, y: cyanUpArrow2.y });
-      setCyanUpArrow2L2Size({ width: cyanUpArrow2.width, height: cyanUpArrow2.height });
+      setCyanUpArrow2L2Size({
+        width: cyanUpArrow2.width,
+        height: cyanUpArrow2.height,
+      });
     }
 
-    const cyanUpArrow3 = positionMap.get('cyan_up_arrow_3_l2');
+    const cyanUpArrow3 = positionMap.get("cyan_up_arrow_3_l2");
     if (cyanUpArrow3) {
       setCyanUpArrow3L2Position({ x: cyanUpArrow3.x, y: cyanUpArrow3.y });
-      setCyanUpArrow3L2Size({ width: cyanUpArrow3.width, height: cyanUpArrow3.height });
+      setCyanUpArrow3L2Size({
+        width: cyanUpArrow3.width,
+        height: cyanUpArrow3.height,
+      });
     }
 
-    const cyanDownArrow = positionMap.get('cyan_down_arrow_l2');
+    const cyanDownArrow = positionMap.get("cyan_down_arrow_l2");
     if (cyanDownArrow) {
       setCyanDownArrowL2Position({ x: cyanDownArrow.x, y: cyanDownArrow.y });
-      setCyanDownArrowL2Size({ width: cyanDownArrow.width, height: cyanDownArrow.height });
+      setCyanDownArrowL2Size({
+        width: cyanDownArrow.width,
+        height: cyanDownArrow.height,
+      });
     }
 
-    const metalTank = positionMap.get('metal_tank_l2');
+    const metalTank = positionMap.get("metal_tank_l2");
     if (metalTank) {
       setMetalTankL2Position({ x: metalTank.x, y: metalTank.y });
       setMetalTankL2Size({ width: metalTank.width, height: metalTank.height });
     }
 
-    const grayYellowArrow = positionMap.get('gray_yellow_arrow_l2');
+    const grayYellowArrow = positionMap.get("gray_yellow_arrow_l2");
     if (grayYellowArrow) {
-      setGrayYellowArrowL2Position({ x: grayYellowArrow.x, y: grayYellowArrow.y });
-      setGrayYellowArrowL2Size({ width: grayYellowArrow.width, height: grayYellowArrow.height });
+      setGrayYellowArrowL2Position({
+        x: grayYellowArrow.x,
+        y: grayYellowArrow.y,
+      });
+      setGrayYellowArrowL2Size({
+        width: grayYellowArrow.width,
+        height: grayYellowArrow.height,
+      });
     }
 
-    const cyanHorizArrow2 = positionMap.get('cyan_horiz_arrow_2_l2');
+    const cyanHorizArrow2 = positionMap.get("cyan_horiz_arrow_2_l2");
     if (cyanHorizArrow2) {
-      setCyanHorizArrow2L2Position({ x: cyanHorizArrow2.x, y: cyanHorizArrow2.y });
-      setCyanHorizArrow2L2Size({ width: cyanHorizArrow2.width, height: cyanHorizArrow2.height });
+      setCyanHorizArrow2L2Position({
+        x: cyanHorizArrow2.x,
+        y: cyanHorizArrow2.y,
+      });
+      setCyanHorizArrow2L2Size({
+        width: cyanHorizArrow2.width,
+        height: cyanHorizArrow2.height,
+      });
     }
 
-    const grayArrowCyanLine = positionMap.get('gray_arrow_cyan_line_l2');
+    const grayArrowCyanLine = positionMap.get("gray_arrow_cyan_line_l2");
     if (grayArrowCyanLine) {
-      setGrayArrowCyanLineL2Position({ x: grayArrowCyanLine.x, y: grayArrowCyanLine.y });
-      setGrayArrowCyanLineL2Size({ width: grayArrowCyanLine.width, height: grayArrowCyanLine.height });
+      setGrayArrowCyanLineL2Position({
+        x: grayArrowCyanLine.x,
+        y: grayArrowCyanLine.y,
+      });
+      setGrayArrowCyanLineL2Size({
+        width: grayArrowCyanLine.width,
+        height: grayArrowCyanLine.height,
+      });
     }
 
-    const cyanThinLine1 = positionMap.get('cyan_thin_line_1_l2');
+    const cyanThinLine1 = positionMap.get("cyan_thin_line_1_l2");
     if (cyanThinLine1) {
       setCyanThinLine1L2Position({ x: cyanThinLine1.x, y: cyanThinLine1.y });
-      setCyanThinLine1L2Size({ width: cyanThinLine1.width, height: cyanThinLine1.height });
+      setCyanThinLine1L2Size({
+        width: cyanThinLine1.width,
+        height: cyanThinLine1.height,
+      });
     }
 
-    const cyanThinLine2 = positionMap.get('cyan_thin_line_2_l2');
+    const cyanThinLine2 = positionMap.get("cyan_thin_line_2_l2");
     if (cyanThinLine2) {
       setCyanThinLine2L2Position({ x: cyanThinLine2.x, y: cyanThinLine2.y });
-      setCyanThinLine2L2Size({ width: cyanThinLine2.width, height: cyanThinLine2.height });
+      setCyanThinLine2L2Size({
+        width: cyanThinLine2.width,
+        height: cyanThinLine2.height,
+      });
     }
 
-    const cyanVertLine1 = positionMap.get('cyan_vert_line_1_l2');
+    const cyanVertLine1 = positionMap.get("cyan_vert_line_1_l2");
     if (cyanVertLine1) {
       setCyanVertLine1L2Position({ x: cyanVertLine1.x, y: cyanVertLine1.y });
-      setCyanVertLine1L2Size({ width: cyanVertLine1.width, height: cyanVertLine1.height });
+      setCyanVertLine1L2Size({
+        width: cyanVertLine1.width,
+        height: cyanVertLine1.height,
+      });
     }
 
-    const cyanVertLine2 = positionMap.get('cyan_vert_line_2_l2');
+    const cyanVertLine2 = positionMap.get("cyan_vert_line_2_l2");
     if (cyanVertLine2) {
       setCyanVertLine2L2Position({ x: cyanVertLine2.x, y: cyanVertLine2.y });
-      setCyanVertLine2L2Size({ width: cyanVertLine2.width, height: cyanVertLine2.height });
+      setCyanVertLine2L2Size({
+        width: cyanVertLine2.width,
+        height: cyanVertLine2.height,
+      });
     }
 
-    const blackVertLine = positionMap.get('black_vert_line_l2');
+    const blackVertLine = positionMap.get("black_vert_line_l2");
     if (blackVertLine) {
       setBlackVertLineL2Position({ x: blackVertLine.x, y: blackVertLine.y });
-      setBlackVertLineL2Size({ width: blackVertLine.width, height: blackVertLine.height });
+      setBlackVertLineL2Size({
+        width: blackVertLine.width,
+        height: blackVertLine.height,
+      });
     }
 
-    const tempSensor4200AL2 = positionMap.get('temp_sensor_4200a_l2');
+    const tempSensor4200AL2 = positionMap.get("temp_sensor_4200a_l2");
     if (tempSensor4200AL2) {
-      setTempSensor4200AL2Position({ x: tempSensor4200AL2.x, y: tempSensor4200AL2.y });
-      setTempSensor4200AL2Size({ width: tempSensor4200AL2.width, height: tempSensor4200AL2.height });
+      setTempSensor4200AL2Position({
+        x: tempSensor4200AL2.x,
+        y: tempSensor4200AL2.y,
+      });
+      setTempSensor4200AL2Size({
+        width: tempSensor4200AL2.width,
+        height: tempSensor4200AL2.height,
+      });
     }
 
-    const handController = positionMap.get('hand_controller_l2');
+    const handController = positionMap.get("hand_controller_l2");
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
-      setHandControllerL2Size({ width: handController.width, height: handController.height });
+      setHandControllerL2Size({
+        width: handController.width,
+        height: handController.height,
+      });
     }
 
-    const vfd = positionMap.get('vfd_l2');
+    const vfd = positionMap.get("vfd_l2");
     if (vfd) {
       setVfdL2Position({ x: vfd.x, y: vfd.y });
       setVfdL2Size({ width: vfd.width, height: vfd.height });
     }
 
-    const sulfurFlow = positionMap.get('sulfur_flow_l2');
+    const sulfurFlow = positionMap.get("sulfur_flow_l2");
     if (sulfurFlow) {
       setSulfurFlowL2Position({ x: sulfurFlow.x, y: sulfurFlow.y });
-      setSulfurFlowL2Size({ width: sulfurFlow.width, height: sulfurFlow.height });
+      setSulfurFlowL2Size({
+        width: sulfurFlow.width,
+        height: sulfurFlow.height,
+      });
     }
 
-    const sulfurValve = positionMap.get('sulfur_valve_l2');
+    const sulfurValve = positionMap.get("sulfur_valve_l2");
     if (sulfurValve) {
       setSulfurValveL2Position({ x: sulfurValve.x, y: sulfurValve.y });
-      setSulfurValveL2Size({ width: sulfurValve.width, height: sulfurValve.height });
+      setSulfurValveL2Size({
+        width: sulfurValve.width,
+        height: sulfurValve.height,
+      });
     }
 
-    const jugValveHc = positionMap.get('jug_valve_hc_l2');
+    const jugValveHc = positionMap.get("jug_valve_hc_l2");
     if (jugValveHc) {
       setJugValveHandControllerL2Position({ x: jugValveHc.x, y: jugValveHc.y });
-      setJugValveHandControllerL2Size({ width: jugValveHc.width, height: jugValveHc.height });
+      setJugValveHandControllerL2Size({
+        width: jugValveHc.width,
+        height: jugValveHc.height,
+      });
     }
 
-    const jugValveHcv = positionMap.get('jug_valve_hcv_l2');
+    const jugValveHcv = positionMap.get("jug_valve_hcv_l2");
     if (jugValveHcv) {
       setJugValveHcvL2Position({ x: jugValveHcv.x, y: jugValveHcv.y });
-      setJugValveHcvL2Size({ width: jugValveHcv.width, height: jugValveHcv.height });
+      setJugValveHcvL2Size({
+        width: jugValveHcv.width,
+        height: jugValveHcv.height,
+      });
     }
   }, [layoutDataL2, isL2Dirty]);
 
@@ -2256,7 +3380,10 @@ const HomeScreen = () => {
   useEffect(() => {
     if (!layoutData?.layouts || layoutData.layouts.length === 0) return;
 
-    const positionMap = new Map<string, { x: number; y: number; width: number; height: number; rotation: number }>();
+    const positionMap = new Map<
+      string,
+      { x: number; y: number; width: number; height: number; rotation: number }
+    >();
     layoutData.layouts.forEach((item) => {
       positionMap.set(item.elementId, {
         x: item.positionX,
@@ -2268,235 +3395,333 @@ const HomeScreen = () => {
     });
 
     // Apply positions to equipment
-    const furnace = positionMap.get('furnace');
+    const furnace = positionMap.get("furnace");
     if (furnace) {
       setFurnacePosition({ x: furnace.x, y: furnace.y });
       setFurnaceSize({ width: furnace.width, height: furnace.height });
     }
 
-    const compressor = positionMap.get('compressor');
+    const compressor = positionMap.get("compressor");
     if (compressor) {
       setCompressorPosition({ x: compressor.x, y: compressor.y });
       setCompressorSize({ width: compressor.width, height: compressor.height });
     }
 
-    const turboGenerator = positionMap.get('turbo_generator');
+    const turboGenerator = positionMap.get("turbo_generator");
     if (turboGenerator) {
       setTurboGeneratorPosition({ x: turboGenerator.x, y: turboGenerator.y });
-      setTurboGeneratorSize({ width: turboGenerator.width, height: turboGenerator.height });
+      setTurboGeneratorSize({
+        width: turboGenerator.width,
+        height: turboGenerator.height,
+      });
     }
 
-    const sulfurFlow = positionMap.get('sulfur_flow');
+    const sulfurFlow = positionMap.get("sulfur_flow");
     if (sulfurFlow) {
       setSulfurFlowPosition({ x: sulfurFlow.x, y: sulfurFlow.y });
       setSulfurFlowSize({ width: sulfurFlow.width, height: sulfurFlow.height });
     }
 
-    const sulfurValve = positionMap.get('sulfur_valve');
+    const sulfurValve = positionMap.get("sulfur_valve");
     if (sulfurValve) {
       setSulfurValvePosition({ x: sulfurValve.x, y: sulfurValve.y });
-      setSulfurValveSize({ width: sulfurValve.width, height: sulfurValve.height });
+      setSulfurValveSize({
+        width: sulfurValve.width,
+        height: sulfurValve.height,
+      });
     }
 
-    const jugValve = positionMap.get('jug_valve');
+    const jugValve = positionMap.get("jug_valve");
     if (jugValve) {
       setJugValvePosition({ x: jugValve.x, y: jugValve.y });
       setJugValveSize({ width: jugValve.width, height: jugValve.height });
     }
 
-    const jugValvePositioner = positionMap.get('jug_valve_positioner');
+    const jugValvePositioner = positionMap.get("jug_valve_positioner");
     if (jugValvePositioner) {
-      setJugValvePositionerPosition({ x: jugValvePositioner.x, y: jugValvePositioner.y });
-      setJugValvePositionerSize({ width: jugValvePositioner.width, height: jugValvePositioner.height });
+      setJugValvePositionerPosition({
+        x: jugValvePositioner.x,
+        y: jugValvePositioner.y,
+      });
+      setJugValvePositionerSize({
+        width: jugValvePositioner.width,
+        height: jugValvePositioner.height,
+      });
     }
 
-    const handController = positionMap.get('hand_controller');
+    const handController = positionMap.get("hand_controller");
     if (handController) {
       setHandControllerPosition({ x: handController.x, y: handController.y });
-      setHandControllerSize({ width: handController.width, height: handController.height });
+      setHandControllerSize({
+        width: handController.width,
+        height: handController.height,
+      });
     }
 
-    const whbHandController = positionMap.get('whb_hand_controller');
+    const whbHandController = positionMap.get("whb_hand_controller");
     if (whbHandController) {
-      setWhbHandControllerPosition({ x: whbHandController.x, y: whbHandController.y });
-      setWhbHandControllerSize({ width: whbHandController.width, height: whbHandController.height });
+      setWhbHandControllerPosition({
+        x: whbHandController.x,
+        y: whbHandController.y,
+      });
+      setWhbHandControllerSize({
+        width: whbHandController.width,
+        height: whbHandController.height,
+      });
     }
 
-    const jugValveHandController = positionMap.get('jug_valve_hand_controller');
+    const jugValveHandController = positionMap.get("jug_valve_hand_controller");
     if (jugValveHandController) {
-      setJugValveHandControllerPosition({ x: jugValveHandController.x, y: jugValveHandController.y });
-      setJugValveHandControllerSize({ width: jugValveHandController.width, height: jugValveHandController.height });
+      setJugValveHandControllerPosition({
+        x: jugValveHandController.x,
+        y: jugValveHandController.y,
+      });
+      setJugValveHandControllerSize({
+        width: jugValveHandController.width,
+        height: jugValveHandController.height,
+      });
     }
 
-    const tempSensor5821 = positionMap.get('temp_sensor_5821');
+    const tempSensor5821 = positionMap.get("temp_sensor_5821");
     if (tempSensor5821) {
       setTempSensorPosition({ x: tempSensor5821.x, y: tempSensor5821.y });
-      setTempSensorSize({ width: tempSensor5821.width, height: tempSensor5821.height });
+      setTempSensorSize({
+        width: tempSensor5821.width,
+        height: tempSensor5821.height,
+      });
     }
 
-    const tempSensor4200a = positionMap.get('temp_sensor_4200a');
+    const tempSensor4200a = positionMap.get("temp_sensor_4200a");
     if (tempSensor4200a) {
-      setTempSensor4200APosition({ x: tempSensor4200a.x, y: tempSensor4200a.y });
-      setTempSensor4200ASize({ width: tempSensor4200a.width, height: tempSensor4200a.height });
+      setTempSensor4200APosition({
+        x: tempSensor4200a.x,
+        y: tempSensor4200a.y,
+      });
+      setTempSensor4200ASize({
+        width: tempSensor4200a.width,
+        height: tempSensor4200a.height,
+      });
     }
 
-    const tempSensor4200b = positionMap.get('temp_sensor_4200b');
+    const tempSensor4200b = positionMap.get("temp_sensor_4200b");
     if (tempSensor4200b) {
-      setTempSensor4200BPosition({ x: tempSensor4200b.x, y: tempSensor4200b.y });
-      setTempSensor4200BSize({ width: tempSensor4200b.width, height: tempSensor4200b.height });
+      setTempSensor4200BPosition({
+        x: tempSensor4200b.x,
+        y: tempSensor4200b.y,
+      });
+      setTempSensor4200BSize({
+        width: tempSensor4200b.width,
+        height: tempSensor4200b.height,
+      });
     }
 
-    const tempSensor4200c = positionMap.get('temp_sensor_4200c');
+    const tempSensor4200c = positionMap.get("temp_sensor_4200c");
     if (tempSensor4200c) {
-      setTempSensor4200CPosition({ x: tempSensor4200c.x, y: tempSensor4200c.y });
-      setTempSensor4200CSize({ width: tempSensor4200c.width, height: tempSensor4200c.height });
+      setTempSensor4200CPosition({
+        x: tempSensor4200c.x,
+        y: tempSensor4200c.y,
+      });
+      setTempSensor4200CSize({
+        width: tempSensor4200c.width,
+        height: tempSensor4200c.height,
+      });
     }
 
     // Converter and process equipment
-    const converter4 = positionMap.get('converter4');
+    const converter4 = positionMap.get("converter4");
     if (converter4) {
       setConverter4Position({ x: converter4.x, y: converter4.y });
       setConverter4Size({ width: converter4.width, height: converter4.height });
     }
 
-    const dt2 = positionMap.get('dt2');
+    const dt2 = positionMap.get("dt2");
     if (dt2) {
       setDt2Position({ x: dt2.x, y: dt2.y });
       setDt2Size({ width: dt2.width, height: dt2.height });
     }
 
-    const fat1 = positionMap.get('fat1');
+    const fat1 = positionMap.get("fat1");
     if (fat1) {
       setFat1Position({ x: fat1.x, y: fat1.y });
       setFat1Size({ width: fat1.width, height: fat1.height });
     }
 
-    const ipat1 = positionMap.get('ipat1');
+    const ipat1 = positionMap.get("ipat1");
     if (ipat1) {
       setIpat1Position({ x: ipat1.x, y: ipat1.y });
       setIpat1Size({ width: ipat1.width, height: ipat1.height });
     }
 
-    const hip1 = positionMap.get('hip1');
+    const hip1 = positionMap.get("hip1");
     if (hip1) {
       setHip1Position({ x: hip1.x, y: hip1.y });
       setHip1Size({ width: hip1.width, height: hip1.height });
     }
 
-    const cip = positionMap.get('cip');
+    const cip = positionMap.get("cip");
     if (cip) {
       setCipPosition({ x: cip.x, y: cip.y });
       setCipSize({ width: cip.width, height: cip.height });
     }
 
-    const sh4a = positionMap.get('sh4a');
+    const sh4a = positionMap.get("sh4a");
     if (sh4a) {
       setSh4aPosition({ x: sh4a.x, y: sh4a.y });
       setSh4aSize({ width: sh4a.width, height: sh4a.height });
     }
 
-    const ec3b = positionMap.get('ec3b');
+    const ec3b = positionMap.get("ec3b");
     if (ec3b) {
       setEc3bPosition({ x: ec3b.x, y: ec3b.y });
       setEc3bSize({ width: ec3b.width, height: ec3b.height });
     }
 
-    const sh1b = positionMap.get('sh1b');
+    const sh1b = positionMap.get("sh1b");
     if (sh1b) {
       setSh1bPosition({ x: sh1b.x, y: sh1b.y });
       setSh1bSize({ width: sh1b.width, height: sh1b.height });
     }
 
     // Industrial Filter
-    const industrialFilter = positionMap.get('industrial_filter');
+    const industrialFilter = positionMap.get("industrial_filter");
     if (industrialFilter) {
       setFilterPosition({ x: industrialFilter.x, y: industrialFilter.y });
-      setFilterSize({ width: industrialFilter.width, height: industrialFilter.height });
+      setFilterSize({
+        width: industrialFilter.width,
+        height: industrialFilter.height,
+      });
     }
 
     // Dashed lines
-    const dashedLine1 = positionMap.get('dashed_line_1');
+    const dashedLine1 = positionMap.get("dashed_line_1");
     if (dashedLine1) {
       setDashedLine1Position({ x: dashedLine1.x, y: dashedLine1.y });
-      setDashedLine1Size({ width: dashedLine1.width, height: dashedLine1.height });
+      setDashedLine1Size({
+        width: dashedLine1.width,
+        height: dashedLine1.height,
+      });
       setDashedLine1Rotation(dashedLine1.rotation || 0);
     }
 
-    const dashedLine2 = positionMap.get('dashed_line_2');
+    const dashedLine2 = positionMap.get("dashed_line_2");
     if (dashedLine2) {
       setDashedLine2Position({ x: dashedLine2.x, y: dashedLine2.y });
-      setDashedLine2Size({ width: dashedLine2.width, height: dashedLine2.height });
+      setDashedLine2Size({
+        width: dashedLine2.width,
+        height: dashedLine2.height,
+      });
       setDashedLine2Rotation(dashedLine2.rotation || 0);
     }
 
-    const dashedLine3 = positionMap.get('dashed_line_3');
+    const dashedLine3 = positionMap.get("dashed_line_3");
     if (dashedLine3) {
       setDashedLine3Position({ x: dashedLine3.x, y: dashedLine3.y });
-      setDashedLine3Size({ width: dashedLine3.width, height: dashedLine3.height });
+      setDashedLine3Size({
+        width: dashedLine3.width,
+        height: dashedLine3.height,
+      });
       setDashedLine3Rotation(dashedLine3.rotation || 0);
     }
 
-    const dashedLine4 = positionMap.get('dashed_line_4');
+    const dashedLine4 = positionMap.get("dashed_line_4");
     if (dashedLine4) {
       setDashedLine4Position({ x: dashedLine4.x, y: dashedLine4.y });
-      setDashedLine4Size({ width: dashedLine4.width, height: dashedLine4.height });
+      setDashedLine4Size({
+        width: dashedLine4.width,
+        height: dashedLine4.height,
+      });
       setDashedLine4Rotation(dashedLine4.rotation || 0);
     }
 
     // Arrows - update from database
-    setArrows(prev => prev.map(arrow => {
-      const saved = positionMap.get(arrow.id);
-      if (saved) {
-        return {
-          ...arrow,
-          x: saved.x,
-          y: saved.y,
-          width: saved.width,
-          height: saved.height,
-          rotation: saved.rotation || 0,
-        };
-      }
-      return arrow;
-    }));
+    setArrows((prev) =>
+      prev.map((arrow) => {
+        const saved = positionMap.get(arrow.id);
+        if (saved) {
+          return {
+            ...arrow,
+            x: saved.x,
+            y: saved.y,
+            width: saved.width,
+            height: saved.height,
+            rotation: saved.rotation || 0,
+          };
+        }
+        return arrow;
+      }),
+    );
 
     // Vertical arrows - load from database (dynamically created elements)
     // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
-    const savedVerticalArrows: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string; rotation: number }> = [];
-    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number; rotation?: number; viewScreen?: string | null }) => {
-      if (layout.elementId.startsWith('v_arrow_')) {
-        savedVerticalArrows.push({
-          id: layout.elementId,
-          x: layout.positionX,
-          y: layout.positionY,
-          width: layout.width,
-          height: layout.height,
-          screen: layout.viewScreen || 'L1 – System Overview',
-          rotation: layout.rotation || 0,
-        });
-      }
-    });
+    const savedVerticalArrows: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      screen: string;
+      rotation: number;
+    }> = [];
+    layoutData.layouts.forEach(
+      (layout: {
+        elementId: string;
+        positionX: number;
+        positionY: number;
+        width: number;
+        height: number;
+        rotation?: number;
+        viewScreen?: string | null;
+      }) => {
+        if (layout.elementId.startsWith("v_arrow_")) {
+          savedVerticalArrows.push({
+            id: layout.elementId,
+            x: layout.positionX,
+            y: layout.positionY,
+            width: layout.width,
+            height: layout.height,
+            screen: layout.viewScreen || "L1 – System Overview",
+            rotation: layout.rotation || 0,
+          });
+        }
+      },
+    );
     if (savedVerticalArrows.length > 0) {
       setVerticalArrows(savedVerticalArrows);
     }
 
     // Vertical lines - load from database (dynamically created elements)
     // Read viewScreen from database, defaulting to 'L1 – System Overview' for backward compatibility
-    const savedVerticalLines: Array<{ id: string; x: number; y: number; width: number; height: number; screen: string }> = [];
-    layoutData.layouts.forEach((layout: { elementId: string; positionX: number; positionY: number; width: number; height: number; viewScreen?: string | null }) => {
-      if (layout.elementId.startsWith('v_line_')) {
-        savedVerticalLines.push({
-          id: layout.elementId,
-          x: layout.positionX,
-          y: layout.positionY,
-          width: layout.width,
-          height: layout.height,
-          screen: layout.viewScreen || 'L1 – System Overview',
-        });
-      }
-    });
+    const savedVerticalLines: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      screen: string;
+    }> = [];
+    layoutData.layouts.forEach(
+      (layout: {
+        elementId: string;
+        positionX: number;
+        positionY: number;
+        width: number;
+        height: number;
+        viewScreen?: string | null;
+      }) => {
+        if (layout.elementId.startsWith("v_line_")) {
+          savedVerticalLines.push({
+            id: layout.elementId,
+            x: layout.positionX,
+            y: layout.positionY,
+            width: layout.width,
+            height: layout.height,
+            screen: layout.viewScreen || "L1 – System Overview",
+          });
+        }
+      },
+    );
     // Always set vertical lines from saved layout (including empty array to clear removed lines)
     setVerticalLines(savedVerticalLines);
-
   }, [layoutData]);
 
   const handleSaveLayout = async () => {
@@ -2504,36 +3729,232 @@ const HomeScreen = () => {
     try {
       // Collect all current positions
       const layouts = [
-        { elementId: 'furnace', positionX: Math.round(furnacePosition.x), positionY: Math.round(furnacePosition.y), width: furnaceSize.width, height: furnaceSize.height, rotation: 0 },
-        { elementId: 'compressor', positionX: Math.round(compressorPosition.x), positionY: Math.round(compressorPosition.y), width: compressorSize.width, height: compressorSize.height, rotation: 0 },
-        { elementId: 'sulfur_flow', positionX: Math.round(sulfurFlowPosition.x), positionY: Math.round(sulfurFlowPosition.y), width: sulfurFlowSize.width, height: sulfurFlowSize.height, rotation: 0 },
-        { elementId: 'sulfur_valve', positionX: Math.round(sulfurValvePosition.x), positionY: Math.round(sulfurValvePosition.y), width: sulfurValveSize.width, height: sulfurValveSize.height, rotation: 0 },
-        { elementId: 'jug_valve', positionX: Math.round(jugValvePosition.x), positionY: Math.round(jugValvePosition.y), width: jugValveSize.width, height: jugValveSize.height, rotation: 0 },
-        { elementId: 'jug_valve_positioner', positionX: Math.round(jugValvePositionerPosition.x), positionY: Math.round(jugValvePositionerPosition.y), width: jugValvePositionerSize.width, height: jugValvePositionerSize.height, rotation: 0 },
-        { elementId: 'hand_controller', positionX: Math.round(handControllerPosition.x), positionY: Math.round(handControllerPosition.y), width: handControllerSize.width, height: handControllerSize.height, rotation: 0 },
-        { elementId: 'whb_hand_controller', positionX: Math.round(whbHandControllerPosition.x), positionY: Math.round(whbHandControllerPosition.y), width: whbHandControllerSize.width, height: whbHandControllerSize.height, rotation: 0 },
-        { elementId: 'jug_valve_hand_controller', positionX: Math.round(jugValveHandControllerPosition.x), positionY: Math.round(jugValveHandControllerPosition.y), width: jugValveHandControllerSize.width, height: jugValveHandControllerSize.height, rotation: 0 },
-        { elementId: 'temp_sensor_5821', positionX: Math.round(tempSensorPosition.x), positionY: Math.round(tempSensorPosition.y), width: tempSensorSize.width, height: tempSensorSize.height, rotation: 0 },
-        { elementId: 'temp_sensor_4200a', positionX: Math.round(tempSensor4200APosition.x), positionY: Math.round(tempSensor4200APosition.y), width: tempSensor4200ASize.width, height: tempSensor4200ASize.height, rotation: 0 },
-        { elementId: 'temp_sensor_4200b', positionX: Math.round(tempSensor4200BPosition.x), positionY: Math.round(tempSensor4200BPosition.y), width: tempSensor4200BSize.width, height: tempSensor4200BSize.height, rotation: 0 },
-        { elementId: 'temp_sensor_4200c', positionX: Math.round(tempSensor4200CPosition.x), positionY: Math.round(tempSensor4200CPosition.y), width: tempSensor4200CSize.width, height: tempSensor4200CSize.height, rotation: 0 },
-        { elementId: 'converter4', positionX: Math.round(converter4Position.x), positionY: Math.round(converter4Position.y), width: converter4Size.width, height: converter4Size.height, rotation: 0 },
-        { elementId: 'dt2', positionX: Math.round(dt2Position.x), positionY: Math.round(dt2Position.y), width: dt2Size.width, height: dt2Size.height, rotation: 0 },
-        { elementId: 'fat1', positionX: Math.round(fat1Position.x), positionY: Math.round(fat1Position.y), width: fat1Size.width, height: fat1Size.height, rotation: 0 },
-        { elementId: 'ipat1', positionX: Math.round(ipat1Position.x), positionY: Math.round(ipat1Position.y), width: ipat1Size.width, height: ipat1Size.height, rotation: 0 },
-        { elementId: 'hip1', positionX: Math.round(hip1Position.x), positionY: Math.round(hip1Position.y), width: hip1Size.width, height: hip1Size.height, rotation: 0 },
-        { elementId: 'cip', positionX: Math.round(cipPosition.x), positionY: Math.round(cipPosition.y), width: cipSize.width, height: cipSize.height, rotation: 0 },
-        { elementId: 'sh4a', positionX: Math.round(sh4aPosition.x), positionY: Math.round(sh4aPosition.y), width: sh4aSize.width, height: sh4aSize.height, rotation: 0 },
-        { elementId: 'ec3b', positionX: Math.round(ec3bPosition.x), positionY: Math.round(ec3bPosition.y), width: ec3bSize.width, height: ec3bSize.height, rotation: 0 },
-        { elementId: 'sh1b', positionX: Math.round(sh1bPosition.x), positionY: Math.round(sh1bPosition.y), width: sh1bSize.width, height: sh1bSize.height, rotation: 0 },
-        { elementId: 'industrial_filter', positionX: Math.round(filterPosition.x), positionY: Math.round(filterPosition.y), width: filterSize.width, height: filterSize.height, rotation: 0 },
-        { elementId: 'dashed_line_1', positionX: Math.round(dashedLine1Position.x), positionY: Math.round(dashedLine1Position.y), width: dashedLine1Size.width, height: dashedLine1Size.height, rotation: dashedLine1Rotation },
-        { elementId: 'dashed_line_2', positionX: Math.round(dashedLine2Position.x), positionY: Math.round(dashedLine2Position.y), width: dashedLine2Size.width, height: dashedLine2Size.height, rotation: dashedLine2Rotation },
-        { elementId: 'dashed_line_3', positionX: Math.round(dashedLine3Position.x), positionY: Math.round(dashedLine3Position.y), width: dashedLine3Size.width, height: dashedLine3Size.height, rotation: dashedLine3Rotation },
-        { elementId: 'dashed_line_4', positionX: Math.round(dashedLine4Position.x), positionY: Math.round(dashedLine4Position.y), width: dashedLine4Size.width, height: dashedLine4Size.height, rotation: dashedLine4Rotation },
-        { elementId: 'turbo_generator', positionX: Math.round(turboGeneratorPosition.x), positionY: Math.round(turboGeneratorPosition.y), width: turboGeneratorSize.width, height: turboGeneratorSize.height, rotation: 0 },
+        {
+          elementId: "furnace",
+          positionX: Math.round(furnacePosition.x),
+          positionY: Math.round(furnacePosition.y),
+          width: furnaceSize.width,
+          height: furnaceSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "compressor",
+          positionX: Math.round(compressorPosition.x),
+          positionY: Math.round(compressorPosition.y),
+          width: compressorSize.width,
+          height: compressorSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sulfur_flow",
+          positionX: Math.round(sulfurFlowPosition.x),
+          positionY: Math.round(sulfurFlowPosition.y),
+          width: sulfurFlowSize.width,
+          height: sulfurFlowSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sulfur_valve",
+          positionX: Math.round(sulfurValvePosition.x),
+          positionY: Math.round(sulfurValvePosition.y),
+          width: sulfurValveSize.width,
+          height: sulfurValveSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "jug_valve",
+          positionX: Math.round(jugValvePosition.x),
+          positionY: Math.round(jugValvePosition.y),
+          width: jugValveSize.width,
+          height: jugValveSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "jug_valve_positioner",
+          positionX: Math.round(jugValvePositionerPosition.x),
+          positionY: Math.round(jugValvePositionerPosition.y),
+          width: jugValvePositionerSize.width,
+          height: jugValvePositionerSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "hand_controller",
+          positionX: Math.round(handControllerPosition.x),
+          positionY: Math.round(handControllerPosition.y),
+          width: handControllerSize.width,
+          height: handControllerSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "whb_hand_controller",
+          positionX: Math.round(whbHandControllerPosition.x),
+          positionY: Math.round(whbHandControllerPosition.y),
+          width: whbHandControllerSize.width,
+          height: whbHandControllerSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "jug_valve_hand_controller",
+          positionX: Math.round(jugValveHandControllerPosition.x),
+          positionY: Math.round(jugValveHandControllerPosition.y),
+          width: jugValveHandControllerSize.width,
+          height: jugValveHandControllerSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "temp_sensor_5821",
+          positionX: Math.round(tempSensorPosition.x),
+          positionY: Math.round(tempSensorPosition.y),
+          width: tempSensorSize.width,
+          height: tempSensorSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "temp_sensor_4200a",
+          positionX: Math.round(tempSensor4200APosition.x),
+          positionY: Math.round(tempSensor4200APosition.y),
+          width: tempSensor4200ASize.width,
+          height: tempSensor4200ASize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "temp_sensor_4200b",
+          positionX: Math.round(tempSensor4200BPosition.x),
+          positionY: Math.round(tempSensor4200BPosition.y),
+          width: tempSensor4200BSize.width,
+          height: tempSensor4200BSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "temp_sensor_4200c",
+          positionX: Math.round(tempSensor4200CPosition.x),
+          positionY: Math.round(tempSensor4200CPosition.y),
+          width: tempSensor4200CSize.width,
+          height: tempSensor4200CSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "converter4",
+          positionX: Math.round(converter4Position.x),
+          positionY: Math.round(converter4Position.y),
+          width: converter4Size.width,
+          height: converter4Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "dt2",
+          positionX: Math.round(dt2Position.x),
+          positionY: Math.round(dt2Position.y),
+          width: dt2Size.width,
+          height: dt2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "fat1",
+          positionX: Math.round(fat1Position.x),
+          positionY: Math.round(fat1Position.y),
+          width: fat1Size.width,
+          height: fat1Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "ipat1",
+          positionX: Math.round(ipat1Position.x),
+          positionY: Math.round(ipat1Position.y),
+          width: ipat1Size.width,
+          height: ipat1Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "hip1",
+          positionX: Math.round(hip1Position.x),
+          positionY: Math.round(hip1Position.y),
+          width: hip1Size.width,
+          height: hip1Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cip",
+          positionX: Math.round(cipPosition.x),
+          positionY: Math.round(cipPosition.y),
+          width: cipSize.width,
+          height: cipSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sh4a",
+          positionX: Math.round(sh4aPosition.x),
+          positionY: Math.round(sh4aPosition.y),
+          width: sh4aSize.width,
+          height: sh4aSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "ec3b",
+          positionX: Math.round(ec3bPosition.x),
+          positionY: Math.round(ec3bPosition.y),
+          width: ec3bSize.width,
+          height: ec3bSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sh1b",
+          positionX: Math.round(sh1bPosition.x),
+          positionY: Math.round(sh1bPosition.y),
+          width: sh1bSize.width,
+          height: sh1bSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "industrial_filter",
+          positionX: Math.round(filterPosition.x),
+          positionY: Math.round(filterPosition.y),
+          width: filterSize.width,
+          height: filterSize.height,
+          rotation: 0,
+        },
+        {
+          elementId: "dashed_line_1",
+          positionX: Math.round(dashedLine1Position.x),
+          positionY: Math.round(dashedLine1Position.y),
+          width: dashedLine1Size.width,
+          height: dashedLine1Size.height,
+          rotation: dashedLine1Rotation,
+        },
+        {
+          elementId: "dashed_line_2",
+          positionX: Math.round(dashedLine2Position.x),
+          positionY: Math.round(dashedLine2Position.y),
+          width: dashedLine2Size.width,
+          height: dashedLine2Size.height,
+          rotation: dashedLine2Rotation,
+        },
+        {
+          elementId: "dashed_line_3",
+          positionX: Math.round(dashedLine3Position.x),
+          positionY: Math.round(dashedLine3Position.y),
+          width: dashedLine3Size.width,
+          height: dashedLine3Size.height,
+          rotation: dashedLine3Rotation,
+        },
+        {
+          elementId: "dashed_line_4",
+          positionX: Math.round(dashedLine4Position.x),
+          positionY: Math.round(dashedLine4Position.y),
+          width: dashedLine4Size.width,
+          height: dashedLine4Size.height,
+          rotation: dashedLine4Rotation,
+        },
+        {
+          elementId: "turbo_generator",
+          positionX: Math.round(turboGeneratorPosition.x),
+          positionY: Math.round(turboGeneratorPosition.y),
+          width: turboGeneratorSize.width,
+          height: turboGeneratorSize.height,
+          rotation: 0,
+        },
         // Add all arrows
-        ...arrows.map(arrow => ({
+        ...arrows.map((arrow) => ({
           elementId: arrow.id,
           positionX: Math.round(arrow.x),
           positionY: Math.round(arrow.y),
@@ -2542,7 +3963,7 @@ const HomeScreen = () => {
           rotation: arrow.rotation,
         })),
         // Add all vertical arrows (include viewScreen and rotation for persistence)
-        ...verticalArrows.map(va => ({
+        ...verticalArrows.map((va) => ({
           elementId: va.id,
           positionX: Math.round(va.x),
           positionY: Math.round(va.y),
@@ -2552,7 +3973,7 @@ const HomeScreen = () => {
           viewScreen: va.screen,
         })),
         // Add all vertical lines (include viewScreen property for persistence)
-        ...verticalLines.map(vl => ({
+        ...verticalLines.map((vl) => ({
           elementId: vl.id,
           positionX: Math.round(vl.x),
           positionY: Math.round(vl.y),
@@ -2563,13 +3984,22 @@ const HomeScreen = () => {
         })),
       ];
 
-      await apiRequest('PUT', '/api/homescreen-layout/L1', { layouts });
+      await apiRequest("PUT", "/api/homescreen-layout/L1", { layouts });
       // Invalidate cache so fresh data loads on next page visit
-      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L1'] });
-      toast({ title: "Layout saved", description: "Icon positions saved to database." });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/homescreen-layout/L1"],
+      });
+      toast({
+        title: "Layout saved",
+        description: "Icon positions saved to database.",
+      });
     } catch (error) {
-      console.error('Failed to save layout:', error);
-      toast({ title: "Error", description: "Failed to save layout positions.", variant: "destructive" });
+      console.error("Failed to save layout:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save layout positions.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -2580,39 +4010,73 @@ const HomeScreen = () => {
     setIsSavingL4(true);
     try {
       const layouts = [
-        { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
-        { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
-        { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
-        // Add vertical arrows for L4-Converter screen
-        ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
-          elementId: va.id,
-          positionX: Math.round(va.x),
-          positionY: Math.round(va.y),
-          width: va.width,
-          height: va.height,
-          rotation: va.rotation,
-          viewScreen: va.screen,
-        })),
-        // Add vertical lines for L4-Converter screen
-        ...verticalLines.filter(vl => vl.screen === 'L4-Converter').map(vl => ({
-          elementId: vl.id,
-          positionX: Math.round(vl.x),
-          positionY: Math.round(vl.y),
-          width: vl.width,
-          height: vl.height,
+        {
+          elementId: "converter4_l4",
+          positionX: Math.round(converter4L4Position.x),
+          positionY: Math.round(converter4L4Position.y),
+          width: converter4L4Size.width,
+          height: converter4L4Size.height,
           rotation: 0,
-          viewScreen: vl.screen,
-        })),
+        },
+        {
+          elementId: "faceplate4825_l4",
+          positionX: Math.round(faceplate4825L4Position.x),
+          positionY: Math.round(faceplate4825L4Position.y),
+          width: faceplate4825L4Size.width,
+          height: faceplate4825L4Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "jug_valve_hc_l4",
+          positionX: Math.round(jugValveHandControllerL4Position.x),
+          positionY: Math.round(jugValveHandControllerL4Position.y),
+          width: jugValveHandControllerL4Size.width,
+          height: jugValveHandControllerL4Size.height,
+          rotation: 0,
+        },
+        // Add vertical arrows for L4-Converter screen
+        ...verticalArrows
+          .filter((va) => va.screen === "L4-Converter")
+          .map((va) => ({
+            elementId: va.id,
+            positionX: Math.round(va.x),
+            positionY: Math.round(va.y),
+            width: va.width,
+            height: va.height,
+            rotation: va.rotation,
+            viewScreen: va.screen,
+          })),
+        // Add vertical lines for L4-Converter screen
+        ...verticalLines
+          .filter((vl) => vl.screen === "L4-Converter")
+          .map((vl) => ({
+            elementId: vl.id,
+            positionX: Math.round(vl.x),
+            positionY: Math.round(vl.y),
+            width: vl.width,
+            height: vl.height,
+            rotation: 0,
+            viewScreen: vl.screen,
+          })),
       ];
 
-      await apiRequest('PUT', '/api/homescreen-layout/L4', { layouts });
+      await apiRequest("PUT", "/api/homescreen-layout/L4", { layouts });
       // Clear dirty flag so refetched data can be applied
       setIsL4Dirty(false);
-      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L4'] });
-      toast({ title: "Layout saved", description: "L4 Converter layout saved to database." });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/homescreen-layout/L4"],
+      });
+      toast({
+        title: "Layout saved",
+        description: "L4 Converter layout saved to database.",
+      });
     } catch (error) {
-      console.error('Failed to save L4 layout:', error);
-      toast({ title: "Error", description: "Failed to save L4 layout positions.", variant: "destructive" });
+      console.error("Failed to save L4 layout:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save L4 layout positions.",
+        variant: "destructive",
+      });
     } finally {
       setIsSavingL4(false);
     }
@@ -2623,68 +4087,276 @@ const HomeScreen = () => {
     setIsSavingL2(true);
     try {
       const layouts = [
-        { elementId: 'hand_controller_l2', positionX: Math.round(handControllerL2Position.x), positionY: Math.round(handControllerL2Position.y), width: handControllerL2Size.width, height: handControllerL2Size.height, rotation: 0 },
-        { elementId: 'vfd_l2', positionX: Math.round(vfdL2Position.x), positionY: Math.round(vfdL2Position.y), width: vfdL2Size.width, height: vfdL2Size.height, rotation: 0 },
-        { elementId: 'sulfur_flow_l2', positionX: Math.round(sulfurFlowL2Position.x), positionY: Math.round(sulfurFlowL2Position.y), width: sulfurFlowL2Size.width, height: sulfurFlowL2Size.height, rotation: 0 },
-        { elementId: 'sulfur_valve_l2', positionX: Math.round(sulfurValveL2Position.x), positionY: Math.round(sulfurValveL2Position.y), width: sulfurValveL2Size.width, height: sulfurValveL2Size.height, rotation: 0 },
-        { elementId: 'jug_valve_hc_l2', positionX: Math.round(jugValveHandControllerL2Position.x), positionY: Math.round(jugValveHandControllerL2Position.y), width: jugValveHandControllerL2Size.width, height: jugValveHandControllerL2Size.height, rotation: 0 },
-        { elementId: 'jug_valve_hcv_l2', positionX: Math.round(jugValveHcvL2Position.x), positionY: Math.round(jugValveHcvL2Position.y), width: jugValveHcvL2Size.width, height: jugValveHcvL2Size.height, rotation: 0 },
-        { elementId: 'yellow_arrow_l2', positionX: Math.round(yellowArrowL2Position.x), positionY: Math.round(yellowArrowL2Position.y), width: yellowArrowL2Size.width, height: yellowArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_arrow_l2', positionX: Math.round(cyanArrowL2Position.x), positionY: Math.round(cyanArrowL2Position.y), width: cyanArrowL2Size.width, height: cyanArrowL2Size.height, rotation: 0 },
-        { elementId: 'sulfur_furnace_l2', positionX: Math.round(sulfurFurnaceL2Position.x), positionY: Math.round(sulfurFurnaceL2Position.y), width: sulfurFurnaceL2Size.width, height: sulfurFurnaceL2Size.height, rotation: 0 },
-        { elementId: 'waste_heat_boiler_l2', positionX: Math.round(wasteHeatBoilerL2Position.x), positionY: Math.round(wasteHeatBoilerL2Position.y), width: wasteHeatBoilerL2Size.width, height: wasteHeatBoilerL2Size.height, rotation: 0 },
-        { elementId: 'yellow_horiz_arrow_l2', positionX: Math.round(yellowHorizArrowL2Position.x), positionY: Math.round(yellowHorizArrowL2Position.y), width: yellowHorizArrowL2Size.width, height: yellowHorizArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_long_arrow_l2', positionX: Math.round(cyanLongArrowL2Position.x), positionY: Math.round(cyanLongArrowL2Position.y), width: cyanLongArrowL2Size.width, height: cyanLongArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_up_arrow_l2', positionX: Math.round(cyanUpArrowL2Position.x), positionY: Math.round(cyanUpArrowL2Position.y), width: cyanUpArrowL2Size.width, height: cyanUpArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_left_arrow_l2', positionX: Math.round(cyanLeftArrowL2Position.x), positionY: Math.round(cyanLeftArrowL2Position.y), width: cyanLeftArrowL2Size.width, height: cyanLeftArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_long_left_arrow_l2', positionX: Math.round(cyanLongLeftArrowL2Position.x), positionY: Math.round(cyanLongLeftArrowL2Position.y), width: cyanLongLeftArrowL2Size.width, height: cyanLongLeftArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_up_arrow_2_l2', positionX: Math.round(cyanUpArrow2L2Position.x), positionY: Math.round(cyanUpArrow2L2Position.y), width: cyanUpArrow2L2Size.width, height: cyanUpArrow2L2Size.height, rotation: 0 },
-        { elementId: 'cyan_up_arrow_3_l2', positionX: Math.round(cyanUpArrow3L2Position.x), positionY: Math.round(cyanUpArrow3L2Position.y), width: cyanUpArrow3L2Size.width, height: cyanUpArrow3L2Size.height, rotation: 0 },
-        { elementId: 'cyan_down_arrow_l2', positionX: Math.round(cyanDownArrowL2Position.x), positionY: Math.round(cyanDownArrowL2Position.y), width: cyanDownArrowL2Size.width, height: cyanDownArrowL2Size.height, rotation: 0 },
-        { elementId: 'metal_tank_l2', positionX: Math.round(metalTankL2Position.x), positionY: Math.round(metalTankL2Position.y), width: metalTankL2Size.width, height: metalTankL2Size.height, rotation: 0 },
-        { elementId: 'gray_yellow_arrow_l2', positionX: Math.round(grayYellowArrowL2Position.x), positionY: Math.round(grayYellowArrowL2Position.y), width: grayYellowArrowL2Size.width, height: grayYellowArrowL2Size.height, rotation: 0 },
-        { elementId: 'cyan_horiz_arrow_2_l2', positionX: Math.round(cyanHorizArrow2L2Position.x), positionY: Math.round(cyanHorizArrow2L2Position.y), width: cyanHorizArrow2L2Size.width, height: cyanHorizArrow2L2Size.height, rotation: 0 },
-        { elementId: 'gray_arrow_cyan_line_l2', positionX: Math.round(grayArrowCyanLineL2Position.x), positionY: Math.round(grayArrowCyanLineL2Position.y), width: grayArrowCyanLineL2Size.width, height: grayArrowCyanLineL2Size.height, rotation: 0 },
-        { elementId: 'cyan_thin_line_1_l2', positionX: Math.round(cyanThinLine1L2Position.x), positionY: Math.round(cyanThinLine1L2Position.y), width: cyanThinLine1L2Size.width, height: cyanThinLine1L2Size.height, rotation: 0 },
-        { elementId: 'cyan_thin_line_2_l2', positionX: Math.round(cyanThinLine2L2Position.x), positionY: Math.round(cyanThinLine2L2Position.y), width: cyanThinLine2L2Size.width, height: cyanThinLine2L2Size.height, rotation: 0 },
-        { elementId: 'cyan_vert_line_1_l2', positionX: Math.round(cyanVertLine1L2Position.x), positionY: Math.round(cyanVertLine1L2Position.y), width: cyanVertLine1L2Size.width, height: cyanVertLine1L2Size.height, rotation: 0 },
-        { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
-        { elementId: 'black_vert_line_l2', positionX: Math.round(blackVertLineL2Position.x), positionY: Math.round(blackVertLineL2Position.y), width: blackVertLineL2Size.width, height: blackVertLineL2Size.height, rotation: 0 },
-        { elementId: 'temp_sensor_4200a_l2', positionX: Math.round(tempSensor4200AL2Position.x), positionY: Math.round(tempSensor4200AL2Position.y), width: tempSensor4200AL2Size.width, height: tempSensor4200AL2Size.height, rotation: 0 },
-        // Add vertical arrows for L2-Furnace Area screen
-        ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
-          elementId: va.id,
-          positionX: Math.round(va.x),
-          positionY: Math.round(va.y),
-          width: va.width,
-          height: va.height,
-          rotation: va.rotation,
-          viewScreen: va.screen,
-        })),
-        // Add vertical lines for L2-Furnace Area screen
-        ...verticalLines.filter(vl => vl.screen === 'L2 – Furnace Area').map(vl => ({
-          elementId: vl.id,
-          positionX: Math.round(vl.x),
-          positionY: Math.round(vl.y),
-          width: vl.width,
-          height: vl.height,
+        {
+          elementId: "hand_controller_l2",
+          positionX: Math.round(handControllerL2Position.x),
+          positionY: Math.round(handControllerL2Position.y),
+          width: handControllerL2Size.width,
+          height: handControllerL2Size.height,
           rotation: 0,
-          viewScreen: vl.screen,
-        })),
+        },
+        {
+          elementId: "vfd_l2",
+          positionX: Math.round(vfdL2Position.x),
+          positionY: Math.round(vfdL2Position.y),
+          width: vfdL2Size.width,
+          height: vfdL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sulfur_flow_l2",
+          positionX: Math.round(sulfurFlowL2Position.x),
+          positionY: Math.round(sulfurFlowL2Position.y),
+          width: sulfurFlowL2Size.width,
+          height: sulfurFlowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sulfur_valve_l2",
+          positionX: Math.round(sulfurValveL2Position.x),
+          positionY: Math.round(sulfurValveL2Position.y),
+          width: sulfurValveL2Size.width,
+          height: sulfurValveL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "jug_valve_hc_l2",
+          positionX: Math.round(jugValveHandControllerL2Position.x),
+          positionY: Math.round(jugValveHandControllerL2Position.y),
+          width: jugValveHandControllerL2Size.width,
+          height: jugValveHandControllerL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "jug_valve_hcv_l2",
+          positionX: Math.round(jugValveHcvL2Position.x),
+          positionY: Math.round(jugValveHcvL2Position.y),
+          width: jugValveHcvL2Size.width,
+          height: jugValveHcvL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "yellow_arrow_l2",
+          positionX: Math.round(yellowArrowL2Position.x),
+          positionY: Math.round(yellowArrowL2Position.y),
+          width: yellowArrowL2Size.width,
+          height: yellowArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_arrow_l2",
+          positionX: Math.round(cyanArrowL2Position.x),
+          positionY: Math.round(cyanArrowL2Position.y),
+          width: cyanArrowL2Size.width,
+          height: cyanArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "sulfur_furnace_l2",
+          positionX: Math.round(sulfurFurnaceL2Position.x),
+          positionY: Math.round(sulfurFurnaceL2Position.y),
+          width: sulfurFurnaceL2Size.width,
+          height: sulfurFurnaceL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "waste_heat_boiler_l2",
+          positionX: Math.round(wasteHeatBoilerL2Position.x),
+          positionY: Math.round(wasteHeatBoilerL2Position.y),
+          width: wasteHeatBoilerL2Size.width,
+          height: wasteHeatBoilerL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "yellow_horiz_arrow_l2",
+          positionX: Math.round(yellowHorizArrowL2Position.x),
+          positionY: Math.round(yellowHorizArrowL2Position.y),
+          width: yellowHorizArrowL2Size.width,
+          height: yellowHorizArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_long_arrow_l2",
+          positionX: Math.round(cyanLongArrowL2Position.x),
+          positionY: Math.round(cyanLongArrowL2Position.y),
+          width: cyanLongArrowL2Size.width,
+          height: cyanLongArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_up_arrow_l2",
+          positionX: Math.round(cyanUpArrowL2Position.x),
+          positionY: Math.round(cyanUpArrowL2Position.y),
+          width: cyanUpArrowL2Size.width,
+          height: cyanUpArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_left_arrow_l2",
+          positionX: Math.round(cyanLeftArrowL2Position.x),
+          positionY: Math.round(cyanLeftArrowL2Position.y),
+          width: cyanLeftArrowL2Size.width,
+          height: cyanLeftArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_long_left_arrow_l2",
+          positionX: Math.round(cyanLongLeftArrowL2Position.x),
+          positionY: Math.round(cyanLongLeftArrowL2Position.y),
+          width: cyanLongLeftArrowL2Size.width,
+          height: cyanLongLeftArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_up_arrow_2_l2",
+          positionX: Math.round(cyanUpArrow2L2Position.x),
+          positionY: Math.round(cyanUpArrow2L2Position.y),
+          width: cyanUpArrow2L2Size.width,
+          height: cyanUpArrow2L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_up_arrow_3_l2",
+          positionX: Math.round(cyanUpArrow3L2Position.x),
+          positionY: Math.round(cyanUpArrow3L2Position.y),
+          width: cyanUpArrow3L2Size.width,
+          height: cyanUpArrow3L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_down_arrow_l2",
+          positionX: Math.round(cyanDownArrowL2Position.x),
+          positionY: Math.round(cyanDownArrowL2Position.y),
+          width: cyanDownArrowL2Size.width,
+          height: cyanDownArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "metal_tank_l2",
+          positionX: Math.round(metalTankL2Position.x),
+          positionY: Math.round(metalTankL2Position.y),
+          width: metalTankL2Size.width,
+          height: metalTankL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "gray_yellow_arrow_l2",
+          positionX: Math.round(grayYellowArrowL2Position.x),
+          positionY: Math.round(grayYellowArrowL2Position.y),
+          width: grayYellowArrowL2Size.width,
+          height: grayYellowArrowL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_horiz_arrow_2_l2",
+          positionX: Math.round(cyanHorizArrow2L2Position.x),
+          positionY: Math.round(cyanHorizArrow2L2Position.y),
+          width: cyanHorizArrow2L2Size.width,
+          height: cyanHorizArrow2L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "gray_arrow_cyan_line_l2",
+          positionX: Math.round(grayArrowCyanLineL2Position.x),
+          positionY: Math.round(grayArrowCyanLineL2Position.y),
+          width: grayArrowCyanLineL2Size.width,
+          height: grayArrowCyanLineL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_thin_line_1_l2",
+          positionX: Math.round(cyanThinLine1L2Position.x),
+          positionY: Math.round(cyanThinLine1L2Position.y),
+          width: cyanThinLine1L2Size.width,
+          height: cyanThinLine1L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_thin_line_2_l2",
+          positionX: Math.round(cyanThinLine2L2Position.x),
+          positionY: Math.round(cyanThinLine2L2Position.y),
+          width: cyanThinLine2L2Size.width,
+          height: cyanThinLine2L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_vert_line_1_l2",
+          positionX: Math.round(cyanVertLine1L2Position.x),
+          positionY: Math.round(cyanVertLine1L2Position.y),
+          width: cyanVertLine1L2Size.width,
+          height: cyanVertLine1L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "cyan_vert_line_2_l2",
+          positionX: Math.round(cyanVertLine2L2Position.x),
+          positionY: Math.round(cyanVertLine2L2Position.y),
+          width: cyanVertLine2L2Size.width,
+          height: cyanVertLine2L2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "black_vert_line_l2",
+          positionX: Math.round(blackVertLineL2Position.x),
+          positionY: Math.round(blackVertLineL2Position.y),
+          width: blackVertLineL2Size.width,
+          height: blackVertLineL2Size.height,
+          rotation: 0,
+        },
+        {
+          elementId: "temp_sensor_4200a_l2",
+          positionX: Math.round(tempSensor4200AL2Position.x),
+          positionY: Math.round(tempSensor4200AL2Position.y),
+          width: tempSensor4200AL2Size.width,
+          height: tempSensor4200AL2Size.height,
+          rotation: 0,
+        },
+        // Add vertical arrows for L2-Furnace Area screen
+        ...verticalArrows
+          .filter((va) => va.screen === "L2 – Furnace Area")
+          .map((va) => ({
+            elementId: va.id,
+            positionX: Math.round(va.x),
+            positionY: Math.round(va.y),
+            width: va.width,
+            height: va.height,
+            rotation: va.rotation,
+            viewScreen: va.screen,
+          })),
+        // Add vertical lines for L2-Furnace Area screen
+        ...verticalLines
+          .filter((vl) => vl.screen === "L2 – Furnace Area")
+          .map((vl) => ({
+            elementId: vl.id,
+            positionX: Math.round(vl.x),
+            positionY: Math.round(vl.y),
+            width: vl.width,
+            height: vl.height,
+            rotation: 0,
+            viewScreen: vl.screen,
+          })),
       ];
 
-      await apiRequest('PUT', '/api/homescreen-layout/L2', { layouts });
+      await apiRequest("PUT", "/api/homescreen-layout/L2", { layouts });
       setIsL2Dirty(false);
-      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L2'] });
-      toast({ title: "Layout saved", description: "L2 Furnace Area layout saved to database." });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/homescreen-layout/L2"],
+      });
+      toast({
+        title: "Layout saved",
+        description: "L2 Furnace Area layout saved to database.",
+      });
     } catch (error) {
-      console.error('Failed to save L2 layout:', error);
-      toast({ title: "Error", description: "Failed to save L2 layout positions.", variant: "destructive" });
+      console.error("Failed to save L2 layout:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save L2 layout positions.",
+        variant: "destructive",
+      });
     } finally {
       setIsSavingL2(false);
     }
   };
-
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -2713,74 +4385,100 @@ const HomeScreen = () => {
   // Rotate arrow by 90 degrees clockwise
   const handleRotateArrow = (arrowId: string) => {
     if (isLocked) return;
-    setArrows(prev => prev.map(arrow =>
-      arrow.id === arrowId
-        ? { ...arrow, rotation: (arrow.rotation + 90) % 360 }
-        : arrow
-    ));
+    setArrows((prev) =>
+      prev.map((arrow) =>
+        arrow.id === arrowId
+          ? { ...arrow, rotation: (arrow.rotation + 90) % 360 }
+          : arrow,
+      ),
+    );
   };
 
   // Add a new vertical arrow to the current screen
   const handleAddVerticalArrow = () => {
     const newId = `v_arrow_${Date.now()}`;
-    setVerticalArrows(prev => [...prev, {
-      id: newId,
-      x: 100,
-      y: 100,
-      width: 24,
-      height: 150,
-      screen: selectedScreen,
-      rotation: 0,
-    }]);
-    toast({ title: "Vertical Arrow Added", description: `A new vertical arrow has been added to ${selectedScreen}.` });
+    setVerticalArrows((prev) => [
+      ...prev,
+      {
+        id: newId,
+        x: 100,
+        y: 100,
+        width: 24,
+        height: 150,
+        screen: selectedScreen,
+        rotation: 0,
+      },
+    ]);
+    toast({
+      title: "Vertical Arrow Added",
+      description: `A new vertical arrow has been added to ${selectedScreen}.`,
+    });
   };
 
   // Rotate a vertical arrow by 90 degrees clockwise
   const handleRotateVerticalArrow = (arrowId: string) => {
-    setVerticalArrows(prev => prev.map(va =>
-      va.id === arrowId
-        ? { ...va, rotation: (va.rotation + 90) % 360 }
-        : va
-    ));
+    setVerticalArrows((prev) =>
+      prev.map((va) =>
+        va.id === arrowId ? { ...va, rotation: (va.rotation + 90) % 360 } : va,
+      ),
+    );
   };
 
   // Add a new vertical line (without arrowhead) to the current screen
   const handleAddVerticalLine = () => {
     const newId = `v_line_${Date.now()}`;
-    setVerticalLines(prev => [...prev, {
-      id: newId,
-      x: 150,
-      y: 100,
-      width: 24,
-      height: 150,
-      screen: selectedScreen,
-    }]);
-    toast({ title: "Vertical Line Added", description: `A new vertical line has been added to ${selectedScreen}.` });
+    setVerticalLines((prev) => [
+      ...prev,
+      {
+        id: newId,
+        x: 150,
+        y: 100,
+        width: 24,
+        height: 150,
+        screen: selectedScreen,
+      },
+    ]);
+    toast({
+      title: "Vertical Line Added",
+      description: `A new vertical line has been added to ${selectedScreen}.`,
+    });
   };
 
   // Delete a specific vertical arrow by id
   const handleDeleteVerticalArrow = (arrowId: string) => {
-    setVerticalArrows(prev => prev.filter(va => va.id !== arrowId));
-    if (selectedScreen === 'L4-Converter') {
+    setVerticalArrows((prev) => prev.filter((va) => va.id !== arrowId));
+    if (selectedScreen === "L4-Converter") {
       setIsL4Dirty(true);
     }
-    toast({ title: "Arrow Deleted", description: "The vertical arrow has been removed." });
+    toast({
+      title: "Arrow Deleted",
+      description: "The vertical arrow has been removed.",
+    });
   };
 
   // Delete a specific vertical line by id
   const handleDeleteVerticalLine = (lineId: string) => {
-    setVerticalLines(prev => prev.filter(vl => vl.id !== lineId));
-    if (selectedScreen === 'L4-Converter') {
+    setVerticalLines((prev) => prev.filter((vl) => vl.id !== lineId));
+    if (selectedScreen === "L4-Converter") {
       setIsL4Dirty(true);
     }
-    toast({ title: "Line Deleted", description: "The vertical line has been removed." });
+    toast({
+      title: "Line Deleted",
+      description: "The vertical line has been removed.",
+    });
   };
 
   // Delete the last added vertical arrow on the current screen
   const handleDeleteLastArrow = () => {
-    const screenArrows = verticalArrows.filter(va => va.screen === selectedScreen);
+    const screenArrows = verticalArrows.filter(
+      (va) => va.screen === selectedScreen,
+    );
     if (screenArrows.length === 0) {
-      toast({ title: "No Arrows", description: `No arrows to delete on ${selectedScreen}.`, variant: "destructive" });
+      toast({
+        title: "No Arrows",
+        description: `No arrows to delete on ${selectedScreen}.`,
+        variant: "destructive",
+      });
       return;
     }
     const lastArrow = screenArrows[screenArrows.length - 1];
@@ -2789,9 +4487,15 @@ const HomeScreen = () => {
 
   // Delete the last added vertical line on the current screen
   const handleDeleteLastLine = () => {
-    const screenLines = verticalLines.filter(vl => vl.screen === selectedScreen);
+    const screenLines = verticalLines.filter(
+      (vl) => vl.screen === selectedScreen,
+    );
     if (screenLines.length === 0) {
-      toast({ title: "No Lines", description: `No lines to delete on ${selectedScreen}.`, variant: "destructive" });
+      toast({
+        title: "No Lines",
+        description: `No lines to delete on ${selectedScreen}.`,
+        variant: "destructive",
+      });
       return;
     }
     const lastLine = screenLines[screenLines.length - 1];
@@ -2801,11 +4505,11 @@ const HomeScreen = () => {
   const windowsWidth = window.innerWidth;
   const windowsHeight = window.innerHeight;
   useEffect(() => {
-    if (selectedScreen === 'L1 – System Overview') {
+    if (selectedScreen === "L1 – System Overview") {
       // Main Equipment
       setFilterPosition({ x: 60, y: 325 });
       setFilterSize({ width: 60, height: 70 });
-      
+
       setDt2Position({ x: 180, y: 330 });
       setDt2Size({ width: 134, height: 327 });
 
@@ -2889,69 +4593,240 @@ const HomeScreen = () => {
 
       setArrows([
         // === Air Feed ===
-        { id: '1', x: 0, y: 410, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        { id: '1.1', x: 0, y: 380, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        { id: '1.2', x: 0, y: 440, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        { id: '2', x: 150, y: 410, width: 60, height: 20, rotation: 0, color: 'blue' as const },
+        {
+          id: "1",
+          x: 0,
+          y: 410,
+          width: 50,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+        {
+          id: "1.1",
+          x: 0,
+          y: 380,
+          width: 50,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+        {
+          id: "1.2",
+          x: 0,
+          y: 440,
+          width: 50,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+        {
+          id: "2",
+          x: 150,
+          y: 410,
+          width: 60,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
         // DT -> Compressor
-        { id: '3', x: 280, y: 400, width: 200, height: 20, rotation: 0, color: 'blue' as const },
-        
+        {
+          id: "3",
+          x: 280,
+          y: 400,
+          width: 200,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+
         // === Sulfur Feed ===
-        { id: '5', x: 163, y: 657, width: 230, height: 20, rotation: 0, color: 'yellow' as const },
-        { id: '6', x: 423, y: 540, width: 96, height: 20, rotation: 0, color: 'yellow' as const },
-        
+        {
+          id: "5",
+          x: 163,
+          y: 657,
+          width: 230,
+          height: 20,
+          rotation: 0,
+          color: "yellow" as const,
+        },
+        {
+          id: "6",
+          x: 423,
+          y: 540,
+          width: 96,
+          height: 20,
+          rotation: 0,
+          color: "yellow" as const,
+        },
+
         // === WHB Outlet & SH1B Bypass Logic ===
         // WHB Exit (Vertical Up) -> Split to Jug/SH1B
         // Line exiting WHB Top-Right (x~830)
-        
+
         // Horizontal: Split -> Jug Valve Inlet (Left)
-        { id: 'whb_to_jug', x: 677, y: 560, width: 160, height: 20, rotation: 180, color: 'blue' as const },
-        
+        {
+          id: "whb_to_jug",
+          x: 677,
+          y: 560,
+          width: 160,
+          height: 20,
+          rotation: 180,
+          color: "blue" as const,
+        },
+
         // Horizontal: Jug Valve Outlet -> Join SH1B Inlet (Right)
-        { id: 'jug_out_to_join', x: 677, y: 320, width: 160, height: 20, rotation: 0, color: 'blue' as const },
-        
+        {
+          id: "jug_out_to_join",
+          x: 677,
+          y: 320,
+          width: 160,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+
         // Horizontal: Join Point -> SH1B Inlet (Right)
-        { id: 'join_to_sh1b_in', x: 620, y: 560, width: 40, height: 20, rotation: 180, color: 'blue' as const },
+        {
+          id: "join_to_sh1b_in",
+          x: 620,
+          y: 560,
+          width: 40,
+          height: 20,
+          rotation: 180,
+          color: "blue" as const,
+        },
 
         // Horizontal: SH1B Outlet -> Main Line
-        { id: 'sh1b_out_horiz', x: 800, y: 500, width: 90, height: 20, rotation: 0, color: 'blue' as const },
-        
+        {
+          id: "sh1b_out_horiz",
+          x: 800,
+          y: 500,
+          width: 90,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+
         // Horizontal: Main Line -> Converter Pass 1
-        { id: 'to_conv_pass1', x: 890, y: 150, width: 30, height: 20, rotation: 0, color: 'blue' as const },
+        {
+          id: "to_conv_pass1",
+          x: 890,
+          y: 150,
+          width: 30,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
 
         // === Interpass Logic (Right Side) ===
         // Converter Out 1 -> Hip Inlet
-        { id: 'conv_out1_horiz', x: 1080, y: 200, width: 70, height: 20, rotation: 0, color: 'blue' as const },
+        {
+          id: "conv_out1_horiz",
+          x: 1080,
+          y: 200,
+          width: 70,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
         // Hip Outlet -> Converter In 2
-        { id: 'hip_out_horiz', x: 1080, y: 380, width: 70, height: 20, rotation: 180, color: 'blue' as const },
-        
+        {
+          id: "hip_out_horiz",
+          x: 1080,
+          y: 380,
+          width: 70,
+          height: 20,
+          rotation: 180,
+          color: "blue" as const,
+        },
+
         // Converter Out 2 -> Cip Inlet
-        { id: 'conv_out2_horiz', x: 1080, y: 550, width: 220, height: 20, rotation: 0, color: 'blue' as const },
-        
+        {
+          id: "conv_out2_horiz",
+          x: 1080,
+          y: 550,
+          width: 220,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+
         // Cip Outlet -> Converter In 3
-        { id: 'cip_out_horiz', x: 1400, y: 550, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        
+        {
+          id: "cip_out_horiz",
+          x: 1400,
+          y: 550,
+          width: 50,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
+
         // Converter Out 3 -> Exit
-        { id: 'final_out', x: 1080, y: 700, width: 220, height: 20, rotation: 0, color: 'blue' as const },
+        {
+          id: "final_out",
+          x: 1080,
+          y: 700,
+          width: 220,
+          height: 20,
+          rotation: 0,
+          color: "blue" as const,
+        },
       ]);
 
       setVerticalLines([
         // Compressor OUT Down
-        { id: 'vl_comp_out', x: 700, y: 350, width: 10, height: 200, screen: 'L1 – System Overview' },
-        
+        {
+          id: "vl_comp_out",
+          x: 700,
+          y: 350,
+          width: 10,
+          height: 200,
+          screen: "L1 – System Overview",
+        },
+
         // WHB Rising Main Line
-        { id: 'vl_whb_rise', x: 837, y: 320, width: 10, height: 240, screen: 'L1 – System Overview' },
-        
+        {
+          id: "vl_whb_rise",
+          x: 837,
+          y: 320,
+          width: 10,
+          height: 240,
+          screen: "L1 – System Overview",
+        },
+
         // Jug Valve Vertical Line
-        { id: 'vl_jug', x: 677, y: 320, width: 10, height: 240, screen: 'L1 – System Overview' },
+        {
+          id: "vl_jug",
+          x: 677,
+          y: 320,
+          width: 10,
+          height: 240,
+          screen: "L1 – System Overview",
+        },
 
         // SH1B Outlet Down
-        { id: 'vl_sh1b_out', x: 800, y: 500, width: 10, height: 200, screen: 'L1 – System Overview' },
-        
+        {
+          id: "vl_sh1b_out",
+          x: 800,
+          y: 500,
+          width: 10,
+          height: 200,
+          screen: "L1 – System Overview",
+        },
+
         // Converter Inlet Rise
-        { id: 'vl_conv_in', x: 890, y: 150, width: 10, height: 550, screen: 'L1 – System Overview' },
+        {
+          id: "vl_conv_in",
+          x: 890,
+          y: 150,
+          width: 10,
+          height: 550,
+          screen: "L1 – System Overview",
+        },
       ]);
-      
+
       setVerticalArrows([]);
     }
   }, [selectedScreen]);
@@ -2963,97 +4838,263 @@ const HomeScreen = () => {
         <img src={menuIconImg} alt="Menu" className="w-5 h-5 mr-2" />
         <Menubar className="border-none bg-transparent h-6 p-0 space-x-0">
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-file">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-file"
+            >
               File
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-file-new">New</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-file-new"
+              >
+                New
+              </MenubarItem>
               <MenubarItem
                 className="text-gray-800"
                 data-testid="menu-file-open"
                 onClick={() => setIsOpenPVCaseDialogOpen(true)}
-              >Open</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-file-save">Save</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-file-save-as">Save As</MenubarItem>
+              >
+                Open
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-file-save"
+              >
+                Save
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-file-save-as"
+              >
+                Save As
+              </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem className="text-gray-800" data-testid="menu-file-print">Print</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-file-print"
+              >
+                Print
+              </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem className="text-gray-800" data-testid="menu-file-exit">Exit</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-file-exit"
+              >
+                Exit
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-edit">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-edit"
+            >
               Edit
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-edit-undo">Undo</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-edit-redo">Redo</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-edit-undo"
+              >
+                Undo
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-edit-redo"
+              >
+                Redo
+              </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem className="text-gray-800" data-testid="menu-edit-cut">Cut</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-edit-copy">Copy</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-edit-paste">Paste</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-edit-cut"
+              >
+                Cut
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-edit-copy"
+              >
+                Copy
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-edit-paste"
+              >
+                Paste
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-view">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-view"
+            >
               View
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-view-zoom-in">Zoom In</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-view-zoom-out">Zoom Out</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-view-fit">Fit to Screen</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-view-zoom-in"
+              >
+                Zoom In
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-view-zoom-out"
+              >
+                Zoom Out
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-view-fit"
+              >
+                Fit to Screen
+              </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem className="text-gray-800" data-testid="menu-view-refresh">Refresh</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-view-refresh"
+              >
+                Refresh
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-chart">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-chart"
+            >
               Chart
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-chart-trend">Trend Chart</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-chart-bar">Bar Chart</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-chart-pie">Pie Chart</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-chart-trend"
+              >
+                Trend Chart
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-chart-bar"
+              >
+                Bar Chart
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-chart-pie"
+              >
+                Pie Chart
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-trend">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-trend"
+            >
               Trend
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-trend-new">New Trend</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-trend-historical">Historical</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-trend-realtime">Real-time</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-trend-new"
+              >
+                New Trend
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-trend-historical"
+              >
+                Historical
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-trend-realtime"
+              >
+                Real-time
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-events">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-events"
+            >
               Events
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-events-alarms">Alarms</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-events-journal">Event Journal</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-events-history">Event History</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-events-alarms"
+              >
+                Alarms
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-events-journal"
+              >
+                Event Journal
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-events-history"
+              >
+                Event History
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-window">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-window"
+            >
               Window
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-window-cascade">Cascade</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-window-tile">Tile</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-window-cascade"
+              >
+                Cascade
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-window-tile"
+              >
+                Tile
+              </MenubarItem>
               <MenubarSeparator />
-              <MenubarItem className="text-gray-800" data-testid="menu-window-close-all">Close All</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-window-close-all"
+              >
+                Close All
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
           <MenubarMenu>
-            <MenubarTrigger className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white" data-testid="menu-help">
+            <MenubarTrigger
+              className="text-xs px-2 py-0.5 h-5 font-normal text-gray-800 data-[state=open]:bg-blue-600 data-[state=open]:text-white hover:bg-blue-600 hover:text-white"
+              data-testid="menu-help"
+            >
               Help
             </MenubarTrigger>
             <MenubarContent className="bg-white text-gray-800">
-              <MenubarItem className="text-gray-800" data-testid="menu-help-contents">Help Contents</MenubarItem>
-              <MenubarItem className="text-gray-800" data-testid="menu-help-about">About DeltaV</MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-help-contents"
+              >
+                Help Contents
+              </MenubarItem>
+              <MenubarItem
+                className="text-gray-800"
+                data-testid="menu-help-about"
+              >
+                About DeltaV
+              </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
         </Menubar>
@@ -3116,7 +5157,13 @@ const HomeScreen = () => {
                   }}
                   data-testid="button-lock-toggle"
                 >
-                  {(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? (
+                  {(
+                    selectedScreen === "L4-Converter"
+                      ? isLockedL4
+                      : selectedScreen === "L2 – Furnace Area"
+                        ? isLockedL2
+                        : isLocked
+                  ) ? (
                     <Lock className="h-5 w-5 text-yellow-600" />
                   ) : (
                     <LockOpen className="h-5 w-5 text-gray-500" />
@@ -3124,7 +5171,17 @@ const HomeScreen = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
+                <p>
+                  {(
+                    selectedScreen === "L4-Converter"
+                      ? isLockedL4
+                      : selectedScreen === "L2 – Furnace Area"
+                        ? isLockedL2
+                        : isLocked
+                  )
+                    ? "Unlock Icons"
+                    : "Lock Icons"}
+                </p>
               </TooltipContent>
             </Tooltip>
 
@@ -3144,17 +5201,34 @@ const HomeScreen = () => {
                       handleSaveLayout();
                     }
                   }}
-                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving}
+                  disabled={
+                    selectedScreen === "L4-Converter"
+                      ? isSavingL4
+                      : selectedScreen === "L2 – Furnace Area"
+                        ? isSavingL2
+                        : isSaving
+                  }
                   data-testid="button-save-layout"
                 >
-                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
+                  <Save
+                    className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? "text-gray-400" : "text-green-600"}`}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? "Saving..." : "Save Layout"}</p>
+                <p>
+                  {(
+                    selectedScreen === "L4-Converter"
+                      ? isSavingL4
+                      : selectedScreen === "L2 – Furnace Area"
+                        ? isSavingL2
+                        : isSaving
+                  )
+                    ? "Saving..."
+                    : "Save Layout"}
+                </p>
               </TooltipContent>
             </Tooltip>
-
           </TooltipProvider>
 
           {/* Add Shapes Dropdown - combines arrow and line tools */}
@@ -3167,7 +5241,11 @@ const HomeScreen = () => {
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 hover:bg-gray-200"
-                      disabled={selectedScreen === "L4-Converter" ? isLockedL4 : isLocked}
+                      disabled={
+                        selectedScreen === "L4-Converter"
+                          ? isLockedL4
+                          : isLocked
+                      }
                       data-testid="dropdown-add-shapes"
                     >
                       <Shapes className="h-5 w-5 text-cyan-500" />
@@ -3193,7 +5271,14 @@ const HomeScreen = () => {
                 className="flex items-center gap-2 cursor-pointer"
                 data-testid="dropdown-add-vertical-line"
               >
-                <svg className="h-4 w-4 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <svg
+                  className="h-4 w-4 text-cyan-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                >
                   <line x1="12" y1="4" x2="12" y2="20" />
                 </svg>
                 <span>Add Vertical Line</span>
@@ -3274,7 +5359,7 @@ const HomeScreen = () => {
           <Button
             variant="default"
             size="sm"
-            className={`gap-2 ${staticSimulationRunning ? 'bg-yellow-600 border-yellow-600' : 'bg-green-600 border border-green-600'} text-white hover:bg-green-700`}
+            className={`gap-2 ${staticSimulationRunning ? "bg-yellow-600 border-yellow-600" : "bg-green-600 border border-green-600"} text-white hover:bg-green-700`}
             data-testid="button-toolbar-start"
             onClick={runStaticSimulation}
             disabled={staticSimulationRunning || selectedMode !== "Static"}
@@ -3306,7 +5391,10 @@ const HomeScreen = () => {
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-72 max-h-[70vh] overflow-y-auto">
+            <DropdownMenuContent
+              align="start"
+              className="w-72 max-h-[70vh] overflow-y-auto"
+            >
               <div className="text-xs font-semibold text-muted-foreground px-2 py-1">
                 PROCESS FLOW DIAGRAMS
               </div>
@@ -3342,7 +5430,11 @@ const HomeScreen = () => {
                 data-testid="toolbar-filter-dropdown"
               >
                 <FileText className="h-4 w-4" />
-                {instBlockFilter === "all" ? "All Inst. Blocks" : instBlockFilter === "controllers" ? "Controllers Only" : "Sensors Only"}
+                {instBlockFilter === "all"
+                  ? "All Inst. Blocks"
+                  : instBlockFilter === "controllers"
+                    ? "Controllers Only"
+                    : "Sensors Only"}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -3353,21 +5445,33 @@ const HomeScreen = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setInstBlockFilter("all")}
-                className={instBlockFilter === "all" ? "bg-blue-50 text-blue-700 font-medium" : ""}
+                className={
+                  instBlockFilter === "all"
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : ""
+                }
                 data-testid="filter-option-all"
               >
                 All Inst. Blocks
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setInstBlockFilter("controllers")}
-                className={instBlockFilter === "controllers" ? "bg-blue-50 text-blue-700 font-medium" : ""}
+                className={
+                  instBlockFilter === "controllers"
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : ""
+                }
                 data-testid="filter-option-controllers"
               >
                 Controllers Only
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setInstBlockFilter("sensors")}
-                className={instBlockFilter === "sensors" ? "bg-blue-50 text-blue-700 font-medium" : ""}
+                className={
+                  instBlockFilter === "sensors"
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : ""
+                }
                 data-testid="filter-option-sensors"
               >
                 Sensors Only
@@ -3436,14 +5540,16 @@ const HomeScreen = () => {
       </div>
 
       {/* Simulation Toolbar - visible in Dynamic, Start-Up, and Emergency modes */}
-      {(selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios") && (
+      {(selectedMode === "Dynamic" ||
+        selectedMode === "Start-Up" ||
+        selectedMode === "Emergency Scenarios") && (
         <div className="flex-shrink-0 bg-gray-800 border-b border-gray-600 px-3 py-2 flex flex-wrap items-center gap-6">
           {/* Start/Stop Button */}
           <Button
             onClick={() => setDynamicRunning(!dynamicRunning)}
             variant={dynamicRunning ? "destructive" : "default"}
             size="sm"
-            className={`gap-2 ${!dynamicRunning ? 'bg-green-600' : ''}`}
+            className={`gap-2 ${!dynamicRunning ? "bg-green-600" : ""}`}
             data-testid="button-dynamic-start-stop"
           >
             {dynamicRunning ? (
@@ -3473,8 +5579,12 @@ const HomeScreen = () => {
 
           {/* Update Interval */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-300 whitespace-nowrap">Update Interval:</span>
-            <span className="text-xs text-white font-medium w-10">{dynamicDt.toFixed(2)} s</span>
+            <span className="text-xs text-gray-300 whitespace-nowrap">
+              Update Interval:
+            </span>
+            <span className="text-xs text-white font-medium w-10">
+              {dynamicDt.toFixed(2)} s
+            </span>
             <Slider
               min={0.01}
               max={0.5}
@@ -3488,8 +5598,12 @@ const HomeScreen = () => {
 
           {/* Simulation Speed */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-300 whitespace-nowrap">Simulation Speed:</span>
-            <span className="text-xs text-white font-medium w-10">{dynamicSpeed.toFixed(1)}x</span>
+            <span className="text-xs text-gray-300 whitespace-nowrap">
+              Simulation Speed:
+            </span>
+            <span className="text-xs text-white font-medium w-10">
+              {dynamicSpeed.toFixed(1)}x
+            </span>
             <Slider
               min={0.1}
               max={20}
@@ -3504,7 +5618,10 @@ const HomeScreen = () => {
           {/* Status */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-300">Status</span>
-            <span className={`text-sm font-semibold ${dynamicRunning ? 'text-green-400' : 'text-gray-400'}`} data-testid="text-dynamic-status">
+            <span
+              className={`text-sm font-semibold ${dynamicRunning ? "text-green-400" : "text-gray-400"}`}
+              data-testid="text-dynamic-status"
+            >
               {dynamicRunning ? "Running" : "Stopped"}
             </span>
           </div>
@@ -3512,7 +5629,10 @@ const HomeScreen = () => {
           {/* Elapsed Time */}
           <div className="flex flex-col">
             <span className="text-[10px] text-gray-400">Elapsed:</span>
-            <span className="text-xs text-white font-mono" data-testid="text-dynamic-elapsed">
+            <span
+              className="text-xs text-white font-mono"
+              data-testid="text-dynamic-elapsed"
+            >
               {(dynamicElapsed / 60).toFixed(3)} min
             </span>
           </div>
@@ -3523,7 +5643,15 @@ const HomeScreen = () => {
       <div className="flex-1 overflow-auto">
         {/* L4-Converter View - Canvas with Converter 4 */}
         {selectedScreen === "L4-Converter" && (
-          <div className="relative bg-gray-50" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
+          <div
+            className="relative bg-gray-50"
+            style={{
+              width: "3680px",
+              height: "2260px",
+              minWidth: "3680px",
+              minHeight: "2260px",
+            }}
+          >
             {/* Converter 4 Graphic */}
             <Rnd
               key="converter4-l4"
@@ -3536,7 +5664,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setConverter4L4Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setConverter4L4Position(position);
                 setIsL4Dirty(true);
@@ -3569,7 +5697,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setFaceplate4825L4Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setFaceplate4825L4Position(position);
                 setIsL4Dirty(true);
@@ -3582,18 +5710,26 @@ const HomeScreen = () => {
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 20 }}
             >
-              <div 
-                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
                 data-testid="faceplate-4825-l4-container"
-                onClick={isLockedL4 ? () => setShowSecondaryConverter4L4(true) : undefined}
+                onClick={
+                  isLockedL4
+                    ? () => setShowSecondaryConverter4L4(true)
+                    : undefined
+                }
               >
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  1540-TI-4825
+                </span>
                 <TempSensorPrimaryFaceplate
                   data={{
                     ...defaultControllerData,
-                    instrumentTag: tempSensor4825Config.TAGNAME || '1540-TI-4825',
-                    description: tempSensor4825Config.DESC || 'Pass 1 Catalyst In',
-                    pvUnits: tempSensor4825Config.EU || 'F',
+                    instrumentTag:
+                      tempSensor4825Config.TAGNAME || "1540-TI-4825",
+                    description:
+                      tempSensor4825Config.DESC || "Pass 1 Catalyst In",
+                    pvUnits: tempSensor4825Config.EU || "F",
                     pvRangeMin: tempSensor4825Config.SP_LIM_LO ?? 0,
                     pvRangeMax: tempSensor4825Config.SP_LIM_HI ?? 2000,
                     pv: tempSensor4825SyncState.syncedPV,
@@ -3617,7 +5753,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setJugValveHandControllerL4Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setJugValveHandControllerL4Position(position);
                 setIsL4Dirty(true);
@@ -3631,15 +5767,15 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
               data-testid="jug-valve-hc-l4-rnd"
             >
-              <div 
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+              <div
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? "cursor-pointer" : ""}`}
                 onClick={handleJugValveHandControllerClick}
                 style={{
                   transform: `scale(${Math.min(jugValveHandControllerL4Size.width / 220, jugValveHandControllerL4Size.height / 200)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
-                <ControllerFaceplate 
+                <ControllerFaceplate
                   data={jugValveHandControllerData}
                   isTransparent={true}
                   controllerId="1540-H-4282"
@@ -3648,139 +5784,222 @@ const HomeScreen = () => {
             </Rnd>
 
             {/* Render vertical arrows for L4-Converter */}
-            {verticalArrows.filter(va => va.screen === 'L4-Converter').map((vArrow) => (
-              <Rnd
-                key={`${vArrow.id}-${vArrow.rotation}`}
-                position={{ x: vArrow.x, y: vArrow.y }}
-                size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
-                onDragStop={(e, d) => {
-                  setVerticalArrows(prev => prev.map(va =>
-                    va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
-                  ));
-                }}
-                onResizeStop={(e, dir, ref, delta, position) => {
-                  const isHorizontal = vArrow.rotation % 180 !== 0;
-                  setVerticalArrows(prev => prev.map(va =>
-                    va.id === vArrow.id
+            {verticalArrows
+              .filter((va) => va.screen === "L4-Converter")
+              .map((vArrow) => (
+                <Rnd
+                  key={`${vArrow.id}-${vArrow.rotation}`}
+                  position={{ x: vArrow.x, y: vArrow.y }}
+                  size={{
+                    width:
+                      vArrow.rotation % 180 === 0
+                        ? vArrow.width
+                        : vArrow.height,
+                    height:
+                      vArrow.rotation % 180 === 0
+                        ? vArrow.height
+                        : vArrow.width,
+                  }}
+                  onDragStop={(e, d) => {
+                    setVerticalArrows((prev) =>
+                      prev.map((va) =>
+                        va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va,
+                      ),
+                    );
+                  }}
+                  onResizeStop={(e, dir, ref, delta, position) => {
+                    const isHorizontal = vArrow.rotation % 180 !== 0;
+                    setVerticalArrows((prev) =>
+                      prev.map((va) =>
+                        va.id === vArrow.id
+                          ? {
+                              ...va,
+                              height: isHorizontal
+                                ? parseInt(ref.style.width)
+                                : parseInt(ref.style.height),
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : va,
+                      ),
+                    );
+                  }}
+                  minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+                  minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+                  maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+                  maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
+                  bounds="parent"
+                  disableDragging={isLockedL4}
+                  enableResizing={
+                    !isLockedL4
                       ? {
-                        ...va,
-                        height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
-                        x: position.x,
-                        y: position.y
-                      }
-                      : va
-                  ));
-                }}
-                minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
-                minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
-                maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
-                maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
-                bounds="parent"
-                disableDragging={isLockedL4}
-                enableResizing={!isLockedL4 ? {
-                  top: vArrow.rotation % 180 === 0,
-                  bottom: vArrow.rotation % 180 === 0,
-                  left: vArrow.rotation % 180 !== 0,
-                  right: vArrow.rotation % 180 !== 0,
-                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
-                } : false}
-                className={`${isLockedL4 ? "cursor-default" : "cursor-move"} group`}
-                style={{ zIndex: 35 }}
-              >
-                <div className="relative w-full h-full">
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
-                      width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
-                      height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
-                    }}
-                  >
-                    <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
-                  </div>
-                  {!isLockedL4 && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
-                      <button
-                        className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                                   flex items-center justify-center shadow-lg"
-                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                        title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                      >
-                        <RotateCw className="w-3 h-3 text-white" />
-                      </button>
-                      <button
-                        className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
-                                   flex items-center justify-center shadow-lg"
-                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
-                        title="Delete arrow"
-                      >
-                        <Trash2 className="w-3 h-3 text-white" />
-                      </button>
+                          top: vArrow.rotation % 180 === 0,
+                          bottom: vArrow.rotation % 180 === 0,
+                          left: vArrow.rotation % 180 !== 0,
+                          right: vArrow.rotation % 180 !== 0,
+                          topLeft: false,
+                          topRight: false,
+                          bottomLeft: false,
+                          bottomRight: false,
+                        }
+                      : false
+                  }
+                  className={`${isLockedL4 ? "cursor-default" : "cursor-move"} group`}
+                  style={{ zIndex: 35 }}
+                >
+                  <div className="relative w-full h-full">
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                        width:
+                          vArrow.rotation % 180 === 0 ? "100%" : vArrow.height,
+                        height:
+                          vArrow.rotation % 180 === 0 ? "100%" : vArrow.width,
+                      }}
+                    >
+                      <VerticalArrow
+                        width={vArrow.width}
+                        height={vArrow.height}
+                        color="#53B1D8"
+                      />
                     </div>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+                    {!isLockedL4 && (
+                      <div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      >
+                        <button
+                          className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                   flex items-center justify-center shadow-lg"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleRotateVerticalArrow(vArrow.id);
+                          }}
+                          title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                        >
+                          <RotateCw className="w-3 h-3 text-white" />
+                        </button>
+                        <button
+                          className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                   flex items-center justify-center shadow-lg"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDeleteVerticalArrow(vArrow.id);
+                          }}
+                          title="Delete arrow"
+                        >
+                          <Trash2 className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
 
             {/* Render vertical lines for L4-Converter */}
-            {verticalLines.filter(vl => vl.screen === 'L4-Converter').map((vLine) => (
-              <Rnd
-                key={vLine.id}
-                position={{ x: vLine.x, y: vLine.y }}
-                size={{ width: vLine.width, height: vLine.height }}
-                onDragStop={(e, d) => {
-                  setVerticalLines(prev => prev.map(vl =>
-                    vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
-                  ));
-                }}
-                onResizeStop={(e, dir, ref, delta, position) => {
-                  setVerticalLines(prev => prev.map(vl =>
-                    vl.id === vLine.id
-                      ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
-                      : vl
-                  ));
-                }}
-                minWidth={24}
-                minHeight={50}
-                maxWidth={24}
-                bounds="parent"
-                disableDragging={isLockedL4}
-                enableResizing={!isLockedL4 ? {
-                  top: true, bottom: true, left: false, right: false,
-                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
-                } : false}
-                className={`${isLockedL4 ? "cursor-default" : "cursor-move"} group`}
-                style={{ zIndex: 35 }}
-              >
-                <div className="relative w-full h-full">
-                  <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
-                  {!isLockedL4 && (
-                    <button
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+            {verticalLines
+              .filter((vl) => vl.screen === "L4-Converter")
+              .map((vLine) => (
+                <Rnd
+                  key={vLine.id}
+                  position={{ x: vLine.x, y: vLine.y }}
+                  size={{ width: vLine.width, height: vLine.height }}
+                  onDragStop={(e, d) => {
+                    setVerticalLines((prev) =>
+                      prev.map((vl) =>
+                        vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl,
+                      ),
+                    );
+                  }}
+                  onResizeStop={(e, dir, ref, delta, position) => {
+                    setVerticalLines((prev) =>
+                      prev.map((vl) =>
+                        vl.id === vLine.id
+                          ? {
+                              ...vl,
+                              height: parseInt(ref.style.height),
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : vl,
+                      ),
+                    );
+                  }}
+                  minWidth={24}
+                  minHeight={50}
+                  maxWidth={24}
+                  bounds="parent"
+                  disableDragging={isLockedL4}
+                  enableResizing={
+                    !isLockedL4
+                      ? {
+                          top: true,
+                          bottom: true,
+                          left: false,
+                          right: false,
+                          topLeft: false,
+                          topRight: false,
+                          bottomLeft: false,
+                          bottomRight: false,
+                        }
+                      : false
+                  }
+                  className={`${isLockedL4 ? "cursor-default" : "cursor-move"} group`}
+                  style={{ zIndex: 35 }}
+                >
+                  <div className="relative w-full h-full">
+                    <VerticalLine
+                      width={vLine.width}
+                      height={vLine.height}
+                      color="#53B1D8"
+                    />
+                    {!isLockedL4 && (
+                      <button
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
                                  w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
                                  flex items-center justify-center shadow-lg 
                                  opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
-                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
-                      title="Delete line"
-                    >
-                      <Trash2 className="w-3 h-3 text-white" />
-                    </button>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleDeleteVerticalLine(vLine.id);
+                        }}
+                        title="Delete line"
+                      >
+                        <Trash2 className="w-3 h-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
-            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+            <Dialog
+              open={showSecondaryConverter4L4}
+              onOpenChange={setShowSecondaryConverter4L4}
+            >
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
                 <VisuallyHidden>
-                  <DialogTitle>1540-TI-4825 Pass 1 Catalyst Temperature</DialogTitle>
+                  <DialogTitle>
+                    1540-TI-4825 Pass 1 Catalyst Temperature
+                  </DialogTitle>
                 </VisuallyHidden>
                 <TempSensorSecondaryFaceplate
                   data={tempSensor4825SecondaryData}
@@ -3795,140 +6014,225 @@ const HomeScreen = () => {
 
         {/* L2 - Furnace Area View - Canvas with equipment */}
         {selectedScreen === "L2 – Furnace Area" && (
-          <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
-
+          <div
+            className="relative bg-white"
+            style={{
+              width: "3680px",
+              height: "1130px",
+              minWidth: "3680px",
+              minHeight: "1130px",
+            }}
+          >
             {/* Render vertical arrows for L2-Furnace Area */}
-            {verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map((vArrow) => (
-              <Rnd
-                key={`${vArrow.id}-${vArrow.rotation}`}
-                position={{ x: vArrow.x, y: vArrow.y }}
-                size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
-                onDragStop={(e, d) => {
-                  setVerticalArrows(prev => prev.map(va =>
-                    va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
-                  ));
-                  setIsL2Dirty(true);
-                }}
-                onResizeStop={(e, dir, ref, delta, position) => {
-                  const isHorizontal = vArrow.rotation % 180 !== 0;
-                  setVerticalArrows(prev => prev.map(va =>
-                    va.id === vArrow.id
+            {verticalArrows
+              .filter((va) => va.screen === "L2 – Furnace Area")
+              .map((vArrow) => (
+                <Rnd
+                  key={`${vArrow.id}-${vArrow.rotation}`}
+                  position={{ x: vArrow.x, y: vArrow.y }}
+                  size={{
+                    width:
+                      vArrow.rotation % 180 === 0
+                        ? vArrow.width
+                        : vArrow.height,
+                    height:
+                      vArrow.rotation % 180 === 0
+                        ? vArrow.height
+                        : vArrow.width,
+                  }}
+                  onDragStop={(e, d) => {
+                    setVerticalArrows((prev) =>
+                      prev.map((va) =>
+                        va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va,
+                      ),
+                    );
+                    setIsL2Dirty(true);
+                  }}
+                  onResizeStop={(e, dir, ref, delta, position) => {
+                    const isHorizontal = vArrow.rotation % 180 !== 0;
+                    setVerticalArrows((prev) =>
+                      prev.map((va) =>
+                        va.id === vArrow.id
+                          ? {
+                              ...va,
+                              height: isHorizontal
+                                ? parseInt(ref.style.width)
+                                : parseInt(ref.style.height),
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : va,
+                      ),
+                    );
+                    setIsL2Dirty(true);
+                  }}
+                  minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+                  minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+                  maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+                  maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
+                  bounds="parent"
+                  disableDragging={isLockedL2}
+                  enableResizing={
+                    !isLockedL2
                       ? {
-                        ...va,
-                        height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
-                        x: position.x,
-                        y: position.y
-                      }
-                      : va
-                  ));
-                  setIsL2Dirty(true);
-                }}
-                minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
-                minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
-                maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
-                maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
-                bounds="parent"
-                disableDragging={isLockedL2}
-                enableResizing={!isLockedL2 ? {
-                  top: vArrow.rotation % 180 === 0,
-                  bottom: vArrow.rotation % 180 === 0,
-                  left: vArrow.rotation % 180 !== 0,
-                  right: vArrow.rotation % 180 !== 0,
-                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
-                } : false}
-                className={`${isLockedL2 ? "cursor-default" : "cursor-move"} group`}
-                style={{ zIndex: 35 }}
-              >
-                <div className="relative w-full h-full">
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
-                      width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
-                      height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
-                    }}
-                  >
-                    <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
-                  </div>
-                  {!isLockedL2 && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
-                      <button
-                        className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                                   flex items-center justify-center shadow-lg"
-                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                        title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                      >
-                        <RotateCw className="w-3 h-3 text-white" />
-                      </button>
-                      <button
-                        className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
-                                   flex items-center justify-center shadow-lg"
-                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
-                        title="Delete arrow"
-                      >
-                        <Trash2 className="w-3 h-3 text-white" />
-                      </button>
+                          top: vArrow.rotation % 180 === 0,
+                          bottom: vArrow.rotation % 180 === 0,
+                          left: vArrow.rotation % 180 !== 0,
+                          right: vArrow.rotation % 180 !== 0,
+                          topLeft: false,
+                          topRight: false,
+                          bottomLeft: false,
+                          bottomRight: false,
+                        }
+                      : false
+                  }
+                  className={`${isLockedL2 ? "cursor-default" : "cursor-move"} group`}
+                  style={{ zIndex: 35 }}
+                >
+                  <div className="relative w-full h-full">
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                        width:
+                          vArrow.rotation % 180 === 0 ? "100%" : vArrow.height,
+                        height:
+                          vArrow.rotation % 180 === 0 ? "100%" : vArrow.width,
+                      }}
+                    >
+                      <VerticalArrow
+                        width={vArrow.width}
+                        height={vArrow.height}
+                        color="#53B1D8"
+                      />
                     </div>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+                    {!isLockedL2 && (
+                      <div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      >
+                        <button
+                          className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                   flex items-center justify-center shadow-lg"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleRotateVerticalArrow(vArrow.id);
+                          }}
+                          title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                        >
+                          <RotateCw className="w-3 h-3 text-white" />
+                        </button>
+                        <button
+                          className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                   flex items-center justify-center shadow-lg"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDeleteVerticalArrow(vArrow.id);
+                          }}
+                          title="Delete arrow"
+                        >
+                          <Trash2 className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
 
             {/* Render vertical lines for L2-Furnace Area */}
-            {verticalLines.filter(vl => vl.screen === 'L2 – Furnace Area').map((vLine) => (
-              <Rnd
-                key={vLine.id}
-                position={{ x: vLine.x, y: vLine.y }}
-                size={{ width: vLine.width, height: vLine.height }}
-                onDragStop={(e, d) => {
-                  setVerticalLines(prev => prev.map(vl =>
-                    vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
-                  ));
-                  setIsL2Dirty(true);
-                }}
-                onResizeStop={(e, dir, ref, delta, position) => {
-                  setVerticalLines(prev => prev.map(vl =>
-                    vl.id === vLine.id
-                      ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
-                      : vl
-                  ));
-                  setIsL2Dirty(true);
-                }}
-                minWidth={24}
-                minHeight={50}
-                maxWidth={24}
-                bounds="parent"
-                disableDragging={isLockedL2}
-                enableResizing={!isLockedL2 ? {
-                  top: true, bottom: true, left: false, right: false,
-                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
-                } : false}
-                className={`${isLockedL2 ? "cursor-default" : "cursor-move"} group`}
-                style={{ zIndex: 35 }}
-              >
-                <div className="relative w-full h-full">
-                  <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
-                  {!isLockedL2 && (
-                    <button
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+            {verticalLines
+              .filter((vl) => vl.screen === "L2 – Furnace Area")
+              .map((vLine) => (
+                <Rnd
+                  key={vLine.id}
+                  position={{ x: vLine.x, y: vLine.y }}
+                  size={{ width: vLine.width, height: vLine.height }}
+                  onDragStop={(e, d) => {
+                    setVerticalLines((prev) =>
+                      prev.map((vl) =>
+                        vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl,
+                      ),
+                    );
+                    setIsL2Dirty(true);
+                  }}
+                  onResizeStop={(e, dir, ref, delta, position) => {
+                    setVerticalLines((prev) =>
+                      prev.map((vl) =>
+                        vl.id === vLine.id
+                          ? {
+                              ...vl,
+                              height: parseInt(ref.style.height),
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : vl,
+                      ),
+                    );
+                    setIsL2Dirty(true);
+                  }}
+                  minWidth={24}
+                  minHeight={50}
+                  maxWidth={24}
+                  bounds="parent"
+                  disableDragging={isLockedL2}
+                  enableResizing={
+                    !isLockedL2
+                      ? {
+                          top: true,
+                          bottom: true,
+                          left: false,
+                          right: false,
+                          topLeft: false,
+                          topRight: false,
+                          bottomLeft: false,
+                          bottomRight: false,
+                        }
+                      : false
+                  }
+                  className={`${isLockedL2 ? "cursor-default" : "cursor-move"} group`}
+                  style={{ zIndex: 35 }}
+                >
+                  <div className="relative w-full h-full">
+                    <VerticalLine
+                      width={vLine.width}
+                      height={vLine.height}
+                      color="#53B1D8"
+                    />
+                    {!isLockedL2 && (
+                      <button
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
                                  w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
                                  flex items-center justify-center shadow-lg 
                                  opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
-                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
-                      title="Delete line"
-                    >
-                      <Trash2 className="w-3 h-3 text-white" />
-                    </button>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleDeleteVerticalLine(vLine.id);
+                        }}
+                        title="Delete line"
+                      >
+                        <Trash2 className="w-3 h-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
 
             {/* Hand Controller 1540-H-4030 Faceplate for L2 */}
             <Rnd
@@ -3942,7 +6246,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setHandControllerL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setHandControllerL2Position(position);
                 setIsL2Dirty(true);
@@ -3956,11 +6260,11 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""}`}
                 onClick={handleHandControllerClick}
                 style={{
                   transform: `scale(${Math.min(handControllerL2Size.width / 220, handControllerL2Size.height / 200)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
                 <ControllerFaceplate
@@ -3983,7 +6287,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setVfdL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setVfdL2Position(position);
                 setIsL2Dirty(true);
@@ -3998,16 +6302,18 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""} ${getHighlightClass("compressor")}`}
                 onClick={handleCompressorClick}
                 style={{
                   transform: `scale(${Math.min(vfdL2Size.width / 100, vfdL2Size.height / 100)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
                 <PrimaryCompressorFaceplate
                   data={compressorData}
-                  transparentBackground={vfdConfig?.transparentBackground ?? true}
+                  transparentBackground={
+                    vfdConfig?.transparentBackground ?? true
+                  }
                   configTagName={vfdConfig?.tagName}
                   configDescription={vfdConfig?.description}
                   configUnit={vfdConfig?.unit}
@@ -4027,7 +6333,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setSulfurFlowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setSulfurFlowL2Position(position);
                 setIsL2Dirty(true);
@@ -4042,11 +6348,11 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""} ${getHighlightClass("1530-F-2602")}`}
                 onClick={handleSulfurFlowClick}
                 style={{
                   transform: `scale(${Math.min(sulfurFlowL2Size.width / 220, sulfurFlowL2Size.height / 200)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
                 <ControllerFaceplate
@@ -4070,7 +6376,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setSulfurValveL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setSulfurValveL2Position(position);
                 setIsL2Dirty(true);
@@ -4085,17 +6391,14 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""} ${getHighlightClass("1540-FCV-2602")}`}
                 onClick={isLockedL2 ? handleSulfurValveL2Click : undefined}
                 style={{
                   transform: `scale(${Math.min(sulfurValveL2Size.width / 100, sulfurValveL2Size.height / 140)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
-                <ValveFaceplate
-                  data={sulfurValveData}
-                  isTransparent={true}
-                />
+                <ValveFaceplate data={sulfurValveData} isTransparent={true} />
               </div>
             </Rnd>
 
@@ -4111,7 +6414,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setJugValveHandControllerL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setJugValveHandControllerL2Position(position);
                 setIsL2Dirty(true);
@@ -4126,11 +6429,11 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""} ${getHighlightClass("1540-H-4282")}`}
                 onClick={handleJugValveHandControllerClick}
                 style={{
                   transform: `scale(${Math.min(jugValveHandControllerL2Size.width / 220, jugValveHandControllerL2Size.height / 200)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
                 <ControllerFaceplate
@@ -4153,7 +6456,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setJugValveHcvL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setJugValveHcvL2Position(position);
                 setIsL2Dirty(true);
@@ -4168,11 +6471,11 @@ const HomeScreen = () => {
               style={{ zIndex: 20 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""} ${getHighlightClass("1540-HCV-4282")}`}
                 onClick={isLockedL2 ? handleJugValveClick : undefined}
                 style={{
                   transform: `scale(${Math.min(jugValveHcvL2Size.width / 100, jugValveHcvL2Size.height / 140)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
                 <ValveFaceplate
@@ -4196,7 +6499,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setWasteHeatBoilerL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setWasteHeatBoilerL2Position(position);
                 setIsL2Dirty(true);
@@ -4232,7 +6535,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setYellowHorizArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setYellowHorizArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4268,7 +6571,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanLongArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanLongArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4304,7 +6607,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanUpArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanUpArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4340,7 +6643,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanLeftArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanLeftArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4376,7 +6679,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanLongLeftArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanLongLeftArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4412,7 +6715,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanUpArrow2L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanUpArrow2L2Position(position);
                 setIsL2Dirty(true);
@@ -4448,7 +6751,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanUpArrow3L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanUpArrow3L2Position(position);
                 setIsL2Dirty(true);
@@ -4484,7 +6787,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanDownArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanDownArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4520,7 +6823,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setMetalTankL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setMetalTankL2Position(position);
                 setIsL2Dirty(true);
@@ -4535,7 +6838,7 @@ const HomeScreen = () => {
               style={{ zIndex: 30 }}
             >
               <div
-                className={`w-full h-full ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full ${isLockedL2 ? "cursor-pointer" : ""}`}
                 onClick={handleFurnaceClick}
               >
                 <img
@@ -4561,7 +6864,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setGrayYellowArrowL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setGrayYellowArrowL2Position(position);
                 setIsL2Dirty(true);
@@ -4597,7 +6900,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanHorizArrow2L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanHorizArrow2L2Position(position);
                 setIsL2Dirty(true);
@@ -4633,7 +6936,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setGrayArrowCyanLineL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setGrayArrowCyanLineL2Position(position);
                 setIsL2Dirty(true);
@@ -4669,7 +6972,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanThinLine1L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanThinLine1L2Position(position);
                 setIsL2Dirty(true);
@@ -4705,7 +7008,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanThinLine2L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanThinLine2L2Position(position);
                 setIsL2Dirty(true);
@@ -4741,7 +7044,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanVertLine1L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanVertLine1L2Position(position);
                 setIsL2Dirty(true);
@@ -4777,7 +7080,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setCyanVertLine2L2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setCyanVertLine2L2Position(position);
                 setIsL2Dirty(true);
@@ -4813,7 +7116,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setBlackVertLineL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setBlackVertLineL2Position(position);
                 setIsL2Dirty(true);
@@ -4849,7 +7152,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setTempSensor4200AL2Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setTempSensor4200AL2Position(position);
                 setIsL2Dirty(true);
@@ -4864,11 +7167,11 @@ const HomeScreen = () => {
               style={{ zIndex: 40 }}
             >
               <div
-                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? "cursor-pointer" : ""}`}
                 onClick={handleTempSensor4200AClick}
                 style={{
                   transform: `scale(${Math.min(tempSensor4200AL2Size.width / 180, tempSensor4200AL2Size.height / 120)})`,
-                  transformOrigin: 'center center'
+                  transformOrigin: "center center",
                 }}
               >
                 <TempSensorPrimaryFaceplate
@@ -4877,165 +7180,264 @@ const HomeScreen = () => {
                 />
               </div>
             </Rnd>
-
           </div>
         )}
 
         {/* L3 - Compressor Area View - Blank Canvas */}
         {selectedScreen === "L3 – Compressor Area" && (
-          <div className="relative bg-gray-50" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+          <div
+            className="relative bg-gray-50"
+            style={{
+              width: "3680px",
+              height: "1130px",
+              minWidth: "3680px",
+              minHeight: "1130px",
+            }}
+          >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center text-gray-400">
                 <p className="text-2xl font-semibold">L3 – Compressor Area</p>
-                <p className="text-sm mt-2">Blank Canvas - Add equipment here</p>
+                <p className="text-sm mt-2">
+                  Blank Canvas - Add equipment here
+                </p>
               </div>
             </div>
 
             {/* Render vertical arrows for L3-Compressor Area */}
-            {verticalArrows.filter(va => va.screen === 'L3 – Compressor Area').map((vArrow) => (
-              <Rnd
-                key={`${vArrow.id}-${vArrow.rotation}`}
-                position={{ x: vArrow.x, y: vArrow.y }}
-                size={{ width: vArrow.rotation % 180 === 0 ? vArrow.width : vArrow.height, height: vArrow.rotation % 180 === 0 ? vArrow.height : vArrow.width }}
-                onDragStop={(e, d) => {
-                  setVerticalArrows(prev => prev.map(va =>
-                    va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va
-                  ));
-                }}
-                onResizeStop={(e, dir, ref, delta, position) => {
-                  const isHorizontal = vArrow.rotation % 180 !== 0;
-                  setVerticalArrows(prev => prev.map(va =>
-                    va.id === vArrow.id
+            {verticalArrows
+              .filter((va) => va.screen === "L3 – Compressor Area")
+              .map((vArrow) => (
+                <Rnd
+                  key={`${vArrow.id}-${vArrow.rotation}`}
+                  position={{ x: vArrow.x, y: vArrow.y }}
+                  size={{
+                    width:
+                      vArrow.rotation % 180 === 0
+                        ? vArrow.width
+                        : vArrow.height,
+                    height:
+                      vArrow.rotation % 180 === 0
+                        ? vArrow.height
+                        : vArrow.width,
+                  }}
+                  onDragStop={(e, d) => {
+                    setVerticalArrows((prev) =>
+                      prev.map((va) =>
+                        va.id === vArrow.id ? { ...va, x: d.x, y: d.y } : va,
+                      ),
+                    );
+                  }}
+                  onResizeStop={(e, dir, ref, delta, position) => {
+                    const isHorizontal = vArrow.rotation % 180 !== 0;
+                    setVerticalArrows((prev) =>
+                      prev.map((va) =>
+                        va.id === vArrow.id
+                          ? {
+                              ...va,
+                              height: isHorizontal
+                                ? parseInt(ref.style.width)
+                                : parseInt(ref.style.height),
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : va,
+                      ),
+                    );
+                  }}
+                  minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
+                  minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
+                  maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
+                  maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
+                  bounds="parent"
+                  disableDragging={isLocked}
+                  enableResizing={
+                    !isLocked
                       ? {
-                        ...va,
-                        height: isHorizontal ? parseInt(ref.style.width) : parseInt(ref.style.height),
-                        x: position.x,
-                        y: position.y
-                      }
-                      : va
-                  ));
-                }}
-                minWidth={vArrow.rotation % 180 === 0 ? 24 : 50}
-                minHeight={vArrow.rotation % 180 === 0 ? 50 : 24}
-                maxWidth={vArrow.rotation % 180 === 0 ? 24 : undefined}
-                maxHeight={vArrow.rotation % 180 === 0 ? undefined : 24}
-                bounds="parent"
-                disableDragging={isLocked}
-                enableResizing={!isLocked ? {
-                  top: vArrow.rotation % 180 === 0,
-                  bottom: vArrow.rotation % 180 === 0,
-                  left: vArrow.rotation % 180 !== 0,
-                  right: vArrow.rotation % 180 !== 0,
-                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
-                } : false}
-                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
-                style={{ zIndex: 35 }}
-              >
-                <div className="relative w-full h-full">
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
-                      width: vArrow.rotation % 180 === 0 ? '100%' : vArrow.height,
-                      height: vArrow.rotation % 180 === 0 ? '100%' : vArrow.width,
-                    }}
-                  >
-                    <VerticalArrow width={vArrow.width} height={vArrow.height} color="#53B1D8" />
-                  </div>
-                  {!isLocked && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
-                      <button
-                        className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
-                                   flex items-center justify-center shadow-lg"
-                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleRotateVerticalArrow(vArrow.id); }}
-                        title={`Rotate 90° (current: ${vArrow.rotation}°)`}
-                      >
-                        <RotateCw className="w-3 h-3 text-white" />
-                      </button>
-                      <button
-                        className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
-                                   flex items-center justify-center shadow-lg"
-                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalArrow(vArrow.id); }}
-                        title="Delete arrow"
-                      >
-                        <Trash2 className="w-3 h-3 text-white" />
-                      </button>
+                          top: vArrow.rotation % 180 === 0,
+                          bottom: vArrow.rotation % 180 === 0,
+                          left: vArrow.rotation % 180 !== 0,
+                          right: vArrow.rotation % 180 !== 0,
+                          topLeft: false,
+                          topRight: false,
+                          bottomLeft: false,
+                          bottomRight: false,
+                        }
+                      : false
+                  }
+                  className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
+                  style={{ zIndex: 35 }}
+                >
+                  <div className="relative w-full h-full">
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: `translate(-50%, -50%) rotate(${vArrow.rotation}deg)`,
+                        width:
+                          vArrow.rotation % 180 === 0 ? "100%" : vArrow.height,
+                        height:
+                          vArrow.rotation % 180 === 0 ? "100%" : vArrow.width,
+                      }}
+                    >
+                      <VerticalArrow
+                        width={vArrow.width}
+                        height={vArrow.height}
+                        color="#53B1D8"
+                      />
                     </div>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+                    {!isLocked && (
+                      <div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                                    flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      >
+                        <button
+                          className="w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-600 
+                                   flex items-center justify-center shadow-lg"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleRotateVerticalArrow(vArrow.id);
+                          }}
+                          title={`Rotate 90° (current: ${vArrow.rotation}°)`}
+                        >
+                          <RotateCw className="w-3 h-3 text-white" />
+                        </button>
+                        <button
+                          className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
+                                   flex items-center justify-center shadow-lg"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDeleteVerticalArrow(vArrow.id);
+                          }}
+                          title="Delete arrow"
+                        >
+                          <Trash2 className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
 
             {/* Render vertical lines for L3-Compressor Area */}
-            {verticalLines.filter(vl => vl.screen === 'L3 – Compressor Area').map((vLine) => (
-              <Rnd
-                key={vLine.id}
-                position={{ x: vLine.x, y: vLine.y }}
-                size={{ width: vLine.width, height: vLine.height }}
-                onDragStop={(e, d) => {
-                  setVerticalLines(prev => prev.map(vl =>
-                    vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl
-                  ));
-                }}
-                onResizeStop={(e, dir, ref, delta, position) => {
-                  setVerticalLines(prev => prev.map(vl =>
-                    vl.id === vLine.id
-                      ? { ...vl, height: parseInt(ref.style.height), x: position.x, y: position.y }
-                      : vl
-                  ));
-                }}
-                minWidth={24}
-                minHeight={50}
-                maxWidth={24}
-                bounds="parent"
-                disableDragging={isLocked}
-                enableResizing={!isLocked ? {
-                  top: true, bottom: true, left: false, right: false,
-                  topLeft: false, topRight: false, bottomLeft: false, bottomRight: false
-                } : false}
-                className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
-                style={{ zIndex: 35 }}
-              >
-                <div className="relative w-full h-full">
-                  <VerticalLine width={vLine.width} height={vLine.height} color="#53B1D8" />
-                  {!isLocked && (
-                    <button
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+            {verticalLines
+              .filter((vl) => vl.screen === "L3 – Compressor Area")
+              .map((vLine) => (
+                <Rnd
+                  key={vLine.id}
+                  position={{ x: vLine.x, y: vLine.y }}
+                  size={{ width: vLine.width, height: vLine.height }}
+                  onDragStop={(e, d) => {
+                    setVerticalLines((prev) =>
+                      prev.map((vl) =>
+                        vl.id === vLine.id ? { ...vl, x: d.x, y: d.y } : vl,
+                      ),
+                    );
+                  }}
+                  onResizeStop={(e, dir, ref, delta, position) => {
+                    setVerticalLines((prev) =>
+                      prev.map((vl) =>
+                        vl.id === vLine.id
+                          ? {
+                              ...vl,
+                              height: parseInt(ref.style.height),
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : vl,
+                      ),
+                    );
+                  }}
+                  minWidth={24}
+                  minHeight={50}
+                  maxWidth={24}
+                  bounds="parent"
+                  disableDragging={isLocked}
+                  enableResizing={
+                    !isLocked
+                      ? {
+                          top: true,
+                          bottom: true,
+                          left: false,
+                          right: false,
+                          topLeft: false,
+                          topRight: false,
+                          bottomLeft: false,
+                          bottomRight: false,
+                        }
+                      : false
+                  }
+                  className={`${isLocked ? "cursor-default" : "cursor-move"} group`}
+                  style={{ zIndex: 35 }}
+                >
+                  <div className="relative w-full h-full">
+                    <VerticalLine
+                      width={vLine.width}
+                      height={vLine.height}
+                      color="#53B1D8"
+                    />
+                    {!isLocked && (
+                      <button
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
                                  w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-600 
                                  flex items-center justify-center shadow-lg 
                                  opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
-                      onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteVerticalLine(vLine.id); }}
-                      title="Delete line"
-                    >
-                      <Trash2 className="w-3 h-3 text-white" />
-                    </button>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleDeleteVerticalLine(vLine.id);
+                        }}
+                        title="Delete line"
+                      >
+                        <Trash2 className="w-3 h-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
           </div>
         )}
 
         {/* 6.1 L3_1540 Converter View */}
         {selectedScreen === "6.1 L3_1540 Converter" && (
-          <div className="relative bg-white" style={{ width: '3680px', height: '2260px', minWidth: '3680px', minHeight: '2260px' }}>
+          <div
+            className="relative bg-white"
+            style={{
+              width: "3680px",
+              height: "2260px",
+              minWidth: "3680px",
+              minHeight: "2260px",
+            }}
+          >
             {/* Lock/Unlock Button */}
             <div className="absolute top-4 right-4 z-50 flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsLocked61(!isLocked61)}
-                className={`${isLocked61 ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-green-500/20 border-green-500 text-green-400'}`}
+                className={`${isLocked61 ? "bg-red-500/20 border-red-500 text-red-400" : "bg-green-500/20 border-green-500 text-green-400"}`}
                 data-testid="button-lock-toggle-61"
               >
-                {isLocked61 ? <Lock className="w-4 h-4 mr-1" /> : <LockOpen className="w-4 h-4 mr-1" />}
-                {isLocked61 ? 'Locked' : 'Unlocked'}
+                {isLocked61 ? (
+                  <Lock className="w-4 h-4 mr-1" />
+                ) : (
+                  <LockOpen className="w-4 h-4 mr-1" />
+                )}
+                {isLocked61 ? "Locked" : "Unlocked"}
               </Button>
             </div>
 
@@ -5050,7 +7452,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setConverter61Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setConverter61Position(position);
               }}
@@ -5083,7 +7485,7 @@ const HomeScreen = () => {
               onResizeStop={(e, dir, ref, delta, position) => {
                 setFaceplate4825_61Size({
                   width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height)
+                  height: parseInt(ref.style.height),
                 });
                 setFaceplate4825_61Position(position);
               }}
@@ -5097,17 +7499,21 @@ const HomeScreen = () => {
               data-testid="faceplate-4825-61-rnd"
             >
               <div
-                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                className={`flex flex-col items-center gap-1 w-full h-full cursor-pointer ${getHighlightClass("1540-TI-4825")}`}
                 data-testid="button-faceplate-4825-61-open"
                 onClick={() => setShowSecondary4825_61(true)}
               >
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">1540-TI-4825</span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  1540-TI-4825
+                </span>
                 <TempSensorPrimaryFaceplate
                   data={{
                     ...defaultControllerData,
-                    instrumentTag: tempSensor4825Config.TAGNAME || '1540-TI-4825',
-                    description: tempSensor4825Config.DESC || 'Pass 1 Catalyst In',
-                    pvUnits: tempSensor4825Config.EU || 'F',
+                    instrumentTag:
+                      tempSensor4825Config.TAGNAME || "1540-TI-4825",
+                    description:
+                      tempSensor4825Config.DESC || "Pass 1 Catalyst In",
+                    pvUnits: tempSensor4825Config.EU || "F",
                     pvRangeMin: tempSensor4825Config.SP_LIM_LO ?? 0,
                     pvRangeMax: tempSensor4825Config.SP_LIM_HI ?? 2000,
                     pv: tempSensor4825SyncState.syncedPV,
@@ -5120,7 +7526,10 @@ const HomeScreen = () => {
             </Rnd>
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 */}
-            <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61}>
+            <Dialog
+              open={showSecondary4825_61}
+              onOpenChange={setShowSecondary4825_61}
+            >
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
                 <VisuallyHidden>
                   <DialogTitle>1540-TI-4825 Secondary Faceplate</DialogTitle>
@@ -5133,20 +7542,33 @@ const HomeScreen = () => {
                 />
               </DialogContent>
             </Dialog>
-
           </div>
         )}
 
         {/* L1 - System Overview - Fixed-size canvas for scrollable content */}
-        
-        {selectedScreen === "L1 – System Overview" && <L1SystemOverview simulationTriggerRef={l1SimTriggerRef} />}
+
+        {selectedScreen === "L1 – System Overview" && (
+          <L1SystemOverview simulationTriggerRef={l1SimTriggerRef} />
+        )}
         {selectedScreen === "L2 – Converter" && <L2Converter />}
         {selectedScreen === "L2 1520 ACID" && <L2_1520_ACID />}
       </div>
 
       {/* Alarm Banner - always visible at bottom */}
       <div className="flex-shrink-0">
-        <AlarmBanner />
+        <AlarmBanner
+          onAlarmClick={(screen, blockId) => {
+            // Robustly find the screen label from homescreenOptions if screen ID or label is passed
+            const matchedOption = homescreenOptions.find(
+              (o) => o.id === screen || o.label === screen,
+            );
+            const targetScreen = matchedOption ? matchedOption.label : screen;
+
+            setSelectedScreen(targetScreen);
+            setHighlightedBlock(blockId);
+            setTimeout(() => setHighlightedBlock(null), 4000);
+          }}
+        />
       </div>
 
       {/* VFD Faceplate Modal */}
@@ -5171,7 +7593,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Sulfur Flow Controller Secondary Faceplate Modal */}
-      <Dialog open={isSulfurFlowModalOpen} onOpenChange={setIsSulfurFlowModalOpen}>
+      <Dialog
+        open={isSulfurFlowModalOpen}
+        onOpenChange={setIsSulfurFlowModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Sulfur Flow Controller</DialogTitle>
@@ -5198,16 +7623,23 @@ const HomeScreen = () => {
                 setLoadedCaseValueSulfurFlow(value);
               }
             }}
-            onModelockOverrideChange={(active) => setSulfurFlowModelockOverride(active)}
+            onModelockOverrideChange={(active) =>
+              setSulfurFlowModelockOverride(active)
+            }
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={useStaticSulfurFlow ? loadedCaseValueSulfurFlow : null}
+            loadedCaseValue={
+              useStaticSulfurFlow ? loadedCaseValueSulfurFlow : null
+            }
           />
         </DialogContent>
       </Dialog>
 
       {/* Temperature Sensor 1520-TI-5821 Secondary Faceplate Modal */}
-      <Dialog open={isTempSensorModalOpen} onOpenChange={setIsTempSensorModalOpen}>
+      <Dialog
+        open={isTempSensorModalOpen}
+        onOpenChange={setIsTempSensorModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Temperature Sensor 1520-TI-5821</DialogTitle>
@@ -5222,7 +7654,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Temperature Sensor 1540-TI-4200A Secondary Faceplate Modal */}
-      <Dialog open={isTempSensor4200AModalOpen} onOpenChange={setIsTempSensor4200AModalOpen}>
+      <Dialog
+        open={isTempSensor4200AModalOpen}
+        onOpenChange={setIsTempSensor4200AModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Temperature Sensor 1540-TI-4200A</DialogTitle>
@@ -5237,7 +7672,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Temperature Sensor 1540-TI-4200B Secondary Faceplate Modal */}
-      <Dialog open={isTempSensor4200BModalOpen} onOpenChange={setIsTempSensor4200BModalOpen}>
+      <Dialog
+        open={isTempSensor4200BModalOpen}
+        onOpenChange={setIsTempSensor4200BModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Temperature Sensor 1540-TI-4200B</DialogTitle>
@@ -5252,7 +7690,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Temperature Sensor 1540-TI-4200C Secondary Faceplate Modal */}
-      <Dialog open={isTempSensor4200CModalOpen} onOpenChange={setIsTempSensor4200CModalOpen}>
+      <Dialog
+        open={isTempSensor4200CModalOpen}
+        onOpenChange={setIsTempSensor4200CModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Temperature Sensor 1540-TI-4200C</DialogTitle>
@@ -5267,7 +7708,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Hand Controller 1540-H-4030 Secondary Faceplate Modal */}
-      <Dialog open={isHandControllerModalOpen} onOpenChange={setIsHandControllerModalOpen}>
+      <Dialog
+        open={isHandControllerModalOpen}
+        onOpenChange={setIsHandControllerModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Hand Controller 1540-H-4030</DialogTitle>
@@ -5280,13 +7724,13 @@ const HomeScreen = () => {
             onModeChange={(mode) => updateHandControllerMode(mode)}
             onSpChange={(value) => {
               updateHandControllerSP(value);
-              if (selectedMode === 'Static') {
+              if (selectedMode === "Static") {
                 setLoadedCaseValue1540H4030(value);
               }
             }}
             onOutChange={(value) => {
               updateHandControllerOUT(value);
-              if (selectedMode === 'Static') {
+              if (selectedMode === "Static") {
                 setLoadedCaseValue1540H4030(value);
               }
             }}
@@ -5299,7 +7743,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Jug Valve Hand Controller 1540-H-4282 Secondary Faceplate Modal */}
-      <Dialog open={isJugValveHandControllerModalOpen} onOpenChange={setIsJugValveHandControllerModalOpen}>
+      <Dialog
+        open={isJugValveHandControllerModalOpen}
+        onOpenChange={setIsJugValveHandControllerModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Jug Valve Hand Controller 1540-H-4282</DialogTitle>
@@ -5321,7 +7768,10 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* WHB Hand Controller 1540-H-4283 Secondary Faceplate Modal */}
-      <Dialog open={isWhbHandControllerModalOpen} onOpenChange={setIsWhbHandControllerModalOpen}>
+      <Dialog
+        open={isWhbHandControllerModalOpen}
+        onOpenChange={setIsWhbHandControllerModalOpen}
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>WHB Outlet dP Hand Controller 1540-H-4283</DialogTitle>
@@ -5346,7 +7796,10 @@ const HomeScreen = () => {
       <PFDNavigation position="bottom-right" />
 
       {/* Open PV Case Selection Dialog */}
-      <Dialog open={isOpenPVCaseDialogOpen} onOpenChange={setIsOpenPVCaseDialogOpen}>
+      <Dialog
+        open={isOpenPVCaseDialogOpen}
+        onOpenChange={setIsOpenPVCaseDialogOpen}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Open PV Case</DialogTitle>
@@ -5366,17 +7819,27 @@ const HomeScreen = () => {
                   className="flex items-start space-x-3 p-3 rounded-md border hover:bg-gray-50 cursor-pointer"
                   onClick={() => setSelectedPVCase(pvCase.id)}
                 >
-                  <RadioGroupItem value={pvCase.id} id={pvCase.id} className="mt-0.5" />
-                  <Label htmlFor={pvCase.id} className="flex flex-col cursor-pointer flex-1">
+                  <RadioGroupItem
+                    value={pvCase.id}
+                    id={pvCase.id}
+                    className="mt-0.5"
+                  />
+                  <Label
+                    htmlFor={pvCase.id}
+                    className="flex flex-col cursor-pointer flex-1"
+                  >
                     <span className="font-medium text-sm">{pvCase.name}</span>
-                    <span className="text-xs text-muted-foreground">{pvCase.description}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {pvCase.description}
+                    </span>
                   </Label>
                 </div>
               ))}
             </RadioGroup>
             {(!pvCaseData?.cases || pvCaseData.cases.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No PV cases available. Configure cases in the Process Variables settings.
+                No PV cases available. Configure cases in the Process Variables
+                settings.
               </p>
             )}
           </div>
@@ -5393,11 +7856,16 @@ const HomeScreen = () => {
                 if (selectedPVCase && pvCaseData) {
                   // Find the 1540-H-4030 variable and extract the value for the selected case
                   const handControllerVar = pvCaseData.variables?.find(
-                    (v: any) => v.tag === '1540-H-4030' || v.tagNumber === '1540-H-4030'
+                    (v: any) =>
+                      v.tag === "1540-H-4030" || v.tagNumber === "1540-H-4030",
                   );
                   if (handControllerVar && handControllerVar.cases) {
                     const caseValue = handControllerVar.cases[selectedPVCase];
-                    if (caseValue !== undefined && caseValue !== null && caseValue !== '') {
+                    if (
+                      caseValue !== undefined &&
+                      caseValue !== null &&
+                      caseValue !== ""
+                    ) {
                       const numericValue = parseFloat(String(caseValue));
                       if (!isNaN(numericValue)) {
                         setLoadedCaseValue1540H4030(numericValue);
@@ -5407,7 +7875,7 @@ const HomeScreen = () => {
                   }
                   toast({
                     title: "Case Loaded",
-                    description: `Loaded PV Case: ${pvCaseData?.cases?.find(c => c.id === selectedPVCase)?.name || selectedPVCase}`,
+                    description: `Loaded PV Case: ${pvCaseData?.cases?.find((c) => c.id === selectedPVCase)?.name || selectedPVCase}`,
                   });
                   setIsOpenPVCaseDialogOpen(false);
                 }
@@ -5425,4 +7893,3 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
-
