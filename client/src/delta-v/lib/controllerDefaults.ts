@@ -3,8 +3,8 @@ import {
   SecondaryControllerData,
   defaultSecondaryConfig,
   defaultSecondaryData,
-} from '@/delta-v/types/secondaryController';
-import { getControllerMetadata } from './controllerMetadata';
+} from "@/delta-v/types/secondaryController";
+import { getControllerMetadata } from "./controllerMetadata";
 
 /**
  * Returns a controller-aware default configuration.
@@ -12,27 +12,31 @@ import { getControllerMetadata } from './controllerMetadata';
  * instead of falling back to the 1520-TIC-6670 defaults.
  */
 export const getDefaultSecondaryControllerConfig = (
-  controllerId: string
+  controllerId: string,
 ): SecondaryControllerConfig => {
   const metadata = getControllerMetadata(controllerId);
 
   // Controller-specific default overrides
-  const controllerDefaults: Record<string, Partial<SecondaryControllerConfig>> = {
-    '1530-F-2602': {
+  const controllerDefaults: Record<
+    string,
+    Partial<SecondaryControllerConfig>
+  > = {
+    "1530-F-2602": {
       // Sulfur Flow Controller: alarm-based coloring with L/LL/H/HH reference lines
       PV_SCALE_LO: 0,
       PV_SCALE_HI: 500,
       SP_LIM_LO: 0,
       SP_LIM_HI: 500,
-      EU: 'gpm',
+      EU: "gpm",
       ALM_LL_LIM: 5,
       ALM_L_LIM: 10,
       ALM_H_LIM: 400,
       ALM_HH_LIM: 450,
       ALM_DL_LIM: 0,
       ALM_DH_LIM: 0,
+      UNIT: "L2 – Furnace Area",
     },
-    '1540-HCV-4282': {
+    "1540-HCV-4282": {
       // Jug Valve: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
       SHOW_NO_SYMBOL: false,
@@ -45,8 +49,9 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_OUTPUT_PATH_INDICATOR: false,
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
+      UNIT: "L2 – Furnace Area",
     },
-    '1540-FCV-2602': {
+    "1540-FCV-2602": {
       // Flow Control Valve: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
       SHOW_NO_SYMBOL: false,
@@ -59,8 +64,9 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_OUTPUT_PATH_INDICATOR: false,
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
+      UNIT: "L2 – Furnace Area",
     },
-    '1540-HCV-4281': {
+    "1540-HCV-4281": {
       // Jug Valve Positioner: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
       SHOW_NO_SYMBOL: false,
@@ -74,7 +80,7 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
     },
-    '1540-H-4030': {
+    "1540-H-4030": {
       // Main Compressor Hand Controller: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
       SHOW_NO_SYMBOL: false,
@@ -87,8 +93,9 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_OUTPUT_PATH_INDICATOR: false,
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
+      UNIT: "L2 – Furnace Area",
     },
-    '1540-H-4282': {
+    "1540-H-4282": {
       // Jug Valve Hand Controller: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
       SHOW_NO_SYMBOL: false,
@@ -101,8 +108,9 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_OUTPUT_PATH_INDICATOR: false,
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
+      UNIT: "L2 – Furnace Area",
     },
-    '1540-H-4283': {
+    "1540-H-4283": {
       // WHB Outlet dP Hand Controller: Start with all indicators hidden
       SHOW_ALARM_CIRCLE: false,
       SHOW_NO_SYMBOL: false,
@@ -115,16 +123,17 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_OUTPUT_PATH_INDICATOR: false,
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
+      UNIT: "L2 – Furnace Area",
     },
-    '1540-TI-4200C': {
+    "1540-TI-4200C": {
       // Furnace Temperature Sensor C: Configure proper ranges and typical PV
       TYPICAL_PV: 2050,
       PV_SCALE_LO: 1800,
       PV_SCALE_HI: 2300,
       SP_LIM_LO: 1800,
       SP_LIM_HI: 2300,
-      EU: '°F',
-      DESC: 'Furnace C',
+      EU: "°F",
+      DESC: "Furnace C",
       ALM_LL_LIM: 1850,
       ALM_L_LIM: 1900,
       ALM_H_LIM: 2200,
@@ -143,15 +152,15 @@ export const getDefaultSecondaryControllerConfig = (
       SHOW_HOLD_INDICATOR: false,
       SHOW_INTERLOCK_INDICATOR: false,
     },
-    '1520-TI-6624': {
+    "1520-TI-6624": {
       // Furnace Temperature Sensor C: Configure proper ranges and typical PV
       TYPICAL_PV: 2050,
       PV_SCALE_LO: 1800,
       PV_SCALE_HI: 2300,
       SP_LIM_LO: 1800,
       SP_LIM_HI: 2300,
-      EU: '°F',
-      DESC: 'Furnace C',
+      EU: "°F",
+      DESC: "Furnace C",
       ALM_LL_LIM: 1850,
       ALM_L_LIM: 1900,
       ALM_H_LIM: 2200,
@@ -188,7 +197,7 @@ export const getDefaultSecondaryControllerConfig = (
  * but can be extended per-controller if needed.
  */
 export const getDefaultSecondaryControllerData = (
-  controllerId: string
+  controllerId: string,
 ): SecondaryControllerData => {
   return { ...defaultSecondaryData };
 };

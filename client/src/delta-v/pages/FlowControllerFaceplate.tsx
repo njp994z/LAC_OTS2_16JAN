@@ -3,11 +3,15 @@ import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 
 const flowControllers = [
-  { id: "1530-F-2602", name: "Sulfur Flow Controller", href: "/settings/controller-outputs/faceplates/sulfur-flow-controller" },
-  { id: "1520-F-5870", name: "DT SA Inlet Flow Controller", href: null },
-  { id: "1520-F-6770", name: "IPAT SA Inlet Controller", href: null },
-  { id: "1520-F-6670", name: "FAT SA Inlet Controller", href: null },
-];
+  {
+    id: "1530-F-2602",
+    name: "Sulfur Flow Controller",
+    href: "/settings/controller-outputs/faceplates/sulfur-flow-controller",
+  },
+  { id: "1520-F-5870", name: "DT SA Inlet Flow Controller" },
+  { id: "1520-F-6770", name: "IPAT SA Inlet Controller" },
+  { id: "1520-F-6670", name: "FAT SA Inlet Controller" },
+];  
 
 const FlowControllerFaceplate = () => {
   return (
@@ -45,37 +49,25 @@ const FlowControllerFaceplate = () => {
         </p>
 
         <div className="flex flex-col items-center gap-4">
-          {flowControllers.map((controller) => 
-            controller.href ? (
+          {flowControllers.map((controller) => {
+            const linkHref =
+              controller.href ||
+              `/settings/controller-outputs/faceplates/flow-controller/${controller.id}?name=${encodeURIComponent(controller.name)}`;
+            return (
               <Link
                 key={controller.id}
-                href={controller.href}
+                href={linkHref}
                 className={cn(
                   "w-full max-w-md px-6 py-4 rounded-lg border-2 border-blue-600",
                   "bg-blue-700 hover:bg-blue-600 transition-colors",
-                  "text-white font-semibold text-center"
+                  "text-white font-semibold text-center",
                 )}
               >
                 <div className="text-lg">{controller.id}</div>
                 <div className="text-sm">{controller.name}</div>
               </Link>
-            ) : (
-              <button
-                key={controller.id}
-                className={cn(
-                  "w-full max-w-md px-6 py-4 rounded-lg border-2 border-blue-600",
-                  "bg-blue-700 hover:bg-blue-600 transition-colors",
-                  "text-white font-semibold text-center",
-                  "cursor-not-allowed opacity-80"
-                )}
-                disabled
-                title="Coming Soon"
-              >
-                <div className="text-lg">{controller.id}</div>
-                <div className="text-sm">{controller.name}</div>
-              </button>
-            )
-          )}
+            );
+          })}
         </div>
 
         <p className="text-muted-foreground mt-8 text-sm">
