@@ -43,7 +43,7 @@ const unitOperations = [
     id: "sulfur-control-hydraulics",
     title: "Sulfur Control Hydraulics",
     description: "Model sulfur flow control systems including valve sizing, pressure regulation, and flow distribution for molten sulfur handling.",
-    path: "/unit-operation/sulfur-control-hydraulics",
+    path: "/unit-operation/sulfur-control-hydraulics/1540-VCF-2602",
     icon: Gauge
   },
   {

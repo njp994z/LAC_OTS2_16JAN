@@ -1,4 +1,4 @@
-import { Link, useLocation, useSearch } from "wouter";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { defaultControllerData, type ControllerData } from "@/delta-v/types/controller";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 import sulfurControlDiagram from "@assets/image_1772416981735.png";
+import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 
 interface ProcessNode {
   tagId: string;
@@ -110,18 +111,22 @@ interface DynamicState {
 export default function SulfurControlHydraulics() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
+  const { id } = useParams();
   const searchParams = new URLSearchParams(searchString);
   const fromHomeScreen = searchParams.get('from') === 'home-screen' || searchParams.get('from') === 'l2-furnace';
   const { toast } = useToast();
-  
+
   // Valve faceplate configuration (NOT using sync context for static mode)
-  const VALVE_CONTROLLER_ID = '1540-FCV-2602';
-  const { getControllerConfig } = useControllerConfig();
+  const VALVE_CONTROLLER_ID = id ?? '1540-FCV-2602';
+  const { getControllerConfig, getControllerData } = useControllerConfig();
+
   const valveConfig = getControllerConfig(VALVE_CONTROLLER_ID);
-  
+  const valveData = getControllerData(VALVE_CONTROLLER_ID);
+  const { state: valveState } = useControllerSync(VALVE_CONTROLLER_ID);
+
   // Static valve position state - this is the master value for static mode (PV = SP = OUT)
   const [staticValvePosition, setStaticValvePosition] = useState<number>(50);
-  
+
   const [valveFaceplateData, setValveFaceplateData] = useState<ControllerData>({
     ...defaultControllerData,
     instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
@@ -135,21 +140,21 @@ export default function SulfurControlHydraulics() {
     mode: 'AUTO',
     valveTypeAction: valveConfig.VALVE_TYPE_ACTION || 'DA',
   });
-  
+
   const [mode, setMode] = useState<SimulationMode>("static");
   const [isCalculating, setIsCalculating] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  
+
   const [staticInputs, setStaticInputs] = useState<StaticInputs>({
     flow_gpm: "87"
   });
-  
+
   const [dynamicInputs, setDynamicInputs] = useState<DynamicInputs>({
     tau_valve: "8.0",
     tau_flow: "4.0",
     dt: "0.5"
   });
-  
+
   const [systemParams, setSystemParams] = useState<SystemParams>({
     pipe_dia_in: "4.0",
     line_length_ft: "80.0",
@@ -162,30 +167,30 @@ export default function SulfurControlHydraulics() {
     barometric_psia: "14.696",
     pit_level_ft: "7.0"
   });
-  
+
   const [zipCode, setZipCode] = useState("89801");
   const [fetchingBarometric, setFetchingBarometric] = useState(false);
-  
+
   const [staticResults, setStaticResults] = useState<StaticResults | null>(null);
   const [dynamicState, setDynamicState] = useState<DynamicState | null>(null);
-  
+
   const [valveProfileType, setValveProfileType] = useState<string>("equal_percentage");
   const [valveLinearM, setValveLinearM] = useState<string>("1");
   const [valveLinearB, setValveLinearB] = useState<string>("0");
   const [valveRValue, setValveRValue] = useState<string>("85");
-  
+
   const [staticProcessNodes, setStaticProcessNodes] = useState<ProcessNode[]>(DEFAULT_PROCESS_NODES);
   const [dynamicProcessNodes, setDynamicProcessNodes] = useState<ProcessNode[]>(DEFAULT_PROCESS_NODES);
-  
+
   // Fetch saved process nodes (read-only)
   const { data: savedStaticNodes } = useQuery<{ nodes: ProcessNode[] }>({
     queryKey: ['/api/sulfur-process-nodes', 'static'],
   });
-  
+
   const { data: savedDynamicNodes } = useQuery<{ nodes: ProcessNode[] }>({
     queryKey: ['/api/sulfur-process-nodes', 'dynamic'],
   });
-  
+
   // Load saved data when fetched
   useEffect(() => {
     if (savedStaticNodes?.nodes?.length) {
@@ -202,7 +207,7 @@ export default function SulfurControlHydraulics() {
       })));
     }
   }, [savedStaticNodes]);
-  
+
   useEffect(() => {
     if (savedDynamicNodes?.nodes?.length) {
       setDynamicProcessNodes(savedDynamicNodes.nodes.map(n => ({
@@ -218,41 +223,41 @@ export default function SulfurControlHydraulics() {
       })));
     }
   }, [savedDynamicNodes]);
-  
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stateRef = useRef<DynamicState | null>(null);
+  const isRunningRef = useRef<boolean>(isRunning);
   const dynamicInputsRef = useRef<DynamicInputs>(dynamicInputs);
   const systemParamsRef = useRef<SystemParams>(systemParams);
-  
+
   useEffect(() => {
     stateRef.current = dynamicState;
   }, [dynamicState]);
-  
+
+  useEffect(() => {
+    isRunningRef.current = isRunning;
+  }, [isRunning]);
+
   useEffect(() => {
     dynamicInputsRef.current = dynamicInputs;
   }, [dynamicInputs]);
-  
+
   useEffect(() => {
     systemParamsRef.current = systemParams;
   }, [systemParams]);
-  
+
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, []);
-  
-  // Update valve faceplate data when static valve position changes
-  // Static mode: PV = SP = OUT (all equal to valve position %)
+
+  // Sync config fields (tag, EU, alarms, indicators) from DB/ControllerConfigContext
   useEffect(() => {
     setValveFaceplateData(prev => ({
       ...prev,
-      pv: staticValvePosition,
-      sp: staticValvePosition,  // PV = SP in static mode
-      out: staticValvePosition, // OUT = valve position in static mode
-      mode: 'AUTO',
       instrumentTag: valveConfig.TAGNAME || VALVE_CONTROLLER_ID,
       description: valveConfig.DESC || 'Sulfur Feed Control Valve',
       pvUnits: valveConfig.EU || '%',
@@ -271,8 +276,30 @@ export default function SulfurControlHydraulics() {
       showValveTypeLabel: valveConfig.SHOW_VALVE_TYPE_LABEL,
       holdActive: valveConfig.HOLD_ACTIVE ?? false,
     }));
-  }, [staticValvePosition, valveConfig]);
-  
+  }, [JSON.stringify(valveConfig)]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync live PV / SP / OUT / mode from ControllerSyncContext (DB-backed)
+  useEffect(() => {
+    setValveFaceplateData(prev => ({
+      ...prev,
+      pv: valveState.syncedPV,
+      sp: valveState.syncedSP,
+      out: valveState.syncedOUT,
+      mode: valveState.syncedMode,
+    }));
+  }, [valveState.syncedPV, valveState.syncedSP, valveState.syncedOUT, valveState.syncedMode]);
+
+  // Update valve faceplate PV/SP/OUT from static calculation result
+  // (only in static simulation mode — overrides the sync state for display)
+  useEffect(() => {
+    setValveFaceplateData(prev => ({
+      ...prev,
+      pv: staticValvePosition,
+      sp: staticValvePosition,
+      out: staticValvePosition,
+    }));
+  }, [staticValvePosition]);
+
   const runStaticCalculation = async () => {
     setIsCalculating(true);
     try {
@@ -291,15 +318,15 @@ export default function SulfurControlHydraulics() {
         valve_profile_type: valveProfileType,
         R_value: parseFloat(valveRValue)
       });
-      
+
       const data = await response.json();
       setStaticResults(data);
-      
+
       // Update valve faceplate with calculated valve position (PV = SP = OUT)
       if (data.valve_position_percent !== undefined) {
         setStaticValvePosition(data.valve_position_percent);
       }
-      
+
       // Update process nodes table with calculation results
       const flowGpm = data.flow_gpm?.toString() || "0";
       const massKlbHr = data.m_Total_klb_hr?.toString() || "0";
@@ -307,46 +334,46 @@ export default function SulfurControlHydraulics() {
       const pumpPsia = data.pressure_psia_pump?.toString() || "0";
       const valvePsia = data.pressure_psia_valve?.toString() || "0";
       const nozzlePsia = data.pressure_psia_nozzle?.toString() || "0";
-      
+
       const newProcessNodes: ProcessNode[] = [
-        { 
-          tagId: "1540-PI-2600", 
-          description: "Sulfur Pump Outlet", 
-          pressurePsia: pumpPsia, 
-          tempF: tempF, 
-          flowGpm: flowGpm, 
-          mTotalKlbHr: massKlbHr, 
-          xSulfur: "1.0", 
-          xH2o: "0.00", 
-          xH2so4: "0.00" 
+        {
+          tagId: "1540-PI-2600",
+          description: "Sulfur Pump Outlet",
+          pressurePsia: pumpPsia,
+          tempF: tempF,
+          flowGpm: flowGpm,
+          mTotalKlbHr: massKlbHr,
+          xSulfur: "1.0",
+          xH2o: "0.00",
+          xH2so4: "0.00"
         },
-        { 
-          tagId: "1540-FIC-2602", 
-          description: "Control Valve Inlet", 
-          pressurePsia: valvePsia, 
-          tempF: tempF, 
-          flowGpm: flowGpm, 
-          mTotalKlbHr: massKlbHr, 
-          xSulfur: "1.0", 
-          xH2o: "0.00", 
-          xH2so4: "0.00" 
+        {
+          tagId: "1540-FIC-2602",
+          description: "Control Valve Inlet",
+          pressurePsia: valvePsia,
+          tempF: tempF,
+          flowGpm: flowGpm,
+          mTotalKlbHr: massKlbHr,
+          xSulfur: "1.0",
+          xH2o: "0.00",
+          xH2so4: "0.00"
         },
-        { 
-          tagId: "1540-PI-2604", 
-          description: "Sulfur Spray Nozzle Inlet", 
-          pressurePsia: nozzlePsia, 
-          tempF: tempF, 
-          flowGpm: flowGpm, 
-          mTotalKlbHr: massKlbHr, 
-          xSulfur: "1.0", 
-          xH2o: "0.00", 
-          xH2so4: "0.00" 
+        {
+          tagId: "1540-PI-2604",
+          description: "Sulfur Spray Nozzle Inlet",
+          pressurePsia: nozzlePsia,
+          tempF: tempF,
+          flowGpm: flowGpm,
+          mTotalKlbHr: massKlbHr,
+          xSulfur: "1.0",
+          xH2o: "0.00",
+          xH2so4: "0.00"
         },
       ];
-      
+
       // Update local state
       setStaticProcessNodes(newProcessNodes);
-      
+
       // Save to database and invalidate cache to prevent stale data overwriting
       try {
         await apiRequest("POST", "/api/sulfur-process-nodes/static", { nodes: newProcessNodes });
@@ -354,7 +381,7 @@ export default function SulfurControlHydraulics() {
       } catch (saveError) {
         console.error("Failed to save process nodes:", saveError);
       }
-      
+
       toast({
         title: "Calculation Complete",
         description: `Valve position: ${data.valve_position_percent}%`
@@ -369,8 +396,10 @@ export default function SulfurControlHydraulics() {
       setIsCalculating(false);
     }
   };
-  
+
   const stepDynamic = useCallback(async () => {
+    if (!isRunningRef.current) return;
+
     try {
       const currentState = stateRef.current;
       const inputs = dynamicInputsRef.current;
@@ -398,10 +427,10 @@ export default function SulfurControlHydraulics() {
         tau_flow: parseFloat(inputs.tau_flow),
         dt: parseFloat(inputs.dt)
       });
-      
+
       const data = await response.json();
       setDynamicState(data);
-      
+
       // Update dynamic process nodes table with calculation results
       const flowGpm = data.flow_gpm?.toString() || "0";
       const massKlbHr = data.m_Total_klb_hr?.toString() || "0";
@@ -409,75 +438,92 @@ export default function SulfurControlHydraulics() {
       const pumpPsia = data.pressure_psia_pump?.toString() || "0";
       const valvePsia = data.pressure_psia_valve?.toString() || "0";
       const nozzlePsia = data.pressure_psia_nozzle?.toString() || "0";
-      
+
       setDynamicProcessNodes([
-        { 
-          tagId: "1540-PI-2600", 
-          description: "Sulfur Pump Outlet", 
-          pressurePsia: pumpPsia, 
-          tempF: tempF, 
-          flowGpm: flowGpm, 
-          mTotalKlbHr: massKlbHr, 
-          xSulfur: "1.0", 
-          xH2o: "0.00", 
-          xH2so4: "0.00" 
+        {
+          tagId: "1540-PI-2600",
+          description: "Sulfur Pump Outlet",
+          pressurePsia: pumpPsia,
+          tempF: tempF,
+          flowGpm: flowGpm,
+          mTotalKlbHr: massKlbHr,
+          xSulfur: "1.0",
+          xH2o: "0.00",
+          xH2so4: "0.00"
         },
-        { 
-          tagId: "1540-FIC-2602", 
-          description: "Control Valve Inlet", 
-          pressurePsia: valvePsia, 
-          tempF: tempF, 
-          flowGpm: flowGpm, 
-          mTotalKlbHr: massKlbHr, 
-          xSulfur: "1.0", 
-          xH2o: "0.00", 
-          xH2so4: "0.00" 
+        {
+          tagId: "1540-FIC-2602",
+          description: "Control Valve Inlet",
+          pressurePsia: valvePsia,
+          tempF: tempF,
+          flowGpm: flowGpm,
+          mTotalKlbHr: massKlbHr,
+          xSulfur: "1.0",
+          xH2o: "0.00",
+          xH2so4: "0.00"
         },
-        { 
-          tagId: "1540-PI-2604", 
-          description: "Sulfur Spray Nozzle Inlet", 
-          pressurePsia: nozzlePsia, 
-          tempF: tempF, 
-          flowGpm: flowGpm, 
-          mTotalKlbHr: massKlbHr, 
-          xSulfur: "1.0", 
-          xH2o: "0.00", 
-          xH2so4: "0.00" 
+        {
+          tagId: "1540-PI-2604",
+          description: "Sulfur Spray Nozzle Inlet",
+          pressurePsia: nozzlePsia,
+          tempF: tempF,
+          flowGpm: flowGpm,
+          mTotalKlbHr: massKlbHr,
+          xSulfur: "1.0",
+          xH2o: "0.00",
+          xH2so4: "0.00"
         },
       ]);
+
+      // Schedule next step only after this one finishes
+      // Always wait at least 500ms after each response before sending the next request
+      if (isRunningRef.current) {
+        const dtMs = parseFloat(inputs.dt) * 1000;
+        const delay = Math.max(dtMs, 3000);
+        timerRef.current = setTimeout(stepDynamic, delay);
+      }
     } catch (error) {
       console.error("Dynamic step error:", error);
       setIsRunning(false);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      isRunningRef.current = false;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
+
+      // Special handling for rate limiting
+      const isRateLimit = error instanceof Error && error.message.includes("429");
+
       toast({
-        title: "Simulation Error",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: isRateLimit ? "Rate Limit Exceeded" : "Simulation Error",
+        description: isRateLimit
+          ? "The server is receiving too many requests. The simulation has been paused. Please wait a moment before restarting."
+          : (error instanceof Error ? error.message : "Unknown error"),
         variant: "destructive"
       });
     }
   }, [toast]);
-  
+
   const startDynamic = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
     setIsRunning(true);
-    const dtMs = parseFloat(dynamicInputs.dt) * 1000;
-    intervalRef.current = setInterval(stepDynamic, Math.max(dtMs, 100));
+    isRunningRef.current = true;
+    // Kick off the first step
+    stepDynamic();
   };
-  
+
   const pauseDynamic = () => {
     setIsRunning(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    isRunningRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
-  
+
   const resetDynamic = async () => {
     pauseDynamic();
     stateRef.current = null;
@@ -491,7 +537,7 @@ export default function SulfurControlHydraulics() {
       setDynamicState(null);
     }
   };
-  
+
   const fetchBarometricPressure = async () => {
     if (!zipCode.trim()) {
       toast({
@@ -501,7 +547,7 @@ export default function SulfurControlHydraulics() {
       });
       return;
     }
-    
+
     setFetchingBarometric(true);
     try {
       const response = await fetch(`/api/psychrometrics/current?zipCode=${zipCode}&countryCode=US`);
@@ -528,7 +574,7 @@ export default function SulfurControlHydraulics() {
       setFetchingBarometric(false);
     }
   };
-  
+
   const valveProfileData = useMemo(() => {
     const m = parseFloat(valveLinearM) || 0;
     const b = parseFloat(valveLinearB) || 0;
@@ -555,7 +601,7 @@ export default function SulfurControlHydraulics() {
 
   const isStaticMode = mode === "static";
   const isDynamicMode = mode === "dynamic";
-  
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card">
@@ -581,43 +627,43 @@ export default function SulfurControlHydraulics() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => window.open("/attached_assets/Sulfur_Feed_Pump_1766607751245.pdf", "_blank")}
                 data-testid="button-sulfur-pump-datasheet"
               >
                 Sulfur Pump
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => window.open("/attached_assets/1540-FCV-2602_Sulfur_Feed_Control_Valve_1766607872776.pdf", "_blank")}
                 data-testid="button-sulfur-valve-datasheet"
               >
                 Sulfur Control Valve
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => window.open("/attached_assets/Motor_Data_Sheet_Sulfur_Feed_Pump_1766607940359.pdf", "_blank")}
                 data-testid="button-sulfur-motor-datasheet"
               >
                 Sulfur Pump Motor
               </Button>
-              <Link href="/unit-operation/sulfur-control-hydraulics/python-code/gui">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}/python-code/gui`}>
                 <Button variant="outline" size="sm" data-testid="button-view-gui-code">
                   <Code className="h-4 w-4 mr-2" />
                   GUI Code
                 </Button>
               </Link>
-              <Link href="/unit-operation/sulfur-control-hydraulics/python-code/static">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}/python-code/static`}>
                 <Button variant="outline" size="sm" data-testid="button-view-static-code">
                   <Code className="h-4 w-4 mr-2" />
                   Static Code
                 </Button>
               </Link>
-              <Link href="/unit-operation/sulfur-control-hydraulics/python-code/dynamic">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}/python-code/dynamic`}>
                 <Button variant="outline" size="sm" data-testid="button-view-dynamic-code">
                   <Code className="h-4 w-4 mr-2" />
                   Dynamic Code
@@ -665,13 +711,13 @@ export default function SulfurControlHydraulics() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Gauge className="h-5 w-5" />
-                1540-FCV-2602 - Sulfur Feed Control Valve
+                {VALVE_CONTROLLER_ID} - Sulfur Feed Control Valve
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center gap-4">
-                <ValveFaceplate 
-                  data={valveFaceplateData} 
+                <ValveFaceplate
+                  data={valveFaceplateData}
                   onSelect={() => console.log('Valve faceplate selected:', VALVE_CONTROLLER_ID)}
                   isTransparent={valveConfig.TRANSPARENT_BG}
                 />
@@ -834,32 +880,32 @@ export default function SulfurControlHydraulics() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={valveProfileData} margin={{ top: 10, right: 20, left: 0, bottom: 30 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.2)" />
-                      <XAxis 
-                        dataKey="positioner" 
+                      <XAxis
+                        dataKey="positioner"
                         label={{ value: "Positioner", position: "bottom", offset: 10 }}
                         domain={[0, 100]}
                         ticks={[0, 8, 18, 28, 38, 48, 58, 68, 78, 88, 100]}
                         tick={{ fontSize: 11 }}
                       />
-                      <YAxis 
+                      <YAxis
                         label={{ value: "Cv %", angle: -90, position: "insideLeft", offset: 10 }}
                         domain={[0, 100]}
                         ticks={[0, 25, 50, 75, 100]}
                         tick={{ fontSize: 11 }}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: "hsl(var(--card))", 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
                           border: "1px solid hsl(var(--border))",
                           borderRadius: "6px"
                         }}
                         formatter={(value: number) => [`${value.toFixed(1)}%`, "Cv"]}
                         labelFormatter={(label) => `Positioner: ${label}%`}
                       />
-                      <Line 
-                        type="linear" 
-                        dataKey="cv" 
-                        stroke="hsl(217, 91%, 60%)" 
+                      <Line
+                        type="linear"
+                        dataKey="cv"
+                        stroke="hsl(217, 91%, 60%)"
                         strokeWidth={2}
                         dot={false}
                       />
@@ -958,7 +1004,7 @@ export default function SulfurControlHydraulics() {
                     data-testid="input-static-flow"
                   />
                 </div>
-                
+
                 <Button
                   onClick={runStaticCalculation}
                   disabled={!isStaticMode || isCalculating}
@@ -977,7 +1023,7 @@ export default function SulfurControlHydraulics() {
                     </>
                   )}
                 </Button>
-                
+
               </CardContent>
             </Card>
 
@@ -992,14 +1038,14 @@ export default function SulfurControlHydraulics() {
               <CardContent className="space-y-4">
                 <div className="border rounded-lg p-3 bg-blue-500/10 border-blue-500/30">
                   <label className="text-sm text-muted-foreground">PID Controller Output (mA) - Received</label>
-                  <div 
+                  <div
                     className="text-2xl font-mono font-bold text-blue-500"
                     data-testid="display-controller-output-mA"
                   >
                     {dynamicState?.controller_output_mA?.toFixed(2) ?? "4.00"} mA
                   </div>
                 </div>
-                
+
                 <div className="border rounded-lg p-3 bg-muted/30">
                   <h4 className="text-sm font-semibold mb-2">Simulation Parameters</h4>
                   <div className="grid grid-cols-3 gap-3">
@@ -1041,7 +1087,7 @@ export default function SulfurControlHydraulics() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Button
                     onClick={startDynamic}
@@ -1073,14 +1119,14 @@ export default function SulfurControlHydraulics() {
                     Reset
                   </Button>
                 </div>
-                
+
                 <Button
                   variant="default"
                   className="w-full"
                   disabled={!isDynamicMode}
                   onClick={() => {
                     if (isDynamicMode) {
-                      window.open("https://delta-v-controller-faceplate.lovable.app/home-screen", "_blank", "noopener,noreferrer");
+                      setLocation("/home-screen");
                     }
                   }}
                   data-testid="button-start-scenario"
@@ -1088,7 +1134,7 @@ export default function SulfurControlHydraulics() {
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Start Scenario
                 </Button>
-                
+
                 {isDynamicMode && (
                   <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
                     <h4 className="font-semibold text-sm flex items-center gap-2">
@@ -1131,48 +1177,48 @@ export default function SulfurControlHydraulics() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Pump Head:</span>
                       <span className="font-mono" data-testid="output-pump-head">
-                        {isStaticMode 
-                          ? staticResults?.pump_head_ft 
+                        {isStaticMode
+                          ? staticResults?.pump_head_ft
                           : dynamicState?.pump_head_ft?.toFixed(2)} ft
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Velocity:</span>
                       <span className="font-mono" data-testid="output-velocity">
-                        {isStaticMode 
-                          ? staticResults?.velocity_fps 
+                        {isStaticMode
+                          ? staticResults?.velocity_fps
                           : dynamicState?.velocity_fps?.toFixed(2)} ft/s
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Friction Loss:</span>
                       <span className="font-mono" data-testid="output-friction-loss">
-                        {isStaticMode 
-                          ? staticResults?.friction_loss_ft 
+                        {isStaticMode
+                          ? staticResults?.friction_loss_ft
                           : dynamicState?.friction_head_ft?.toFixed(2)} ft
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Valve Inlet P:</span>
                       <span className="font-mono" data-testid="output-valve-inlet">
-                        {isStaticMode 
-                          ? `${staticResults?.valve_inlet_psig} psig` 
+                        {isStaticMode
+                          ? `${staticResults?.valve_inlet_psig} psig`
                           : `${((dynamicState?.valve_inlet_psia ?? 0) - parseFloat(systemParams.barometric_psia)).toFixed(1)} psig`}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Downstream P:</span>
                       <span className="font-mono" data-testid="output-downstream">
-                        {isStaticMode 
-                          ? `${staticResults?.downstream_psig} psig` 
+                        {isStaticMode
+                          ? `${staticResults?.downstream_psig} psig`
                           : `${((dynamicState?.nozzle_inlet_psia ?? 0) - parseFloat(systemParams.barometric_psia)).toFixed(1)} psig`}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Valve ΔP:</span>
                       <span className="font-mono" data-testid="output-valve-dp">
-                        {isStaticMode 
-                          ? staticResults?.dP_valve_psi 
+                        {isStaticMode
+                          ? staticResults?.dP_valve_psi
                           : dynamicState?.dP_valve_psi?.toFixed(1)} psi
                       </span>
                     </div>
@@ -1187,32 +1233,32 @@ export default function SulfurControlHydraulics() {
                     <div className="flex justify-between">
                       <span className="font-semibold">Valve Position:</span>
                       <span className="font-mono font-bold text-primary" data-testid="output-valve-position">
-                        {isStaticMode 
-                          ? `${staticResults?.valve_position_percent}%` 
+                        {isStaticMode
+                          ? `${staticResults?.valve_position_percent}%`
                           : `${dynamicState?.valve_pos_pct?.toFixed(4)}%`}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold text-orange-600 dark:text-orange-400">PID Output:</span>
                       <span className="font-mono font-bold text-orange-600 dark:text-orange-400" data-testid="output-pid-ma">
-                        {isStaticMode 
-                          ? `${staticResults?.pid_output_mA} mA` 
+                        {isStaticMode
+                          ? `${staticResults?.pid_output_mA} mA`
                           : `${dynamicState?.pid_output_mA?.toFixed(4)} mA`}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold">Cv Required:</span>
                       <span className="font-mono font-bold" data-testid="output-cv-required">
-                        {isStaticMode 
-                          ? staticResults?.Cv_required 
+                        {isStaticMode
+                          ? staticResults?.Cv_required
                           : dynamicState?.Cv_current?.toFixed(6)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Controller Output:</span>
                       <span className="font-mono" data-testid="output-controller-pct">
-                        {isStaticMode 
-                          ? `${((staticResults?.valve_position_percent ?? 0)).toFixed(2)}%` 
+                        {isStaticMode
+                          ? `${((staticResults?.valve_position_percent ?? 0)).toFixed(2)}%`
                           : `${dynamicState?.controller_output_pct?.toFixed(2)}%`}
                       </span>
                     </div>
@@ -1297,11 +1343,11 @@ export default function SulfurControlHydraulics() {
                     </tr>
                     <tr className="border-b">
                       <td className="p-2 font-medium">Pressure</td>
-                      <td className="p-2 text-muted-foreground">psia</td>
+                      <td className="p-2 text-muted-foreground">psig</td>
                       {(mode === 'static' ? staticProcessNodes : dynamicProcessNodes).map((node, idx) => (
                         <td key={idx} className="p-2 text-center">
                           <div className="h-8 flex items-center justify-center font-mono text-sm bg-muted/50 rounded border border-border max-w-[80px] mx-auto" data-testid={`output-pressure-${idx}`}>
-                            {node.pressurePsia}
+                            {mode === 'static' ? (parseFloat(node.pressurePsia) - 14.696).toFixed(3) : node.pressurePsia}
                           </div>
                         </td>
                       ))}
