@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   FlowEdge,
   DrawingEdge,
+  Layout,
 } from "@/rtkServices/layoutManagerServices/type";
 import {
   Dialog,
@@ -507,21 +508,21 @@ const L1SystemOverview = ({
       });
   };
 
-  const handleLoad = () => {
-    if (layoutData) {
-      setPositions(layoutData.positions);
-      setEdges(layoutData.edges);
+  const handleLoad = (data: Layout) => {
+      setPositions(data.positions);
+      setEdges(data.edges);
       // Fix 1: Seed edge counter from max existing ID to avoid duplicate IDs on next save/load
-      if (layoutData.edges && layoutData.edges.length > 0) {
-        const maxId = Math.max(...layoutData.edges.map((e) => e.id));
+      if (data.edges && data.edges.length > 0) {
+        const maxId = Math.max(...data.edges.map((e) => e.id));
         edgeCounterRef.current = maxId + 1;
       }
-    }
   };
 
   useEffect(() => {
-    handleLoad();
-    if (!layoutData && !isLoading && !isUninitialized) {
+    if(layoutData && layoutData?.edges?.length > 0){
+      handleLoad(layoutData);
+    }
+    else if (!isLoading && !isUninitialized) {
       setPositions(defaultPositionL1.positions);
       setEdges(defaultPositionL1.edges);
       // Fix 1: Seed edge counter from max existing ID to avoid duplicate IDs on next save/load
@@ -531,8 +532,6 @@ const L1SystemOverview = ({
         updateLayout({ id: "L1", layout: defaultPositionL1 }).unwrap()
       }
       setMode(Mode.Edit);
-    } else {
-      handleLoad();
     }
   }, [layoutData, isLoading, isUninitialized]);
 
