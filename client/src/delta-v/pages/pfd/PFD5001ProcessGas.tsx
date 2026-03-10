@@ -63,7 +63,8 @@ const streamDataPart2 = {
   ],
 };
 
-const sulfurStreamData = {
+// sulfurStreamData is built dynamically in the component — this is a static-only helper for the table structure
+const sulfurStreamDataStatic = {
   headers: ["50A", "50B", "50C"],
   equipmentLabels: [
     { name: "Sulfur Pump", type: "Outlet" },
@@ -71,16 +72,16 @@ const sulfurStreamData = {
     { name: "Sulfur Spray Nozzle", type: "Inlet" },
   ],
   instrumentTags: ["1540-PI-2600", "1540-FIC-2602", "1540-PI-2604"],
-  rows: [
-    { label: "FLUID", values: ["Sulfur", "Sulfur", "Sulfur"] },
-    { label: "FLOW", unit: "LB/MIN", values: ["--", "--", "--"] },
-    { label: "FLOW", unit: "GPM", values: ["--", "--", "--"] },
-    { label: "TEMPERATURE", unit: "°F", values: ["275", "275", "275"] },
-    { label: "PRESSURE", unit: "PSIG", values: ["--", "--", "--"] },
-  ],
 };
 
-function SulfurStreamTable({ data, title }: { data: typeof sulfurStreamData; title: string }) {
+interface SulfurStreamData {
+  headers: string[];
+  equipmentLabels: { name: string; type: string }[];
+  instrumentTags: string[];
+  rows: { label: string; unit?: string; values: (string | number)[] }[];
+}
+
+function SulfurStreamTable({ data, title }: { data: SulfurStreamData; title: string }) {
   return (
     <div className="overflow-x-auto">
       <table className="text-xs border-collapse" data-testid={`table-${title}`}>
@@ -169,6 +170,18 @@ function StreamTable({ headers, rows, title, showValues }: { headers: string[]; 
   );
 }
 
+interface SulfurStaticResult {
+  flow_gpm: number;
+  m_Total_klb_hr: number;
+  temperature_f: number;
+  pressure_psia_pump: number;
+  pressure_psia_valve: number;
+  pressure_psia_nozzle: number;
+  Pump_Discharge_psig: number;
+  Valve_Inlet_psig: number;
+  Valve_Outlet_psig: number;
+}
+
 export default function PFD5001ProcessGas() {
   const id = "5001";
   const documentNumber = "1540-PR-PFD-0000-EXP-5001";
@@ -186,7 +199,37 @@ export default function PFD5001ProcessGas() {
     SO2: number; SO3: number; O2: number; N2: number; H2O: number;
     H2SO4: number; TOTAL: number; PRESSURE: number; TEMPERATURE: number;
   }> | null>(null);
+
+  // Sulfur Streams hydraulic calculation state
+  const [hasSulfurSimulated, setHasSulfurSimulated] = useState(false);
+  const [sulfurResults, setSulfurResults] = useState<SulfurStaticResult | null>(null);
+
   const { toast } = useToast();
+
+  // Run sulfur hydraulic calculation automatically on page load
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch("/api/sulfur-control/static", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            flow_gpm: 87,
+            pit_level_ft: 7.0,
+            valve_profile_type: "equal_percentage",
+            R_value: 85,
+          }),
+        });
+        if (!response.ok) return;
+        const data: SulfurStaticResult = await response.json();
+        setSulfurResults(data);
+        setHasSulfurSimulated(true);
+      } catch {
+        // silently fail — table will show "--" defaults
+      }
+    })();
+  }, []);
+
 
   const isOrchestratorCase = (caseId: string) =>
     caseId === "current-static" || caseId === "current-dynamic";
@@ -318,13 +361,17 @@ export default function PFD5001ProcessGas() {
         variant: "destructive",
       });
     } finally {
-      if (!silent && !controller.signal.aborted) {
-        setIsSimulating(false);
-      }
+      setIsSimulating(false);
     }
-  }, [toast]);
+  },[]);
+    const getOrchestratorValue = (streamNum: number, field: string): number => {
+    if (!orchestratorStreams) return 0;
+    const s = orchestratorStreams[String(streamNum)];
+    if (!s) return 0;
+    return (s as any)[field] ?? 0;
+  }
 
-  const handleCaseChange = (spCase: typeof spInputCases[0]) => {
+    const handleCaseChange = (spCase: typeof spInputCases[0]) => {
     setSelectedCase(spCase);
     setHasSimulated(false);
     setCalculatedStreams(null);
@@ -336,52 +383,6 @@ export default function PFD5001ProcessGas() {
     simulateForCase(selectedCase);
   };
 
-  const hasAutoSimulated = useRef(false);
-  useEffect(() => {
-    if (!hasAutoSimulated.current) {
-      hasAutoSimulated.current = true;
-      simulateForCase(spInputCases[0]);
-    }
-  }, [simulateForCase]);
-
-  const lastDynamicTimestampRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (selectedCase.id !== "current-dynamic" || !hasSimulated) return;
-
-    let cancelled = false;
-
-    const poll = async () => {
-      while (!cancelled) {
-        try {
-          const res = await fetch('/api/plant-orchestrator/latest-dynamic');
-          if (!cancelled && res.ok) {
-            const data = await res.json();
-            if (data.available && data.timestamp !== lastDynamicTimestampRef.current) {
-              lastDynamicTimestampRef.current = data.timestamp;
-              if (data.streams) {
-                setOrchestratorStreams(data.streams);
-              }
-            }
-          }
-        } catch {
-        }
-        if (!cancelled) {
-          await new Promise(r => setTimeout(r, 250));
-        }
-      }
-    };
-
-    poll();
-    return () => { cancelled = true; };
-  }, [selectedCase, hasSimulated]);
-
-  const getOrchestratorValue = (streamNum: number, field: string): number => {
-    if (!orchestratorStreams) return 0;
-    const s = orchestratorStreams[String(streamNum)];
-    if (!s) return 0;
-    return (s as any)[field] ?? 0;
-  };
 
   const getStreamData = () => {
     if (orchestratorStreams) {
@@ -613,7 +614,55 @@ export default function PFD5001ProcessGas() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold" data-testid="text-section-sulfur-streams">Stream Data - Sulfur Streams</h2>
             <div className="bg-card rounded-md border border-border p-2">
-              <SulfurStreamTable data={sulfurStreamData} title="sulfur-streams" />
+              <SulfurStreamTable
+                data={{
+                  ...sulfurStreamDataStatic,
+                  rows: [
+                    { label: "FLUID", values: ["Sulfur", "Sulfur", "Sulfur"] },
+                    {
+                      label: "FLOW", unit: "LB/MIN",
+                      values: hasSulfurSimulated && sulfurResults
+                        ? [
+                          (sulfurResults.m_Total_klb_hr * 1000 / 60).toFixed(1),
+                          (sulfurResults.m_Total_klb_hr * 1000 / 60).toFixed(1),
+                          (sulfurResults.m_Total_klb_hr * 1000 / 60).toFixed(1),
+                        ]
+                        : ["--", "--", "--"],
+                    },
+                    {
+                      label: "FLOW", unit: "GPM",
+                      values: hasSulfurSimulated && sulfurResults
+                        ? [
+                          sulfurResults.flow_gpm.toFixed(1),
+                          sulfurResults.flow_gpm.toFixed(1),
+                          sulfurResults.flow_gpm.toFixed(1),
+                        ]
+                        : ["--", "--", "--"],
+                    },
+                    {
+                      label: "TEMPERATURE", unit: "°F",
+                      values: hasSulfurSimulated && sulfurResults
+                        ? [
+                          sulfurResults.temperature_f.toFixed(0),
+                          sulfurResults.temperature_f.toFixed(0),
+                          sulfurResults.temperature_f.toFixed(0),
+                        ]
+                        : ["275", "275", "275"],
+                    },
+                    {
+                      label: "PRESSURE", unit: "PSIG",
+                      values: hasSulfurSimulated && sulfurResults
+                        ? [
+                          sulfurResults.Pump_Discharge_psig.toFixed(1),
+                          sulfurResults.Valve_Inlet_psig.toFixed(1),
+                          sulfurResults.Valve_Outlet_psig.toFixed(1),
+                        ]
+                        : ["--", "--", "--"],
+                    },
+                  ],
+                }}
+                title="sulfur-streams"
+              />
             </div>
           </div>
         </div>

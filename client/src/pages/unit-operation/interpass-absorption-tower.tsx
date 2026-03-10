@@ -86,7 +86,8 @@ export default function InterpassAbsorptionTower() {
   const [mode, setMode] = useState<"Static" | "Dynamic">("Static");
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [isRunningDynamic, setIsRunningDynamic] = useState(false);
-  const dynamicIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isRunningDynamicRef = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
     x_H2SO4_AI0: "0.985",
@@ -190,9 +191,9 @@ export default function InterpassAbsorptionTower() {
         PRESSURE_GI0: parseFloat(gasInputs.PRESSURE_GI0) || 0,
         TEMPERATURE_GI0: parseFloat(gasInputs.TEMPERATURE_GI0) || 0,
       });
-      
+
       const data = await response.json();
-      
+
       if (data.error) {
         toast({
           title: "Calculation Error",
@@ -263,21 +264,24 @@ export default function InterpassAbsorptionTower() {
   }, [acidInputs, gasInputs, systemParams, toast, isRunningDynamic]);
 
   const startDynamic = () => {
-    if (isRunningDynamic) return;
-    
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    if (isRunningDynamicRef.current) return;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-    
+
     setIsRunningDynamic(true);
+    isRunningDynamicRef.current = true;
     const baseSO3 = parseFloat(gasInputs.SO3_GI0) || 12148;
     const baseSO2 = parseFloat(gasInputs.SO2_GI0) || 480;
     const baseTotal = parseFloat(gasInputs.TOTAL_GI0) || 103736;
     const baseTemp = parseFloat(gasInputs.TEMPERATURE_GI0) || 330;
-    const basePress = parseFloat(gasInputs.PRESSURE_GI0) || 92;
+const basePress = parseFloat(gasInputs.PRESSURE_GI0) || 92;
     let t = 0;
-    const updateDynamic = () => {
+    const updateDynamic = async () => {
+      if (!isRunningDynamicRef.current) return;
+
       const dt = parseFloat(dynamicParams.dt) || 0.5;
       t += dt;
       const so3Perturb = baseSO3 * (1 + 0.02 * Math.sin(t / 8) + 0.01 * (Math.random() - 0.5));
@@ -294,16 +298,16 @@ export default function InterpassAbsorptionTower() {
         PRESSURE_GI0: pressPerturb.toFixed(1),
       }));
     };
-    
+
     updateDynamic();
-    dynamicIntervalRef.current = setInterval(updateDynamic, (parseFloat(dynamicParams.dt) || 0.5) * 1000);
   };
 
   const pauseDynamic = () => {
     setIsRunningDynamic(false);
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    isRunningDynamicRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
 
@@ -312,12 +316,16 @@ export default function InterpassAbsorptionTower() {
     runCalculation();
   };
 
+  // No longer needed: sequential update handled in startDynamic
+  /*
   useEffect(() => {
     if (isRunningDynamic) {
-      runCalculation();
+        runCalculation();
     }
   }, [gasInputs.SO3_GI0, gasInputs.SO2_GI0, gasInputs.TOTAL_GI0, isRunningDynamic, runCalculation]);
 
+  */
+ 
   useEffect(() => {
     if (mode === "Static" && isRunningDynamic) {
       pauseDynamic();
@@ -326,8 +334,8 @@ export default function InterpassAbsorptionTower() {
 
   useEffect(() => {
     return () => {
-      if (dynamicIntervalRef.current) {
-        clearInterval(dynamicIntervalRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, []);
@@ -402,8 +410,8 @@ export default function InterpassAbsorptionTower() {
                 <CardTitle className="text-lg">Simulation Mode</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
-                  value={mode} 
+                <RadioGroup
+                  value={mode}
                   onValueChange={(value) => setMode(value as "Static" | "Dynamic")}
                   className="flex gap-8"
                 >

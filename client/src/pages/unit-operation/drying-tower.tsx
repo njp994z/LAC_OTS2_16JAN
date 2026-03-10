@@ -94,7 +94,8 @@ export default function DryingTower() {
   const [mode, setMode] = useState<"Static" | "Dynamic">("Static");
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [isRunningDynamic, setIsRunningDynamic] = useState(false);
-  const dynamicIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isRunningDynamicRef = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const currentFlowRef = useRef<number>(0);
 
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
@@ -199,9 +200,9 @@ export default function DryingTower() {
         PRESSURE_GD0: parseFloat(gasInputs.PRESSURE_GD0) || 0,
         TEMPERATURE_GD0: parseFloat(gasInputs.TEMPERATURE_GD0) || 0,
       });
-      
+
       const data = await response.json();
-      
+
       if (data.error) {
         toast({
           title: "Calculation Error",
@@ -266,38 +267,49 @@ export default function DryingTower() {
   }, [acidInputs, gasInputs, systemParams, toast, isRunningDynamic]);
 
   const startDynamic = () => {
-    if (isRunningDynamic) return;
-    
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    if (isRunningDynamicRef.current) return;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-    
+
     setIsRunningDynamic(true);
+    isRunningDynamicRef.current = true;
     currentFlowRef.current = parseFloat(acidInputs.Flow_AD0) || 0;
-    
-    const updateDynamic = () => {
+
+    const updateDynamic = async () => {
+      if (!isRunningDynamicRef.current) return;
+
       const target = 1200.0;
       const tau = parseFloat(dynamicParams.tau) || 6.0;
       const dt = parseFloat(dynamicParams.dt) || 0.5;
-      
+
       currentFlowRef.current += (target - currentFlowRef.current) * (1 - Math.exp(-dt / tau));
-      
+
       setAcidInputs(prev => ({
         ...prev,
         Flow_AD0: currentFlowRef.current.toFixed(1)
       }));
+
+      // In dynamic mode, we run calculation immediately after updating values
+      // This ensures requests are sequential
+      await runCalculation();
+
+      if (isRunningDynamicRef.current) {
+        timerRef.current = setTimeout(updateDynamic, Math.max(dt * 1000, 100));
+      }
     };
-    
+
     updateDynamic();
-    dynamicIntervalRef.current = setInterval(updateDynamic, (parseFloat(dynamicParams.dt) || 0.5) * 1000);
   };
 
   const pauseDynamic = () => {
     setIsRunningDynamic(false);
-    if (dynamicIntervalRef.current) {
-      clearInterval(dynamicIntervalRef.current);
-      dynamicIntervalRef.current = null;
+    isRunningDynamicRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   };
 
@@ -308,11 +320,14 @@ export default function DryingTower() {
     runCalculation();
   };
 
+  // No longer needed: sequential update handled in startDynamic
+  /*
   useEffect(() => {
     if (isRunningDynamic) {
       runCalculation();
     }
   }, [acidInputs.Flow_AD0, isRunningDynamic, runCalculation]);
+  */
 
   useEffect(() => {
     if (mode === "Static" && isRunningDynamic) {
@@ -320,10 +335,17 @@ export default function DryingTower() {
     }
   }, [mode]);
 
+  // In Static mode, keep TEMPERATURE_GD0 in sync with acid inlet temperature (Temp_AD0)
+  useEffect(() => {
+    if (mode === "Static") {
+      setGasInputs(prev => ({ ...prev, TEMPERATURE_GD0: acidInputs.Temp_AD0 }));
+    }
+  }, [acidInputs.Temp_AD0, mode]);
+
   useEffect(() => {
     return () => {
-      if (dynamicIntervalRef.current) {
-        clearInterval(dynamicIntervalRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
   }, []);
@@ -342,7 +364,7 @@ export default function DryingTower() {
     { param: "SO3", unit: "scfm", inputKey: "SO3_GD0", packingKey: "SO3_Packing", outputKey: "SO3_GD1" },
     { param: "O2", unit: "scfm", inputKey: "O2_GD0", packingKey: "O2_Packing", outputKey: "O2_GD1" },
     { param: "N2", unit: "scfm", inputKey: "N2_GD0", packingKey: "N2_Packing", outputKey: "N2_GD1" },
-    { param: "H2O", unit: "scfm", inputKey: "H2O_GD0", packingKey: "H2O_Packing", outputKey: "H2O_GD1" },
+    // { param: "H2O", unit: "scfm", inputKey: "H2O_GD0", packingKey: "H2O_Packing", outputKey: "H2O_GD1" },
     { param: "H2SO4", unit: "scfm", inputKey: "H2SO4_GD0", packingKey: "H2SO4_Packing", outputKey: "H2SO4_GD1" },
     { param: "TOTAL", unit: "scfm", inputKey: "TOTAL_GD0", packingKey: "TOTAL_Packing", outputKey: "TOTAL_GD1" },
     { param: "PRESSURE", unit: "in. wc.", inputKey: "PRESSURE_GD0", packingKey: "PRESSURE_Packing", outputKey: "PRESSURE_GD1" },
@@ -393,12 +415,6 @@ export default function DryingTower() {
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Main Compressor</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <Link href="/unit-operation/main-compressor/python-code" data-testid="link-compressor-python">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Code
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
                   <a href="/api/download-python/compressor_calculator.py" download data-testid="link-download-compressor">
                     <Download className="h-4 w-4 mr-2" />
                     Download compressor_calculator.py
@@ -430,8 +446,8 @@ export default function DryingTower() {
                 <CardTitle className="text-lg">Simulation Mode</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
-                  value={mode} 
+                <RadioGroup
+                  value={mode}
                   onValueChange={(value) => setMode(value as "Static" | "Dynamic")}
                   className="flex gap-8"
                 >
@@ -655,8 +671,8 @@ export default function DryingTower() {
             )}
 
             <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={runCalculation} 
+              <Button
+                onClick={runCalculation}
                 disabled={isRunningSimulation || isRunningDynamic}
                 data-testid="button-calculate"
               >
@@ -672,11 +688,11 @@ export default function DryingTower() {
                   </>
                 )}
               </Button>
-              
+
               {mode === "Dynamic" && (
                 <>
-                  <Button 
-                    onClick={startDynamic} 
+                  <Button
+                    onClick={startDynamic}
                     disabled={isRunningDynamic}
                     variant="outline"
                     data-testid="button-start-dynamic"
@@ -684,8 +700,8 @@ export default function DryingTower() {
                     <Play className="h-4 w-4 mr-2" />
                     Start Dynamic
                   </Button>
-                  <Button 
-                    onClick={pauseDynamic} 
+                  <Button
+                    onClick={pauseDynamic}
                     disabled={!isRunningDynamic}
                     variant="outline"
                     data-testid="button-pause"
@@ -693,7 +709,7 @@ export default function DryingTower() {
                     <Pause className="h-4 w-4 mr-2" />
                     Pause
                   </Button>
-                  <Button 
+                  <Button
                     onClick={resetDynamic}
                     variant="outline"
                     data-testid="button-reset"

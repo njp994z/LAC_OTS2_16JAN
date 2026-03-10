@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { AlarmLogEntry } from "@/delta-v/types/secondaryController";
+import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 
 type SyncedMode = "AUTO" | "MAN" | "BYPASS" | "RCAS" | "ROUT";
 
@@ -569,7 +570,22 @@ export const useControllerSync = (controllerId: string) => {
     throw new Error("useControllerSync must be used within a ControllerSyncProvider");
   }
 
+  const { getControllerConfig, getControllerData } = useControllerConfig();
   const state = context.getControllerState(controllerId);
+
+  useEffect(() => {
+    if (!state.initialized) {
+      const config = getControllerConfig(controllerId);
+      const data = getControllerData(controllerId);
+      
+      const initialPV = config.TYPICAL_PV ?? config.PV_INIT_VAL ?? data.PV ?? 175.0;
+      const initialSP = config.TYPICAL_PV ?? data.SP ?? 75.0;
+      const pvMin = config.PV_SCALE_LO ?? 0;
+      const pvMax = config.PV_SCALE_HI ?? 500;
+      
+      context.initializeController(controllerId, initialPV, initialSP, pvMin, pvMax);
+    }
+  }, [controllerId, state.initialized, context, getControllerConfig, getControllerData]);
 
   return {
     state,
@@ -590,3 +606,17 @@ export const useControllerSync = (controllerId: string) => {
 
 // Export types for external use
 export type { SyncedMode, AlarmStates, SingleControllerState, AlarmLimits };
+
+/**
+ * useControllerSyncContext
+ * Returns the raw context so callers can bulk-update any controller by ID.
+ * Use this when you need to push many tag values at once (e.g. after a plant simulation).
+ * For single-controller operations prefer useControllerSync(controllerId).
+ */
+export const useControllerSyncContext = (): ControllerSyncContextType => {
+  const context = useContext(ControllerSyncContext);
+  if (!context) {
+    throw new Error('useControllerSyncContext must be used within a ControllerSyncProvider');
+  }
+  return context;
+};
