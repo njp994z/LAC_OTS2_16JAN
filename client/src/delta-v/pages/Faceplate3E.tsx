@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useParams, useSearch } from 'wouter';
 import { ArrowLeft, Sliders, Save } from 'lucide-react';
 import { FaceplateDownloadButtons } from '@/delta-v/components/PythonDownloadButton';
 import { getControllerMetadata } from '@/delta-v/lib/controllerMetadata';
+import { getDefaultSecondaryControllerConfig } from '@/delta-v/lib/controllerDefaults';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ const StableStringInput = ({
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
       onBlur={handleBlur}
-      className={`font-mono bg-background/50 border-border/50 h-8 w-48 ${className}`}
+      className={`font-mono bg-background/50 border-border/50 w-48 ${className}`}
     />
   );
 };
@@ -102,7 +103,7 @@ const StableNumberInput = ({
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
-        className={`font-mono bg-background/50 border-border/50 h-8 w-32 ${className}`}
+        className={`font-mono bg-background/50 border-border/50 w-32 ${className}`}
       />
       {unit && <span className="text-muted-foreground text-sm">{unit}</span>}
     </div>
@@ -159,7 +160,7 @@ const Faceplate3E = () => {
     return getControllerMetadata(activeControllerId).label;
   };
   
-  const { updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits } = useControllerSync(activeControllerId);
+  const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits, updatePvRange, initializeController } = useControllerSync(activeControllerId);
   const { getControllerConfig, updateControllerConfig, getControllerData, updateControllerData, saveController } = useControllerConfig();
   
   // Separate state for string fields (stable, no sync)
@@ -178,69 +179,133 @@ const Faceplate3E = () => {
   // Track if initial load is complete
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const configRef = useRef(config);
+  const stringFieldsRef = useRef(stringFields);
+  const dataRef = useRef(data);
+
   // Load saved config and data ONCE on mount or when controllerId changes
   useEffect(() => {
     const savedConfig = getControllerConfig(activeControllerId);
     const savedData = getControllerData(activeControllerId);
     
     setConfig(savedConfig);
-    setStringFields({
+    configRef.current = savedConfig;
+    const sf = {
       TAGNAME: savedConfig.TAGNAME || '',
       DESC: savedConfig.DESC || '',
       UNIT: savedConfig.UNIT || ''
-    });
+    };
+    setStringFields(sf);
+    stringFieldsRef.current = sf;
     setData(savedData);
+    dataRef.current = savedData;
     setIsLoaded(true);
     
     console.log(`Loaded config for controller: ${activeControllerId}`, savedConfig);
   }, [activeControllerId, getControllerConfig, getControllerData]);
 
-  // Update config field (non-string fields only)
+  useEffect(() => {
+    const defaults = getDefaultSecondaryControllerConfig(activeControllerId);
+    const cfg = getControllerConfig(activeControllerId);
+    const scaleLo = defaults.PV_SCALE_LO ?? cfg.PV_SCALE_LO;
+    const scaleHi = defaults.PV_SCALE_HI ?? cfg.PV_SCALE_HI;
+    const pvInitInRange = cfg.PV_INIT_VAL > 0 && scaleLo != null && scaleHi != null && cfg.PV_INIT_VAL >= scaleLo && cfg.PV_INIT_VAL <= scaleHi;
+    const initPV = pvInitInRange ? cfg.PV_INIT_VAL : (defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? 0);
+    if (initPV > 0) {
+      initializeController(initPV, initPV, scaleLo, scaleHi);
+    }
+    if (scaleLo != null && scaleHi != null) {
+      updatePvRange(scaleLo, scaleHi);
+      if (initPV > 0) {
+        const currentSP = syncState.syncedSP;
+        const currentPV = syncState.syncedPV;
+        if (!Number.isFinite(currentSP) || currentSP < scaleLo || currentSP > scaleHi) {
+          updateSyncedSP(initPV);
+        }
+        if (!Number.isFinite(currentPV) || currentPV < scaleLo || currentPV > scaleHi) {
+          updateSyncedPV(initPV);
+        }
+      }
+    }
+    updateAlarmLimits({
+      LL: defaults.ALM_LL_LIM ?? cfg.ALM_LL_LIM ?? 0,
+      L: defaults.ALM_L_LIM ?? cfg.ALM_L_LIM ?? 0,
+      H: defaults.ALM_H_LIM ?? cfg.ALM_H_LIM ?? 0,
+      HH: defaults.ALM_HH_LIM ?? cfg.ALM_HH_LIM ?? 0,
+    });
+  }, [activeControllerId, getControllerConfig, initializeController, updatePvRange, updateAlarmLimits]);
+
+  useEffect(() => {
+    setData(prev => {
+      const next = {
+        ...prev,
+        PV: syncState.syncedPV,
+        SP: syncState.syncedSP,
+        OUT_PCT: syncState.syncedOUT,
+      };
+      dataRef.current = next;
+      return next;
+    });
+  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT]);
+
   const updateConfigField = useCallback(<K extends keyof SecondaryControllerConfig>(
     key: K, 
     value: SecondaryControllerConfig[K]
   ) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+    setConfig(prev => {
+      const next = { ...prev, [key]: value };
+      configRef.current = next;
+      return next;
+    });
   }, []);
 
-  // Update string field
   const updateStringField = useCallback((key: 'TAGNAME' | 'DESC' | 'UNIT', value: string) => {
-    setStringFields(prev => ({ ...prev, [key]: value }));
+    setStringFields(prev => {
+      const next = { ...prev, [key]: value };
+      stringFieldsRef.current = next;
+      return next;
+    });
   }, []);
 
-  // Update data field (no auto-sync to context)
   const updateDataField = useCallback(<K extends keyof SecondaryControllerData>(
     key: K, 
     value: SecondaryControllerData[K]
   ) => {
-    setData(prev => ({ ...prev, [key]: value }));
+    setData(prev => {
+      const next = { ...prev, [key]: value };
+      dataRef.current = next;
+      return next;
+    });
   }, []);
 
-  // Apply all changes and sync to context
+  // Apply all changes and sync to context (reads from refs to avoid stale closure from onBlur race)
   const handleApply = useCallback(() => {
-    // Merge string fields back into config
+    const latestConfig = configRef.current;
+    const latestStringFields = stringFieldsRef.current;
+    const latestData = dataRef.current;
+
     const finalConfig: SecondaryControllerConfig = {
-      ...config,
-      TAGNAME: stringFields.TAGNAME,
-      DESC: stringFields.DESC,
-      UNIT: stringFields.UNIT
+      ...latestConfig,
+      TAGNAME: latestStringFields.TAGNAME,
+      DESC: latestStringFields.DESC,
+      UNIT: latestStringFields.UNIT
     };
     
-    // Save to context and localStorage
     updateControllerConfig(activeControllerId, finalConfig);
-    updateControllerData(activeControllerId, data);
+    updateControllerData(activeControllerId, latestData);
     saveController(activeControllerId);
     
-    // Use TYPICAL_PV if set, otherwise use current PV for syncing
-    const typicalPV = finalConfig.TYPICAL_PV ?? data.PV;
+    const pvScaleLo = finalConfig.PV_SCALE_LO ?? 0;
+    const pvScaleHi = finalConfig.PV_SCALE_HI ?? 100;
+    const pvInitInRange = finalConfig.PV_INIT_VAL > 0 && finalConfig.PV_INIT_VAL >= pvScaleLo && finalConfig.PV_INIT_VAL <= pvScaleHi;
+    const initPV = pvInitInRange ? finalConfig.PV_INIT_VAL : (finalConfig.TYPICAL_PV ?? latestData.PV);
     
-    // Sync live values to sync context - set both PV and SP to TYPICAL_PV to prevent drift
-    updateSyncedPV(typicalPV);
-    updateSyncedSP(typicalPV);  // Critical: SP must match PV to prevent simulation drift
-    updateSyncedOUT(data.OUT_PCT);
-    updateSyncedMode(data.MODE_AUTOMAN);
+    updatePvRange(finalConfig.PV_SCALE_LO ?? 0, finalConfig.PV_SCALE_HI ?? 100);
+    updateSyncedPV(initPV);
+    updateSyncedSP(initPV);
+    updateSyncedOUT(latestData.OUT_PCT);
+    updateSyncedMode(latestData.MODE_AUTOMAN);
     
-    // Sync alarm limits to simulation engine
     updateAlarmLimits({
       LL: finalConfig.ALM_LL_LIM ?? 0,
       L: finalConfig.ALM_L_LIM ?? 0,
@@ -248,12 +313,12 @@ const Faceplate3E = () => {
       HH: finalConfig.ALM_HH_LIM ?? 0,
     });
     
-    toast.success(`Configuration saved for ${stringFields.TAGNAME || activeControllerId}`);
-    console.log(`[Faceplate3E] Applied config for ${activeControllerId}, TYPICAL_PV=${typicalPV}`);
+    toast.success(`Configuration saved for ${latestStringFields.TAGNAME || activeControllerId}`);
+    console.log(`[Faceplate3E] Applied config for ${activeControllerId}, initPV=${initPV}`);
   }, [
-    config, stringFields, data, activeControllerId,
+    activeControllerId,
     updateControllerConfig, updateControllerData, saveController,
-    updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits
+    updatePvRange, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, updateAlarmLimits
   ]);
 
   if (!isLoaded) {
@@ -518,7 +583,7 @@ const Faceplate3E = () => {
                             value={data.MODE_AUTOMAN} 
                             onValueChange={(v) => updateDataField('MODE_AUTOMAN', v as AutoManMode)}
                           >
-                            <SelectTrigger className="w-32 bg-background/50 border-border/50 h-8 font-mono">
+                            <SelectTrigger className="w-32 bg-background/50 border-border/50 font-mono">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-border">
@@ -535,7 +600,7 @@ const Faceplate3E = () => {
                             value={data.MODE_ROUTRCAS} 
                             onValueChange={(v) => updateDataField('MODE_ROUTRCAS', v as RoutRcasMode)}
                           >
-                            <SelectTrigger className="w-32 bg-background/50 border-border/50 h-8 font-mono">
+                            <SelectTrigger className="w-32 bg-background/50 border-border/50 font-mono">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-border">
@@ -738,7 +803,7 @@ const Faceplate3E = () => {
                             value={config.INTLK_ACTION} 
                             onValueChange={(v) => updateConfigField('INTLK_ACTION', v as InterlockAction)}
                           >
-                            <SelectTrigger className="w-32 bg-background/50 border-border/50 h-8 font-mono">
+                            <SelectTrigger className="w-32 bg-background/50 border-border/50 font-mono">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 border-border">

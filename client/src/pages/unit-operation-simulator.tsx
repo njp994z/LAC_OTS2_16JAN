@@ -43,7 +43,7 @@ const unitOperations = [
     id: "sulfur-control-hydraulics",
     title: "Sulfur Control Hydraulics",
     description: "Model sulfur flow control systems including valve sizing, pressure regulation, and flow distribution for molten sulfur handling.",
-    path: "/unit-operation/sulfur-control-hydraulics",
+    path: "/unit-operation/sulfur-control-hydraulics/1540-VCF-2602",
     icon: Gauge
   },
   {
@@ -75,13 +75,6 @@ const unitOperations = [
     icon: Factory
   },
   {
-    id: "acid-hydraulics",
-    title: "Acid Hydraulics",
-    description: "Model acid circulation system hydraulics including pump curves, pressure drops, and flow distribution across towers.",
-    path: "/unit-operation/acid-hydraulics",
-    icon: PipetteIcon
-  },
-  {
     id: "gas-gas-heat-exchanger",
     title: "Gas-Gas Heat Exchanger",
     description: "Optimize heat recovery between hot and cold process gas streams.",
@@ -103,18 +96,18 @@ const unitOperations = [
     icon: Thermometer
   },
   {
-    id: "acid-cooler",
-    title: "Acid Cooler",
-    description: "Manage product acid temperature for safe storage and handling.",
-    path: "/unit-operation/acid-cooler",
-    icon: Wind
-  },
-  {
-    id: "economizer",
-    title: "Economizer",
+    id: "economizer 3B",
+    title: "Economizer 3B",
     description: "Preheat boiler feedwater using waste heat to improve overall efficiency.",
     path: "/unit-operation/economizer",
     icon: Gauge
+  },
+  {
+    id: "superheater-4a-economizer",
+    title: "Superheater 4A, Economizer 4C, Economizer 4A",
+    description: "Model heat recovery across Superheater 4A, Economizer 4C, and Economizer 4A for feedwater and steam circuit optimization.",
+    path: "/unit-operation/superheater-4a-economizer",
+    icon: Thermometer
   },
   {
     id: "tail-gas-scrubber",
@@ -138,6 +131,13 @@ const unitOperations = [
     icon: Zap
   },
   {
+    id: "acid-hydraulics",
+    title: "Acid Hydraulics",
+    description: "Model acid circulation system hydraulics including pump curves, pressure drops, and flow distribution across towers.",
+    path: "/unit-operation/acid-hydraulics",
+    icon: PipetteIcon
+  },
+  {
     id: "start-up-burner",
     title: "Start-Up Burner",
     description: "Provide auxiliary heat during plant startup to bring catalyst beds to operating temperature.",
@@ -157,6 +157,13 @@ const unitOperations = [
     description: "Condense steam to water using ambient air cooling for water conservation.",
     path: "/unit-operation/air-cooled-condenser",
     icon: Snowflake
+  },
+  {
+    id: "acid-cooler",
+    title: "Acid Cooler",
+    description: "Manage product acid temperature for safe storage and handling.",
+    path: "/unit-operation/acid-cooler",
+    icon: Wind
   }
 ];
 

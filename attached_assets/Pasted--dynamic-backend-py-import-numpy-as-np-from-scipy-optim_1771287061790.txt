@@ -1,0 +1,52 @@
+# dynamic_backend.py
+import numpy as np
+from scipy.optimize import fsolve
+from static_backend import CONFIG, StaticInterpassHX
+
+class DynamicInterpassHX:
+    def __init__(self):
+        self.static = StaticInterpassHX()
+        self.time = 0.0
+        self.dt = 0.5
+        self.tau = 45.0
+        self.T_out_hip = 806.0
+        self.T_out_cip = 779.0
+
+    def step(self, mA, hip_hot_inlet_f, cip_hot_inlet_f, cip_cold_feed_f):
+        self.time += self.dt
+
+        # CIP split-range
+        pos_cip = (mA - 4) / 16 * 100
+        pos_cip = max(0, min(100, pos_cip))
+        cv_cip = self.static.get_Cv(pos_cip, CONFIG['CIP_Cv_max_36'], CONFIG['CIP_Cv_max_78'])
+
+        # HIP single valve
+        cv_hip = self.static.get_Cv(pos_cip, CONFIG['HIP_Cv_max_48'])
+
+        # Solve flows (forward)
+        flow_hx_cip = self._solve_flow_from_cv(cv_cip, CONFIG['Q_design_CIP'], CONFIG['dP_design_psi'], 103736)
+        flow_hx_hip = self._solve_flow_from_cv(cv_hip, CONFIG['Q_design_HIP'], CONFIG['dP_design_psi'], 104164)
+
+        # Simple temperature update with lag
+        self.T_out_cip += (cip_hot_inlet_f - 68 - self.T_out_cip) * self.dt / self.tau
+        self.T_out_hip += (hip_hot_inlet_f - 50 - self.T_out_hip) * self.dt / self.tau
+
+        return {
+            'time_s': round(self.time, 1),
+            'mA': round(mA, 2),
+            'CIP_position_pct': round(pos_cip, 1),
+            'HIP_position_pct': round(pos_cip, 1),
+            'CIP_bypass_flow': round(103736 - flow_hx_cip),
+            'HIP_bypass_flow': round(104164 - flow_hx_hip),
+            'stream15_temp': round(self.T_out_cip, 1),
+            'stream19_temp': round(self.T_out_hip, 1),
+            'stream18_temp': round(self.T_out_cip, 1),
+        }
+
+    def _solve_flow_from_cv(self, cv, Q_design, dP_design, Q_total):
+        def obj(flow_hx):
+            flow_byp = Q_total - flow_hx
+            dP_hx = dP_design * (flow_hx / Q_design) ** CONFIG['power_dP']
+            dP_valve = (flow_byp * 60 / (1360 * cv)) ** 2 * (1.2 * 760 / 14.7)   # simplified
+            return dP_hx - dP_valve
+        return fsolve(obj, Q_total * 0.6)[0]

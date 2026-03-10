@@ -1,0 +1,94 @@
+# superheater_calc.py
+import sys
+import json
+
+
+def calculate_superheater(
+    furnace_outlet_scfm_dry: float = 109697,
+    furnace_outlet_so2: float = 12401,
+    furnace_outlet_so3: float = 227,
+    furnace_outlet_o2: float = 10261,
+    furnace_outlet_n2: float = 86808,
+    furnace_outlet_temp_f: float = 2080,
+    furnace_outlet_press_inwc: float = 196.0,
+    jug_open_pct: float = 10.0,
+    valve_4822b_open_pct: float = 100.0,
+    cv_max: float = 40000.0,
+    u_value: float = 7.8,
+    sh_area: float = 32679.0,
+    sh_steam_psig: float = 900.0,
+    baro_psia: float = 14.3
+) -> dict:
+    """
+    Static simulation of superheater bypass flows and temperatures.
+    Produces stream values matching frontend prefixes: G11, GSH0, GSH1, GSH3, GSBYP, G20
+    """
+    total_flow = furnace_outlet_scfm_dry
+
+    # Simplified flow split preference to jug valve when open
+    jug_frac = jug_open_pct / 100.0
+    jug_flow = total_flow * (jug_frac ** 0.68) * 1.10
+    sh_flow  = total_flow - jug_flow
+
+    # Approximate pressure drop – decreases as jug opens more
+    delta_p = 22.0 * (1.0 - jug_frac * 0.8)
+    downstream_p = furnace_outlet_press_inwc - delta_p
+
+    # Temperatures (placeholder – real model would solve heat transfer)
+    t_inlet     = furnace_outlet_temp_f           # ≈ 2080 °F
+    t_sh_out    = 960.0                           # after heat exchange
+    t_bypass    = t_inlet                         # no cooling
+
+    # Valve 4822B controls portion of jug flow that bypasses (remainder might vent or trim)
+    bypass_flow = jug_flow * (valve_4822b_open_pct / 100.0)
+    vent_flow   = jug_flow - bypass_flow          # small vent stream
+
+    # Mixed temperature to Pass 2 inlet (G20)
+    mixed_t = (
+        sh_flow    * t_sh_out +
+        bypass_flow * t_bypass +
+        vent_flow   * t_bypass
+    ) / total_flow if total_flow > 0 else t_inlet
+
+    # Dry gas composition – assumed conserved
+    so2   = furnace_outlet_so2
+    so3   = furnace_outlet_so3
+    o2    = furnace_outlet_o2
+    n2    = furnace_outlet_n2
+    h2o   = 0.0
+    h2so4 = 0.0
+
+    results: dict = {}
+
+    def store_stream(prefix: str, flow: float, temp: float, press: float) -> None:
+        f = max(0.0, flow)
+        scale = f / total_flow if total_flow > 0 else 0.0
+        results[f"TOTAL_{prefix}"]     = round(f)
+        results[f"SO2_{prefix}"]       = round(so2   * scale)
+        results[f"SO3_{prefix}"]       = round(so3   * scale)
+        results[f"O2_{prefix}"]        = round(o2    * scale)
+        results[f"N2_{prefix}"]        = round(n2    * scale)
+        results[f"H2O_{prefix}"]       = round(h2o   * scale)
+        results[f"H2SO4_{prefix}"]     = round(h2so4 * scale)
+        results[f"PRESSURE_{prefix}"]   = round(press, 1)
+        results[f"TEMPERATURE_{prefix}"] = round(temp)
+
+    # Define streams
+    store_stream("G11",   total_flow,  t_inlet,     furnace_outlet_press_inwc)   # Pass 1 Out
+    store_stream("GSH0",  sh_flow,     t_inlet,     furnace_outlet_press_inwc)   # SH Gas In
+    store_stream("GSH1",  sh_flow,     t_sh_out,    downstream_p)                # SH Gas Out (main path)
+    store_stream("GSH3",  vent_flow,   t_bypass,    downstream_p)                # SH Gas V. Out (vent/trim)
+    store_stream("GSBYP", bypass_flow, t_bypass,    downstream_p)                # SH Bypass
+    store_stream("G20",   total_flow,  mixed_t,     downstream_p)                # Pass 2 Inlet
+
+    return results
+
+
+if __name__ == "__main__":
+    try:
+        input_data = json.loads(sys.stdin.read() or "{}")
+        result = calculate_superheater(**input_data)
+        print(json.dumps(result))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}), file=sys.stderr)
+        sys.exit(1)

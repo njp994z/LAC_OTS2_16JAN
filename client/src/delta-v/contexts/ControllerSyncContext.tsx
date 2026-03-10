@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { AlarmLogEntry } from "@/delta-v/types/secondaryController";
+import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 
 type SyncedMode = "AUTO" | "MAN" | "BYPASS" | "RCAS" | "ROUT";
 
@@ -43,6 +44,7 @@ interface ControllerSyncContextType {
   updateSyncedSP: (controllerId: string, value: number) => void;
   updateSyncedOUT: (controllerId: string, value: number) => void;
   updateSyncedMode: (controllerId: string, mode: SyncedMode) => void;
+  updatePvRange: (controllerId: string, min: number, max: number) => void;
   updateAlarmStates: (controllerId: string, alarms: AlarmStates) => void;
   updateAlarmLimits: (controllerId: string, limits: AlarmLimits) => void;
   addAlarmLogEntry: (controllerId: string, entry: Omit<AlarmLogEntry, "id" | "acknowledged">) => void;
@@ -319,16 +321,24 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
     const safeRangeMin = toFiniteNumber(pvRangeMin, 0);
     const safeRangeMax = toFiniteNumber(pvRangeMax, 100);
     
-    // Skip if already initialized AND has valid (finite) PV/SP/OUT values
-    // If existing state has NaN values, allow re-initialization to repair
+    // If already initialized with valid PV/SP/OUT, only update the pvRange
+    // (range may change when code defaults are corrected) but keep existing PV/SP/OUT
     if (existing?.initialized) {
       const hasValidState = Number.isFinite(existing.syncedPV) && 
                            Number.isFinite(existing.syncedSP) && 
                            Number.isFinite(existing.syncedOUT);
       if (hasValidState) {
-        return prev;
+        return {
+          controllers: {
+            ...prev.controllers,
+            [controllerId]: {
+              ...existing,
+              pvRangeMin: safeRangeMin,
+              pvRangeMax: safeRangeMax,
+            },
+          },
+        };
       }
-      // State is corrupted with NaN, allow re-initialization
       console.log(`[ControllerSync] Re-initializing ${controllerId} due to invalid state`);
     }
       
@@ -344,6 +354,20 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
             pvRangeMax: safeRangeMax,
             initialized: true,
           },
+        },
+      };
+    });
+  }, []);
+
+  const updatePvRange = useCallback((controllerId: string, min: number, max: number) => {
+    const safeMin = toFiniteNumber(min, 0);
+    const safeMax = toFiniteNumber(max, 100);
+    setState((prev) => {
+      const currentController = prev.controllers[controllerId] || createDefaultControllerState();
+      return {
+        controllers: {
+          ...prev.controllers,
+          [controllerId]: { ...currentController, pvRangeMin: safeMin, pvRangeMax: safeMax },
         },
       };
     });
@@ -522,6 +546,7 @@ export const ControllerSyncProvider = ({ children }: { children: ReactNode }) =>
       value={{
         getControllerState,
         initializeController,
+        updatePvRange,
         updateSyncedPV,
         updateSyncedSP,
         updateSyncedOUT,
@@ -545,12 +570,28 @@ export const useControllerSync = (controllerId: string) => {
     throw new Error("useControllerSync must be used within a ControllerSyncProvider");
   }
 
+  const { getControllerConfig, getControllerData } = useControllerConfig();
   const state = context.getControllerState(controllerId);
+
+  useEffect(() => {
+    if (!state.initialized) {
+      const config = getControllerConfig(controllerId);
+      const data = getControllerData(controllerId);
+      
+      const initialPV = config.TYPICAL_PV ?? config.PV_INIT_VAL ?? data.PV ?? 175.0;
+      const initialSP = config.TYPICAL_PV ?? data.SP ?? 75.0;
+      const pvMin = config.PV_SCALE_LO ?? 0;
+      const pvMax = config.PV_SCALE_HI ?? 500;
+      
+      context.initializeController(controllerId, initialPV, initialSP, pvMin, pvMax);
+    }
+  }, [controllerId, state.initialized, context, getControllerConfig, getControllerData]);
 
   return {
     state,
     initializeController: (initialPV: number, initialSP?: number, pvRangeMin?: number, pvRangeMax?: number) => 
       context.initializeController(controllerId, initialPV, initialSP, pvRangeMin, pvRangeMax),
+    updatePvRange: (min: number, max: number) => context.updatePvRange(controllerId, min, max),
     updateSyncedPV: (value: number) => context.updateSyncedPV(controllerId, value),
     updateSyncedSP: (value: number) => context.updateSyncedSP(controllerId, value),
     updateSyncedOUT: (value: number) => context.updateSyncedOUT(controllerId, value),

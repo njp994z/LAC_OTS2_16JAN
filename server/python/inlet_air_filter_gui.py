@@ -116,7 +116,7 @@ class InletAirFilterGUI:
         
         # Barometric
         ttk.Label(frame, text="Barometric:").grid(row=2, column=0, sticky="e")
-        self.barometric_var = tk.StringVar(value="1.0010")
+        self.barometric_var = tk.StringVar(value="0.85")
         ttk.Entry(frame, textvariable=self.barometric_var, width=15).grid(row=2, column=1)
         ttk.Label(frame, text="atm").grid(row=2, column=2, sticky="w")
         

@@ -18,10 +18,27 @@ import { getCurrentPsychrometrics, getHistoricalPsychrometrics, isWeatherService
 import { weatherRequestSchema, weatherHistoryRequestSchema, catalystParameterApiSchema, insertConverterCaseSchema } from "../shared/schema";
 import { getLayout, getLayouts, setLayout } from "./services/layoutServices";
 
+const simulationPaths = [
+  '/api/ipat-calc', '/api/fat-calc', '/api/sh4a-ec4c-ec4a-calc', '/api/ec3b-calc',
+  '/api/catalytic-reactor-simulation', '/api/compressor-simulation', '/api/sulfur-furnace-simulation',
+  '/api/drying-tower-simulation', '/api/drying-tower-calc', '/api/converter-pass-simulation',
+  '/api/jug-valve-simulation', '/api/superheater-simulation', '/api/inlet-air-filter-simulation',
+  '/api/plant-orchestrator',
+];
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   message: { message: "Too many requests from this IP, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => simulationPaths.some(p => req.path === p),
+});
+
+const simulationLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 300,
+  message: { message: "Too many simulation requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -115,32 +132,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Legacy Homescreen Layout API (for Draggable Icons)
-  app.get('/api/homescreen-layout/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const layout = await storage.getHomescreenLayout(id);
-      res.json(layout);
-    } catch (error) {
-      console.error("Error fetching homescreen layout:", error);
-      res.status(500).json({ message: "Failed to fetch homescreen layout" });
-    }
-  });
-
-  app.put('/api/homescreen-layout/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { layouts } = req.body;
-      if (!layouts || !Array.isArray(layouts)) {
-        return res.status(400).json({ message: "Layouts array is required" });
-      }
-      const updated = await storage.upsertHomescreenLayout(id, layouts);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error saving homescreen layout:", error);
-      res.status(500).json({ message: "Failed to save homescreen layout" });
-    }
-  });
 
   const httpServer = createServer(app);
 
@@ -201,6 +192,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/login', authLimiter);
   app.use('/api/register', authLimiter);
+
+  app.use('/api/ipat-calc', simulationLimiter);
+  app.use('/api/fat-calc', simulationLimiter);
+  app.use('/api/sh4a-ec4c-ec4a-calc', simulationLimiter);
+  app.use('/api/ec3b-calc', simulationLimiter);
+  app.use('/api/catalytic-reactor-simulation', simulationLimiter);
+  app.use('/api/compressor-simulation', simulationLimiter);
+  app.use('/api/sulfur-furnace-simulation', simulationLimiter);
+  app.use('/api/drying-tower-simulation', simulationLimiter);
+  app.use('/api/drying-tower-calc', simulationLimiter);
+  app.use('/api/converter-pass-simulation', simulationLimiter);
+  app.use('/api/jug-valve-simulation', simulationLimiter);
+  app.use('/api/superheater-simulation', simulationLimiter);
+  app.use('/api/inlet-air-filter-simulation', simulationLimiter);
+  app.use('/api/plant-orchestrator', simulationLimiter);
 
   app.use('/api/', apiLimiter);
 
@@ -1917,6 +1923,21 @@ Be professional, concise, and helpful. If asked about features not yet implement
     }
   });
 
+  app.patch('/api/process-variables/:tag/cases/:caseId', async (req: Request, res: Response) => {
+    try {
+      const { tag, caseId } = req.params;
+      const { value } = req.body;
+      if (value === undefined || value === null) {
+        return res.status(400).json({ message: "value is required" });
+      }
+      await storage.updateProcessVariableCaseValue(tag, caseId, String(value));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Process variable case update error:", error);
+      res.status(500).json({ message: "Failed to update process variable case value" });
+    }
+  });
+
   // Get all setpoint variables and case columns
   app.get('/api/setpoint-variables', async (req: Request, res: Response) => {
     try {
@@ -2267,6 +2288,81 @@ Be professional, concise, and helpful. If asked about features not yet implement
       console.error('Compressor simulation error:', error);
       res.status(500).json({
         message: error instanceof Error ? error.message : "Compressor simulation failed"
+      });
+    }
+  });
+
+  let latestDynamicOrchestratorResult: { data: any; timestamp: number } | null = null;
+
+  app.get('/api/plant-orchestrator/latest-dynamic', (_req: Request, res: Response) => {
+    if (!latestDynamicOrchestratorResult) {
+      return res.json({ available: false });
+    }
+    res.json({
+      available: true,
+      timestamp: latestDynamicOrchestratorResult.timestamp,
+      ...latestDynamicOrchestratorResult.data,
+    });
+  });
+
+  app.post('/api/plant-orchestrator', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body || {};
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'plant_orchestrator.py');
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdin.write(JSON.stringify(pythonInput));
+        pythonProcess.stdin.end();
+
+        pythonProcess.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+          if (code !== 0) {
+            console.error('Plant orchestrator error:', stderr);
+            reject(new Error(`Plant orchestrator exited with code ${code}: ${stderr}`));
+            return;
+          }
+
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse orchestrator output:', stdout);
+            reject(new Error('Failed to parse plant orchestrator results'));
+          }
+        });
+
+        pythonProcess.on('error', (err: Error) => {
+          console.error('Failed to start plant orchestrator:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Plant orchestrator failed" });
+      }
+
+      if (pythonInput.mode === 'dynamic' && result.success) {
+        latestDynamicOrchestratorResult = { data: result, timestamp: Date.now() };
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Plant orchestrator error:', error);
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Plant orchestrator failed"
       });
     }
   });
@@ -3030,54 +3126,42 @@ Be professional, concise, and helpful. If asked about features not yet implement
   app.post('/api/jug-valve-simulation', async (req: Request, res: Response) => {
     try {
       const {
-        furnace_outlet_scfm_dry,
-        furnace_outlet_so2,
-        furnace_outlet_so3,
-        furnace_outlet_o2,
-        furnace_outlet_n2,
-        furnace_outlet_temp_f,
-        furnace_outlet_press_inwc,
-        jug_open_pct,
-        positioner_open_pct,
-        cv_max,
-        u_value,
-        whb_area,
-        baro_psia
+        s5_so2, s5_so3, s5_o2, s5_n2, s5_h2o, s5_h2so4,
+        s5_total, s5_pressure, s5_temperature,
+        jug_open_pct, damper_open_pct
       } = req.body;
 
-      if (jug_open_pct === undefined || positioner_open_pct === undefined) {
+      if (jug_open_pct === undefined || damper_open_pct === undefined) {
         return res.status(400).json({ message: "Missing required valve opening percentages" });
       }
 
       const jugOpenVal = parseFloat(jug_open_pct);
-      const posOpenVal = parseFloat(positioner_open_pct);
+      const damperOpenVal = parseFloat(damper_open_pct);
 
-      if (isNaN(jugOpenVal) || isNaN(posOpenVal)) {
+      if (isNaN(jugOpenVal) || isNaN(damperOpenVal)) {
         return res.status(400).json({ message: "Valve opening percentages must be valid numbers" });
       }
 
-      if (jugOpenVal < 0 || jugOpenVal > 100 || posOpenVal < 0 || posOpenVal > 100) {
+      if (jugOpenVal < 0 || jugOpenVal > 100 || damperOpenVal < 0 || damperOpenVal > 100) {
         return res.status(400).json({ message: "Valve opening percentages must be between 0 and 100" });
       }
 
       const pythonInput = {
-        furnace_outlet_scfm_dry: parseFloat(furnace_outlet_scfm_dry) || 109697,
-        furnace_outlet_so2: parseFloat(furnace_outlet_so2) || 12401,
-        furnace_outlet_so3: parseFloat(furnace_outlet_so3) || 227,
-        furnace_outlet_o2: parseFloat(furnace_outlet_o2) || 10261,
-        furnace_outlet_n2: parseFloat(furnace_outlet_n2) || 86808,
-        furnace_outlet_temp_f: parseFloat(furnace_outlet_temp_f) || 2080,
-        furnace_outlet_press_inwc: parseFloat(furnace_outlet_press_inwc) || 196,
+        s5_so2: parseFloat(s5_so2) || 0,
+        s5_so3: parseFloat(s5_so3) || 0,
+        s5_o2: parseFloat(s5_o2) || 0,
+        s5_n2: parseFloat(s5_n2) || 0,
+        s5_h2o: parseFloat(s5_h2o) || 0,
+        s5_h2so4: parseFloat(s5_h2so4) || 0,
+        s5_total: parseFloat(s5_total) || 0,
+        s5_pressure: parseFloat(s5_pressure) || 0,
+        s5_temperature: parseFloat(s5_temperature) || 0,
         jug_open_pct: jugOpenVal,
-        positioner_open_pct: posOpenVal,
-        cv_max: parseFloat(cv_max) || 12500,
-        u_value: parseFloat(u_value) || 16.0,
-        whb_area: parseFloat(whb_area) || 9800,
-        baro_psia: parseFloat(baro_psia) || 14.3
+        damper_open_pct: damperOpenVal,
       };
 
       const pythonScriptPath = path.join(import.meta.dirname, 'python', 'jug_valve_calc.py');
-      const pythonProcess = spawn('python', [pythonScriptPath]);
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
 
       let stdout = '';
       let stderr = '';
@@ -3110,6 +3194,185 @@ Be professional, concise, and helpful. If asked about features not yet implement
     } catch (error) {
       console.error('Jug valve simulation error:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Superheater Simulation endpoint
+  app.post('/api/superheater-simulation', async (req: Request, res: Response) => {
+    try {
+      const {
+        furnace_outlet_scfm_dry,
+        furnace_outlet_so2,
+        furnace_outlet_so3,
+        furnace_outlet_o2,
+        furnace_outlet_n2,
+        furnace_outlet_temp_f,
+        furnace_outlet_press_inwc,
+        jug_open_pct,
+        valve_4822b_open_pct,
+        cv_max,
+        u_value,
+        sh_area,
+        sh_steam_psig,
+        baro_psia
+      } = req.body;
+
+      if (jug_open_pct === undefined || valve_4822b_open_pct === undefined) {
+        return res.status(400).json({ error: "Missing required valve opening percentages" });
+      }
+
+      const jugOpenVal = parseFloat(jug_open_pct);
+      const valveOpenVal = parseFloat(valve_4822b_open_pct);
+
+      if (isNaN(jugOpenVal) || isNaN(valveOpenVal)) {
+        return res.status(400).json({ error: "Valve opening percentages must be valid numbers" });
+      }
+
+      if (jugOpenVal < 0 || jugOpenVal > 100 || valveOpenVal < 0 || valveOpenVal > 100) {
+        return res.status(400).json({ error: "Valve opening percentages must be between 0 and 100" });
+      }
+
+      const pythonInput = {
+        furnace_outlet_scfm_dry: parseFloat(furnace_outlet_scfm_dry) || 109697,
+        furnace_outlet_so2: parseFloat(furnace_outlet_so2) || 12401,
+        furnace_outlet_so3: parseFloat(furnace_outlet_so3) || 227,
+        furnace_outlet_o2: parseFloat(furnace_outlet_o2) || 10261,
+        furnace_outlet_n2: parseFloat(furnace_outlet_n2) || 86808,
+        furnace_outlet_temp_f: parseFloat(furnace_outlet_temp_f) || 2080,
+        furnace_outlet_press_inwc: parseFloat(furnace_outlet_press_inwc) || 196,
+        jug_open_pct: jugOpenVal,
+        valve_4822b_open_pct: valveOpenVal,
+        cv_max: parseFloat(cv_max) || 40000,
+        u_value: parseFloat(u_value) || 7.8,
+        sh_area: parseFloat(sh_area) || 32679,
+        sh_steam_psig: parseFloat(sh_steam_psig) || 900,
+        baro_psia: parseFloat(baro_psia) || 14.3
+      };
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'superheater_calc.py');
+      const pythonProcess = spawn('python', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => { stdout += data.toString(); });
+      pythonProcess.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('Superheater Python error:', stderr);
+          return res.status(500).json({ error: 'Calculation failed', details: stderr });
+        }
+
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          res.status(500).json({ error: 'Failed to parse simulation results' });
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('Python process error:', error);
+        res.status(500).json({ error: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('Superheater simulation error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/sh4a-ec4c-ec4a-calc', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'sh4a_ec4c_ec4a_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code: number | null) => {
+        if (code !== 0) {
+          console.error('SH4A/EC4C/EC4A calc stderr:', stderr);
+          return res.status(500).json({ error: stderr || 'Calculation failed' });
+        }
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('SH4A/EC4C/EC4A calc parse error:', stdout);
+          res.status(500).json({ error: 'Failed to parse calculation results' });
+        }
+      });
+
+      pythonProcess.on('error', (err: Error) => {
+        console.error('SH4A/EC4C/EC4A calc process error:', err);
+        res.status(500).json({ error: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('SH4A/EC4C/EC4A calc error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/ec3b-calc', async (req: Request, res: Response) => {
+    try {
+      const pythonInput = req.body;
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'ec3b_calc.py');
+      const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.stdin.write(JSON.stringify(pythonInput));
+      pythonProcess.stdin.end();
+
+      pythonProcess.on('close', (code: number | null) => {
+        if (code !== 0) {
+          console.error('EC3B calc stderr:', stderr);
+          return res.status(500).json({ error: stderr || 'Calculation failed' });
+        }
+        try {
+          const results = JSON.parse(stdout);
+          res.json(results);
+        } catch (parseError) {
+          console.error('EC3B calc parse error:', stdout);
+          res.status(500).json({ error: 'Failed to parse calculation results' });
+        }
+      });
+
+      pythonProcess.on('error', (err: Error) => {
+        console.error('EC3B calc process error:', err);
+        res.status(500).json({ error: 'Failed to run Python script' });
+      });
+    } catch (error) {
+      console.error('EC3B calc error:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -3271,6 +3534,67 @@ Be professional, concise, and helpful. If asked about features not yet implement
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'text/x-python');
     res.sendFile(filePath);
+  });
+
+  // Interpass HX Valve & Stream Simulator endpoint
+  app.post('/api/interpass-hx', async (req: Request, res: Response) => {
+    try {
+      const { mode } = req.body;
+
+      if (!mode || !['static', 'dynamic'].includes(mode)) {
+        return res.status(400).json({ message: "Mode must be 'static' or 'dynamic'" });
+      }
+
+      const pythonScriptPath = path.join(import.meta.dirname, 'python', 'interpass_hx_calc.py');
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const pythonProcess = spawn('python3', [pythonScriptPath]);
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdin.write(JSON.stringify(req.body));
+        pythonProcess.stdin.end();
+
+        pythonProcess.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString();
+        });
+
+        pythonProcess.on('close', (code: number) => {
+          if (code !== 0) {
+            console.error('Python interpass HX calculator error:', stderr);
+            reject(new Error(`Python process exited with code ${code}: ${stderr}`));
+            return;
+          }
+
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } catch (parseError) {
+            console.error('Failed to parse Python output:', stdout);
+            reject(new Error('Failed to parse interpass HX simulation results'));
+          }
+        });
+
+        pythonProcess.on('error', (err: Error) => {
+          console.error('Failed to start Python process:', err);
+          reject(err);
+        });
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Interpass HX simulation failed" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Interpass HX simulation error:', error);
+      res.status(500).json({ message: "Failed to run interpass HX simulation" });
+    }
   });
 
   // Full Plant Static Simulation — orchestrates all unit ops in sequence

@@ -9,6 +9,7 @@ import {
   type SecondaryControllerData,
   type SecondaryControllerConfig 
 } from '@/delta-v/types/secondaryController';
+import { getDefaultSecondaryControllerConfig } from '@/delta-v/lib/controllerDefaults';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Code, FileCode, Copy, Check, ChevronDown } from 'lucide-react';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
@@ -894,7 +895,7 @@ if __name__ == "__main__":
 
 const CommonControllerFaceplatePage = () => {
   const { id: activeControllerId } = useParams();
-  const { state: syncState, updateSyncedSP, updateSyncedOUT, updateSyncedMode } = useControllerSync(activeControllerId!);
+  const { state: syncState, updateSyncedPV, updateSyncedSP, updateSyncedOUT, updateSyncedMode, initializeController, updatePvRange } = useControllerSync(activeControllerId!);
   const { getControllerConfig, getControllerData } = useControllerConfig();
   const { toast } = useToast();
   
@@ -927,6 +928,32 @@ const CommonControllerFaceplatePage = () => {
     OUT_PCT: syncState.syncedOUT,
   });
   
+  // Initialize sync state with TYPICAL_PV from config whenever config store updates (incl. DB load)
+  useEffect(() => {
+    const cfg = getControllerConfig(activeControllerId!);
+    const defaults = getDefaultSecondaryControllerConfig(activeControllerId!);
+    const scaleLo = defaults.PV_SCALE_LO ?? cfg.PV_SCALE_LO;
+    const scaleHi = defaults.PV_SCALE_HI ?? cfg.PV_SCALE_HI;
+    const pvInitInRange = cfg.PV_INIT_VAL > 0 && scaleLo != null && scaleHi != null && cfg.PV_INIT_VAL >= scaleLo && cfg.PV_INIT_VAL <= scaleHi;
+    const initPV = pvInitInRange ? cfg.PV_INIT_VAL : (defaults.TYPICAL_PV ?? cfg.TYPICAL_PV ?? 0);
+    if (initPV > 0) {
+      initializeController(initPV, initPV, scaleLo, scaleHi);
+    }
+    if (scaleLo != null && scaleHi != null) {
+      updatePvRange(scaleLo, scaleHi);
+      if (initPV > 0) {
+        const currentSP = syncState.syncedSP;
+        const currentPV = syncState.syncedPV;
+        if (!Number.isFinite(currentSP) || currentSP < scaleLo || currentSP > scaleHi) {
+          updateSyncedSP(initPV);
+        }
+        if (!Number.isFinite(currentPV) || currentPV < scaleLo || currentPV > scaleHi) {
+          updateSyncedPV(initPV);
+        }
+      }
+    }
+  }, [activeControllerId, getControllerConfig, initializeController, updatePvRange]);
+
   // Sync config changes from Faceplate3F
   useEffect(() => {
     const savedConfig = getControllerConfig(activeControllerId!);
@@ -943,8 +970,7 @@ const CommonControllerFaceplatePage = () => {
   
   // Derive alarm state from secondary controller alarms
   const hasRedAlarm = !secondaryData.PV_OK || secondaryData.ALM_LL_ACT || secondaryData.ALM_HH_ACT;
-  const hasYellowAlarm = secondaryData.ALM_L_ACT || secondaryData.ALM_DL_ACT || 
-                          secondaryData.ALM_DH_ACT || secondaryData.ALM_H_ACT;
+  const hasYellowAlarm = secondaryData.ALM_L_ACT || secondaryData.ALM_H_ACT;
   const primaryAlarmActive = hasRedAlarm || hasYellowAlarm;
   const primaryAlarmColor: 'red' | 'yellow' = hasRedAlarm ? 'red' : 'yellow';
 
@@ -981,6 +1007,15 @@ const CommonControllerFaceplatePage = () => {
   }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, syncState.syncedMode, primaryAlarmActive, primaryAlarmColor, hasRedAlarm, hasYellowAlarm, config, secondaryData.ALM_HH_ACT, secondaryData.ALM_LL_ACT]);
   
   // Sync Secondary Controller values from context
+  // Use controller-specific defaults for alarm limits to avoid stale DB-saved generic limits
+  const alarmDefaults = getDefaultSecondaryControllerConfig(activeControllerId!);
+  const almLL = alarmDefaults.ALM_LL_LIM ?? config.ALM_LL_LIM;
+  const almL = alarmDefaults.ALM_L_LIM ?? config.ALM_L_LIM;
+  const almDL = alarmDefaults.ALM_DL_LIM ?? config.ALM_DL_LIM;
+  const almDH = alarmDefaults.ALM_DH_LIM ?? config.ALM_DH_LIM;
+  const almH = alarmDefaults.ALM_H_LIM ?? config.ALM_H_LIM;
+  const almHH = alarmDefaults.ALM_HH_LIM ?? config.ALM_HH_LIM;
+
   useEffect(() => {
     setSecondaryData(prev => {
       const newPV = syncState.syncedPV;
@@ -991,16 +1026,16 @@ const CommonControllerFaceplatePage = () => {
         PV: newPV,
         SP: syncState.syncedSP,
         OUT_PCT: syncState.syncedOUT,
-        ALM_LL_ACT: newPV <= config.ALM_LL_LIM,
-        ALM_L_ACT: newPV <= config.ALM_L_LIM,
-        ALM_DL_ACT: dev <= config.ALM_DL_LIM,
-        ALM_DH_ACT: dev >= config.ALM_DH_LIM,
-        ALM_H_ACT: newPV >= config.ALM_H_LIM,
-        ALM_HH_ACT: newPV >= config.ALM_HH_LIM,
-        PV_OK: !(newPV <= config.ALM_LL_LIM || newPV >= config.ALM_HH_LIM),
+        ALM_LL_ACT: almLL > 0 && newPV <= almLL,
+        ALM_L_ACT: almL > 0 && newPV <= almL,
+        ALM_DL_ACT: almDL !== 0 && dev <= almDL,
+        ALM_DH_ACT: almDH !== 0 && dev >= almDH,
+        ALM_H_ACT: almH > 0 && newPV >= almH,
+        ALM_HH_ACT: almHH > 0 && newPV >= almHH,
+        PV_OK: !((almLL > 0 && newPV <= almLL) || (almHH > 0 && newPV >= almHH)),
       };
     });
-  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, config]);
+  }, [syncState.syncedPV, syncState.syncedSP, syncState.syncedOUT, almLL, almL, almDL, almDH, almH, almHH]);
 
   // Expose update functions for Python integration
   useEffect(() => {

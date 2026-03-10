@@ -1,0 +1,183 @@
+# ipat_calc.py
+# Interpass Absorption Tower (IPAT)
+# 100% SO3 absorption
+# 32°F standard gas basis
+# Full material and energy balance
+
+import json
+import sys
+
+# ───────────────────────────────────────────────────────────────
+# Constants
+# ───────────────────────────────────────────────────────────────
+
+SG_ACID = 1.84
+
+MW_SO3   = 80.06
+MW_H2SO4 = 98.08
+MW_H2O   = 18.02
+
+# Standard cubic feet per lbmol at 32°F
+SCF_PER_LBMOLE = 359.05
+
+CP_ACID_BTU_LB_F = 0.33
+
+CP_GAS_BTU_LBMOL_F = {
+    "SO2": 10.5,
+    "SO3": 12.0,
+    "O2":  7.3,
+    "N2":  7.0,
+    "H2O": 8.0,
+}
+
+# Reaction enthalpy SO3 + H2O → H2SO4
+# Default: −132 kJ/mol
+KJ_PER_MOL_TO_BTU_PER_LBMOL = 430.21
+DH_RXN_KJ_PER_MOL_DEFAULT = -132.0
+DH_RXN_BTU_PER_LBMOL_DEFAULT = DH_RXN_KJ_PER_MOL_DEFAULT * KJ_PER_MOL_TO_BTU_PER_LBMOL
+
+
+# ───────────────────────────────────────────────────────────────
+# Calculation
+# ───────────────────────────────────────────────────────────────
+
+def calculate_tower(inputs):
+
+    results = {}
+
+    try:
+
+        # ==========================================================
+        # Inlet Acid — AI0
+        # ==========================================================
+        x_h2so4_ai0 = float(inputs.get("x_H2SO4_AI0", 0.985))
+        x_h2o_ai0   = float(inputs.get("x_H2O_AI0",   0.015))
+        m_total_ai0 = float(inputs.get("m_Total_AI0", 0.0)) * 1000
+        temp_ai0    = float(inputs.get("Temp_AI0", 180.0))
+        flow_ai0    = float(inputs.get("Flow_AI0", 0.0))
+
+        if flow_ai0 > 0:
+            mass_ai0_lbhr = flow_ai0 * 60 * 8.337 * SG_ACID
+        else:
+            mass_ai0_lbhr = m_total_ai0
+
+        h2so4_ai0_lbhr = mass_ai0_lbhr * x_h2so4_ai0
+        h2o_ai0_lbhr   = mass_ai0_lbhr * x_h2o_ai0
+
+        # ==========================================================
+        # Inlet Gas — GI0
+        # ==========================================================
+        so2_gi0 = float(inputs.get("SO2_GI0", 0.0))
+        so3_gi0 = float(inputs.get("SO3_GI0", 0.0))
+        o2_gi0  = float(inputs.get("O2_GI0",  0.0))
+        n2_gi0  = float(inputs.get("N2_GI0",  0.0))
+        h2o_gi0 = float(inputs.get("H2O_GI0", 0.0))
+
+        temp_gi0 = float(inputs.get("Temp_GI0", 400.0))
+        temp_gi1_target = float(inputs.get("Temp_GI1", 180.0))
+
+        total_gi0 = so2_gi0 + so3_gi0 + o2_gi0 + n2_gi0 + h2o_gi0
+
+        def scfm_to_lbmol_hr(scfm):
+            return (scfm / SCF_PER_LBMOLE) * 60.0
+
+        # ==========================================================
+        # 100% SO3 Absorption
+        # ==========================================================
+        n_so3_in = scfm_to_lbmol_hr(so3_gi0)
+        n_so3_abs = n_so3_in   # 100% absorption
+
+        mass_so3_abs_lbhr = n_so3_abs * MW_SO3
+        mass_h2o_used_lbhr = n_so3_abs * MW_H2O
+        mass_h2so4_formed_lbhr = n_so3_abs * MW_H2SO4
+
+        # ==========================================================
+        # Outlet Acid — AI1 (Material Balance)
+        # ==========================================================
+        mass_ai1_lbhr  = mass_ai0_lbhr + mass_so3_abs_lbhr
+        h2so4_ai1_lbhr = h2so4_ai0_lbhr + mass_h2so4_formed_lbhr
+        h2o_ai1_lbhr   = max(0, h2o_ai0_lbhr - mass_h2o_used_lbhr)
+
+        x_h2so4_ai1 = h2so4_ai1_lbhr / mass_ai1_lbhr
+        x_h2o_ai1   = h2o_ai1_lbhr   / mass_ai1_lbhr
+
+        # ==========================================================
+        # ENERGY BALANCE
+        # ==========================================================
+        dh_rxn = float(inputs.get("dH_rxn_BTU_per_lbmol", DH_RXN_BTU_PER_LBMOL_DEFAULT))
+
+        # Reaction heat (positive to acid)
+        q_rxn = n_so3_abs * (-dh_rxn)
+
+        # Gas sensible heat
+        n_so2 = scfm_to_lbmol_hr(so2_gi0)
+        n_o2  = scfm_to_lbmol_hr(o2_gi0)
+        n_n2  = scfm_to_lbmol_hr(n2_gi0)
+        n_h2o = scfm_to_lbmol_hr(h2o_gi0)
+
+        dt_gas = temp_gi0 - temp_gi1_target
+
+        q_sensible = dt_gas * (
+            n_so2 * CP_GAS_BTU_LBMOL_F["SO2"] +
+            n_so3_in * CP_GAS_BTU_LBMOL_F["SO3"] +
+            n_o2  * CP_GAS_BTU_LBMOL_F["O2"] +
+            n_n2  * CP_GAS_BTU_LBMOL_F["N2"] +
+            n_h2o * CP_GAS_BTU_LBMOL_F["H2O"]
+        )
+
+        q_total = q_rxn + q_sensible
+
+        dT_acid = q_total / (mass_ai1_lbhr * CP_ACID_BTU_LB_F)
+        temp_ai1 = temp_ai0 + dT_acid
+
+        # ==========================================================
+        # Outlet Gas — GI1
+        # ==========================================================
+        so3_gi1 = 0.0
+        total_gi1 = total_gi0 - so3_gi0
+
+        # ==========================================================
+        # Results
+        # ==========================================================
+        results.update({
+
+            # Acid Streams
+            "Temp_AI1": round(temp_ai1, 1),
+            "x_H2SO4_AI1": round(x_h2so4_ai1, 4),
+            "x_H2O_AI1": round(x_h2o_ai1, 4),
+            "m_Total_AI1_klbhr": round(mass_ai1_lbhr / 1000, 2),
+
+            # Gas Streams
+            "SO3_GI1": round(so3_gi1, 1),
+            "TOTAL_GI1": round(total_gi1, 1),
+            "Temp_GI1": round(temp_gi1_target, 1),
+
+            # Diagnostics
+            "mass_SO3_abs_lbhr": round(mass_so3_abs_lbhr, 2),
+            "Q_rxn_Btu_hr": round(q_rxn, 0),
+            "Q_sensible_Btu_hr": round(q_sensible, 0),
+            "dT_acid_F": round(dT_acid, 2)
+        })
+
+    except Exception as e:
+        results["error"] = str(e)
+
+    return results
+
+
+# ───────────────────────────────────────────────────────────────
+# Main
+# ───────────────────────────────────────────────────────────────
+
+def main():
+    try:
+        input_data = json.load(sys.stdin)
+        result = calculate_tower(input_data)
+        print(json.dumps(result))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

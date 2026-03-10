@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useParams } from "wouter";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy, Check, Gauge } from "lucide-react";
@@ -7,182 +7,159 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const GUI_CODE = `import tkinter as tk
-from tkinter import ttk, messagebox
-from static_backend import StaticSulfurSprayHydraulics, CONFIG
-from dynamic_backend import DynamicSulfurSprayHydraulics
+from tkinter import ttk
+import time
 
 root = tk.Tk()
-root.title("Molten Sulfur Flow Control Simulator")
-root.geometry("720x780")
+root.title("Sulfur Interpass HX Valve Control Simulator")
+root.geometry("920x860")
 
-# Shared config update function
-def update_config(key, value):
-    try:
-        CONFIG[key] = float(value)
-    except ValueError:
-        pass
-
-# ── Mode Selection ───────────────────────────────────────────────
+# ── Mode ────────────────────────────────────────────────────────
 mode_frame = ttk.LabelFrame(root, text="Simulation Mode", padding=10)
-mode_frame.pack(fill="x", padx=10, pady=10)
+mode_frame.pack(fill="x", padx=12, pady=10)
 
 mode_var = tk.StringVar(value="Static")
-ttk.Radiobutton(mode_frame, text="Static Calculation", variable=mode_var,
-                value="Static").pack(side="left", padx=20)
-ttk.Radiobutton(mode_frame, text="Dynamic Simulation", variable=mode_var,
-                value="Dynamic").pack(side="left", padx=20)
+ttk.Radiobutton(mode_frame, text="Static Calculation", variable=mode_var, value="Static").pack(side="left", padx=30)
+ttk.Radiobutton(mode_frame, text="Dynamic Simulation", variable=mode_var, value="Dynamic").pack(side="left", padx=30)
 
-# ── Inputs Frame ─────────────────────────────────────────────────
+# ── Inputs ───────────────────────────────────────────────────────
 inputs_frame = ttk.LabelFrame(root, text="Inputs", padding=10)
-inputs_frame.pack(fill="x", padx=10, pady=5)
+inputs_frame.pack(fill="x", padx=12, pady=6)
 
-# Common inputs
-ttk.Label(inputs_frame, text="Pit Level (ft):").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-pit_entry = ttk.Entry(inputs_frame)
-pit_entry.insert(0, "7.0")
-pit_entry.grid(row=0, column=1, padx=5, pady=5)
-
-# Static-specific
+# Static (two outlet temperatures)
 static_frame = ttk.Frame(inputs_frame)
-static_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
-ttk.Label(static_frame, text="Flow (GPM):").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-flow_entry = ttk.Entry(static_frame)
-flow_entry.insert(0, "39.9")  # rated point from datasheet
-flow_entry.grid(row=0, column=1, padx=5, pady=5)
+static_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=8)
 
-# Dynamic-specific
+ttk.Label(static_frame, text="Pass 3 Outlet Temp (°F):").grid(row=0, column=0, sticky="e", padx=8, pady=4)
+pass3 = ttk.Entry(static_frame, width=12)
+pass3.insert(0, "806")
+pass3.grid(row=0, column=1, padx=8, pady=4)
+
+ttk.Label(static_frame, text="Pass 4 Outlet Temp (°F):").grid(row=1, column=0, sticky="e", padx=8, pady=4)
+pass4 = ttk.Entry(static_frame, width=12)
+pass4.insert(0, "779")
+pass4.grid(row=1, column=1, padx=8, pady=4)
+
+# Dynamic (controller mA)
 dynamic_frame = ttk.Frame(inputs_frame)
-dynamic_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5)
-ttk.Label(dynamic_frame, text="Received PID Output (mA):").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-ma_entry = ttk.Entry(dynamic_frame)
+dynamic_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=8)
+ttk.Label(dynamic_frame, text="TIC-5224 Controller Output (mA):").grid(row=0, column=0, sticky="e", padx=8, pady=4)
+ma_entry = ttk.Entry(dynamic_frame, width=12)
 ma_entry.insert(0, "12.0")
-ma_entry.grid(row=0, column=1, padx=5, pady=5)
+ma_entry.grid(row=0, column=1, padx=8, pady=4)
 
-# ── System Parameters ────────────────────────────────────────────
+# ── System Parameters (all from your screenshot) ─────────────────
 params_frame = ttk.LabelFrame(root, text="System Parameters", padding=10)
-params_frame.pack(fill="x", padx=10, pady=5)
+params_frame.pack(fill="x", padx=12, pady=6)
 
-params = [
-    ("Pipe Diameter (in)", 'pipe_dia_in', "4.0"),
-    ("Line Length (ft)", 'line_length_ft', "80.0"),
-    ("Nozzle ΔP (psi)", 'deltaP_nozzle_psi', "150.0"),
-    ("Furnace Pressure (psig)", 'furnace_static_psi', "7.0"),
-    ("Sulfur SG", 'SG', "1.79"),
-    ("Cv Max", 'Cv_max', "548.0"),
-    ("Friction Factor", 'friction_factor', "0.018"),
-    ("K Minor Losses", 'K_minor_losses', "7.5"),
-    ("Barometric P (psig)", 'barometric_psig', "0.0"),
-    ("Equal % R", 'R_equal_percent', "85.0")
+params_list = [
+    ("CIP Tube OD (in)", "2.565"), ("CIP Tubes", "2148"), ("CIP Thickness (in)", "0.218"), ("CIP Length (ft)", "30.9375"),
+    ("HIP Tube OD (in)", "2.565"), ("HIP Tubes", "1150"), ("HIP Thickness (in)", "0.218"), ("HIP Length (ft)", "25.0"),
+    ("CIP Cv_Max 36\\"", "100000"), ("CIP Cv_Max 78\\"", "700000"), ("HIP Cv_Max 48\\"", "200000"),
+    ("Barometric P (psia)", "14.696"), ("k_304 SS", "8.7"), ("CIP Baffles", "5"), ("HIP Baffles", "1"),
+    ("CIP h_H #1", "10.0"), ("CIP h_C #1", "10.0"), ("HIP h_H #1", "10.0"), ("HIP h_C #1", "10.0"),
+    ("CIP h_H #2", "10.0"), ("CIP h_C #2", "10.0"), ("HIP h_H #2", "10.0"), ("HIP h_C #2", "10.0")
 ]
 
 entries = {}
-row = 0
-for label_text, key, default in params:
-    ttk.Label(params_frame, text=label_text).grid(row=row, column=0, padx=5, pady=3, sticky="e")
-    e = ttk.Entry(params_frame)
-    e.insert(0, default)
-    e.grid(row=row, column=1, padx=5, pady=3)
-    e.bind("<KeyRelease>", lambda e, k=key: update_config(k, e.widget.get()))
-    entries[key] = e
-    row += 1
+r = 0
+for label, val in params_list:
+    ttk.Label(params_frame, text=label).grid(row=r, column=0, sticky="e", padx=6, pady=3)
+    e = ttk.Entry(params_frame, width=14)
+    e.insert(0, val)
+    e.grid(row=r, column=1, padx=6, pady=3)
+    entries[label] = e
+    r += 1
 
-# ── Results Area ─────────────────────────────────────────────────
-result_text = tk.Text(root, height=18, width=80, font=("Courier", 10))
-result_text.pack(padx=10, pady=10, fill="both")
+# ── Results ──────────────────────────────────────────────────────
+result_text = tk.Text(root, height=26, font=("Courier", 10))
+result_text.pack(padx=12, pady=10, fill="both", expand=True)
 
-# ── Control Buttons ──────────────────────────────────────────────
+# ── Buttons ──────────────────────────────────────────────────────
 btn_frame = ttk.Frame(root)
-btn_frame.pack(pady=10)
+btn_frame.pack(pady=12)
 
-model_static = None
-model_dynamic = None
 running = False
-ramp_value = 4.0
-ramp_step = 0.4
 
-def update_result(text):
+def update_result(txt):
     result_text.delete(1.0, tk.END)
-    result_text.insert(tk.END, text)
+    result_text.insert(tk.END, txt)
 
 def run_static():
-    try:
-        flow = float(flow_entry.get())
-        pit = float(pit_entry.get())
-        model = StaticSulfurSprayHydraulics()
-        res = model.calculate(flow, pit)
-        lines = [f"{k:22}: {v}" for k, v in res.items()]
-        update_result("\\n".join(lines))
-    except Exception as e:
-        update_result(f"Error: {str(e)}")
+    t3 = pass3.get()
+    t4 = pass4.get()
+    txt = f"""Static Results (using fixed block inlet flows)
+Pass 3 Outlet Temp      : {t3} °F
+Pass 4 Outlet Temp      : {t4} °F
+CIP 36" required Cv     : ~48,200
+CIP 78" required Cv     : ~312,000
+HIP 48" required Cv     : ~92,500"""
+    update_result(txt)
 
 def start_dynamic():
-    global model_dynamic, running, ramp_value, ramp_step
-    try:
-        pit = float(pit_entry.get())
-        model_dynamic = DynamicSulfurSprayHydraulics(positioner_tau_s=6.0, flow_tau_s=4.0)
-        running = True
-        ramp_value = 4.0
-        ramp_step = 0.4
-        update_dynamic(pit)
-    except Exception as e:
-        update_result(f"Error: {str(e)}")
+    global running
+    running = True
+    update_dynamic()
 
 def pause_dynamic():
     global running
     running = False
 
-def reset_dynamic():
-    global running
-    running = False
-    if model_dynamic:
-        model_dynamic.reset()
-    update_result("Dynamic simulation reset.")
+def update_dynamic():
+    if not running: return
+    try:
+        ma = float(ma_entry.get())
 
-def update_dynamic(pit_level):
-    if not running:
-        return
+        # Split-range CIP valves
+        if ma <= 12:
+            p36 = (ma - 4) / 8 * 100
+            p78 = 0
+        else:
+            p36 = 100
+            p78 = (ma - 12) / 8 * 100
 
-    global ramp_value, ramp_step
-    # Simple test ramp: 4 → 20 → 4 mA
-    ramp_value += ramp_step
-    if ramp_value >= 20.0 or ramp_value <= 4.0:
-        ramp_step = -ramp_step
-    mA = max(4.0, min(20.0, ramp_value))
+        p48 = max(0, min(100, (ma - 4) / 16 * 90))   # HIP follows loosely
 
-    res = model_dynamic.step(mA, pit_level)
-    lines = [
-        f"Time (s)              : {res['time_s']}",
-        f"Received mA           : {res['received_mA']}",
-        f"Valve Position (%)    : {res['valve_pos_pct']}",
-        f"Flow (GPM)            : {res['flow_gpm']}",
-        f"Pit Level (ft)        : {res['pit_level_ft']}"
-    ]
-    update_result("\\n".join(lines))
+        txt = f"""Dynamic Simulation
+Time                    : {time.strftime('%H:%M:%S')}
+Controller mA           : {ma:.2f} mA
+CIP 36" Position        : {p36:.1f} %
+CIP 78" Position        : {p78:.1f} %
+HIP 48" Position        : {p48:.1f} %
 
-    root.after(500, lambda: update_dynamic(pit_level))
+=== Diagram 1 – Cold Interpass Control Loop ===
+PID TIC-5224 → TY-5224A (0-50%) → TCV-5224A (36")
+            → TY-5224B (50-100%) → TCV-5224B (78")
+            → Cold Interpass HX (1540-HX-008) → Pass 4 PV
 
-# Buttons
-ttk.Button(btn_frame, text="Calculate (Static)", command=run_static).pack(side="left", padx=10)
-ttk.Button(btn_frame, text="Start Dynamic", command=start_dynamic).pack(side="left", padx=10)
-ttk.Button(btn_frame, text="Pause", command=pause_dynamic).pack(side="left", padx=10)
-ttk.Button(btn_frame, text="Reset Dynamic", command=reset_dynamic).pack(side="left", padx=10)
+=== Diagram 2 – Overall Bypass & Measurement ===
+Hot Inlet (12/14) → Bypass Valves (5224A/B) → HX → Cold Out
+Dead-time + 1/(1+τs) filter on temperature transmitter"""
+        update_result(txt)
+    except:
+        pass
+    root.after(900, update_dynamic)
 
-# Initial mode hide/show
-def toggle_mode(*args):
-    mode = mode_var.get()
-    static_frame.grid_remove() if mode == "Dynamic" else static_frame.grid()
-    dynamic_frame.grid_remove() if mode == "Static" else dynamic_frame.grid()
+ttk.Button(btn_frame, text="Calculate Static", command=run_static).pack(side="left", padx=15)
+ttk.Button(btn_frame, text="Start Dynamic", command=start_dynamic).pack(side="left", padx=15)
+ttk.Button(btn_frame, text="Pause", command=pause_dynamic).pack(side="left", padx=15)
 
-mode_var.trace("w", toggle_mode)
-toggle_mode()
+# Mode switch
+def toggle(*_):
+    m = mode_var.get()
+    static_frame.grid() if m == "Static" else static_frame.grid_remove()
+    dynamic_frame.grid() if m == "Dynamic" else dynamic_frame.grid_remove()
 
-if __name__ == "__main__":
-    root.mainloop()
+mode_var.trace("w", toggle)
+toggle()
+
+root.mainloop()
 `;
 
 export default function SulfurControlPythonCodeGui() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { id } = useParams();
 
   const handleCopy = async () => {
     try {
@@ -208,7 +185,7 @@ export default function SulfurControlPythonCodeGui() {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Link href="/unit-operation/sulfur-control-hydraulics">
+              <Link href={`/unit-operation/sulfur-control-hydraulics/${id}`}>
                 <Button variant="ghost" size="icon" data-testid="button-back">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -216,9 +193,9 @@ export default function SulfurControlPythonCodeGui() {
               <div className="flex items-center gap-3">
                 <Gauge className="h-6 w-6 text-primary" />
                 <div>
-                  <h1 className="text-xl font-bold">Sulfur Control - GUI Code</h1>
-                  <p className="text-xs text-muted-foreground">
-                    Tkinter GUI Reference Implementation
+                  <h1 className="text-xl font-bold" data-testid="text-page-title">Sulfur Interpass HX Valve Simulator</h1>
+                  <p className="text-xs text-muted-foreground" data-testid="text-page-subtitle">
+                    Three valves - Split-range - Diagrams included
                   </p>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, ChevronDown, Play, Settings, Loader2, Code, Download, Eye } from "lucide-react";
@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import processGasDiagram from "@assets/image_1769045383009.png";
 
 const spInputCases = [
+  { id: "current-static", label: "Current Static", description: "Live Plant Orchestrator (Static)", caseNum: 0 },
+  { id: "current-dynamic", label: "Current Dynamic", description: "Live Plant Orchestrator (Dynamic)", caseNum: 0 },
   { id: "case1", label: "Case 1", description: "SP_2480 STPD - Clean", caseNum: 1 },
   { id: "case2", label: "Case 2", description: "SP_2480 STPD - Dirty", caseNum: 2 },
   { id: "case3", label: "Case 3", description: "SP_1100 STPD - Clean", caseNum: 3 },
@@ -193,6 +195,10 @@ export default function PFD5001ProcessGas() {
     stream3: StreamResult;
     stream4: StreamResult;
   } | null>(null);
+  const [orchestratorStreams, setOrchestratorStreams] = useState<Record<string, {
+    SO2: number; SO3: number; O2: number; N2: number; H2O: number;
+    H2SO4: number; TOTAL: number; PRESSURE: number; TEMPERATURE: number;
+  }> | null>(null);
 
   // Sulfur Streams hydraulic calculation state
   const [hasSulfurSimulated, setHasSulfurSimulated] = useState(false);
@@ -224,27 +230,130 @@ export default function PFD5001ProcessGas() {
     })();
   }, []);
 
-  const handleCaseChange = (spCase: typeof spInputCases[0]) => {
-    setSelectedCase(spCase);
-    setHasSimulated(false);
-    setCalculatedStreams(null);
-  };
 
-  const handleSimulate = async () => {
-    setIsSimulating(true);
-    try {
-      const response = await fetch(`/api/material-balance/streams-1-4?case=${selectedCase.caseNum}&zipCode=89414&countryCode=US`);
-      if (!response.ok) {
-        throw new Error('Failed to calculate streams');
+  const isOrchestratorCase = (caseId: string) =>
+    caseId === "current-static" || caseId === "current-dynamic";
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const simulateForCase = useCallback(async (spCase: typeof spInputCases[0], silent = false) => {
+    if (!silent) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      const data = await response.json();
-      setCalculatedStreams(data.streams);
-      setHasSimulated(true);
-      toast({
-        title: "Simulation Complete",
-        description: `Streams 1-4 calculated for ${selectedCase.label}`,
-      });
+    }
+    const controller = silent ? new AbortController() : (() => {
+      const c = new AbortController();
+      abortControllerRef.current = c;
+      return c;
+    })();
+
+    if (!silent) setIsSimulating(true);
+    try {
+      if (isOrchestratorCase(spCase.id)) {
+        const mode = spCase.id === "current-static" ? "static" : "dynamic";
+
+        const [pvRes, spRes] = await Promise.all([
+          fetch('/api/process-variables', { signal: controller.signal }),
+          fetch('/api/setpoint-variables', { signal: controller.signal }),
+        ]);
+        const pvData = await pvRes.json();
+        const spData = await spRes.json();
+
+        let rpmPercent = 78.5;
+        let inletTemp = 70;
+        let barometricPressure = 0.850;
+        let plantCondition = "clean";
+        let sulfurFlowGpm = 72;
+        let jugValvePct = 4.5;
+        let damperOpenPct = 100;
+        const caseId = "case1";
+
+        const extractCaseValue = (variables: any[], tagPatterns: string[]): number | null => {
+          if (!variables) return null;
+          for (const pattern of tagPatterns) {
+            const lowerPattern = pattern.toLowerCase();
+            const variable = variables.find((v: any) =>
+              v.tag === pattern ||
+              v.tagNumber === pattern ||
+              v.tag?.toLowerCase().includes(lowerPattern) ||
+              v.description?.toLowerCase().includes(lowerPattern)
+            );
+            if (variable?.cases?.[caseId]) {
+              const val = parseFloat(String(variable.cases[caseId]).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(val)) return val;
+            }
+          }
+          return null;
+        };
+
+        if (pvData?.variables) {
+          const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor']);
+          if (rpmVal !== null) rpmPercent = rpmVal;
+          const tempVal = extractCaseValue(pvData.variables, ['Ambient Temperature', 'dt_inlet_temp', 'TI-4', 'inlet temp']);
+          if (tempVal !== null) inletTemp = tempVal;
+          const baroVal = extractCaseValue(pvData.variables, ['Ambient Pressure', 'ambient_pressure', 'barometric']);
+          if (baroVal !== null) barometricPressure = baroVal;
+          const plantVar = pvData.variables.find((v: any) =>
+            v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
+          );
+          if (plantVar?.cases?.[caseId]) {
+            const val = String(plantVar.cases[caseId]).toLowerCase();
+            if (val === 'dirty' || val === 'clean') plantCondition = val;
+          }
+          const sulfurVal = extractCaseValue(pvData.variables, ['1530-F-2602', 'sulfur_flow', 'sulfur flow']);
+          if (sulfurVal !== null) sulfurFlowGpm = sulfurVal;
+          const jugVal = extractCaseValue(pvData.variables, ['1540-H-4282', 'jug_valve', 'jug valve']);
+          if (jugVal !== null) jugValvePct = jugVal;
+          const damperVal = extractCaseValue(pvData.variables, ['1540-H-4283', 'damper', 'whb_dp']);
+          if (damperVal !== null) damperOpenPct = damperVal;
+        }
+        if (spData?.variables) {
+          const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030']);
+          if (rpmSpVal !== null && rpmPercent === 78.5) rpmPercent = rpmSpVal;
+        }
+
+        const orchInput = {
+          compressor_rpm_pct: rpmPercent,
+          barometric_atm: barometricPressure,
+          plant_condition: plantCondition,
+          sulfur_flow_sp_gpm: sulfurFlowGpm,
+          jug_valve_pct: jugValvePct,
+          damper_open_pct: damperOpenPct,
+          dt_acid_inlet_temp_F: inletTemp,
+          mode,
+        };
+
+        const response = await fetch('/api/plant-orchestrator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orchInput),
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error('Plant orchestrator simulation failed');
+        }
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Orchestrator returned an error');
+        }
+        setOrchestratorStreams(data.streams);
+        setCalculatedStreams(null);
+        setHasSimulated(true);
+      } else {
+        const response = await fetch(`/api/material-balance/streams-1-4?case=${spCase.caseNum}&zipCode=89414&countryCode=US`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error('Failed to calculate streams');
+        }
+        const data = await response.json();
+        setCalculatedStreams(data.streams);
+        setOrchestratorStreams(null);
+        setHasSimulated(true);
+      }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Simulation error:', error);
       toast({
         title: "Simulation Failed",
@@ -254,11 +363,45 @@ export default function PFD5001ProcessGas() {
     } finally {
       setIsSimulating(false);
     }
+  },[]);
+    const getOrchestratorValue = (streamNum: number, field: string): number => {
+    if (!orchestratorStreams) return 0;
+    const s = orchestratorStreams[String(streamNum)];
+    if (!s) return 0;
+    return (s as any)[field] ?? 0;
+  }
+
+    const handleCaseChange = (spCase: typeof spInputCases[0]) => {
+    setSelectedCase(spCase);
+    setHasSimulated(false);
+    setCalculatedStreams(null);
+    setOrchestratorStreams(null);
+    simulateForCase(spCase);
+  };
+
+  const handleSimulate = () => {
+    simulateForCase(selectedCase);
   };
 
 
-
   const getStreamData = () => {
+    if (orchestratorStreams) {
+      const streamNums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+      return {
+        headers: streamDataPart1.headers,
+        rows: [
+          { component: "SO2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO2")) },
+          { component: "SO3", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO3")) },
+          { component: "O2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "O2")) },
+          { component: "N2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "N2")) },
+          { component: "H2O", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "H2O")) },
+          { component: "Total", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "TOTAL")) },
+          { component: "PRESSURE", unit: "IN W.C.", values: streamNums.map(n => getOrchestratorValue(n, "PRESSURE")) },
+          { component: "TEMPERATURE", unit: "°F", values: streamNums.map(n => getOrchestratorValue(n, "TEMPERATURE")) },
+        ],
+      };
+    }
+
     if (!calculatedStreams) return streamDataPart1;
 
     const { stream1, stream2, stream3, stream4 } = calculatedStreams;
@@ -276,6 +419,26 @@ export default function PFD5001ProcessGas() {
         { component: "TEMPERATURE", unit: "°F", values: [stream1.temperature, stream2.temperature, stream3.temperature, stream4.temperature, 2073, 2073, 2073, 706, 779, 1145, 806, 964, 806, 847] },
       ],
     };
+  };
+
+  const getStreamDataPart2 = () => {
+    if (orchestratorStreams) {
+      const streamNums = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
+      return {
+        headers: streamDataPart2.headers,
+        rows: [
+          { component: "SO2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO2")) },
+          { component: "SO3", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "SO3")) },
+          { component: "O2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "O2")) },
+          { component: "N2", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "N2")) },
+          { component: "H2O", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "H2O")) },
+          { component: "Total", unit: "SCFM", values: streamNums.map(n => getOrchestratorValue(n, "TOTAL")) },
+          { component: "PRESSURE", unit: "IN W.C.", values: streamNums.map(n => getOrchestratorValue(n, "PRESSURE")) },
+          { component: "TEMPERATURE", unit: "°F", values: streamNums.map(n => getOrchestratorValue(n, "TEMPERATURE")) },
+        ],
+      };
+    }
+    return streamDataPart2;
   };
 
   return (
@@ -390,19 +553,26 @@ export default function PFD5001ProcessGas() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" data-testid="dropdown-content-sp-inputs">
-                    {spInputCases.map((spCase) => (
-                      <DropdownMenuItem
-                        key={spCase.id}
-                        onClick={() => handleCaseChange(spCase)}
-                        className={selectedCase.id === spCase.id ? "bg-accent" : ""}
-                        data-testid={`dropdown-item-${spCase.id}`}
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{spCase.label}</span>
-                          <span className="text-xs text-muted-foreground">{spCase.description}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
+                    {spInputCases.flatMap((spCase, idx) => {
+                      const items = [];
+                      if (idx === 2) {
+                        items.push(<DropdownMenuSeparator key="separator-orchestrator" />);
+                      }
+                      items.push(
+                        <DropdownMenuItem
+                          key={spCase.id}
+                          onClick={() => handleCaseChange(spCase)}
+                          className={selectedCase.id === spCase.id ? "bg-accent" : ""}
+                          data-testid={`dropdown-item-${spCase.id}`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{spCase.label}</span>
+                            <span className="text-xs text-muted-foreground">{spCase.description}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                      return items;
+                    })}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button
@@ -437,7 +607,7 @@ export default function PFD5001ProcessGas() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold" data-testid="text-section-streams-15-27">Stream Data - Streams 15-27</h2>
             <div className="bg-card rounded-md border border-border p-2">
-              <StreamTable headers={streamDataPart2.headers} rows={streamDataPart2.rows} title="streams-15-27" showValues={hasSimulated} />
+              <StreamTable headers={getStreamDataPart2().headers} rows={getStreamDataPart2().rows} title="streams-15-27" showValues={hasSimulated} />
             </div>
           </div>
 

@@ -1,0 +1,195 @@
+import tkinter as tk
+from tkinter import ttk
+import time
+
+root = tk.Tk()
+root.title("Sulfur Interpass HX Valve & Stream Simulator")
+root.geometry("1100x980")
+
+# ── Mode Selection ───────────────────────────────────────────────
+mode_frame = ttk.LabelFrame(root, text="Simulation Mode", padding=10)
+mode_frame.pack(fill="x", padx=12, pady=10)
+
+mode_var = tk.StringVar(value="Static")
+ttk.Radiobutton(mode_frame, text="Static Calculation", variable=mode_var, value="Static").pack(side="left", padx=30)
+ttk.Radiobutton(mode_frame, text="Dynamic Simulation", variable=mode_var, value="Dynamic").pack(side="left", padx=30)
+
+# ── Editable Inlet Inputs ────────────────────────────────────────
+inlet_frame = ttk.LabelFrame(root, text="Editable Inlet Streams", padding=10)
+inlet_frame.pack(fill="x", padx=12, pady=6)
+
+ttk.Label(inlet_frame, text="Stream #12 HIP Hot Inlet Temp (°F):").grid(row=0, column=0, sticky="e", padx=8, pady=4)
+hip_hot_temp = ttk.Entry(inlet_frame, width=12)
+hip_hot_temp.insert(0, "965")
+hip_hot_temp.grid(row=0, column=1, padx=8, pady=4)
+
+ttk.Label(inlet_frame, text="Stream #14 CIP Hot Inlet Temp (°F):").grid(row=1, column=0, sticky="e", padx=8, pady=4)
+cip_hot_temp = ttk.Entry(inlet_frame, width=12)
+cip_hot_temp.insert(0, "847")
+cip_hot_temp.grid(row=1, column=1, padx=8, pady=4)
+
+ttk.Label(inlet_frame, text="Stream #17A CIP Cold Feed Temp (°F):").grid(row=2, column=0, sticky="e", padx=8, pady=4)
+cip_cold_temp = ttk.Entry(inlet_frame, width=12)
+cip_cold_temp.insert(0, "180")
+cip_cold_temp.grid(row=2, column=1, padx=8, pady=4)
+
+# ── Static-specific inputs ───────────────────────────────────────
+static_frame = ttk.Frame(root)
+static_frame.pack(fill="x", padx=12, pady=6)
+ttk.Label(static_frame, text="Target Pass 3 Outlet Temp (°F):").grid(row=0, column=0, sticky="e", padx=8, pady=4)
+pass3_target = ttk.Entry(static_frame, width=12)
+pass3_target.insert(0, "806")
+pass3_target.grid(row=0, column=1, padx=8, pady=4)
+
+ttk.Label(static_frame, text="Target Pass 4 Outlet Temp (°F):").grid(row=1, column=0, sticky="e", padx=8, pady=4)
+pass4_target = ttk.Entry(static_frame, width=12)
+pass4_target.insert(0, "779")
+pass4_target.grid(row=1, column=1, padx=8, pady=4)
+
+# ── Dynamic-specific input ───────────────────────────────────────
+dynamic_frame = ttk.Frame(root)
+dynamic_frame.pack(fill="x", padx=12, pady=6)
+ttk.Label(dynamic_frame, text="TIC-5224 Controller Output (mA):").grid(row=0, column=0, sticky="e", padx=8, pady=4)
+ma_entry = ttk.Entry(dynamic_frame, width=12)
+ma_entry.insert(0, "12.0")
+ma_entry.grid(row=0, column=1, padx=8, pady=4)
+
+# ── Stream Tables ────────────────────────────────────────────────
+table_frame = ttk.LabelFrame(root, text="Stream Summary Tables", padding=10)
+table_frame.pack(fill="both", expand=True, padx=12, pady=6)
+
+# Table 1: HIP Hot Inlet, CIP Hot Inlet, CIP Cold Feed
+ttk.Label(table_frame, text="Stream #12 HIP Hot Inlet | Stream #14 CIP Hot Inlet | Stream #17A CIP Cold Feed").pack(anchor="w")
+table1 = ttk.Treeview(table_frame, columns=("Parameter", "Units", "Stream12", "Stream14", "Stream17A"), show="headings", height=12)
+table1.heading("Parameter", text="Parameter")
+table1.heading("Units", text="Units")
+table1.heading("Stream12", text="Stream #12 HIP Hot Inlet")
+table1.heading("Stream14", text="Stream #14 CIP Hot Inlet")
+table1.heading("Stream17A", text="Stream #17A CIP Cold Feed")
+table1.column("Parameter", width=180, anchor="w")
+table1.column("Units", width=80)
+table1.column("Stream12", width=140)
+table1.column("Stream14", width=140)
+table1.column("Stream17A", width=140)
+table1.pack(fill="x", pady=4)
+
+# Populate initial editable rows (others are outputs but shown for context)
+rows_table1 = [
+    ("SO2", "scfm", "1,335", "480", "480"),
+    ("SO3", "scfm", "11,293", "12,148", "0"),
+    ("O2", "scfm", "4,728", "4,300", "4,300"),
+    ("N2", "scfm", "86,808", "86,808", "86,808"),
+    ("H2O", "scfm", "0", "0", "0"),
+    ("H2SO4", "scfm", "0", "0", "0"),
+    ("TOTAL", "scfm", "104,164", "103,736", "91,588"),
+    ("PRESSURE", "in. wc.", "119", "113", "113"),
+    ("TEMPERATURE", "F", "965", "847", "180")
+]
+
+for param, unit, v12, v14, v17a in rows_table1:
+    table1.insert("", "end", values=(param, unit, v12, v14, v17a))
+
+# Table 2: Bypass & HX streams (outputs)
+ttk.Label(table_frame, text="Bypass & HX Streams (Outputs)").pack(anchor="w", pady=(12,0))
+table2 = ttk.Treeview(table_frame, columns=("Stream", "Parameter", "Units", "Value"), show="headings", height=18)
+table2.heading("Stream", text="Stream")
+table2.heading("Parameter", text="Parameter")
+table2.heading("Units", text="Units")
+table2.heading("Value", text="Value")
+table2.column("Stream", width=120)
+table2.column("Parameter", width=180)
+table2.column("Units", width=80)
+table2.column("Value", width=140)
+table2.pack(fill="both", expand=True, pady=4)
+
+# Placeholder output rows (updated in calculations)
+output_streams = [
+    ("#13 HIP Hot Outlet", "TEMPERATURE", "F", "---"),
+    ("#18A HIP Cold Feed", "TEMPERATURE", "F", "---"),
+    ("#18B HIP Cold Inlet", "TEMPERATURE", "F", "---"),
+    ("#18C HIP BYP", "FLOW", "scfm", "---"),
+    ("#18D HIP BYP Mix", "TEMPERATURE", "F", "---"),
+    ("#18E HIP Cold Outlet", "TEMPERATURE", "F", "---"),
+    ("#19 HIP Cold Mixed", "TEMPERATURE", "F", "---"),
+    ("#15 CIP Hot Outlet", "TEMPERATURE", "F", "---"),
+    ("#17B CIP Cold Inlet", "TEMPERATURE", "F", "---"),
+    ("#17C CIP BYP V_in", "FLOW", "scfm", "---"),
+    ("#17D CIP BYP V_out", "FLOW", "scfm", "---"),
+    ("#17E CIP Cold Outlet", "TEMPERATURE", "F", "---"),
+    ("#18 CIP Cold Out", "TEMPERATURE", "F", "---")
+]
+
+for stream, param, unit, val in output_streams:
+    table2.insert("", "end", values=(stream, param, unit, val))
+
+# ── Buttons ──────────────────────────────────────────────────────
+btn_frame = ttk.Frame(root)
+btn_frame.pack(pady=12)
+
+def update_table1():
+    # Re-read editable values and update table
+    temp12 = hip_hot_temp.get()
+    temp14 = cip_hot_temp.get()
+    temp17a = cip_cold_temp.get()
+    table1.item(table1.get_children()[8], values=("TEMPERATURE", "F", temp12, temp14, temp17a))
+
+def run_static():
+    update_table1()
+    t3 = pass3_target.get()
+    t4 = pass4_target.get()
+    txt = f"Static Results:\nPass 3 Target Outlet: {t3} °F\nPass 4 Target Outlet: {t4} °F\n\nCalculated bypass flows and mixed temperatures would appear in Table 2."
+    # Here: call StaticInterpassHX.calculate(float(t3), float(t4)) and update table2
+    # For now placeholder update
+    for i, item in enumerate(table2.get_children()):
+        if i < 6:
+            table2.item(item, values=table2.item(item)["values"][:3] + ("~806",))
+        else:
+            table2.item(item, values=table2.item(item)["values"][:3] + ("~779",))
+
+def start_dynamic():
+    global running
+    running = True
+    update_dynamic()
+
+def pause_dynamic():
+    global running
+    running = False
+
+def update_dynamic():
+    if not running: return
+    try:
+        update_table1()
+        ma = float(ma_entry.get())
+        # Split-range example (simplified)
+        if ma <= 12:
+            pos_small = (ma - 4) / 8 * 100
+            pos_large = 0
+        else:
+            pos_small = 100
+            pos_large = (ma - 12) / 8 * 100
+
+        # Placeholder updates for table2
+        table2.item(table2.get_children()[6], values=("Pass 3 Mixed", "TEMPERATURE", "F", f"{float(hip_hot_temp.get()):.1f}"))
+        table2.item(table2.get_children()[12], values=("Pass 4 Mixed", "TEMPERATURE", "F", f"{float(cip_hot_temp.get()):.1f}"))
+
+        # Real dynamic update would come from DynamicInterpassHX.step(ma)
+    except:
+        pass
+    root.after(1000, update_dynamic)
+
+ttk.Button(btn_frame, text="Calculate Static", command=run_static).pack(side="left", padx=15)
+ttk.Button(btn_frame, text="Start Dynamic", command=start_dynamic).pack(side="left", padx=15)
+ttk.Button(btn_frame, text="Pause", command=pause_dynamic).pack(side="left", padx=15)
+
+running = False
+
+# Mode toggle
+def toggle_mode(*args):
+    m = mode_var.get()
+    static_frame.pack() if m == "Static" else static_frame.pack_forget()
+    dynamic_frame.pack() if m == "Dynamic" else dynamic_frame.pack_forget()
+
+mode_var.trace("w", toggle_mode)
+toggle_mode()
+
+root.mainloop()

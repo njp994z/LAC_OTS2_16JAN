@@ -1,103 +1,27 @@
 import { Link } from "wouter";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, ArrowLeftRight, Calculator, RotateCcw } from "lucide-react";
+import { ArrowLeft, Gauge, Calculator, Play, Pause, RotateCcw, Loader2, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import expLogo from "@/assets/exp-logo.png";
-
-interface HotSideInputs {
-  inletTemp: string;
-  outletTemp: string;
-  flowRate: string;
-  pressure: string;
-}
-
-interface ColdSideInputs {
-  inletTemp: string;
-  outletTemp: string;
-  flowRate: string;
-  pressure: string;
-}
-
-interface GeometryInputs {
-  tubeOD: string;
-  tubeThickness: string;
-  numberOfTubes: string;
-  tubeLength: string;
-  shellID: string;
-  tubePitch: string;
-  numberOfBaffles: string;
-  baffleCut: string;
-  tubePassCount: string;
-  foulingTube: string;
-  foulingShell: string;
-  kMetal: string;
-}
-
-interface Results {
-  qHot: number;
-  qCold: number;
-  qAvg: number;
-  heatBalanceError: number;
-  lmtd: number;
-  uClean: number;
-  uDirty: number;
-  aOutside: number;
-  aInside: number;
-  aRequired: number;
-  excessArea: number;
-  effectiveness: number;
-  ntu: number;
-  nTubes: number;
-  tubeOD: number;
-  tubeLength: number;
-  nBaffles: number;
-  kMetal: number;
-}
-
-const defaultHotSide: HotSideInputs = {
-  inletTemp: "806",
-  outletTemp: "420",
-  flowRate: "285000",
-  pressure: "14.2",
-};
-
-const defaultColdSide: ColdSideInputs = {
-  inletTemp: "90",
-  outletTemp: "580",
-  flowRate: "260000",
-  pressure: "14.5",
-};
-
-const defaultGeometry: GeometryInputs = {
-  tubeOD: "2.0",
-  tubeThickness: "0.109",
-  numberOfTubes: "1800",
-  tubeLength: "24.0",
-  shellID: "60.0",
-  tubePitch: "2.5",
-  numberOfBaffles: "8",
-  baffleCut: "25",
-  tubePassCount: "2",
-  foulingTube: "0.001",
-  foulingShell: "0.002",
-  kMetal: "26.0",
-};
+import cipControlLoop from "@assets/image_1771290235296.png";
+import hipControlLoop from "@assets/image_1771290254647.png";
 
 function InputField({ label, value, onChange, unit, testId }: {
   label: string; value: string; onChange: (v: string) => void; unit?: string; testId: string;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Label className="text-xs text-muted-foreground whitespace-nowrap min-w-[130px] text-right">{label}</Label>
+      <Label className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 text-right" style={{ minWidth: '200px' }}>{label}</Label>
       <Input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="text-sm font-mono w-24"
+        className="text-sm font-mono w-28"
         data-testid={testId}
       />
       {unit && <span className="text-xs text-muted-foreground whitespace-nowrap">{unit}</span>}
@@ -105,306 +29,656 @@ function InputField({ label, value, onChange, unit, testId }: {
   );
 }
 
-function GeomField({ label, value, onChange, testId }: {
-  label: string; value: string; onChange: (v: string) => void; testId: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <Label className="text-xs text-muted-foreground whitespace-nowrap min-w-[140px] text-right">{label}</Label>
-      <Input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="text-sm font-mono w-20"
-        data-testid={testId}
-      />
-    </div>
-  );
+interface InletRow {
+  parameter: string;
+  units: string;
+  stream12: string;
+  stream14: string;
+  stream17A: string;
 }
 
-function ResultRow({ label, value, unit, testId }: { label: string; value: string; unit?: string; testId?: string }) {
-  return (
-    <div className="flex items-center justify-between py-1 border-b border-border/50 last:border-0" data-testid={testId}>
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-mono font-semibold">
-        {value}{unit && <span className="text-xs text-muted-foreground ml-1">{unit}</span>}
-      </span>
-    </div>
-  );
+interface HipRow {
+  parameter: string;
+  units: string;
+  s12: string;
+  s13: string;
+  s18A: string;
+  s18B: string;
+  s18C: string;
+  s18D: string;
+  s18E: string;
+  s19: string;
 }
+
+interface CipRow {
+  parameter: string;
+  units: string;
+  s14: string;
+  s15: string;
+  s17A: string;
+  s17B: string;
+  s17C: string;
+  s17D: string;
+  s17E: string;
+  s18: string;
+}
+
+interface ExtraRow {
+  label: string;
+  units: string;
+  value: string;
+}
+
+interface StaticResult {
+  success: boolean;
+  hip_table: HipRow[];
+  cip_table: CipRow[];
+  extras: ExtraRow[];
+}
+
+interface DynamicResult {
+  success: boolean;
+  time_s: number;
+  mA: number;
+  T_out_cip: number;
+  T_out_hip: number;
+  hip_table: HipRow[];
+  cip_table: CipRow[];
+  extras: ExtraRow[];
+}
+
+const DEFAULT_INLET_DATA: InletRow[] = [
+  { parameter: "SO2", units: "scfm", stream12: "1,335", stream14: "480", stream17A: "480" },
+  { parameter: "SO3", units: "scfm", stream12: "11,293", stream14: "12,148", stream17A: "0" },
+  { parameter: "O2", units: "scfm", stream12: "4,728", stream14: "4,300", stream17A: "4,300" },
+  { parameter: "N2", units: "scfm", stream12: "86,808", stream14: "86,808", stream17A: "86,808" },
+  { parameter: "H2O", units: "scfm", stream12: "0", stream14: "0", stream17A: "0" },
+  { parameter: "H2SO4", units: "scfm", stream12: "0", stream14: "0", stream17A: "0" },
+  { parameter: "TOTAL", units: "scfm", stream12: "104,164", stream14: "103,736", stream17A: "91,588" },
+  { parameter: "PRESSURE", units: "in. wc.", stream12: "119", stream14: "113", stream17A: "113" },
+  { parameter: "TEMPERATURE", units: "\u00b0F", stream12: "965", stream14: "847", stream17A: "180" },
+];
+
+const DEFAULT_EXTRAS: ExtraRow[] = [
+  { label: 'HIP 48" Valve Position', units: "% open", value: "---" },
+  { label: 'CIP 36" Valve Position', units: "% open", value: "---" },
+  { label: 'CIP 78" Valve Position', units: "% open", value: "---" },
+  { label: "HIP HX / Bypass ratio", units: "fraction", value: "---" },
+  { label: "CIP HX / Bypass ratio", units: "fraction", value: "---" },
+  { label: "HIP HX Duty", units: "MMBTU/hr", value: "---" },
+  { label: "CIP HX Duty", units: "MMBTU/hr", value: "---" },
+  { label: "HIP LMTD", units: "\u00b0F", value: "---" },
+  { label: "CIP LMTD", units: "\u00b0F", value: "---" },
+];
+
+
+const HIP_COLS = ["#12", "#13", "#18A", "#18B", "#18C", "#18D", "#18E", "#19"] as const;
+const HIP_KEYS: (keyof HipRow)[] = ["s12", "s13", "s18A", "s18B", "s18C", "s18D", "s18E", "s19"];
+
+const CIP_COLS = ["#14", "#15", "#17A", "#17B", "#17C", "#17D", "#17E", "#18"] as const;
+const CIP_KEYS: (keyof CipRow)[] = ["s14", "s15", "s17A", "s17B", "s17C", "s17D", "s17E", "s18"];
 
 export default function GasGasHeatExchanger() {
-  const [mode, setMode] = useState<"Static" | "Rating">("Static");
-  const [hotSide, setHotSide] = useState<HotSideInputs>(defaultHotSide);
-  const [coldSide, setColdSide] = useState<ColdSideInputs>(defaultColdSide);
-  const [geometry, setGeometry] = useState<GeometryInputs>(defaultGeometry);
-  const [results, setResults] = useState<Results | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<"Static" | "Dynamic">("Static");
+  const { toast } = useToast();
 
-  const updateHot = useCallback((field: keyof HotSideInputs, value: string) => {
-    setHotSide(prev => ({ ...prev, [field]: value }));
+  const [inletData, setInletData] = useState<InletRow[]>(DEFAULT_INLET_DATA);
+  const [pass3Target, setPass3Target] = useState("806");
+  const [pass4Target, setPass4Target] = useState("779");
+  const [controllerMA, setControllerMA] = useState("12.0");
+
+  const [dynDt, setDynDt] = useState("0.5");
+  const [dynTauFilter, setDynTauFilter] = useState("2.0");
+  const [dynThetaLag, setDynThetaLag] = useState("8.0");
+  const [dynTau5224, setDynTau5224] = useState("3.0");
+  const [dynTau5220a, setDynTau5220a] = useState("3.0");
+  const [dynTau5220b, setDynTau5220b] = useState("3.0");
+  const [dynHipSetpoint, setDynHipSetpoint] = useState("806");
+  const [dynCipSetpoint, setDynCipSetpoint] = useState("779");
+
+
+  const [hipTable, setHipTable] = useState<HipRow[]>([]);
+  const [cipTable, setCipTable] = useState<CipRow[]>([]);
+  const [extras, setExtras] = useState<ExtraRow[]>(DEFAULT_EXTRAS);
+  const [dynamicInfo, setDynamicInfo] = useState<{ time_s: number; mA: number } | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [running, setRunning] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const driftRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dynamicStateRef = useRef({ time_s: 0, T_out_hip: 806.0, T_out_cip: 779.0 });
+
+  const safeFloat = (val: string, fallback: number) => {
+    const n = parseFloat(val.replace(/,/g, ''));
+    return isNaN(n) ? fallback : n;
+  };
+
+  const getInletValue = useCallback((param: string, col: 'stream12' | 'stream14' | 'stream17A') => {
+    const row = inletData.find(r => r.parameter === param);
+    return row ? row[col] : "";
+  }, [inletData]);
+
+  const updateInletCell = useCallback((rowIdx: number, col: 'stream12' | 'stream14' | 'stream17A', value: string) => {
+    setInletData(prev => {
+      const next = [...prev];
+      next[rowIdx] = { ...next[rowIdx], [col]: value };
+      return next;
+    });
   }, []);
 
-  const updateCold = useCallback((field: keyof ColdSideInputs, value: string) => {
-    setColdSide(prev => ({ ...prev, [field]: value }));
-  }, []);
+  const hipHotInlet = useMemo(() => getInletValue("TEMPERATURE", "stream12"), [getInletValue]);
+  const cipHotInlet = useMemo(() => getInletValue("TEMPERATURE", "stream14"), [getInletValue]);
+  const cipColdFeed = useMemo(() => getInletValue("TEMPERATURE", "stream17A"), [getInletValue]);
 
-  const updateGeom = useCallback((field: keyof GeometryInputs, value: string) => {
-    setGeometry(prev => ({ ...prev, [field]: value }));
-  }, []);
+  const validateInputs = useCallback((...values: string[]) => {
+    for (const v of values) {
+      if (v.trim() === '' || isNaN(parseFloat(v.replace(/,/g, '')))) {
+        toast({ title: "Invalid Input", description: "Please enter valid numeric values for all fields.", variant: "destructive" });
+        return false;
+      }
+    }
+    return true;
+  }, [toast]);
 
-  const calculate = useCallback(() => {
+  const runStatic = useCallback(async () => {
+    if (!validateInputs(hipHotInlet, cipHotInlet, cipColdFeed, pass3Target, pass4Target)) return;
+    setLoading(true);
+    setDynamicInfo(null);
     try {
-      setError(null);
-      const T_h_in = parseFloat(hotSide.inletTemp);
-      const T_h_out = parseFloat(hotSide.outletTemp);
-      const m_h = parseFloat(hotSide.flowRate);
-      const T_c_in = parseFloat(coldSide.inletTemp);
-      const T_c_out = parseFloat(coldSide.outletTemp);
-      const m_c = parseFloat(coldSide.flowRate);
-
-      const nTubes = parseInt(geometry.numberOfTubes);
-      const tubeOD = parseFloat(geometry.tubeOD);
-      const tubeThk = parseFloat(geometry.tubeThickness);
-      const tubeLen = parseFloat(geometry.tubeLength);
-      const nBaffles = parseInt(geometry.numberOfBaffles);
-      const kMetal = parseFloat(geometry.kMetal);
-      const RfTube = parseFloat(geometry.foulingTube);
-      const RfShell = parseFloat(geometry.foulingShell);
-
-      if ([T_h_in, T_h_out, m_h, T_c_in, T_c_out, m_c, nTubes, tubeOD, tubeThk, tubeLen, nBaffles, kMetal, RfTube, RfShell].some(isNaN)) {
-        setError("Please enter valid numeric values for all fields.");
+      const resp = await fetch('/api/interpass-hx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'static',
+          hip_hot_inlet: safeFloat(hipHotInlet, 965),
+          cip_hot_inlet: safeFloat(cipHotInlet, 847),
+          cip_cold_feed: safeFloat(cipColdFeed, 180),
+          target_pass3: safeFloat(pass3Target, 806),
+          target_pass4: safeFloat(pass4Target, 779),
+          inlet_streams: inletData,
+        }),
+      });
+      if (!resp.ok) {
+        toast({ title: "Calculation Error", description: "Server error during static calculation.", variant: "destructive" });
         return;
       }
-
-      const tubeID = tubeOD - 2 * tubeThk;
-      const Cp_h = 0.25;
-      const Cp_c = 0.24;
-
-      const qHot = m_h * Cp_h * (T_h_in - T_h_out);
-      const qCold = m_c * Cp_c * (T_c_out - T_c_in);
-
-      const dT1 = T_h_in - T_c_out;
-      const dT2 = T_h_out - T_c_in;
-      let lmtd: number;
-      if (Math.abs(dT1 - dT2) < 0.01) {
-        lmtd = dT1;
+      const data: StaticResult = await resp.json();
+      if (data.success) {
+        setHipTable(data.hip_table);
+        setCipTable(data.cip_table);
+        setExtras(data.extras);
       } else {
-        lmtd = (dT1 - dT2) / Math.log(dT1 / dT2);
+        toast({ title: "Calculation Error", description: "Static calculation failed.", variant: "destructive" });
       }
-
-      const aOutside = nTubes * Math.PI * (tubeOD / 12) * tubeLen;
-      const aInside = nTubes * Math.PI * (tubeID / 12) * tubeLen;
-
-      const h_i = 12.0;
-      const h_o = 10.0;
-
-      const R_wall = (tubeOD - tubeID) / (2 * 12) / kMetal;
-      const uClean = 1.0 / (1 / h_o + R_wall + (tubeOD / tubeID) / h_i);
-      const uDirty = 1.0 / (1 / h_o + RfShell + R_wall + RfTube * (tubeOD / tubeID) + (tubeOD / tubeID) / h_i);
-
-      const qAvg = (qHot + qCold) / 2;
-      const aRequired = qAvg / (uDirty * lmtd);
-      const excessArea = ((aOutside - aRequired) / aRequired) * 100;
-
-      const C_min = Math.min(m_h * Cp_h, m_c * Cp_c);
-      const effectiveness = qAvg / (C_min * (T_h_in - T_c_in));
-      const ntu = (uDirty * aOutside) / C_min;
-
-      const heatBalanceError = Math.abs(qHot - qCold) / qAvg * 100;
-
-      setResults({
-        qHot, qCold, qAvg, heatBalanceError,
-        lmtd, uClean, uDirty,
-        aOutside, aInside, aRequired, excessArea,
-        effectiveness, ntu,
-        nTubes: nTubes, tubeOD, tubeLength: tubeLen, nBaffles, kMetal,
-      });
-    } catch (ex: any) {
-      setError(ex.message || "Calculation error");
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to connect to backend.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-  }, [hotSide, coldSide, geometry]);
+  }, [hipHotInlet, cipHotInlet, cipColdFeed, pass3Target, pass4Target, toast, validateInputs]);
 
-  const handleReset = useCallback(() => {
-    setHotSide(defaultHotSide);
-    setColdSide(defaultColdSide);
-    setGeometry(defaultGeometry);
-    setResults(null);
-    setError(null);
+  const runDynamicStep = useCallback(async () => {
+    try {
+      const state = dynamicStateRef.current;
+      const resp = await fetch('/api/interpass-hx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'dynamic',
+          mA: safeFloat(controllerMA, 12.0),
+          hip_hot_inlet: safeFloat(hipHotInlet, 965),
+          cip_hot_inlet: safeFloat(cipHotInlet, 847),
+          cip_cold_feed: safeFloat(cipColdFeed, 180),
+          time_s: state.time_s,
+          T_out_hip: state.T_out_hip,
+          T_out_cip: state.T_out_cip,
+          inlet_streams: inletData,
+        }),
+      });
+      if (!resp.ok) {
+        setRunning(false);
+        toast({ title: "Dynamic Error", description: "Server error during dynamic step.", variant: "destructive" });
+        return;
+      }
+      const data: DynamicResult = await resp.json();
+      if (data.success) {
+        dynamicStateRef.current = {
+          time_s: data.time_s,
+          T_out_hip: data.T_out_hip,
+          T_out_cip: data.T_out_cip,
+        };
+        setHipTable(data.hip_table);
+        setCipTable(data.cip_table);
+        setExtras(data.extras);
+        setDynamicInfo({ time_s: data.time_s, mA: data.mA });
+      }
+    } catch (err) {
+      setRunning(false);
+      toast({ title: "Connection Error", description: "Lost connection to simulation backend.", variant: "destructive" });
+    }
+  }, [controllerMA, hipHotInlet, cipHotInlet, cipColdFeed, inletData, toast]);
+
+  const startDynamic = useCallback(() => {
+    setRunning(true);
+    dynamicStateRef.current = { time_s: 0, T_out_hip: 806.0, T_out_cip: 779.0 };
   }, []);
 
-  const fmt = (n: number, decimals = 0) => n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const pauseDynamic = useCallback(() => {
+    setRunning(false);
+  }, []);
+
+  useEffect(() => {
+    if (running) {
+      runDynamicStep();
+      intervalRef.current = setInterval(runDynamicStep, 1000);
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [running, runDynamicStep]);
+
+  const DRIFT_EXCLUDE = new Set(["TOTAL", "PRESSURE", "TEMPERATURE"]);
+
+  const applyDrift = useCallback(() => {
+    setInletData(prev => {
+      const drifted = prev.map(row => {
+        if (DRIFT_EXCLUDE.has(row.parameter)) return row;
+        const driftCell = (val: string): string => {
+          const num = parseFloat(val.replace(/,/g, ''));
+          if (isNaN(num) || num === 0) return val;
+          const pct = 0.002;
+          const delta = num * pct * (Math.random() * 2 - 1);
+          const result = num + delta;
+          if (Math.abs(result) >= 1000) {
+            return Math.round(result).toLocaleString();
+          }
+          if (Math.abs(result) >= 1) {
+            return result.toFixed(1);
+          }
+          return result.toFixed(3);
+        };
+        return {
+          ...row,
+          stream12: driftCell(row.stream12),
+          stream14: driftCell(row.stream14),
+          stream17A: driftCell(row.stream17A),
+        };
+      });
+
+      const sumCol = (col: 'stream12' | 'stream14' | 'stream17A') => {
+        let total = 0;
+        for (const r of drifted) {
+          if (r.parameter !== "TOTAL" && r.parameter !== "PRESSURE" && r.parameter !== "TEMPERATURE") {
+            total += parseFloat(r[col].replace(/,/g, '')) || 0;
+          }
+        }
+        return Math.round(total).toLocaleString();
+      };
+
+      return drifted.map(row => {
+        if (row.parameter === "TOTAL") {
+          return {
+            ...row,
+            stream12: sumCol('stream12'),
+            stream14: sumCol('stream14'),
+            stream17A: sumCol('stream17A'),
+          };
+        }
+        return row;
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (running && mode === "Dynamic") {
+      driftRef.current = setInterval(applyDrift, 1500);
+    } else if (driftRef.current) {
+      clearInterval(driftRef.current);
+      driftRef.current = null;
+    }
+    return () => {
+      if (driftRef.current) clearInterval(driftRef.current);
+    };
+  }, [running, mode, applyDrift]);
+
+  const handleReset = useCallback(() => {
+    setInletData(DEFAULT_INLET_DATA);
+    setPass3Target("806");
+    setPass4Target("779");
+    setControllerMA("12.0");
+    setDynDt("0.5");
+    setDynTauFilter("2.0");
+    setDynThetaLag("8.0");
+    setDynTau5224("3.0");
+    setDynTau5220a("3.0");
+    setDynTau5220b("3.0");
+    setDynHipSetpoint("806");
+    setDynCipSetpoint("779");
+    setHipTable([]);
+    setCipTable([]);
+    setExtras(DEFAULT_EXTRAS);
+    setDynamicInfo(null);
+    setRunning(false);
+    dynamicStateRef.current = { time_s: 0, T_out_hip: 806.0, T_out_cip: 779.0 };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" data-testid="page-gas-gas-heat-exchanger">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <Link href="/unit-operation-simulator">
               <Button variant="ghost" size="icon" data-testid="button-back"><ArrowLeft className="h-5 w-5" /></Button>
             </Link>
             <img src={expLogo} alt="EXP Logo" className="h-6 object-contain" data-testid="img-exp-logo-header" />
             <div className="flex items-center gap-2">
-              <ArrowLeftRight className="h-5 w-5 text-primary" />
+              <Gauge className="h-5 w-5 text-primary" />
               <div>
-                <h1 className="text-lg font-bold leading-tight" data-testid="text-page-title">Gas-Gas Heat Exchanger</h1>
-                <p className="text-xs text-muted-foreground">Shell & Tube HX Rating - LMTD Method</p>
+                <h1 className="text-lg font-bold leading-tight" data-testid="text-page-title">CIP & HIP Heat Exchangers</h1>
+                <p className="text-xs text-muted-foreground">Three valves - Split-range - Full stream tables</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/unit-operation/cip-shell-geometry">
+              <Button variant="default" className="bg-blue-600 border-blue-600" data-testid="button-cip-shell-geometry">
+                CIP Shell Geometry
+              </Button>
+            </Link>
+            <Link href="/unit-operation/hip-shell-geometry">
+              <Button variant="default" className="bg-blue-600 border-blue-600" data-testid="button-hip-shell-geometry">
+                HIP Shell Geometry
+              </Button>
+            </Link>
+            <Link href="/unit-operation/gas-gas-hx-system-parameters">
+              <Button variant="default" className="bg-blue-600 border-blue-600" data-testid="button-system-parameters">
+                <Settings className="mr-2 h-4 w-4" />System Parameters
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleReset} data-testid="button-reset">
               <RotateCcw className="mr-2 h-4 w-4" />Reset
             </Button>
-            <Button onClick={calculate} data-testid="button-calculate">
-              <Calculator className="mr-2 h-4 w-4" />Calculate
-            </Button>
+            {mode === "Static" ? (
+              <Button onClick={runStatic} disabled={loading} data-testid="button-calculate">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calculator className="mr-2 h-4 w-4" />}
+                Calculate Static
+              </Button>
+            ) : (
+              running ? (
+                <Button variant="destructive" onClick={pauseDynamic} data-testid="button-pause">
+                  <Pause className="mr-2 h-4 w-4" />Pause
+                </Button>
+              ) : (
+                <Button onClick={startDynamic} data-testid="button-start-dynamic">
+                  <Play className="mr-2 h-4 w-4" />Start Dynamic
+                </Button>
+              )
+            )}
           </div>
         </div>
       </header>
 
       <main className="pt-20 pb-12 px-4">
-        <div className="max-w-7xl mx-auto space-y-4">
+        <div className="max-w-[1400px] mx-auto space-y-4">
 
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">Simulation Mode</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <RadioGroup value={mode} onValueChange={(v) => setMode(v as "Static" | "Rating")} className="flex gap-6">
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="Static" id="mode-static" data-testid="radio-mode-static" />
-                  <Label htmlFor="mode-static" className="text-sm">Static Calculation</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="Rating" id="mode-rating" data-testid="radio-mode-rating" />
-                  <Label htmlFor="mode-rating" className="text-sm">Rating Mode</Label>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+          <div className="flex gap-4 flex-wrap">
+            <Card className="flex-1 min-w-[200px]">
               <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  Hot Side (Process Gas)
-                </CardTitle>
+                <CardTitle className="text-sm">Simulation Mode</CardTitle>
               </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-2">
-                <InputField label="Inlet Temp" value={hotSide.inletTemp} onChange={(v) => updateHot("inletTemp", v)} unit="°F" testId="input-hot-inlet-temp" />
-                <InputField label="Outlet Temp" value={hotSide.outletTemp} onChange={(v) => updateHot("outletTemp", v)} unit="°F" testId="input-hot-outlet-temp" />
-                <InputField label="Flow Rate" value={hotSide.flowRate} onChange={(v) => updateHot("flowRate", v)} unit="lb/hr" testId="input-hot-flow-rate" />
-                <InputField label="Pressure" value={hotSide.pressure} onChange={(v) => updateHot("pressure", v)} unit="psia" testId="input-hot-pressure" />
+              <CardContent className="px-4 pb-3">
+                <RadioGroup
+                  value={mode}
+                  onValueChange={(v) => {
+                    setMode(v as "Static" | "Dynamic");
+                    setRunning(false);
+                    setHipTable([]);
+                    setCipTable([]);
+                    setExtras(DEFAULT_EXTRAS);
+                    setDynamicInfo(null);
+                  }}
+                  className="flex gap-6"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="Static" id="mode-static" data-testid="radio-mode-static" />
+                    <Label htmlFor="mode-static" className="text-sm">Static Calculation</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="Dynamic" id="mode-dynamic" data-testid="radio-mode-dynamic" />
+                    <Label htmlFor="mode-dynamic" className="text-sm">Dynamic Simulation</Label>
+                  </div>
+                </RadioGroup>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  Cold Side (Ambient Air)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-2">
-                <InputField label="Inlet Temp" value={coldSide.inletTemp} onChange={(v) => updateCold("inletTemp", v)} unit="°F" testId="input-cold-inlet-temp" />
-                <InputField label="Outlet Temp" value={coldSide.outletTemp} onChange={(v) => updateCold("outletTemp", v)} unit="°F" testId="input-cold-outlet-temp" />
-                <InputField label="Flow Rate" value={coldSide.flowRate} onChange={(v) => updateCold("flowRate", v)} unit="lb/hr" testId="input-cold-flow-rate" />
-                <InputField label="Pressure" value={coldSide.pressure} onChange={(v) => updateCold("pressure", v)} unit="psia" testId="input-cold-pressure" />
-              </CardContent>
-            </Card>
+            {mode === "Static" && (
+              <Card className="flex-1 min-w-[300px]">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-sm">Target Temperatures (Static Mode)</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
+                  <InputField label="Target Pass 3 Outlet Temp" value={pass3Target} onChange={setPass3Target} unit={"\u00b0F"} testId="input-pass3-target" />
+                  <InputField label="Target Pass 4 Outlet Temp" value={pass4Target} onChange={setPass4Target} unit={"\u00b0F"} testId="input-pass4-target" />
+                </CardContent>
+              </Card>
+            )}
+
+            {mode === "Dynamic" && (
+              <Card className="flex-1 min-w-[300px]">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-sm">Dynamic Control (mA)</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
+                  <InputField label="TIC-5224 Controller Output (mA)" value={controllerMA} onChange={setControllerMA} unit="mA" testId="input-controller-ma" />
+                  {dynamicInfo && (
+                    <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
+                      <span>Time: <span className="font-mono font-semibold text-foreground" data-testid="value-dyn-time">{dynamicInfo.time_s.toFixed(1)} s</span></span>
+                      <span>Controller: <span className="font-mono font-semibold text-foreground" data-testid="value-dyn-ma">{dynamicInfo.mA.toFixed(2)} mA</span></span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
+          {mode === "Dynamic" && (
+            <Card>
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm">Dynamic Control</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
+                  <InputField label="Dynamic Control (mA)" value={controllerMA} onChange={setControllerMA} unit="mA" testId="input-dyn-ma" />
+                  <InputField label="Timestep dt (s)" value={dynDt} onChange={setDynDt} unit="s" testId="input-dyn-dt" />
+                  <InputField label="Tau Low Pass Filter (s)" value={dynTauFilter} onChange={setDynTauFilter} unit="s" testId="input-dyn-tau-filter" />
+                  <InputField label="Theta Dead-Lag (s)" value={dynThetaLag} onChange={setDynThetaLag} unit="s" testId="input-dyn-theta-lag" />
+                  <InputField label="Tau TCV-5224 (s)" value={dynTau5224} onChange={setDynTau5224} unit="s" testId="input-dyn-tau-5224" />
+                  <InputField label="Tau TCV-5220A (s)" value={dynTau5220a} onChange={setDynTau5220a} unit="s" testId="input-dyn-tau-5220a" />
+                  <InputField label="Tau TCV-5220B (s)" value={dynTau5220b} onChange={setDynTau5220b} unit="s" testId="input-dyn-tau-5220b" />
+                  <InputField label="HIP TIC-5224 Set-Point Pass 3" value={dynHipSetpoint} onChange={setDynHipSetpoint} unit={"\u00b0F"} testId="input-dyn-hip-sp" />
+                  <InputField label="CIP TIC-5220 Set-Point Pass 4" value={dynCipSetpoint} onChange={setDynCipSetpoint} unit={"\u00b0F"} testId="input-dyn-cip-sp" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm">Exchanger Geometry</CardTitle>
+              <CardTitle className="text-sm">Editable Inlet Streams {mode === "Dynamic" && running && <span className="text-xs text-muted-foreground font-normal ml-2">(values drifting — pause to edit)</span>}</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                <GeomField label="Tube OD (in)" value={geometry.tubeOD} onChange={(v) => updateGeom("tubeOD", v)} testId="input-tube-od" />
-                <GeomField label="Tube Thickness (in)" value={geometry.tubeThickness} onChange={(v) => updateGeom("tubeThickness", v)} testId="input-tube-thickness" />
-                <GeomField label="Number of Tubes" value={geometry.numberOfTubes} onChange={(v) => updateGeom("numberOfTubes", v)} testId="input-num-tubes" />
-                <GeomField label="Tube Length (ft)" value={geometry.tubeLength} onChange={(v) => updateGeom("tubeLength", v)} testId="input-tube-length" />
-                <GeomField label="Shell ID (in)" value={geometry.shellID} onChange={(v) => updateGeom("shellID", v)} testId="input-shell-id" />
-                <GeomField label="Tube Pitch (in)" value={geometry.tubePitch} onChange={(v) => updateGeom("tubePitch", v)} testId="input-tube-pitch" />
-                <GeomField label="Number of Baffles" value={geometry.numberOfBaffles} onChange={(v) => updateGeom("numberOfBaffles", v)} testId="input-num-baffles" />
-                <GeomField label="Baffle Cut (%)" value={geometry.baffleCut} onChange={(v) => updateGeom("baffleCut", v)} testId="input-baffle-cut" />
-                <GeomField label="Passes (Tube Side)" value={geometry.tubePassCount} onChange={(v) => updateGeom("tubePassCount", v)} testId="input-tube-passes" />
-                <GeomField label="Fouling Factor (tube)" value={geometry.foulingTube} onChange={(v) => updateGeom("foulingTube", v)} testId="input-fouling-tube" />
-                <GeomField label="Fouling Factor (shell)" value={geometry.foulingShell} onChange={(v) => updateGeom("foulingShell", v)} testId="input-fouling-shell" />
-                <GeomField label="k_metal (BTU/hr-ft-°F)" value={geometry.kMetal} onChange={(v) => updateGeom("kMetal", v)} testId="input-k-metal" />
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm" data-testid="table-inlet-streams">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Parameter</th>
+                      <th className="text-left py-2 px-3 text-xs text-muted-foreground font-medium">Units</th>
+                      <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Stream #12<br/>HIP Hot Inlet</th>
+                      <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Stream #14<br/>CIP Hot Inlet</th>
+                      <th className="text-center py-2 px-3 text-xs text-muted-foreground font-medium">Stream #17A<br/>CIP Cold Feed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inletData.map((row, i) => (
+                      <tr key={i} className="border-b border-border/50 last:border-0" data-testid={`row-inlet-${i}`}>
+                        <td className="py-1.5 px-3 font-mono text-xs font-semibold">{row.parameter}</td>
+                        <td className="py-1.5 px-3 text-xs text-muted-foreground">{row.units}</td>
+                        <td className="py-1 px-2 text-center">
+                          <Input
+                            type="text"
+                            value={row.stream12}
+                            onChange={(e) => updateInletCell(i, 'stream12', e.target.value)}
+                            readOnly={mode === "Dynamic" && running}
+                            className="text-xs font-mono w-24 text-right mx-auto"
+                            data-testid={`cell-inlet-${i}-s12`}
+                          />
+                        </td>
+                        <td className="py-1 px-2 text-center">
+                          <Input
+                            type="text"
+                            value={row.stream14}
+                            onChange={(e) => updateInletCell(i, 'stream14', e.target.value)}
+                            readOnly={mode === "Dynamic" && running}
+                            className="text-xs font-mono w-24 text-right mx-auto"
+                            data-testid={`cell-inlet-${i}-s14`}
+                          />
+                        </td>
+                        <td className="py-1 px-2 text-center">
+                          <Input
+                            type="text"
+                            value={row.stream17A}
+                            onChange={(e) => updateInletCell(i, 'stream17A', e.target.value)}
+                            readOnly={mode === "Dynamic" && running}
+                            className="text-xs font-mono w-24 text-right mx-auto"
+                            data-testid={`cell-inlet-${i}-s17a`}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
 
-          {error && (
-            <Card className="border-destructive">
-              <CardContent className="py-3 px-4">
-                <p className="text-sm text-destructive" data-testid="text-error">{error}</p>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">Calculated Output Streams</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-6">
+              <div>
+                <p className="text-xs font-semibold text-primary mb-2">HIP Streams</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" data-testid="table-hip-streams">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Parameter</th>
+                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Units</th>
+                        {HIP_COLS.map(col => (
+                          <th key={col} className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hipTable.length > 0 ? hipTable.map((row, i) => (
+                        <tr key={i} className="border-b border-border/50 last:border-0" data-testid={`row-hip-${i}`}>
+                          <td className="py-1.5 px-2 font-mono text-xs font-semibold">{row.parameter}</td>
+                          <td className="py-1.5 px-2 text-xs text-muted-foreground">{row.units}</td>
+                          {HIP_KEYS.map(k => (
+                            <td key={k} className="py-1.5 px-2 text-right font-mono text-xs">{row[k]}</td>
+                          ))}
+                        </tr>
+                      )) : (
+                        <tr data-testid="row-hip-placeholder">
+                          <td className="py-1.5 px-2 font-mono text-xs font-semibold">TEMPERATURE</td>
+                          <td className="py-1.5 px-2 text-xs text-muted-foreground">{"\u00b0F"}</td>
+                          {HIP_COLS.map(col => (
+                            <td key={col} className="py-1.5 px-2 text-right font-mono text-xs text-muted-foreground">---</td>
+                          ))}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-          {results && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm">Heat Duty</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-1">
-                  <ResultRow label="Hot Side Duty" value={fmt(results.qHot)} unit="BTU/hr" testId="result-q-hot" />
-                  <ResultRow label="Cold Side Duty" value={fmt(results.qCold)} unit="BTU/hr" testId="result-q-cold" />
-                  <ResultRow label="Average Duty" value={fmt(results.qAvg)} unit="BTU/hr" testId="result-q-avg" />
-                  <ResultRow label="Heat Balance Error" value={fmt(results.heatBalanceError, 2)} unit="%" testId="result-heat-balance-error" />
-                </CardContent>
-              </Card>
+              <div>
+                <p className="text-xs font-semibold text-primary mb-2">CIP Streams</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" data-testid="table-cip-streams">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Parameter</th>
+                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">Units</th>
+                        {CIP_COLS.map(col => (
+                          <th key={col} className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cipTable.length > 0 ? cipTable.map((row, i) => (
+                        <tr key={i} className="border-b border-border/50 last:border-0" data-testid={`row-cip-${i}`}>
+                          <td className="py-1.5 px-2 font-mono text-xs font-semibold">{row.parameter}</td>
+                          <td className="py-1.5 px-2 text-xs text-muted-foreground">{row.units}</td>
+                          {CIP_KEYS.map(k => (
+                            <td key={k} className="py-1.5 px-2 text-right font-mono text-xs">{row[k]}</td>
+                          ))}
+                        </tr>
+                      )) : (
+                        <tr data-testid="row-cip-placeholder">
+                          <td className="py-1.5 px-2 font-mono text-xs font-semibold">TEMPERATURE</td>
+                          <td className="py-1.5 px-2 text-xs text-muted-foreground">{"\u00b0F"}</td>
+                          {CIP_COLS.map(col => (
+                            <td key={col} className="py-1.5 px-2 text-right font-mono text-xs text-muted-foreground">---</td>
+                          ))}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm">Heat Transfer</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-1">
-                  <ResultRow label="LMTD" value={fmt(results.lmtd, 1)} unit="°F" testId="result-lmtd" />
-                  <ResultRow label="U_clean" value={fmt(results.uClean, 3)} unit="BTU/hr-ft²-°F" testId="result-u-clean" />
-                  <ResultRow label="U_dirty" value={fmt(results.uDirty, 3)} unit="BTU/hr-ft²-°F" testId="result-u-dirty" />
-                </CardContent>
-              </Card>
+              <div>
+                <div className="space-y-1">
+                  {extras.map((row, i) => (
+                    <div key={i} className="flex items-center gap-4 py-1.5 border-b border-border/30 last:border-0" data-testid={`row-extra-${i}`}>
+                      <span className="text-xs font-mono font-semibold min-w-[220px]">{row.label}</span>
+                      <span className="text-xs text-muted-foreground min-w-[80px]">{row.units}</span>
+                      <span className="text-sm font-mono font-semibold" data-testid={`value-extra-${i}`}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              <Card>
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm">Surface Area</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-1">
-                  <ResultRow label="Outside Area" value={fmt(results.aOutside)} unit="ft²" testId="result-a-outside" />
-                  <ResultRow label="Inside Area" value={fmt(results.aInside)} unit="ft²" testId="result-a-inside" />
-                  <ResultRow label="Required Area" value={fmt(results.aRequired)} unit="ft²" testId="result-a-required" />
-                  <ResultRow label="Excess Area" value={fmt(results.excessArea, 1)} unit="%" testId="result-excess-area" />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm">Performance</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-1">
-                  <ResultRow label="Effectiveness (ε)" value={fmt(results.effectiveness, 3)} testId="result-effectiveness" />
-                  <ResultRow label="NTU" value={fmt(results.ntu, 3)} testId="result-ntu" />
-                </CardContent>
-              </Card>
-
-              <Card className="md:col-span-2">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm">Geometry Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 space-y-1">
-                  <ResultRow label="Tubes" value={`${results.nTubes} x OD ${results.tubeOD}" x ${results.tubeLength} ft`} testId="result-tubes" />
-                  <ResultRow label="Baffles" value={`${results.nBaffles}`} testId="result-baffles" />
-                  <ResultRow label="Wall Conductivity" value={`${results.kMetal}`} unit="BTU/hr-ft-°F" testId="result-k-metal" />
-                </CardContent>
-              </Card>
-            </div>
-          )}
+        <div className="space-y-6 mt-6">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Control Loop — Hot Interpass HX</h3>
+              <img
+                src={hipControlLoop}
+                alt="Control Loop Hot Interpass HX"
+                className="w-full rounded-md"
+                data-testid="img-hip-control-loop"
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Control Loop — Cold Interpass HX</h3>
+              <img
+                src={cipControlLoop}
+                alt="Control Loop Cold Interpass HX"
+                className="w-full rounded-md"
+                data-testid="img-cip-control-loop"
+              />
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

@@ -9,6 +9,7 @@ import { Rnd } from "react-rnd";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import AlarmBanner from "@/delta-v/components/faceplate/AlarmBanner";
+// import L1SystemOverview from "@/delta-v/pages/L1-SystemOverview";
 import furnaceWhbImg from "@assets/delta-v/icons/furnace-whb.png";
 import blueArrowImg from "@assets/delta-v/icons/blue-arrow.png";
 import jugValveImage from "@assets/delta-v/icons/jug-valve.png";
@@ -61,7 +62,10 @@ import { ControllerFaceplate } from "@/delta-v/components/faceplate/ControllerFa
 import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/SecondaryControllerFaceplate";
 import { ValveFaceplate } from "@/delta-v/components/faceplate/ValveFaceplate";
 import { TempSensorPrimaryFaceplate } from "@/delta-v/components/faceplate/TempSensorPrimaryFaceplate";
+import { KPPFaceplate } from "@/components/KPPFaceplate";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
+import { PrimaryTurboGeneratorFaceplate } from "@/delta-v/components/faceplate/PrimaryTurboGeneratorFaceplate";
+import { TurboGeneratorProvider } from "@/delta-v/contexts/TurboGeneratorContext";
 import { useCompressor } from "@/delta-v/contexts/CompressorContext";
 import { useControllerSync } from "@/delta-v/contexts/ControllerSyncContext";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
@@ -108,8 +112,6 @@ import {
   Shapes,
   Trash2,
   FileText,
-  Play,
-  Pause,
   RotateCcw,
   Loader2,
 } from "lucide-react";
@@ -128,7 +130,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import L1SystemOverview from "./L1-SystemOverview";
+import L1SystemOverview from "./Templates/L1-SystemOverview";
+import L2Converter from "./Templates/L2-Converter";
+import L2_1520_ACID from "./Templates/L2-1520-Acid";
 import { PFDNavigation } from "../components/PFDNavigation";
 
 interface Arrow {
@@ -154,10 +158,12 @@ const toolbarItems = [
 ];
 
 const homescreenOptions = [
-  { id: "L1", label: "L1 – System Overview" },
-  { id: "L2", label: "L2 – Furnace Area", isReady: true },
+  { id: "L1", label: "L1 – System Overview", isReady: true },
+  { id: "L2", label: "L2 – Furnace Area" },
+  { id: "L2-Converter", label: "L2 – Converter", isReady: true },
+  { id: "L2_1520_ACID", label: "L2 1520 ACID" , isReady: false},
   { id: "L3", label: "L3 – Compressor Area" },
-  { id: "L4", label: "L4-Converter", isReady: true },
+  { id: "L4", label: "L4-Converter" },
   // L2_1500 SULFUR UTILITY
   { id: "L2_1500_SULFUR_UTILITY", label: "L2_1500 SULFUR UTILITY" },
   { id: "2.1", label: "2.1 L3_1520 Fin Fan Coolers" },
@@ -170,8 +176,7 @@ const homescreenOptions = [
   { id: "3.1", label: "3.1 L3_1510 Sulfur Scrubber" },
   { id: "3.2", label: "3.2 L3_1520 Effluent Storage" },
   { id: "3.3", label: "3.3 L3_1530 Tail Gas Scrubber" },
-  // L2_1520 ACID
-  { id: "L2_1520_ACID", label: "L2_1520 ACID", isReady: true },
+
   { id: "4.1", label: "4.1 L3_1520 Combination Pump Tank" },
   { id: "4.2", label: "4.2 L3_1520 Final Absorbing Tower" },
   { id: "4.3", label: "4.3 L3_1520 Interpass Heat Exchanger" },
@@ -220,7 +225,7 @@ const HomeScreen = () => {
   const [compressorPosition, setCompressorPosition] = useState({ x: 520, y: 100 });
   const [compressorSize, setCompressorSize] = useState({ width: 200, height: 180 });
   // Array of arrows with position, size, and rotation
-  const [arrows, setArrows] = useState<Array<Arrow>>([
+  const [arrows, setArrows] = useState([
     { id: 'arrow_1', x: 180, y: 280, width: 250, height: 60, rotation: 0, color: 'blue' as const },
     { id: 'arrow_2', x: 180, y: 360, width: 250, height: 60, rotation: 0, color: 'blue' as const },
     { id: 'arrow_3', x: 180, y: 440, width: 250, height: 60, rotation: 0, color: 'blue' as const },
@@ -310,6 +315,10 @@ const HomeScreen = () => {
     navigate(q ? `?${q}` : location, { replace: true });
   };
 
+  const instrumentFilter = instBlockFilter;
+  const setInstrumentFilter = setInstBlockFilter;
+  const sensorVisible = instrumentFilter === 'all' || instrumentFilter === 'sensors';
+  const controllerVisible = instrumentFilter === 'all' || instrumentFilter === 'controllers';
   // Save selected screen to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('deltaV_selectedScreen', selectedScreen);
@@ -334,22 +343,43 @@ const HomeScreen = () => {
     };
   }, [dynamicRunning, dynamicDt, dynamicSpeed]);
 
-  // Reset dynamic simulation
+  const dynamicOrchInFlightRef = useRef(false);
+  const dynamicOrchInputsRef = useRef({
+    compressor_rpm_pct: 0,
+    sulfur_flow_sp_gpm: 0,
+    jug_valve_pct: 0,
+    damper_open_pct: 0,
+  });
+
+  // Auto-start simulation when entering Dynamic/Start-Up/Emergency modes
+  useEffect(() => {
+    const isDynamicMode = selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios";
+    if (isDynamicMode) {
+      setDynamicRunning(true);
+    } else {
+      setDynamicRunning(false);
+      setDynamicElapsed(0);
+    }
+  }, [selectedMode]);
+
+  // Reset dynamic simulation — resets state then auto-restarts
   const handleDynamicReset = () => {
     setDynamicRunning(false);
     setDynamicElapsed(0);
     setDynamicSpeed(1.0);
     setDynamicDt(0.12);
+    setTimeout(() => setDynamicRunning(true), 50);
   };
 
   // Static simulation state
   const [staticSimulationRunning, setStaticSimulationRunning] = useState(false);
   const [staticSimulationResults, setStaticSimulationResults] = useState<any>(null);
+  const [orchestratorResult, setOrchestratorResult] = useState<any>(null);
+  const pendingStaticRecalcRef = useRef(false);
 
   // Ref that L1SystemOverview populates with its startStaticSimulation function
   const l1SimTriggerRef = useRef<(() => void) | null>(null);
 
-  // Run static simulation when Start button is clicked in Static mode
   const runStaticSimulation = async () => {
     if (staticSimulationRunning) return;
 
@@ -369,32 +399,29 @@ const HomeScreen = () => {
 
     setStaticSimulationRunning(true);
     try {
-      
-      // 1. Fetch PV case data
       const pvResponse = await fetch('/api/process-variables');
       const pvData = await pvResponse.json();
-
-      // 2. Fetch SP case data (for setpoint values)
+      
       const spResponse = await fetch('/api/setpoint-variables');
       const spData = await spResponse.json();
-
-      // 3. Extract compressor inputs from selected case or defaults
-      // Use activePVCaseId if available, otherwise use default values
-      let rpmPercent = 87; // Default
-      let inletTemp = 150; // Default in F
-      let barometricPressure = 0.85; // Default in atm
-      let plantCondition = "clean"; // Default
-      let inletPressureInwc = -3.0; // Default in wc
-
-      // Helper function to extract numeric value from case data
+      
+      let rpmPercent = 78.5;
+      let inletTemp = 70;
+      let barometricPressure = 0.850;
+      let plantCondition = "clean";
+      let sulfurFlowGpm = 72;
+      let jugValvePct = 4.5;
+      let damperOpenPct = 100;
+      
       const extractCaseValue = (variables: any[], tagPatterns: string[], caseId: string): number | null => {
         if (!variables || !caseId) return null;
         for (const pattern of tagPatterns) {
-          const variable = variables.find((v: any) =>
-            v.tag === pattern ||
-            v.tagNumber === pattern ||
-            v.tag?.includes(pattern) ||
-            v.description?.toLowerCase().includes(pattern.toLowerCase())
+          const lowerPattern = pattern.toLowerCase();
+          const variable = variables.find((v: any) => 
+            v.tag === pattern || 
+            v.tagNumber === pattern || 
+            v.tag?.toLowerCase().includes(lowerPattern) ||
+            v.description?.toLowerCase().includes(lowerPattern)
           );
           if (variable?.cases?.[caseId]) {
             const val = parseFloat(String(variable.cases[caseId]).replace(/[^0-9.-]/g, ''));
@@ -403,95 +430,134 @@ const HomeScreen = () => {
         }
         return null;
       };
-
-      // Extract values from PV case data
+      
       if (pvData?.variables && activePVCaseId) {
-        // Main compressor RPM (1540-H-4030)
         const rpmVal = extractCaseValue(pvData.variables, ['1540-H-4030', 'main_comp', 'compressor'], activePVCaseId);
         if (rpmVal !== null) rpmPercent = rpmVal;
-
-        // DT inlet temperature
-        const tempVal = extractCaseValue(pvData.variables, ['dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
+        
+        const tempVal = extractCaseValue(pvData.variables, ['Ambient Temperature', 'dt_inlet_temp', 'TI-4', 'inlet temp'], activePVCaseId);
         if (tempVal !== null) inletTemp = tempVal;
-
-        // Barometric pressure (ambient_pressure)
-        const baroVal = extractCaseValue(pvData.variables, ['ambient_pressure', 'barometric'], activePVCaseId);
+        
+        const baroVal = extractCaseValue(pvData.variables, ['Ambient Pressure', 'ambient_pressure', 'barometric'], activePVCaseId);
         if (baroVal !== null) barometricPressure = baroVal;
-
-        // Inlet pressure (pass_1_ash_dp or similar)
-        const pressVal = extractCaseValue(pvData.variables, ['pass_1_ash_dp', 'inlet_pressure', 'inlet press'], activePVCaseId);
-        if (pressVal !== null) inletPressureInwc = pressVal;
-
-        // Plant condition (if stored in PV data)
-        const plantVar = pvData.variables.find((v: any) =>
+        
+        const plantVar = pvData.variables.find((v: any) => 
           v.tag?.includes('plant_condition') || v.description?.toLowerCase().includes('plant condition')
         );
         if (plantVar?.cases?.[activePVCaseId]) {
           const val = String(plantVar.cases[activePVCaseId]).toLowerCase();
           if (val === 'dirty' || val === 'clean') plantCondition = val;
         }
+        
+        const sulfurVal = extractCaseValue(pvData.variables, ['1530-F-2602', 'sulfur_flow', 'sulfur flow'], activePVCaseId);
+        if (sulfurVal !== null) sulfurFlowGpm = sulfurVal;
+        
+        const jugVal = extractCaseValue(pvData.variables, ['1540-H-4282', 'jug_valve', 'jug valve'], activePVCaseId);
+        if (jugVal !== null) jugValvePct = jugVal;
+        
+        const damperVal = extractCaseValue(pvData.variables, ['1540-H-4283', 'damper', 'whb_dp'], activePVCaseId);
+        if (damperVal !== null) damperOpenPct = damperVal;
       }
-
-      // Also check SP data for setpoint overrides
+      
       if (spData?.variables && activePVCaseId) {
-        // Main compressor SP
         const rpmSpVal = extractCaseValue(spData.variables, ['main_comp_speed_sp', '1540-H-4030'], activePVCaseId);
-        if (rpmSpVal !== null && rpmPercent === 87) rpmPercent = rpmSpVal; // Use SP if PV not found
-
-        // DT inlet temp SP
-        const tempSpVal = extractCaseValue(spData.variables, ['dt_inlet_temp_sp'], activePVCaseId);
-        if (tempSpVal !== null && inletTemp === 150) inletTemp = tempSpVal; // Use SP if PV not found
+        if (rpmSpVal !== null && rpmPercent === 85.5) rpmPercent = rpmSpVal;
       }
-
-      console.log('Static simulation inputs:', { rpmPercent, inletTemp, barometricPressure, plantCondition, inletPressureInwc });
-
-      // 4. Call compressor simulation API
-      const simResponse = await fetch('/api/compressor-simulation', {
+      
+      if (loadedCaseValue1540H4030 !== null) rpmPercent = loadedCaseValue1540H4030;
+      if (loadedCaseValueSulfurFlow !== null) sulfurFlowGpm = loadedCaseValueSulfurFlow;
+      if (loadedCaseValueJugValve !== null) jugValvePct = loadedCaseValueJugValve;
+      if (loadedCaseValueWHBdP !== null) damperOpenPct = loadedCaseValueWHBdP;
+      
+      const orchInput = {
+        compressor_rpm_pct: rpmPercent,
+        barometric_atm: barometricPressure,
+        plant_condition: plantCondition,
+        sulfur_flow_sp_gpm: sulfurFlowGpm,
+        jug_valve_pct: jugValvePct,
+        damper_open_pct: damperOpenPct,
+        dt_acid_inlet_temp_F: inletTemp,
+        mode: "static",
+      };
+      
+      console.log('Plant orchestrator inputs:', orchInput);
+      
+      const simResponse = await fetch('/api/plant-orchestrator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rpm_percent: rpmPercent,
-          temp: inletTemp,
-          barometricPressure: barometricPressure,
-          plant_condition: plantCondition,
-          inlet_pressure_inwc: inletPressureInwc
-        })
+        body: JSON.stringify(orchInput)
       });
 
       if (!simResponse.ok) {
-        throw new Error('Compressor simulation failed');
+        throw new Error('Plant orchestrator failed');
       }
-
-      const simResponseData = await simResponse.json();
-      console.log('Static simulation results:', simResponseData);
-
-      // Extract the results from the nested structure
-      const simResults = simResponseData.results || simResponseData;
-      setStaticSimulationResults(simResults);
-
-      // 5. Update faceplate displays with results
-      // Update the loaded case value to show the compressor speed % in the controller
-      // In Static mode: PV = SP = OUT = same value
-      if (simResults.compressor_speed !== undefined) {
-        const speedPercent = (simResults.compressor_speed / 4505) * 100;
-        console.log('Setting static case value for 1540-H-4030:', speedPercent);
-        setLoadedCaseValue1540H4030(speedPercent);
+      
+      const orchData = await simResponse.json();
+      console.log('Plant orchestrator results:', orchData);
+      
+      setOrchestratorResult(orchData);
+      setStaticSimulationResults(orchData);
+      
+      if (orchData.sensor_tags) {
+        const tags = orchData.sensor_tags;
+        if (tags["1540-SIC-4030"] !== undefined && tags["1540-SIC-4030"] !== loadedCaseValue1540H4030) {
+          console.log('Setting static case value for 1540-H-4030:', tags["1540-SIC-4030"]);
+          setLoadedCaseValue1540H4030(tags["1540-SIC-4030"]);
+        }
+        if (tags["1540-TI-4010"] !== undefined) {
+          const furnaceTemp = tags["1540-TI-4010"];
+          setFurnaceOutletTemp(furnaceTemp);
+          updateTempSensor4200APV(furnaceTemp);
+        }
+        if (tags["1540-ZI-4020"] !== undefined) {
+          setLoadedCaseValueJugValve(tags["1540-ZI-4020"]);
+        }
+        if (tags["1540-TI-4820"] !== undefined) {
+          const raw4820 = tags["1540-TI-4820"];
+          updateTempSensor4820PV(typeof raw4820 === 'object' && raw4820 !== null ? (raw4820 as any).value : raw4820);
+        }
+        if (tags["1540-TI-4827"] !== undefined) {
+          const raw4827 = tags["1540-TI-4827"];
+          updateTempSensor4827PV(typeof raw4827 === 'object' && raw4827 !== null ? (raw4827 as any).value : raw4827);
+        }
+        if (tags["1540-TI-4841"] !== undefined) {
+          const raw4841 = tags["1540-TI-4841"];
+          updateTempSensor4841PV(typeof raw4841 === 'object' && raw4841 !== null ? (raw4841 as any).value : raw4841);
+        }
+        if (tags["1540-TI-5231"] !== undefined) {
+          const raw5231 = tags["1540-TI-5231"];
+          updateTempSensor5231PV(typeof raw5231 === 'object' && raw5231 !== null ? (raw5231 as any).value : raw5231);
+        }
+        if (tags["1540-TI-7225"] !== undefined) {
+          const raw7225 = tags["1540-TI-7225"];
+          updateTempSensor7225PV(typeof raw7225 === 'object' && raw7225 !== null ? (raw7225 as any).value : raw7225);
+        }
+        if (tags["1520-TIC-6622"] !== undefined) {
+          const raw6622 = tags["1520-TIC-6622"];
+          updateTempSensor6623PV(typeof raw6622 === 'object' && raw6622 !== null ? (raw6622 as any).value : raw6622);
+        }
+        if (tags["1520-TIC-6722"] !== undefined) {
+          const raw6722 = tags["1520-TIC-6722"];
+          updateTempSensor8464PV(typeof raw6722 === 'object' && raw6722 !== null ? (raw6722 as any).value : raw6722);
+        }
+        if (tags["1540-TIC-7221"] !== undefined) {
+          const raw7221 = tags["1540-TIC-7221"];
+          updateTempSensor7221PV(typeof raw7221 === 'object' && raw7221 !== null ? (raw7221 as any).value : raw7221);
+        }
+        if (tags["1540-TIC-7224"] !== undefined) {
+          const raw7224 = tags["1540-TIC-7224"];
+          updateTempSensor7224PV(typeof raw7224 === 'object' && raw7224 !== null ? (raw7224 as any).value : raw7224);
+        }
       }
-
-      toast({
-        title: "Static Simulation Complete",
-        description: `Compressor: ${simResults.compressor_speed?.toFixed(0) || 'N/A'} RPM, Outlet: ${simResults.outlet_temp_F?.toFixed(1) || 'N/A'}°F, Power: ${simResults.brake_power_hp?.toFixed(1) || 'N/A'} HP`,
-      });
-
+      
     } catch (error) {
       console.error('Static simulation error:', error);
-      toast({
-        title: "Simulation Error",
-        description: error instanceof Error ? error.message : "Failed to run static simulation",
-        variant: "destructive",
-      });
     } finally {
       setStaticSimulationRunning(false);
+      if (pendingStaticRecalcRef.current) {
+        pendingStaticRecalcRef.current = false;
+        setTimeout(() => runStaticSimulation(), 100);
+      }
     }
   };
 
@@ -569,6 +635,9 @@ const HomeScreen = () => {
   const [isHandControllerModalOpen, setIsHandControllerModalOpen] = useState(false);
   const [isJugValveHandControllerModalOpen, setIsJugValveHandControllerModalOpen] = useState(false);
   const [isWhbHandControllerModalOpen, setIsWhbHandControllerModalOpen] = useState(false);
+  const [isPass2ControllerModalOpen, setIsPass2ControllerModalOpen] = useState(false);
+  const [isPass3ControllerModalOpen, setIsPass3ControllerModalOpen] = useState(false);
+  const [isPass4ControllerModalOpen, setIsPass4ControllerModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Sulfur Flow Controller position/size
@@ -607,7 +676,8 @@ const HomeScreen = () => {
   const [tempSensor4200APosition, setTempSensor4200APosition] = useState({ x: 250, y: 400 });
   const [tempSensor4200ASize, setTempSensor4200ASize] = useState({ width: 180, height: 120 });
   const [isTempSensor4200AModalOpen, setIsTempSensor4200AModalOpen] = useState(false);
-
+  const [isTempSensor4820ModalOpen, setIsTempSensor4820ModalOpen] = useState(false);
+  
   // Temperature Sensor 1540-TI-4200B position/size
   const [tempSensor4200BPosition, setTempSensor4200BPosition] = useState({ x: 450, y: 400 });
   const [tempSensor4200BSize, setTempSensor4200BSize] = useState({ width: 180, height: 120 });
@@ -690,6 +760,26 @@ const HomeScreen = () => {
   // L4-Converter: 1540-TI-4825 Primary Faceplate position/size
   const [faceplate4825L4Position, setFaceplate4825L4Position] = useState({ x: 600, y: 150 });
   const [faceplate4825L4Size, setFaceplate4825L4Size] = useState({ width: 160, height: 240 });
+  const [tempSensor4820L4Position, setTempSensor4820L4Position] = useState({ x: 2800, y: 500 });
+  const [tempSensor4820L4Size, setTempSensor4820L4Size] = useState({ width: 180, height: 120 });
+  const [faceplate4822L4Position, setFaceplate4822L4Position] = useState({ x: 800, y: 50 });
+  const [faceplate4822L4Size, setFaceplate4822L4Size] = useState({ width: 220, height: 200 });
+  const [faceplate5220L4Position, setFaceplate5220L4Position] = useState({ x: 800, y: 280 });
+  const [faceplate5220L4Size, setFaceplate5220L4Size] = useState({ width: 220, height: 200 });
+  const [faceplate5224L4Position, setFaceplate5224L4Position] = useState({ x: 800, y: 510 });
+  const [faceplate5224L4Size, setFaceplate5224L4Size] = useState({ width: 220, height: 200 });
+  const [faceplate4827L4Position, setFaceplate4827L4Position] = useState({ x: 600, y: 400 });
+  const [faceplate4827L4Size, setFaceplate4827L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate4841L4Position, setFaceplate4841L4Position] = useState({ x: 600, y: 700 });
+  const [faceplate4841L4Size, setFaceplate4841L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate5231L4Position, setFaceplate5231L4Position] = useState({ x: 600, y: 1000 });
+  const [faceplate5231L4Size, setFaceplate5231L4Size] = useState({ width: 160, height: 240 });
+  const [faceplate7225L4Position, setFaceplate7225L4Position] = useState({ x: 600, y: 1300 });
+  const [faceplate7225L4Size, setFaceplate7225L4Size] = useState({ width: 160, height: 240 });
+  const [showSecondary4827L4, setShowSecondary4827L4] = useState(false);
+  const [showSecondary4841L4, setShowSecondary4841L4] = useState(false);
+  const [showSecondary5231L4, setShowSecondary5231L4] = useState(false);
+  const [showSecondary7225L4, setShowSecondary7225L4] = useState(false);
   const [isSavingL4, setIsSavingL4] = useState(false);
   const [isLockedL4, setIsLockedL4] = useState(true);
   const [isL4Dirty, setIsL4Dirty] = useState(false);
@@ -778,10 +868,22 @@ const HomeScreen = () => {
   // L2 Temperature Sensor 1540-TI-4200A position and size
   const [tempSensor4200AL2Position, setTempSensor4200AL2Position] = useState({ x: 1200, y: 400 });
   const [tempSensor4200AL2Size, setTempSensor4200AL2Size] = useState({ width: 180, height: 120 });
+  // L2 Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) position and size
+  const [tempSensor4820L2Position, setTempSensor4820L2Position] = useState({ x: 1400, y: 400 });
+  const [tempSensor4820L2Size, setTempSensor4820L2Size] = useState({ width: 180, height: 120 });
+  const [processDataPanelL2Position, setProcessDataPanelL2Position] = useState({ x: 1600, y: 20 });
+  const [processDataPanelL2Size, setProcessDataPanelL2Size] = useState({ width: 340, height: 320 });
+  const [kppFaceplateL2Position, setKppFaceplateL2Position] = useState({ x: 1600, y: 340 });
+  const [kppFaceplateL2Size, setKppFaceplateL2Size] = useState({ width: 280, height: 300 });
+  const [kppFaceplateL4Position, setKppFaceplateL4Position] = useState({ x: 2800, y: 100 });
+  const [kppFaceplateL4Size, setKppFaceplateL4Size] = useState({ width: 280, height: 300 });
   const [isSavingL2, setIsSavingL2] = useState(false);
   const [isLockedL2, setIsLockedL2] = useState(true);
   const [isL2Dirty, setIsL2Dirty] = useState(false);
 
+  // L2_1520 ACID: KPP Faceplate
+  const [kppFaceplateL21520Position, setKppFaceplateL21520Position] = useState({ x: 2600, y: 100 });
+  const [kppFaceplateL21520Size, setKppFaceplateL21520Size] = useState({ width: 280, height: 300 });
   // L2_1520 ACID: Acid Boiler position and size
   const [acidBoilerPosition, setAcidBoilerPosition] = useState({ x: 100, y: 100 });
   const [acidBoilerSize, setAcidBoilerSize] = useState({ width: 1024, height: 341 });
@@ -791,7 +893,21 @@ const HomeScreen = () => {
   // L2_1520 ACID: Acid Tower 2 position and size
   const [acidTower2Position, setAcidTower2Position] = useState({ x: 2100, y: 50 });
   const [acidTower2Size, setAcidTower2Size] = useState({ width: 800, height: 400 });
+  const [faceplate6623L21520Position, setFaceplate6623L21520Position] = useState({ x: 1250, y: 500 });
+  const [faceplate6623L21520Size, setFaceplate6623L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary6623L21520, setShowSecondary6623L21520] = useState(false);
+  const [faceplate8464L21520Position, setFaceplate8464L21520Position] = useState({ x: 2150, y: 500 });
+  const [faceplate8464L21520Size, setFaceplate8464L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary8464L21520, setShowSecondary8464L21520] = useState(false);
+  const [faceplate7221L21520Position, setFaceplate7221L21520Position] = useState({ x: 550, y: 500 });
+  const [faceplate7221L21520Size, setFaceplate7221L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary7221L21520, setShowSecondary7221L21520] = useState(false);
+  const [faceplate7224L21520Position, setFaceplate7224L21520Position] = useState({ x: 1700, y: 500 });
+  const [faceplate7224L21520Size, setFaceplate7224L21520Size] = useState({ width: 160, height: 240 });
+  const [showSecondary7224L21520, setShowSecondary7224L21520] = useState(false);
   const [isLockedL21520, setIsLockedL21520] = useState(true);
+  const [isSavingL21520, setIsSavingL21520] = useState(false);
+  const [isL21520Dirty, setIsL21520Dirty] = useState(false);
 
   // Open PV Case dialog state
   const [isOpenPVCaseDialogOpen, setIsOpenPVCaseDialogOpen] = useState(false);
@@ -804,12 +920,30 @@ const HomeScreen = () => {
   const [loadedCaseValueJugValve, setLoadedCaseValueJugValve] = useState<number | null>(null);
   // Loaded PV case value for 1540-H-4283 WHB dP controller (used in Static mode)
   const [loadedCaseValueWHBdP, setLoadedCaseValueWHBdP] = useState<number | null>(null);
+  const [loadedCaseValuePass2Temp, setLoadedCaseValuePass2Temp] = useState<number | null>(null);
+  const [loadedCaseValuePass3Temp, setLoadedCaseValuePass3Temp] = useState<number | null>(null);
+  const [loadedCaseValuePass4Temp, setLoadedCaseValuePass4Temp] = useState<number | null>(null);
   const [activePVCaseId, setActivePVCaseId] = useState<string | null>(null);
 
   // Furnace outlet temperature from sulfur furnace simulation (linked to 1540-TI-4200A)
   const [furnaceOutletTemp, setFurnaceOutletTemp] = useState<number | null>(null);
   // Track last calculated sulfur flow to prevent duplicate API calls
   const lastCalculatedSulfurFlowRef = useRef<number | null>(null);
+  // Debounce timer for SP changes to prevent API spam during user edits
+  const spDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pvSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const savePVCaseValue = useCallback((tag: string, value: number) => {
+    const caseId = activePVCaseId || 'case1';
+    if (pvSaveTimers.current[tag]) clearTimeout(pvSaveTimers.current[tag]);
+    pvSaveTimers.current[tag] = setTimeout(() => {
+      fetch(`/api/process-variables/${encodeURIComponent(tag)}/cases/${encodeURIComponent(caseId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: String(value) }),
+      }).catch(err => console.error(`Failed to save PV case value for ${tag}:`, err));
+    }, 500);
+  }, [activePVCaseId]);
 
   // Auto-load static values when PV case is selected in Static mode
   useEffect(() => {
@@ -838,9 +972,8 @@ const HomeScreen = () => {
                 setLoadedCaseValue1540H4030(val);
               }
             } else {
-              // Default to 75% if no case value found
-              console.log('No case value found for 1540-H-4030, using default 75%');
-              setLoadedCaseValue1540H4030(75);
+              console.log('No case value found for 1540-H-4030, using default 85.5%');
+              setLoadedCaseValue1540H4030(85.5);
             }
 
             // Look for sulfur flow value in the selected case
@@ -856,7 +989,6 @@ const HomeScreen = () => {
                 setLoadedCaseValueSulfurFlow(val);
               }
             } else {
-              // Default to 79 gpm if no case value found (typical sulfur flow)
               console.log('No case value found for 1530-F-2602, using default 79 gpm');
               setLoadedCaseValueSulfurFlow(79);
             }
@@ -874,9 +1006,8 @@ const HomeScreen = () => {
                 setLoadedCaseValueJugValve(val);
               }
             } else {
-              // Default to 50% if no case value found
-              console.log('No case value found for 1540-H-4282, using default 50%');
-              setLoadedCaseValueJugValve(50);
+              console.log('No case value found for 1540-H-4282, using default 10%');
+              setLoadedCaseValueJugValve(10);
             }
 
             // Look for WHB dP value in the selected case
@@ -905,9 +1036,29 @@ const HomeScreen = () => {
       setLoadedCaseValueSulfurFlow(null);
       setLoadedCaseValueJugValve(null);
       setLoadedCaseValueWHBdP(null);
+      setLoadedCaseValuePass2Temp(null);
+      setLoadedCaseValuePass3Temp(null);
+      setLoadedCaseValuePass4Temp(null);
     }
   }, [selectedMode, activePVCaseId]);
 
+  const staticAutoCalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (selectedMode !== "Static") return;
+    if (staticAutoCalcTimerRef.current) {
+      clearTimeout(staticAutoCalcTimerRef.current);
+    }
+    staticAutoCalcTimerRef.current = setTimeout(() => {
+      runStaticSimulation();
+    }, 500);
+    return () => {
+      if (staticAutoCalcTimerRef.current) {
+        clearTimeout(staticAutoCalcTimerRef.current);
+      }
+    };
+  }, [selectedMode, activePVCaseId, loadedCaseValue1540H4030, loadedCaseValueSulfurFlow, loadedCaseValueJugValve, loadedCaseValueWHBdP, loadedCaseValuePass2Temp, loadedCaseValuePass3Temp, loadedCaseValuePass4Temp]);
+  
   // 6.1 L3_1540 Converter: Converter position/size
   const [converter61Position, setConverter61Position] = useState({ x: 400, y: 200 });
   const [converter61Size, setConverter61Size] = useState({ width: 400, height: 600 });
@@ -984,6 +1135,36 @@ const HomeScreen = () => {
   } = useControllerSync('1540-H-4282');
   const jugValveHandControllerConfig = getControllerConfig('1540-H-4282');
 
+  const { 
+    state: pass2ControllerSyncState,
+    initializeController: initPass2Controller,
+    updateAlarmLimits: updatePass2ControllerAlarmLimits,
+    updateSyncedSP: updatePass2ControllerSP,
+    updateSyncedOUT: updatePass2ControllerOUT,
+    updateSyncedMode: updatePass2ControllerMode
+  } = useControllerSync('1540-T-4822');
+  const pass2ControllerConfig = getControllerConfig('1540-T-4822');
+
+  const { 
+    state: pass3ControllerSyncState,
+    initializeController: initPass3Controller,
+    updateAlarmLimits: updatePass3ControllerAlarmLimits,
+    updateSyncedSP: updatePass3ControllerSP,
+    updateSyncedOUT: updatePass3ControllerOUT,
+    updateSyncedMode: updatePass3ControllerMode
+  } = useControllerSync('1540-T-5220');
+  const pass3ControllerConfig = getControllerConfig('1540-T-5220');
+
+  const { 
+    state: pass4ControllerSyncState,
+    initializeController: initPass4Controller,
+    updateAlarmLimits: updatePass4ControllerAlarmLimits,
+    updateSyncedSP: updatePass4ControllerSP,
+    updateSyncedOUT: updatePass4ControllerOUT,
+    updateSyncedMode: updatePass4ControllerMode
+  } = useControllerSync('1540-T-5224');
+  const pass4ControllerConfig = getControllerConfig('1540-T-5224');
+
   // Get real-time synced state for Temperature Sensor 1520-TI-5821
   const { state: tempSensorSyncState, initializeController: initTempSensor } = useControllerSync('1520-TI-5821');
   const tempSensorConfig = getControllerConfig('1520-TI-5821');
@@ -999,10 +1180,120 @@ const HomeScreen = () => {
   // Get real-time synced state for Temperature Sensor 1540-TI-4200C
   const { state: tempSensor4200CSyncState, initializeController: initTempSensor4200C, updateAlarmLimits: updateTempSensor4200CAlarmLimits } = useControllerSync('1540-TI-4200C');
   const tempSensor4200CConfig = getControllerConfig('1540-TI-4200C');
+  
+  // Get real-time synced state for Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct)
+  const { state: tempSensor4820SyncState, initializeController: initTempSensor4820, updateAlarmLimits: updateTempSensor4820AlarmLimits, updateSyncedPV: updateTempSensor4820PV } = useControllerSync('1540-TI-4820');
+  const tempSensor4820Config = getControllerConfig('1540-TI-4820');
+
+  useEffect(() => {
+    dynamicOrchInputsRef.current = {
+      compressor_rpm_pct: handControllerSyncState.syncedPV,
+      sulfur_flow_sp_gpm: sulfurSyncState.syncedPV,
+      jug_valve_pct: jugValveHandControllerSyncState.syncedSP,
+      damper_open_pct: whbHandControllerSyncState.syncedSP,
+    };
+  }, [handControllerSyncState.syncedPV, sulfurSyncState.syncedPV,
+      jugValveHandControllerSyncState.syncedSP, whbHandControllerSyncState.syncedSP]);
+
+  useEffect(() => {
+    if (!dynamicRunning) return;
+    const intervalMs = dynamicDt * 1000 / dynamicSpeed;
+    const tick = async () => {
+      if (dynamicOrchInFlightRef.current) return;
+      dynamicOrchInFlightRef.current = true;
+      try {
+        const inputs = dynamicOrchInputsRef.current;
+        const res = await fetch('/api/plant-orchestrator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...inputs,
+            barometric_atm: 1.0,
+            plant_condition: "clean",
+            dt_acid_inlet_temp_F: 70,
+            mode: "dynamic",
+          }),
+        });
+        if (res.ok) {
+          const orchData = await res.json();
+          setOrchestratorResult(orchData);
+          if (orchData.sensor_tags) {
+            const tags = orchData.sensor_tags;
+            if (tags["1540-TI-4010"] !== undefined) {
+              setFurnaceOutletTemp(tags["1540-TI-4010"]);
+              updateTempSensor4200APV(tags["1540-TI-4010"]);
+            }
+            if (tags["1540-TI-4820"] !== undefined) {
+              const raw4820 = tags["1540-TI-4820"];
+              updateTempSensor4820PV(typeof raw4820 === 'object' && raw4820 !== null ? (raw4820 as any).value : raw4820);
+            }
+            if (tags["1540-TI-4827"] !== undefined) {
+              const raw4827 = tags["1540-TI-4827"];
+              updateTempSensor4827PV(typeof raw4827 === 'object' && raw4827 !== null ? (raw4827 as any).value : raw4827);
+            }
+            if (tags["1540-TI-4841"] !== undefined) {
+              const raw4841 = tags["1540-TI-4841"];
+              updateTempSensor4841PV(typeof raw4841 === 'object' && raw4841 !== null ? (raw4841 as any).value : raw4841);
+            }
+            if (tags["1540-TI-5231"] !== undefined) {
+              const raw5231 = tags["1540-TI-5231"];
+              updateTempSensor5231PV(typeof raw5231 === 'object' && raw5231 !== null ? (raw5231 as any).value : raw5231);
+            }
+            if (tags["1540-TI-7225"] !== undefined) {
+              const raw7225 = tags["1540-TI-7225"];
+              updateTempSensor7225PV(typeof raw7225 === 'object' && raw7225 !== null ? (raw7225 as any).value : raw7225);
+            }
+            if (tags["1520-TIC-6622"] !== undefined) {
+              const raw6622 = tags["1520-TIC-6622"];
+              updateTempSensor6623PV(typeof raw6622 === 'object' && raw6622 !== null ? (raw6622 as any).value : raw6622);
+            }
+            if (tags["1520-TIC-6722"] !== undefined) {
+              const raw6722 = tags["1520-TIC-6722"];
+              updateTempSensor8464PV(typeof raw6722 === 'object' && raw6722 !== null ? (raw6722 as any).value : raw6722);
+            }
+            if (tags["1540-TIC-7221"] !== undefined) {
+              const raw7221 = tags["1540-TIC-7221"];
+              updateTempSensor7221PV(typeof raw7221 === 'object' && raw7221 !== null ? (raw7221 as any).value : raw7221);
+            }
+            if (tags["1540-TIC-7224"] !== undefined) {
+              const raw7224 = tags["1540-TIC-7224"];
+              updateTempSensor7224PV(typeof raw7224 === 'object' && raw7224 !== null ? (raw7224 as any).value : raw7224);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Dynamic orchestrator error:', e);
+      } finally {
+        dynamicOrchInFlightRef.current = false;
+      }
+    };
+    tick();
+    const id = setInterval(tick, Math.max(intervalMs, 1000));
+    return () => clearInterval(id);
+  }, [dynamicRunning, dynamicDt, dynamicSpeed]);
 
   // Get real-time synced state for Temperature Sensor 1540-TI-4825 (Pass 1 Catalyst In)
   const { state: tempSensor4825SyncState, initializeController: initTempSensor4825, updateAlarmLimits: updateTempSensor4825AlarmLimits } = useControllerSync('1540-TI-4825');
   const tempSensor4825Config = getControllerConfig('1540-TI-4825');
+
+  const { state: tempSensor4827SyncState, initializeController: initTempSensor4827, updateAlarmLimits: updateTempSensor4827AlarmLimits, updateSyncedPV: updateTempSensor4827PV } = useControllerSync('1540-TI-4827');
+  const tempSensor4827Config = getControllerConfig('1540-TI-4827');
+  const { state: tempSensor4841SyncState, initializeController: initTempSensor4841, updateAlarmLimits: updateTempSensor4841AlarmLimits, updateSyncedPV: updateTempSensor4841PV } = useControllerSync('1540-TI-4841');
+  const tempSensor4841Config = getControllerConfig('1540-TI-4841');
+  const { state: tempSensor5231SyncState, initializeController: initTempSensor5231, updateAlarmLimits: updateTempSensor5231AlarmLimits, updateSyncedPV: updateTempSensor5231PV } = useControllerSync('1540-TI-5231');
+  const tempSensor5231Config = getControllerConfig('1540-TI-5231');
+  const { state: tempSensor7225SyncState, initializeController: initTempSensor7225, updateAlarmLimits: updateTempSensor7225AlarmLimits, updateSyncedPV: updateTempSensor7225PV } = useControllerSync('1540-TI-7225');
+  const tempSensor7225Config = getControllerConfig('1540-TI-7225');
+
+  const { state: tempSensor6623SyncState, initializeController: initTempSensor6623, updateAlarmLimits: updateTempSensor6623AlarmLimits, updateSyncedPV: updateTempSensor6623PV } = useControllerSync('1520-TI-6623');
+  const tempSensor6623Config = getControllerConfig('1520-TI-6623');
+  const { state: tempSensor8464SyncState, initializeController: initTempSensor8464, updateAlarmLimits: updateTempSensor8464AlarmLimits, updateSyncedPV: updateTempSensor8464PV } = useControllerSync('1520-TI-8464');
+  const tempSensor8464Config = getControllerConfig('1520-TI-8464');
+
+  const { state: tempSensor7221SyncState, initializeController: initTempSensor7221, updateAlarmLimits: updateTempSensor7221AlarmLimits, updateSyncedPV: updateTempSensor7221PV } = useControllerSync('1540-T-7221');
+  const tempSensor7221Config = getControllerConfig('1540-T-7221');
+  const { state: tempSensor7224SyncState, initializeController: initTempSensor7224, updateAlarmLimits: updateTempSensor7224AlarmLimits, updateSyncedPV: updateTempSensor7224PV } = useControllerSync('1540-T-7224');
+  const tempSensor7224Config = getControllerConfig('1540-T-7224');
 
   // Initialize temperature sensor with configured Typical PV
   useEffect(() => {
@@ -1085,6 +1376,28 @@ const HomeScreen = () => {
       HH: tempSensor4200CConfig.ALM_HH_LIM ?? 2250,
     });
   }, [tempSensor4200CConfig.TYPICAL_PV, tempSensor4200CConfig.ALM_LL_LIM, tempSensor4200CConfig.ALM_L_LIM, tempSensor4200CConfig.ALM_H_LIM, tempSensor4200CConfig.ALM_HH_LIM, initTempSensor4200C, updateTempSensor4200CAlarmLimits]);
+  
+  // Initialize temperature sensor 1540-TI-4820 (Pass 1 Inlet Duct) with configured Typical PV and alarm limits
+  useEffect(() => {
+    const configPV = tempSensor4820Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) 
+      ? configPV 
+      : 750;
+    
+    initTempSensor4820(
+      typicalPV,
+      typicalPV,
+      tempSensor4820Config.SP_LIM_LO ?? 0,
+      tempSensor4820Config.SP_LIM_HI ?? 2000
+    );
+    
+    updateTempSensor4820AlarmLimits({
+      LL: tempSensor4820Config.ALM_LL_LIM ?? 0,
+      L: tempSensor4820Config.ALM_L_LIM ?? 0,
+      H: tempSensor4820Config.ALM_H_LIM ?? 0,
+      HH: tempSensor4820Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor4820Config.TYPICAL_PV, tempSensor4820Config.ALM_LL_LIM, tempSensor4820Config.ALM_L_LIM, tempSensor4820Config.ALM_H_LIM, tempSensor4820Config.ALM_HH_LIM, initTempSensor4820, updateTempSensor4820AlarmLimits]);
 
   // Initialize temperature sensor 1540-TI-4825 (Pass 1 Catalyst In) with configured Typical PV and alarm limits
   useEffect(() => {
@@ -1109,6 +1422,138 @@ const HomeScreen = () => {
       HH: tempSensor4825Config.ALM_HH_LIM ?? 900,
     });
   }, [tempSensor4825Config.TYPICAL_PV, tempSensor4825Config.ALM_LL_LIM, tempSensor4825Config.ALM_L_LIM, tempSensor4825Config.ALM_H_LIM, tempSensor4825Config.ALM_HH_LIM, initTempSensor4825, updateTempSensor4825AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor4827Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 1144;
+    initTempSensor4827(typicalPV, typicalPV, 800, 1300);
+    updateTempSensor4827AlarmLimits({
+      LL: tempSensor4827Config.ALM_LL_LIM ?? 0,
+      L: tempSensor4827Config.ALM_L_LIM ?? 0,
+      H: tempSensor4827Config.ALM_H_LIM ?? 1171,
+      HH: tempSensor4827Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor4827Config.TYPICAL_PV, tempSensor4827Config.ALM_LL_LIM, tempSensor4827Config.ALM_L_LIM, tempSensor4827Config.ALM_H_LIM, tempSensor4827Config.ALM_HH_LIM, initTempSensor4827, updateTempSensor4827AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor4841Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 900;
+    initTempSensor4841(typicalPV, typicalPV, 700, 1100);
+    updateTempSensor4841AlarmLimits({
+      LL: tempSensor4841Config.ALM_LL_LIM ?? 0,
+      L: tempSensor4841Config.ALM_L_LIM ?? 0,
+      H: tempSensor4841Config.ALM_H_LIM ?? 920,
+      HH: tempSensor4841Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor4841Config.TYPICAL_PV, tempSensor4841Config.ALM_LL_LIM, tempSensor4841Config.ALM_L_LIM, tempSensor4841Config.ALM_H_LIM, tempSensor4841Config.ALM_HH_LIM, initTempSensor4841, updateTempSensor4841AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor5231Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 880;
+    initTempSensor5231(typicalPV, typicalPV, 700, 1000);
+    updateTempSensor5231AlarmLimits({
+      LL: tempSensor5231Config.ALM_LL_LIM ?? 0,
+      L: tempSensor5231Config.ALM_L_LIM ?? 0,
+      H: tempSensor5231Config.ALM_H_LIM ?? 900,
+      HH: tempSensor5231Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor5231Config.TYPICAL_PV, tempSensor5231Config.ALM_LL_LIM, tempSensor5231Config.ALM_L_LIM, tempSensor5231Config.ALM_H_LIM, tempSensor5231Config.ALM_HH_LIM, initTempSensor5231, updateTempSensor5231AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor7225Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 2000) ? configPV : 810;
+    initTempSensor7225(typicalPV, typicalPV, 600, 950);
+    updateTempSensor7225AlarmLimits({
+      LL: tempSensor7225Config.ALM_LL_LIM ?? 0,
+      L: tempSensor7225Config.ALM_L_LIM ?? 0,
+      H: tempSensor7225Config.ALM_H_LIM ?? 830,
+      HH: tempSensor7225Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor7225Config.TYPICAL_PV, tempSensor7225Config.ALM_LL_LIM, tempSensor7225Config.ALM_L_LIM, tempSensor7225Config.ALM_H_LIM, tempSensor7225Config.ALM_HH_LIM, initTempSensor7225, updateTempSensor7225AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor6623Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 500) ? configPV : 172;
+    initTempSensor6623(typicalPV, typicalPV, 100, 300);
+    updateTempSensor6623AlarmLimits({
+      LL: tempSensor6623Config.ALM_LL_LIM ?? 0,
+      L: tempSensor6623Config.ALM_L_LIM ?? 165,
+      H: tempSensor6623Config.ALM_H_LIM ?? 180,
+      HH: tempSensor6623Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor6623Config.TYPICAL_PV, tempSensor6623Config.ALM_LL_LIM, tempSensor6623Config.ALM_L_LIM, tempSensor6623Config.ALM_H_LIM, tempSensor6623Config.ALM_HH_LIM, initTempSensor6623, updateTempSensor6623AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor8464Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 0 && configPV <= 500) ? configPV : 180;
+    initTempSensor8464(typicalPV, typicalPV, 100, 300);
+    updateTempSensor8464AlarmLimits({
+      LL: tempSensor8464Config.ALM_LL_LIM ?? 0,
+      L: tempSensor8464Config.ALM_L_LIM ?? 165,
+      H: tempSensor8464Config.ALM_H_LIM ?? 190,
+      HH: tempSensor8464Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor8464Config.TYPICAL_PV, tempSensor8464Config.ALM_LL_LIM, tempSensor8464Config.ALM_L_LIM, tempSensor8464Config.ALM_H_LIM, tempSensor8464Config.ALM_HH_LIM, initTempSensor8464, updateTempSensor8464AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor7221Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 100 && configPV <= 500) ? configPV : 275;
+    initTempSensor7221(typicalPV, typicalPV, 200, 400);
+    updateTempSensor7221AlarmLimits({
+      LL: tempSensor7221Config.ALM_LL_LIM ?? 0,
+      L: tempSensor7221Config.ALM_L_LIM ?? 265,
+      H: tempSensor7221Config.ALM_H_LIM ?? 315,
+      HH: tempSensor7221Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor7221Config.TYPICAL_PV, tempSensor7221Config.ALM_LL_LIM, tempSensor7221Config.ALM_L_LIM, tempSensor7221Config.ALM_H_LIM, tempSensor7221Config.ALM_HH_LIM, initTempSensor7221, updateTempSensor7221AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = tempSensor7224Config.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 100 && configPV <= 600) ? configPV : 330;
+    initTempSensor7224(typicalPV, typicalPV, 250, 450);
+    updateTempSensor7224AlarmLimits({
+      LL: tempSensor7224Config.ALM_LL_LIM ?? 0,
+      L: tempSensor7224Config.ALM_L_LIM ?? 320,
+      H: tempSensor7224Config.ALM_H_LIM ?? 370,
+      HH: tempSensor7224Config.ALM_HH_LIM ?? 0,
+    });
+  }, [tempSensor7224Config.TYPICAL_PV, tempSensor7224Config.ALM_LL_LIM, tempSensor7224Config.ALM_L_LIM, tempSensor7224Config.ALM_H_LIM, tempSensor7224Config.ALM_HH_LIM, initTempSensor7224, updateTempSensor7224AlarmLimits]);
+
+  useEffect(() => {
+    const configPV = pass2ControllerConfig.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 700 && configPV <= 900) ? configPV : 806;
+    initPass2Controller(typicalPV, typicalPV, pass2ControllerConfig.SP_LIM_LO ?? 700, pass2ControllerConfig.SP_LIM_HI ?? 900);
+    updatePass2ControllerAlarmLimits({
+      LL: pass2ControllerConfig.ALM_LL_LIM ?? 0,
+      L: pass2ControllerConfig.ALM_L_LIM ?? 797,
+      H: pass2ControllerConfig.ALM_H_LIM ?? 824,
+      HH: pass2ControllerConfig.ALM_HH_LIM ?? 0,
+    });
+  }, [pass2ControllerConfig.TYPICAL_PV, pass2ControllerConfig.SP_LIM_LO, pass2ControllerConfig.SP_LIM_HI, pass2ControllerConfig.ALM_LL_LIM, pass2ControllerConfig.ALM_L_LIM, pass2ControllerConfig.ALM_H_LIM, pass2ControllerConfig.ALM_HH_LIM, initPass2Controller, updatePass2ControllerAlarmLimits]);
+
+  useEffect(() => {
+    const configPV = pass3ControllerConfig.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 700 && configPV <= 900) ? configPV : 806;
+    initPass3Controller(typicalPV, typicalPV, pass3ControllerConfig.SP_LIM_LO ?? 700, pass3ControllerConfig.SP_LIM_HI ?? 900);
+    updatePass3ControllerAlarmLimits({
+      LL: pass3ControllerConfig.ALM_LL_LIM ?? 0,
+      L: pass3ControllerConfig.ALM_L_LIM ?? 797,
+      H: pass3ControllerConfig.ALM_H_LIM ?? 824,
+      HH: pass3ControllerConfig.ALM_HH_LIM ?? 0,
+    });
+  }, [pass3ControllerConfig.TYPICAL_PV, pass3ControllerConfig.SP_LIM_LO, pass3ControllerConfig.SP_LIM_HI, pass3ControllerConfig.ALM_LL_LIM, pass3ControllerConfig.ALM_L_LIM, pass3ControllerConfig.ALM_H_LIM, pass3ControllerConfig.ALM_HH_LIM, initPass3Controller, updatePass3ControllerAlarmLimits]);
+
+  useEffect(() => {
+    const configPV = pass4ControllerConfig.TYPICAL_PV;
+    const typicalPV = (configPV && configPV >= 680 && configPV <= 880) ? configPV : 797;
+    initPass4Controller(typicalPV, typicalPV, pass4ControllerConfig.SP_LIM_LO ?? 680, pass4ControllerConfig.SP_LIM_HI ?? 880);
+    updatePass4ControllerAlarmLimits({
+      LL: pass4ControllerConfig.ALM_LL_LIM ?? 0,
+      L: pass4ControllerConfig.ALM_L_LIM ?? 770,
+      H: pass4ControllerConfig.ALM_H_LIM ?? 797,
+      HH: pass4ControllerConfig.ALM_HH_LIM ?? 0,
+    });
+  }, [pass4ControllerConfig.TYPICAL_PV, pass4ControllerConfig.SP_LIM_LO, pass4ControllerConfig.SP_LIM_HI, pass4ControllerConfig.ALM_LL_LIM, pass4ControllerConfig.ALM_L_LIM, pass4ControllerConfig.ALM_H_LIM, pass4ControllerConfig.ALM_HH_LIM, initPass4Controller, updatePass4ControllerAlarmLimits]);
 
   // Function to call sulfur furnace API and update furnace outlet temperature (4200A)
   const calculateFurnaceTemperature = useCallback(async (sulfurFlowGpm: number) => {
@@ -1346,9 +1791,9 @@ const HomeScreen = () => {
     ...defaultControllerData,
     instrumentTag: whbHandControllerConfig.TAGNAME || '1540-H-4283',
     description: whbHandControllerConfig.DESC || 'WHB Outlet dP Hand Controller',
-    pv: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedPV,
+    pv: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
     sp: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
-    out: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedOUT,
+    out: useStaticWHBdP ? loadedCaseValueWHBdP : whbHandControllerSyncState.syncedSP,
     mode: whbHandControllerSyncState.syncedMode,
     pvUnits: whbHandControllerConfig.EU || '%',
     pvRangeMin: whbHandControllerConfig.PV_SCALE_LO ?? 0,
@@ -1371,9 +1816,9 @@ const HomeScreen = () => {
     ...defaultControllerData,
     instrumentTag: jugValveHandControllerConfig.TAGNAME || '1540-H-4282',
     description: jugValveHandControllerConfig.DESC || 'Jug Valve Hand Controller',
-    pv: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedPV,
+    pv: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
     sp: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
-    out: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedOUT,
+    out: useStaticJugValve ? loadedCaseValueJugValve : jugValveHandControllerSyncState.syncedSP,
     mode: jugValveHandControllerSyncState.syncedMode,
     pvUnits: jugValveHandControllerConfig.EU || '%',
     pvRangeMin: jugValveHandControllerConfig.SP_LIM_LO ?? 0,
@@ -1386,6 +1831,114 @@ const HomeScreen = () => {
     alarmL: jugValveHandControllerConfig.ALM_L_LIM ?? 0,
     alarmH: jugValveHandControllerConfig.ALM_H_LIM ?? 0,
     alarmHH: jugValveHandControllerConfig.ALM_HH_LIM ?? 0,
+  };
+
+  const rawTag4822 = orchestratorResult?.sensor_tags?.["1540-TIC-4822"];
+  const orchestratorPass2Temp = selectedMode === 'Static' && rawTag4822 != null
+    ? (typeof rawTag4822 === 'object' && rawTag4822 !== null ? (rawTag4822 as any).value : rawTag4822)
+    : null;
+  const pass2PV = loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedPV;
+  const pass2HHLim = pass2ControllerConfig.ALM_HH_LIM ?? 0;
+  const pass2HLim = pass2ControllerConfig.ALM_H_LIM ?? 824;
+  const pass2LLim = pass2ControllerConfig.ALM_L_LIM ?? 797;
+  const pass2LLLim = pass2ControllerConfig.ALM_LL_LIM ?? 0;
+  const pass2AlarmHH = pass2HHLim > 0 && pass2PV >= pass2HHLim;
+  const pass2AlarmH = pass2HLim > 0 && pass2PV >= pass2HLim;
+  const pass2AlarmL = pass2LLim > 0 && pass2PV <= pass2LLim;
+  const pass2AlarmLL = pass2LLLim > 0 && pass2PV <= pass2LLLim;
+  const pass2AlarmActive = pass2AlarmHH || pass2AlarmH || pass2AlarmL || pass2AlarmLL;
+  const pass2AlarmColor = (pass2AlarmHH || pass2AlarmLL) ? 'red' as const
+    : (pass2AlarmH || pass2AlarmL) ? 'yellow' as const : undefined;
+
+  const pass2ControllerData: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: pass2ControllerConfig.TAGNAME || '1540-T-4822',
+    description: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
+    pv: pass2PV,
+    sp: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    out: selectedMode === 'Static' ? 50 : pass2ControllerSyncState.syncedOUT,
+    mode: pass2ControllerSyncState.syncedMode,
+    pvUnits: pass2ControllerConfig.EU || '°F',
+    pvRangeMin: pass2ControllerConfig.PV_SCALE_LO ?? 700,
+    pvRangeMax: pass2ControllerConfig.PV_SCALE_HI ?? 900,
+    alarmActive: pass2AlarmActive,
+    alarmColor: pass2AlarmColor,
+    alarmLL: pass2LLLim,
+    alarmL: pass2LLim,
+    alarmH: pass2HLim,
+    alarmHH: pass2HHLim,
+  };
+
+  const rawTag5220 = orchestratorResult?.sensor_tags?.["1540-TIC-5220"];
+  const orchestratorPass3Temp = selectedMode === 'Static' && rawTag5220 != null
+    ? (typeof rawTag5220 === 'object' && rawTag5220 !== null ? (rawTag5220 as any).value : rawTag5220)
+    : null;
+  const pass3PV = loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedPV;
+  const pass3HHLim = pass3ControllerConfig.ALM_HH_LIM ?? 0;
+  const pass3HLim = pass3ControllerConfig.ALM_H_LIM ?? 824;
+  const pass3LLim = pass3ControllerConfig.ALM_L_LIM ?? 797;
+  const pass3LLLim = pass3ControllerConfig.ALM_LL_LIM ?? 0;
+  const pass3AlarmHH = pass3HHLim > 0 && pass3PV >= pass3HHLim;
+  const pass3AlarmH = pass3HLim > 0 && pass3PV >= pass3HLim;
+  const pass3AlarmL = pass3LLim > 0 && pass3PV <= pass3LLim;
+  const pass3AlarmLL = pass3LLLim > 0 && pass3PV <= pass3LLLim;
+  const pass3AlarmActive = pass3AlarmHH || pass3AlarmH || pass3AlarmL || pass3AlarmLL;
+  const pass3AlarmColor = (pass3AlarmHH || pass3AlarmLL) ? 'red' as const
+    : (pass3AlarmH || pass3AlarmL) ? 'yellow' as const : undefined;
+
+  const pass3ControllerData: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: pass3ControllerConfig.TAGNAME || '1540-T-5220',
+    description: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
+    pv: pass3PV,
+    sp: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    out: selectedMode === 'Static' ? 50 : pass3ControllerSyncState.syncedOUT,
+    mode: pass3ControllerSyncState.syncedMode,
+    pvUnits: pass3ControllerConfig.EU || '°F',
+    pvRangeMin: pass3ControllerConfig.PV_SCALE_LO ?? 700,
+    pvRangeMax: pass3ControllerConfig.PV_SCALE_HI ?? 900,
+    alarmActive: pass3AlarmActive,
+    alarmColor: pass3AlarmColor,
+    alarmLL: pass3LLLim,
+    alarmL: pass3LLim,
+    alarmH: pass3HLim,
+    alarmHH: pass3HHLim,
+  };
+
+  const rawTag5224 = orchestratorResult?.sensor_tags?.["1540-TIC-5224"];
+  const orchestratorPass4Temp = selectedMode === 'Static' && rawTag5224 != null
+    ? (typeof rawTag5224 === 'object' && rawTag5224 !== null ? (rawTag5224 as any).value : rawTag5224)
+    : null;
+  const pass4PV = loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedPV;
+  const pass4HHLim = pass4ControllerConfig.ALM_HH_LIM ?? 0;
+  const pass4HLim = pass4ControllerConfig.ALM_H_LIM ?? 797;
+  const pass4LLim = pass4ControllerConfig.ALM_L_LIM ?? 770;
+  const pass4LLLim = pass4ControllerConfig.ALM_LL_LIM ?? 0;
+  const pass4AlarmHH = pass4HHLim > 0 && pass4PV >= pass4HHLim;
+  const pass4AlarmH = pass4HLim > 0 && pass4PV >= pass4HLim;
+  const pass4AlarmL = pass4LLim > 0 && pass4PV <= pass4LLim;
+  const pass4AlarmLL = pass4LLLim > 0 && pass4PV <= pass4LLLim;
+  const pass4AlarmActive = pass4AlarmHH || pass4AlarmH || pass4AlarmL || pass4AlarmLL;
+  const pass4AlarmColor = (pass4AlarmHH || pass4AlarmLL) ? 'red' as const
+    : (pass4AlarmH || pass4AlarmL) ? 'yellow' as const : undefined;
+
+  const pass4ControllerData: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: pass4ControllerConfig.TAGNAME || '1540-T-5224',
+    description: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
+    pv: pass4PV,
+    sp: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    out: selectedMode === 'Static' ? 50 : pass4ControllerSyncState.syncedOUT,
+    mode: pass4ControllerSyncState.syncedMode,
+    pvUnits: pass4ControllerConfig.EU || '°F',
+    pvRangeMin: pass4ControllerConfig.PV_SCALE_LO ?? 680,
+    pvRangeMax: pass4ControllerConfig.PV_SCALE_HI ?? 880,
+    alarmActive: pass4AlarmActive,
+    alarmColor: pass4AlarmColor,
+    alarmLL: pass4LLLim,
+    alarmL: pass4LLim,
+    alarmH: pass4HLim,
+    alarmHH: pass4HHLim,
   };
 
   // Build Temperature Sensor 1520-TI-5821 data from synced state
@@ -1411,10 +1964,24 @@ const HomeScreen = () => {
   };
 
   // Build Temperature Sensor 1540-TI-4200A data from synced state
-  // Use furnace outlet temperature from simulation when available (Static mode), otherwise use synced PV
-  const tempSensor4200APV = selectedMode === 'Static' && furnaceOutletTemp !== null
-    ? furnaceOutletTemp
-    : tempSensor4200ASyncState.syncedPV;
+  // In Static mode, use orchestrator furnace temp (1540-TI-4010) as source of truth
+  const orchestratorFurnaceTemp = selectedMode === 'Static' && orchestratorResult?.sensor_tags?.["1540-TI-4010"] != null
+    ? orchestratorResult.sensor_tags["1540-TI-4010"]
+    : null;
+  const tempSensor4200APV = orchestratorFurnaceTemp ?? furnaceOutletTemp ?? tempSensor4200ASyncState.syncedPV;
+
+  // Compute alarm states directly from displayed PV (not sync context which has dynamic noise)
+  const furnaceHHLimit = tempSensor4200AConfig.ALM_HH_LIM ?? 2195;
+  const furnaceHLimit = tempSensor4200AConfig.ALM_H_LIM ?? 2155;
+  const furnaceLLimit = tempSensor4200AConfig.ALM_L_LIM ?? 0;
+  const furnaceLLLimit = tempSensor4200AConfig.ALM_LL_LIM ?? 0;
+  const furnaceAlarmHH = furnaceHHLimit > 0 && tempSensor4200APV >= furnaceHHLimit;
+  const furnaceAlarmH = furnaceHLimit > 0 && tempSensor4200APV >= furnaceHLimit;
+  const furnaceAlarmL = furnaceLLimit > 0 && tempSensor4200APV <= furnaceLLimit;
+  const furnaceAlarmLL = furnaceLLLimit > 0 && tempSensor4200APV <= furnaceLLLimit;
+  const furnaceAlarmActive = furnaceAlarmHH || furnaceAlarmH || furnaceAlarmL || furnaceAlarmLL;
+  const furnaceAlarmColor = (furnaceAlarmHH || furnaceAlarmLL) ? 'red' as const
+    : (furnaceAlarmH || furnaceAlarmL) ? 'yellow' as const : undefined;
 
   const tempSensor4200AData: ControllerData = {
     ...defaultControllerData,
@@ -1427,58 +1994,101 @@ const HomeScreen = () => {
     pvUnits: tempSensor4200AConfig.EU || '°F',
     pvRangeMin: tempSensor4200AConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200AConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.H ||
-      tempSensor4200ASyncState.alarmStates.L || tempSensor4200ASyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200ASyncState.alarmStates.HH || tempSensor4200ASyncState.alarmStates.LL) ? 'red' :
-      (tempSensor4200ASyncState.alarmStates.H || tempSensor4200ASyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: tempSensor4200AConfig.ALM_LL_LIM,
-    alarmL: tempSensor4200AConfig.ALM_L_LIM,
-    alarmH: tempSensor4200AConfig.ALM_H_LIM,
-    alarmHH: tempSensor4200AConfig.ALM_HH_LIM,
+    alarmActive: furnaceAlarmActive,
+    alarmColor: furnaceAlarmColor,
+    alarmLL: furnaceLLLimit,
+    alarmL: furnaceLLimit,
+    alarmH: furnaceHLimit,
+    alarmHH: furnaceHHLimit,
+  };
+
+  // Build Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) data from synced state
+  const rawTag4820 = orchestratorResult?.sensor_tags?.["1540-TI-4820"];
+  const orchestratorPass1InletTemp = selectedMode === 'Static' && rawTag4820 != null
+    ? (typeof rawTag4820 === 'object' && rawTag4820 !== null ? (rawTag4820 as any).value : rawTag4820)
+    : null;
+  const tempSensor4820PV = orchestratorPass1InletTemp ?? tempSensor4820SyncState.syncedPV;
+  const tempSensor4820Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor4820Config.TAGNAME || '1540-TI-4820',
+    description: tempSensor4820Config.DESC || 'Pass 1 Inlet Duct',
+    pv: tempSensor4820PV,
+    sp: tempSensor4820SyncState.syncedSP,
+    out: tempSensor4820SyncState.syncedOUT,
+    mode: tempSensor4820SyncState.syncedMode,
+    pvUnits: tempSensor4820Config.EU || 'F',
+    pvRangeMin: tempSensor4820Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor4820Config.SP_LIM_HI ?? 2000,
+    alarmLL: tempSensor4820Config.ALM_LL_LIM ?? 0,
+    alarmL: tempSensor4820Config.ALM_L_LIM ?? 0,
+    alarmH: tempSensor4820Config.ALM_H_LIM ?? 0,
+    alarmHH: tempSensor4820Config.ALM_HH_LIM ?? 0,
   };
 
   // Build Temperature Sensor 1540-TI-4200B data from synced state
+  const tempSensor4200BPV = orchestratorFurnaceTemp ?? tempSensor4200BSyncState.syncedPV;
+  const furnaceBHHLimit = tempSensor4200BConfig.ALM_HH_LIM ?? 2195;
+  const furnaceBHLimit = tempSensor4200BConfig.ALM_H_LIM ?? 2155;
+  const furnaceBLLimit = tempSensor4200BConfig.ALM_L_LIM ?? 0;
+  const furnaceBLLLimit = tempSensor4200BConfig.ALM_LL_LIM ?? 0;
+  const furnaceBAlarmHH = furnaceBHHLimit > 0 && tempSensor4200BPV >= furnaceBHHLimit;
+  const furnaceBAlarmH = furnaceBHLimit > 0 && tempSensor4200BPV >= furnaceBHLimit;
+  const furnaceBAlarmL = furnaceBLLimit > 0 && tempSensor4200BPV <= furnaceBLLimit;
+  const furnaceBAlarmLL = furnaceBLLLimit > 0 && tempSensor4200BPV <= furnaceBLLLimit;
+  const furnaceBAlarmActive = furnaceBAlarmHH || furnaceBAlarmH || furnaceBAlarmL || furnaceBAlarmLL;
+  const furnaceBAlarmColor = (furnaceBAlarmHH || furnaceBAlarmLL) ? 'red' as const
+    : (furnaceBAlarmH || furnaceBAlarmL) ? 'yellow' as const : undefined;
+
   const tempSensor4200BData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: tempSensor4200BConfig.TAGNAME || '1540-TI-4200B',
     description: tempSensor4200BConfig.DESC || 'Furnace Temp Out B',
-    pv: tempSensor4200BSyncState.syncedPV,
+    pv: tempSensor4200BPV,
     sp: tempSensor4200BSyncState.syncedSP,
     out: tempSensor4200BSyncState.syncedOUT,
     mode: tempSensor4200BSyncState.syncedMode,
     pvUnits: tempSensor4200BConfig.EU || '°F',
     pvRangeMin: tempSensor4200BConfig.SP_LIM_LO ?? 0,
     pvRangeMax: tempSensor4200BConfig.SP_LIM_HI ?? 2500,
-    alarmActive: tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.H ||
-      tempSensor4200BSyncState.alarmStates.L || tempSensor4200BSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200BSyncState.alarmStates.HH || tempSensor4200BSyncState.alarmStates.LL) ? 'red' :
-      (tempSensor4200BSyncState.alarmStates.H || tempSensor4200BSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: tempSensor4200BConfig.ALM_LL_LIM,
-    alarmL: tempSensor4200BConfig.ALM_L_LIM,
-    alarmH: tempSensor4200BConfig.ALM_H_LIM,
-    alarmHH: tempSensor4200BConfig.ALM_HH_LIM,
+    alarmActive: furnaceBAlarmActive,
+    alarmColor: furnaceBAlarmColor,
+    alarmLL: furnaceBLLLimit,
+    alarmL: furnaceBLLimit,
+    alarmH: furnaceBHLimit,
+    alarmHH: furnaceBHHLimit,
   };
 
   // Build Temperature Sensor 1540-TI-4200C data from synced state (Furnace temp 1800-2300°F)
+  const tempSensor4200CPV = orchestratorFurnaceTemp ?? tempSensor4200CSyncState.syncedPV;
+  const furnaceCHHLimit = 2250;
+  const furnaceCHLimit = 2200;
+  const furnaceCLLimit = 1900;
+  const furnaceCLLLimit = 1850;
+  const furnaceCAlarmHH = furnaceCHHLimit > 0 && tempSensor4200CPV >= furnaceCHHLimit;
+  const furnaceCAlarmH = furnaceCHLimit > 0 && tempSensor4200CPV >= furnaceCHLimit;
+  const furnaceCAlarmL = furnaceCLLimit > 0 && tempSensor4200CPV <= furnaceCLLimit;
+  const furnaceCAlarmLL = furnaceCLLLimit > 0 && tempSensor4200CPV <= furnaceCLLLimit;
+  const furnaceCAlarmActive = furnaceCAlarmHH || furnaceCAlarmH || furnaceCAlarmL || furnaceCAlarmLL;
+  const furnaceCAlarmColor = (furnaceCAlarmHH || furnaceCAlarmLL) ? 'red' as const
+    : (furnaceCAlarmH || furnaceCAlarmL) ? 'yellow' as const : undefined;
+
   const tempSensor4200CData: ControllerData = {
     ...defaultControllerData,
     instrumentTag: '1540-TI-4200C',
     description: 'Furnace C',
-    pv: tempSensor4200CSyncState.syncedPV,
+    pv: tempSensor4200CPV,
     sp: tempSensor4200CSyncState.syncedSP,
     out: tempSensor4200CSyncState.syncedOUT,
     mode: tempSensor4200CSyncState.syncedMode,
     pvUnits: '°F',
     pvRangeMin: 1800,
     pvRangeMax: 2300,
-    alarmActive: tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.H ||
-      tempSensor4200CSyncState.alarmStates.L || tempSensor4200CSyncState.alarmStates.LL,
-    alarmColor: (tempSensor4200CSyncState.alarmStates.HH || tempSensor4200CSyncState.alarmStates.LL) ? 'red' :
-      (tempSensor4200CSyncState.alarmStates.H || tempSensor4200CSyncState.alarmStates.L) ? 'yellow' : undefined,
-    alarmLL: 1850,
-    alarmL: 1900,
-    alarmH: 2200,
-    alarmHH: 2250,
+    alarmActive: furnaceCAlarmActive,
+    alarmColor: furnaceCAlarmColor,
+    alarmLL: furnaceCLLLimit,
+    alarmL: furnaceCLLimit,
+    alarmH: furnaceCHLimit,
+    alarmHH: furnaceCHHLimit,
   };
 
   // Use shared compressor context
@@ -1491,44 +2101,40 @@ const HomeScreen = () => {
     handleClearAlarm,
     setStaticValues,
     vfdConfig,
+    updateVFDConfig,
   } = useCompressor();
 
-  // Update compressor context when static mode is active
   useEffect(() => {
-    if (selectedMode === "Static") {
-      // Use simulation results if available, otherwise use loaded case value
-      if (staticSimulationResults) {
-        const speedPercent = staticSimulationResults.compressor_speed
-          ? (staticSimulationResults.compressor_speed / 4505) * 100
-          : 75;
-
-        setStaticValues({
-          speedPV: speedPercent,
-          speedSP: speedPercent,
-          motorSpeedRPM: staticSimulationResults.compressor_speed || 0,
-          compressorSpeedRPM: staticSimulationResults.compressor_speed || 0,
-          motorPowerHP: staticSimulationResults.brake_power_hp || 0,
-          currentPV: staticSimulationResults.vfd_current || 0,
-          state: "RUNNING",
-          deviceState: "Static Mode",
-        });
-      } else if (loadedCaseValue1540H4030 !== null) {
-        // Use the auto-loaded case value for VFD display
-        const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
-
-        setStaticValues({
-          speedPV: loadedCaseValue1540H4030,
-          speedSP: loadedCaseValue1540H4030,
-          motorSpeedRPM: speedRPM,
-          compressorSpeedRPM: speedRPM,
-          motorPowerHP: Math.round(((loadedCaseValue1540H4030 / 100) * 150) * 10) / 10, // Match dynamic mode calculation
-          currentPV: Math.round((20 + (loadedCaseValue1540H4030 / 100) * 50) * 10) / 10, // Match dynamic mode calculation
-          state: "RUNNING",
-          deviceState: "Static Mode",
-        });
-      }
+    const comp = orchestratorResult?.compressor;
+    if (comp && comp.compressor_rpm) {
+      const speedPercent = orchestratorResult?.sensor_tags?.["1540-SIC-4030"] ?? (comp.speed_ratio ?? 0) * 100;
+      setStaticValues({
+        speedSP: speedPercent,
+        motorSpeedRPM: comp.driver_rpm ?? 0,
+        compressorSpeedRPM: comp.compressor_rpm ?? 0,
+        motorPowerHP: comp.motor_power_hp ?? 0,
+        vfdCurrentAmps: comp.vfd_current_amps ?? 0,
+        currentPV: comp.vfd_current_amps ?? 0,
+        powerPV: comp.motor_power_hp ?? 0,
+        state: "RUNNING",
+        deviceState: selectedMode === "Static" ? "Static Mode" : "Dynamic Mode",
+        ...(selectedMode === "Static" ? { speedPV: speedPercent } : {}),
+      });
+    } else if (selectedMode === "Static" && loadedCaseValue1540H4030 !== null) {
+      const speedRPM = Math.round((loadedCaseValue1540H4030 / 100) * 4505);
+      const estimatedCurrent = (loadedCaseValue1540H4030 / 100) * 50;
+      setStaticValues({
+        speedPV: loadedCaseValue1540H4030,
+        speedSP: loadedCaseValue1540H4030,
+        motorSpeedRPM: speedRPM,
+        compressorSpeedRPM: speedRPM,
+        motorPowerHP: 0,
+        currentPV: estimatedCurrent,
+        state: "RUNNING",
+        deviceState: "Static Mode",
+      });
     }
-  }, [selectedMode, staticSimulationResults, loadedCaseValue1540H4030, setStaticValues]);
+  }, [selectedMode, orchestratorResult, loadedCaseValue1540H4030, setStaticValues]);
 
   const handleCompressorClick = () => {
     if (isLocked) {
@@ -1544,14 +2150,14 @@ const HomeScreen = () => {
 
   const handleSulfurValveClick = () => {
     if (isLocked) {
-      setLocation('/unit-operation/sulfur-control-hydraulics?from=home-screen');
+      setLocation('/unit-operation/sulfur-control-hydraulics/1540-VCF-2602?from=home-screen');
     }
   };
 
   // L2 Sulfur Valve click handler - navigates to sulfur hydraulics page
   const handleSulfurValveL2Click = () => {
     if (isLockedL2) {
-      setLocation('/unit-operation/sulfur-control-hydraulics?from=l2-furnace');
+      setLocation('/unit-operation/sulfur-control-hydraulics/1540-VCF-2602/1540-VCF-2602?from=l2-furnace');
     }
   };
 
@@ -1595,6 +2201,24 @@ const HomeScreen = () => {
     }
   };
 
+  const handlePass2ControllerClick = () => {
+    if (isLockedL4) {
+      setIsPass2ControllerModalOpen(true);
+    }
+  };
+
+  const handlePass3ControllerClick = () => {
+    if (isLockedL4) {
+      setIsPass3ControllerModalOpen(true);
+    }
+  };
+
+  const handlePass4ControllerClick = () => {
+    if (isLockedL4) {
+      setIsPass4ControllerModalOpen(true);
+    }
+  };
+
   const handleTurboGeneratorClick = () => {
     if (isLocked) {
       setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
@@ -1610,6 +2234,12 @@ const HomeScreen = () => {
   const handleTempSensor4200AClick = () => {
     if (isLocked) {
       setIsTempSensor4200AModalOpen(true);
+    }
+  };
+
+  const handleTempSensor4820Click = () => {
+    if (isLockedL2) {
+      setIsTempSensor4820ModalOpen(true);
     }
   };
 
@@ -1731,6 +2361,38 @@ const HomeScreen = () => {
     UNIT: tempSensor4200AConfig.UNIT || 'U-505',
   };
 
+  // Build temperature sensor 1540-TI-4820 (Pass 1 Inlet Duct) secondary faceplate data
+  const tempSensor4820SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4820PV,
+    SP: tempSensor4820SyncState.syncedSP,
+    TSP: tempSensor4820SyncState.syncedSP,
+    OUT_PCT: tempSensor4820SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4820SyncState.syncedMode === 'AUTO' || tempSensor4820SyncState.syncedMode === 'MAN' 
+      ? tempSensor4820SyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: tempSensor4820SyncState.alarmStates.HH,
+    ALM_H_ACT: tempSensor4820SyncState.alarmStates.H,
+    ALM_L_ACT: tempSensor4820SyncState.alarmStates.L,
+    ALM_LL_ACT: tempSensor4820SyncState.alarmStates.LL,
+  };
+
+  const tempSensor4820SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4820Config.TAGNAME || '1540-TI-4820',
+    DESC: tempSensor4820Config.DESC || 'Pass 1 Inlet Duct',
+    EU: tempSensor4820Config.EU || 'F',
+    PV_SCALE_LO: tempSensor4820Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4820Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4820Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4820Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4820Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor4820Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor4820Config.ALM_H_LIM ?? 0,
+    ALM_HH_LIM: tempSensor4820Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor4820Config.UNIT || 'Acid',
+  };
+
   // Build temperature sensor 1540-TI-4200B secondary faceplate data
   const tempSensor4200BSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
@@ -1827,6 +2489,534 @@ const HomeScreen = () => {
     UNIT: tempSensor4825Config.UNIT || 'U-505',
   };
 
+  // Build 1540-TI-4827 (Pass 1 Catalyst Out A) PV from orchestrator
+  const rawTag4827 = orchestratorResult?.sensor_tags?.["1540-TI-4827"];
+  const orchestratorPass1OutTemp = rawTag4827 != null
+    ? (typeof rawTag4827 === 'object' && rawTag4827 !== null ? (rawTag4827 as any).value : rawTag4827)
+    : null;
+  const tempSensor4827PV = orchestratorPass1OutTemp ?? tempSensor4827SyncState.syncedPV;
+  const ts4827HHLim = tempSensor4827Config.ALM_HH_LIM ?? 0;
+  const ts4827HLim = tempSensor4827Config.ALM_H_LIM ?? 1171;
+  const ts4827LLim = tempSensor4827Config.ALM_L_LIM ?? 0;
+  const ts4827LLLim = tempSensor4827Config.ALM_LL_LIM ?? 0;
+  const ts4827AlarmHH = ts4827HHLim > 0 && tempSensor4827PV >= ts4827HHLim;
+  const ts4827AlarmH = ts4827HLim > 0 && tempSensor4827PV >= ts4827HLim;
+  const ts4827AlarmL = ts4827LLim > 0 && tempSensor4827PV <= ts4827LLim;
+  const ts4827AlarmLL = ts4827LLLim > 0 && tempSensor4827PV <= ts4827LLLim;
+  const ts4827AlarmActive = ts4827AlarmHH || ts4827AlarmH || ts4827AlarmL || ts4827AlarmLL;
+  const ts4827AlarmColor = (ts4827AlarmHH || ts4827AlarmLL) ? 'red' as const
+    : (ts4827AlarmH || ts4827AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor4827Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor4827Config.TAGNAME || '1540-TI-4827',
+    description: tempSensor4827Config.DESC || 'Pass 1 Catalyst Out A',
+    pv: tempSensor4827PV,
+    sp: tempSensor4827SyncState.syncedSP,
+    out: tempSensor4827SyncState.syncedOUT,
+    mode: tempSensor4827SyncState.syncedMode,
+    pvUnits: tempSensor4827Config.EU || '°F',
+    pvRangeMin: tempSensor4827Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor4827Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts4827AlarmActive,
+    alarmColor: ts4827AlarmColor,
+    alarmLL: ts4827LLLim,
+    alarmL: ts4827LLim,
+    alarmH: ts4827HLim,
+    alarmHH: ts4827HHLim,
+  };
+
+  const tempSensor4827SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4827PV,
+    SP: tempSensor4827SyncState.syncedSP,
+    TSP: tempSensor4827SyncState.syncedSP,
+    OUT_PCT: tempSensor4827SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4827SyncState.syncedMode === 'AUTO' || tempSensor4827SyncState.syncedMode === 'MAN' ? tempSensor4827SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts4827AlarmHH,
+    ALM_H_ACT: ts4827AlarmH,
+    ALM_L_ACT: ts4827AlarmL,
+    ALM_LL_ACT: ts4827AlarmLL,
+  };
+
+  const tempSensor4827SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4827Config.TAGNAME || '1540-TI-4827',
+    DESC: tempSensor4827Config.DESC || 'Pass 1 Catalyst Out A',
+    EU: tempSensor4827Config.EU || '°F',
+    PV_SCALE_LO: tempSensor4827Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4827Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4827Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4827Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4827Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor4827Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor4827Config.ALM_H_LIM ?? 1171,
+    ALM_HH_LIM: tempSensor4827Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor4827Config.UNIT || 'U-505',
+  };
+
+  // Build 1540-TI-4841 (Pass 2 Catalyst Out) PV from orchestrator
+  const rawTag4841 = orchestratorResult?.sensor_tags?.["1540-TI-4841"];
+  const orchestratorPass2OutTemp = rawTag4841 != null
+    ? (typeof rawTag4841 === 'object' && rawTag4841 !== null ? (rawTag4841 as any).value : rawTag4841)
+    : null;
+  const tempSensor4841PV = orchestratorPass2OutTemp ?? tempSensor4841SyncState.syncedPV;
+  const ts4841HHLim = tempSensor4841Config.ALM_HH_LIM ?? 0;
+  const ts4841HLim = tempSensor4841Config.ALM_H_LIM ?? 920;
+  const ts4841LLim = tempSensor4841Config.ALM_L_LIM ?? 0;
+  const ts4841LLLim = tempSensor4841Config.ALM_LL_LIM ?? 0;
+  const ts4841AlarmHH = ts4841HHLim > 0 && tempSensor4841PV >= ts4841HHLim;
+  const ts4841AlarmH = ts4841HLim > 0 && tempSensor4841PV >= ts4841HLim;
+  const ts4841AlarmL = ts4841LLim > 0 && tempSensor4841PV <= ts4841LLim;
+  const ts4841AlarmLL = ts4841LLLim > 0 && tempSensor4841PV <= ts4841LLLim;
+  const ts4841AlarmActive = ts4841AlarmHH || ts4841AlarmH || ts4841AlarmL || ts4841AlarmLL;
+  const ts4841AlarmColor = (ts4841AlarmHH || ts4841AlarmLL) ? 'red' as const
+    : (ts4841AlarmH || ts4841AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor4841Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor4841Config.TAGNAME || '1540-TI-4841',
+    description: tempSensor4841Config.DESC || 'Pass 2 Catalyst Out',
+    pv: tempSensor4841PV,
+    sp: tempSensor4841SyncState.syncedSP,
+    out: tempSensor4841SyncState.syncedOUT,
+    mode: tempSensor4841SyncState.syncedMode,
+    pvUnits: tempSensor4841Config.EU || '°F',
+    pvRangeMin: tempSensor4841Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor4841Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts4841AlarmActive,
+    alarmColor: ts4841AlarmColor,
+    alarmLL: ts4841LLLim,
+    alarmL: ts4841LLim,
+    alarmH: ts4841HLim,
+    alarmHH: ts4841HHLim,
+  };
+
+  const tempSensor4841SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor4841PV,
+    SP: tempSensor4841SyncState.syncedSP,
+    TSP: tempSensor4841SyncState.syncedSP,
+    OUT_PCT: tempSensor4841SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor4841SyncState.syncedMode === 'AUTO' || tempSensor4841SyncState.syncedMode === 'MAN' ? tempSensor4841SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts4841AlarmHH,
+    ALM_H_ACT: ts4841AlarmH,
+    ALM_L_ACT: ts4841AlarmL,
+    ALM_LL_ACT: ts4841AlarmLL,
+  };
+
+  const tempSensor4841SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor4841Config.TAGNAME || '1540-TI-4841',
+    DESC: tempSensor4841Config.DESC || 'Pass 2 Catalyst Out',
+    EU: tempSensor4841Config.EU || '°F',
+    PV_SCALE_LO: tempSensor4841Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor4841Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor4841Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor4841Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor4841Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor4841Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor4841Config.ALM_H_LIM ?? 920,
+    ALM_HH_LIM: tempSensor4841Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor4841Config.UNIT || 'U-505',
+  };
+
+  // Build 1540-TI-5231 (Pass 3 Duct Outlet) PV from orchestrator
+  const rawTag5231 = orchestratorResult?.sensor_tags?.["1540-TI-5231"];
+  const orchestratorPass3OutTemp = rawTag5231 != null
+    ? (typeof rawTag5231 === 'object' && rawTag5231 !== null ? (rawTag5231 as any).value : rawTag5231)
+    : null;
+  const tempSensor5231PV = orchestratorPass3OutTemp ?? tempSensor5231SyncState.syncedPV;
+  const ts5231HHLim = tempSensor5231Config.ALM_HH_LIM ?? 0;
+  const ts5231HLim = tempSensor5231Config.ALM_H_LIM ?? 900;
+  const ts5231LLim = tempSensor5231Config.ALM_L_LIM ?? 0;
+  const ts5231LLLim = tempSensor5231Config.ALM_LL_LIM ?? 0;
+  const ts5231AlarmHH = ts5231HHLim > 0 && tempSensor5231PV >= ts5231HHLim;
+  const ts5231AlarmH = ts5231HLim > 0 && tempSensor5231PV >= ts5231HLim;
+  const ts5231AlarmL = ts5231LLim > 0 && tempSensor5231PV <= ts5231LLim;
+  const ts5231AlarmLL = ts5231LLLim > 0 && tempSensor5231PV <= ts5231LLLim;
+  const ts5231AlarmActive = ts5231AlarmHH || ts5231AlarmH || ts5231AlarmL || ts5231AlarmLL;
+  const ts5231AlarmColor = (ts5231AlarmHH || ts5231AlarmLL) ? 'red' as const
+    : (ts5231AlarmH || ts5231AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor5231Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor5231Config.TAGNAME || '1540-TI-5231',
+    description: tempSensor5231Config.DESC || 'Pass 3 Duct Outlet',
+    pv: tempSensor5231PV,
+    sp: tempSensor5231SyncState.syncedSP,
+    out: tempSensor5231SyncState.syncedOUT,
+    mode: tempSensor5231SyncState.syncedMode,
+    pvUnits: tempSensor5231Config.EU || '°F',
+    pvRangeMin: tempSensor5231Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor5231Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts5231AlarmActive,
+    alarmColor: ts5231AlarmColor,
+    alarmLL: ts5231LLLim,
+    alarmL: ts5231LLim,
+    alarmH: ts5231HLim,
+    alarmHH: ts5231HHLim,
+  };
+
+  const tempSensor5231SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor5231PV,
+    SP: tempSensor5231SyncState.syncedSP,
+    TSP: tempSensor5231SyncState.syncedSP,
+    OUT_PCT: tempSensor5231SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor5231SyncState.syncedMode === 'AUTO' || tempSensor5231SyncState.syncedMode === 'MAN' ? tempSensor5231SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts5231AlarmHH,
+    ALM_H_ACT: ts5231AlarmH,
+    ALM_L_ACT: ts5231AlarmL,
+    ALM_LL_ACT: ts5231AlarmLL,
+  };
+
+  const tempSensor5231SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor5231Config.TAGNAME || '1540-TI-5231',
+    DESC: tempSensor5231Config.DESC || 'Pass 3 Duct Outlet',
+    EU: tempSensor5231Config.EU || '°F',
+    PV_SCALE_LO: tempSensor5231Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor5231Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor5231Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor5231Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor5231Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor5231Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor5231Config.ALM_H_LIM ?? 900,
+    ALM_HH_LIM: tempSensor5231Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor5231Config.UNIT || 'U-505',
+  };
+
+  // Build 1540-TI-7225 (Pass 4 Catalyst Out) PV from orchestrator
+  const rawTag7225 = orchestratorResult?.sensor_tags?.["1540-TI-7225"];
+  const orchestratorPass4OutTemp = rawTag7225 != null
+    ? (typeof rawTag7225 === 'object' && rawTag7225 !== null ? (rawTag7225 as any).value : rawTag7225)
+    : null;
+  const tempSensor7225PV = orchestratorPass4OutTemp ?? tempSensor7225SyncState.syncedPV;
+  const ts7225HHLim = tempSensor7225Config.ALM_HH_LIM ?? 0;
+  const ts7225HLim = tempSensor7225Config.ALM_H_LIM ?? 830;
+  const ts7225LLim = tempSensor7225Config.ALM_L_LIM ?? 0;
+  const ts7225LLLim = tempSensor7225Config.ALM_LL_LIM ?? 0;
+  const ts7225AlarmHH = ts7225HHLim > 0 && tempSensor7225PV >= ts7225HHLim;
+  const ts7225AlarmH = ts7225HLim > 0 && tempSensor7225PV >= ts7225HLim;
+  const ts7225AlarmL = ts7225LLim > 0 && tempSensor7225PV <= ts7225LLim;
+  const ts7225AlarmLL = ts7225LLLim > 0 && tempSensor7225PV <= ts7225LLLim;
+  const ts7225AlarmActive = ts7225AlarmHH || ts7225AlarmH || ts7225AlarmL || ts7225AlarmLL;
+  const ts7225AlarmColor = (ts7225AlarmHH || ts7225AlarmLL) ? 'red' as const
+    : (ts7225AlarmH || ts7225AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor7225Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor7225Config.TAGNAME || '1540-TI-7225',
+    description: tempSensor7225Config.DESC || 'Pass 4 Catalyst Out',
+    pv: tempSensor7225PV,
+    sp: tempSensor7225SyncState.syncedSP,
+    out: tempSensor7225SyncState.syncedOUT,
+    mode: tempSensor7225SyncState.syncedMode,
+    pvUnits: tempSensor7225Config.EU || '°F',
+    pvRangeMin: tempSensor7225Config.SP_LIM_LO ?? 0,
+    pvRangeMax: tempSensor7225Config.SP_LIM_HI ?? 2000,
+    alarmActive: ts7225AlarmActive,
+    alarmColor: ts7225AlarmColor,
+    alarmLL: ts7225LLLim,
+    alarmL: ts7225LLim,
+    alarmH: ts7225HLim,
+    alarmHH: ts7225HHLim,
+  };
+
+  const tempSensor7225SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor7225PV,
+    SP: tempSensor7225SyncState.syncedSP,
+    TSP: tempSensor7225SyncState.syncedSP,
+    OUT_PCT: tempSensor7225SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor7225SyncState.syncedMode === 'AUTO' || tempSensor7225SyncState.syncedMode === 'MAN' ? tempSensor7225SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts7225AlarmHH,
+    ALM_H_ACT: ts7225AlarmH,
+    ALM_L_ACT: ts7225AlarmL,
+    ALM_LL_ACT: ts7225AlarmLL,
+  };
+
+  const tempSensor7225SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor7225Config.TAGNAME || '1540-TI-7225',
+    DESC: tempSensor7225Config.DESC || 'Pass 4 Catalyst Out',
+    EU: tempSensor7225Config.EU || '°F',
+    PV_SCALE_LO: tempSensor7225Config.PV_SCALE_LO ?? 0,
+    PV_SCALE_HI: tempSensor7225Config.PV_SCALE_HI ?? 2000,
+    SP_LIM_LO: tempSensor7225Config.SP_LIM_LO ?? 0,
+    SP_LIM_HI: tempSensor7225Config.SP_LIM_HI ?? 2000,
+    ALM_LL_LIM: tempSensor7225Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor7225Config.ALM_L_LIM ?? 0,
+    ALM_H_LIM: tempSensor7225Config.ALM_H_LIM ?? 830,
+    ALM_HH_LIM: tempSensor7225Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor7225Config.UNIT || 'U-505',
+  };
+
+  // Build 1520-TI-6623 (FAT Acid Temp) PV from orchestrator
+  const rawTag6623 = orchestratorResult?.sensor_tags?.["1520-TIC-6622"];
+  const orchestratorFATAcidTemp = rawTag6623 != null
+    ? (typeof rawTag6623 === 'object' && rawTag6623 !== null ? (rawTag6623 as any).value : rawTag6623)
+    : null;
+  const tempSensor6623PV = orchestratorFATAcidTemp ?? tempSensor6623SyncState.syncedPV;
+  const ts6623HHLim = tempSensor6623Config.ALM_HH_LIM ?? 0;
+  const ts6623HLim = tempSensor6623Config.ALM_H_LIM ?? 180;
+  const ts6623LLim = tempSensor6623Config.ALM_L_LIM ?? 165;
+  const ts6623LLLim = tempSensor6623Config.ALM_LL_LIM ?? 0;
+  const ts6623AlarmHH = ts6623HHLim > 0 && tempSensor6623PV >= ts6623HHLim;
+  const ts6623AlarmH = ts6623HLim > 0 && tempSensor6623PV >= ts6623HLim;
+  const ts6623AlarmL = ts6623LLim > 0 && tempSensor6623PV <= ts6623LLim;
+  const ts6623AlarmLL = ts6623LLLim > 0 && tempSensor6623PV <= ts6623LLLim;
+  const ts6623AlarmActive = ts6623AlarmHH || ts6623AlarmH || ts6623AlarmL || ts6623AlarmLL;
+  const ts6623AlarmColor = (ts6623AlarmHH || ts6623AlarmLL) ? 'red' as const
+    : (ts6623AlarmH || ts6623AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor6623Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor6623Config.TAGNAME || '1520-TI-6623',
+    description: tempSensor6623Config.DESC || 'FAT Acid Temp',
+    pv: tempSensor6623PV,
+    sp: tempSensor6623SyncState.syncedSP,
+    out: tempSensor6623SyncState.syncedOUT,
+    mode: tempSensor6623SyncState.syncedMode,
+    pvUnits: tempSensor6623Config.EU || '°F',
+    pvRangeMin: tempSensor6623Config.SP_LIM_LO ?? 100,
+    pvRangeMax: tempSensor6623Config.SP_LIM_HI ?? 300,
+    alarmActive: ts6623AlarmActive,
+    alarmColor: ts6623AlarmColor,
+    alarmLL: ts6623LLLim,
+    alarmL: ts6623LLim,
+    alarmH: ts6623HLim,
+    alarmHH: ts6623HHLim,
+  };
+
+  const tempSensor6623SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor6623PV,
+    SP: tempSensor6623SyncState.syncedSP,
+    TSP: tempSensor6623SyncState.syncedSP,
+    OUT_PCT: tempSensor6623SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor6623SyncState.syncedMode === 'AUTO' || tempSensor6623SyncState.syncedMode === 'MAN' ? tempSensor6623SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts6623AlarmHH,
+    ALM_H_ACT: ts6623AlarmH,
+    ALM_L_ACT: ts6623AlarmL,
+    ALM_LL_ACT: ts6623AlarmLL,
+  };
+
+  const tempSensor6623SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor6623Config.TAGNAME || '1520-TI-6623',
+    DESC: tempSensor6623Config.DESC || 'FAT Acid Temp',
+    EU: tempSensor6623Config.EU || '°F',
+    PV_SCALE_LO: tempSensor6623Config.PV_SCALE_LO ?? 100,
+    PV_SCALE_HI: tempSensor6623Config.PV_SCALE_HI ?? 300,
+    SP_LIM_LO: tempSensor6623Config.SP_LIM_LO ?? 100,
+    SP_LIM_HI: tempSensor6623Config.SP_LIM_HI ?? 300,
+    ALM_LL_LIM: tempSensor6623Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor6623Config.ALM_L_LIM ?? 165,
+    ALM_H_LIM: tempSensor6623Config.ALM_H_LIM ?? 180,
+    ALM_HH_LIM: tempSensor6623Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor6623Config.UNIT || '1520',
+  };
+
+  // Build 1520-TI-8464 (IPAT Acid Temp) PV from orchestrator
+  const rawTag8464 = orchestratorResult?.sensor_tags?.["1520-TIC-6722"];
+  const orchestratorIPATAcidTemp = rawTag8464 != null
+    ? (typeof rawTag8464 === 'object' && rawTag8464 !== null ? (rawTag8464 as any).value : rawTag8464)
+    : null;
+  const tempSensor8464PV = orchestratorIPATAcidTemp ?? tempSensor8464SyncState.syncedPV;
+  const ts8464HHLim = tempSensor8464Config.ALM_HH_LIM ?? 0;
+  const ts8464HLim = tempSensor8464Config.ALM_H_LIM ?? 190;
+  const ts8464LLim = tempSensor8464Config.ALM_L_LIM ?? 165;
+  const ts8464LLLim = tempSensor8464Config.ALM_LL_LIM ?? 0;
+  const ts8464AlarmHH = ts8464HHLim > 0 && tempSensor8464PV >= ts8464HHLim;
+  const ts8464AlarmH = ts8464HLim > 0 && tempSensor8464PV >= ts8464HLim;
+  const ts8464AlarmL = ts8464LLim > 0 && tempSensor8464PV <= ts8464LLim;
+  const ts8464AlarmLL = ts8464LLLim > 0 && tempSensor8464PV <= ts8464LLLim;
+  const ts8464AlarmActive = ts8464AlarmHH || ts8464AlarmH || ts8464AlarmL || ts8464AlarmLL;
+  const ts8464AlarmColor = (ts8464AlarmHH || ts8464AlarmLL) ? 'red' as const
+    : (ts8464AlarmH || ts8464AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor8464Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor8464Config.TAGNAME || '1520-TI-8464',
+    description: tempSensor8464Config.DESC || 'IPAT Acid Temp',
+    pv: tempSensor8464PV,
+    sp: tempSensor8464SyncState.syncedSP,
+    out: tempSensor8464SyncState.syncedOUT,
+    mode: tempSensor8464SyncState.syncedMode,
+    pvUnits: tempSensor8464Config.EU || '°F',
+    pvRangeMin: tempSensor8464Config.SP_LIM_LO ?? 100,
+    pvRangeMax: tempSensor8464Config.SP_LIM_HI ?? 300,
+    alarmActive: ts8464AlarmActive,
+    alarmColor: ts8464AlarmColor,
+    alarmLL: ts8464LLLim,
+    alarmL: ts8464LLim,
+    alarmH: ts8464HLim,
+    alarmHH: ts8464HHLim,
+  };
+
+  const tempSensor8464SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor8464PV,
+    SP: tempSensor8464SyncState.syncedSP,
+    TSP: tempSensor8464SyncState.syncedSP,
+    OUT_PCT: tempSensor8464SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor8464SyncState.syncedMode === 'AUTO' || tempSensor8464SyncState.syncedMode === 'MAN' ? tempSensor8464SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts8464AlarmHH,
+    ALM_H_ACT: ts8464AlarmH,
+    ALM_L_ACT: ts8464AlarmL,
+    ALM_LL_ACT: ts8464AlarmLL,
+  };
+
+  const tempSensor8464SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor8464Config.TAGNAME || '1520-TI-8464',
+    DESC: tempSensor8464Config.DESC || 'IPAT Acid Temp',
+    EU: tempSensor8464Config.EU || '°F',
+    PV_SCALE_LO: tempSensor8464Config.PV_SCALE_LO ?? 100,
+    PV_SCALE_HI: tempSensor8464Config.PV_SCALE_HI ?? 300,
+    SP_LIM_LO: tempSensor8464Config.SP_LIM_LO ?? 100,
+    SP_LIM_HI: tempSensor8464Config.SP_LIM_HI ?? 300,
+    ALM_LL_LIM: tempSensor8464Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor8464Config.ALM_L_LIM ?? 165,
+    ALM_H_LIM: tempSensor8464Config.ALM_H_LIM ?? 190,
+    ALM_HH_LIM: tempSensor8464Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor8464Config.UNIT || '1520',
+  };
+
+  // Build 1540-T-7221 (Final Tower Gas Inlet Temperature) PV from orchestrator
+  const rawTag7221 = orchestratorResult?.sensor_tags?.["1540-TIC-7221"];
+  const orchestratorFATGasInletTemp = rawTag7221 != null
+    ? (typeof rawTag7221 === 'object' && rawTag7221 !== null ? (rawTag7221 as any).value : rawTag7221)
+    : null;
+  const tempSensor7221PV = orchestratorFATGasInletTemp ?? tempSensor7221SyncState.syncedPV;
+  const ts7221HHLim = tempSensor7221Config.ALM_HH_LIM ?? 0;
+  const ts7221HLim = tempSensor7221Config.ALM_H_LIM ?? 315;
+  const ts7221LLim = tempSensor7221Config.ALM_L_LIM ?? 265;
+  const ts7221LLLim = tempSensor7221Config.ALM_LL_LIM ?? 0;
+  const ts7221AlarmHH = ts7221HHLim > 0 && tempSensor7221PV >= ts7221HHLim;
+  const ts7221AlarmH = ts7221HLim > 0 && tempSensor7221PV >= ts7221HLim;
+  const ts7221AlarmL = ts7221LLim > 0 && tempSensor7221PV <= ts7221LLim;
+  const ts7221AlarmLL = ts7221LLLim > 0 && tempSensor7221PV <= ts7221LLLim;
+  const ts7221AlarmActive = ts7221AlarmHH || ts7221AlarmH || ts7221AlarmL || ts7221AlarmLL;
+  const ts7221AlarmColor = (ts7221AlarmHH || ts7221AlarmLL) ? 'red' as const
+    : (ts7221AlarmH || ts7221AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor7221Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor7221Config.TAGNAME || '1540-T-7221',
+    description: tempSensor7221Config.DESC || 'Final Tower Gas Inlet Temperature',
+    pv: tempSensor7221PV,
+    sp: tempSensor7221SyncState.syncedSP,
+    out: tempSensor7221SyncState.syncedOUT,
+    mode: tempSensor7221SyncState.syncedMode,
+    pvUnits: tempSensor7221Config.EU || '°F',
+    pvRangeMin: tempSensor7221Config.SP_LIM_LO ?? 200,
+    pvRangeMax: tempSensor7221Config.SP_LIM_HI ?? 400,
+    alarmActive: ts7221AlarmActive,
+    alarmColor: ts7221AlarmColor,
+    alarmLL: ts7221LLLim,
+    alarmL: ts7221LLim,
+    alarmH: ts7221HLim,
+    alarmHH: ts7221HHLim,
+  };
+
+  const tempSensor7221SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor7221PV,
+    SP: tempSensor7221SyncState.syncedSP,
+    TSP: tempSensor7221SyncState.syncedSP,
+    OUT_PCT: tempSensor7221SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor7221SyncState.syncedMode === 'AUTO' || tempSensor7221SyncState.syncedMode === 'MAN' ? tempSensor7221SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts7221AlarmHH,
+    ALM_H_ACT: ts7221AlarmH,
+    ALM_L_ACT: ts7221AlarmL,
+    ALM_LL_ACT: ts7221AlarmLL,
+  };
+
+  const tempSensor7221SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor7221Config.TAGNAME || '1540-T-7221',
+    DESC: tempSensor7221Config.DESC || 'Final Tower Gas Inlet Temperature',
+    EU: tempSensor7221Config.EU || '°F',
+    PV_SCALE_LO: tempSensor7221Config.PV_SCALE_LO ?? 200,
+    PV_SCALE_HI: tempSensor7221Config.PV_SCALE_HI ?? 400,
+    SP_LIM_LO: tempSensor7221Config.SP_LIM_LO ?? 200,
+    SP_LIM_HI: tempSensor7221Config.SP_LIM_HI ?? 400,
+    ALM_LL_LIM: tempSensor7221Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor7221Config.ALM_L_LIM ?? 265,
+    ALM_H_LIM: tempSensor7221Config.ALM_H_LIM ?? 315,
+    ALM_HH_LIM: tempSensor7221Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor7221Config.UNIT || '1540',
+  };
+
+  // Build 1540-T-7224 (Interpass Tower Gas Inlet Temperature) PV from orchestrator
+  const rawTag7224 = orchestratorResult?.sensor_tags?.["1540-TIC-7224"];
+  const orchestratorIPATGasInletTemp = rawTag7224 != null
+    ? (typeof rawTag7224 === 'object' && rawTag7224 !== null ? (rawTag7224 as any).value : rawTag7224)
+    : null;
+  const tempSensor7224PV = orchestratorIPATGasInletTemp ?? tempSensor7224SyncState.syncedPV;
+  const ts7224HHLim = tempSensor7224Config.ALM_HH_LIM ?? 0;
+  const ts7224HLim = tempSensor7224Config.ALM_H_LIM ?? 370;
+  const ts7224LLim = tempSensor7224Config.ALM_L_LIM ?? 320;
+  const ts7224LLLim = tempSensor7224Config.ALM_LL_LIM ?? 0;
+  const ts7224AlarmHH = ts7224HHLim > 0 && tempSensor7224PV >= ts7224HHLim;
+  const ts7224AlarmH = ts7224HLim > 0 && tempSensor7224PV >= ts7224HLim;
+  const ts7224AlarmL = ts7224LLim > 0 && tempSensor7224PV <= ts7224LLim;
+  const ts7224AlarmLL = ts7224LLLim > 0 && tempSensor7224PV <= ts7224LLLim;
+  const ts7224AlarmActive = ts7224AlarmHH || ts7224AlarmH || ts7224AlarmL || ts7224AlarmLL;
+  const ts7224AlarmColor = (ts7224AlarmHH || ts7224AlarmLL) ? 'red' as const
+    : (ts7224AlarmH || ts7224AlarmL) ? 'yellow' as const : undefined;
+
+  const tempSensor7224Data: ControllerData = {
+    ...defaultControllerData,
+    instrumentTag: tempSensor7224Config.TAGNAME || '1540-T-7224',
+    description: tempSensor7224Config.DESC || 'Interpass Tower Gas Inlet Temperature',
+    pv: tempSensor7224PV,
+    sp: tempSensor7224SyncState.syncedSP,
+    out: tempSensor7224SyncState.syncedOUT,
+    mode: tempSensor7224SyncState.syncedMode,
+    pvUnits: tempSensor7224Config.EU || '°F',
+    pvRangeMin: tempSensor7224Config.SP_LIM_LO ?? 250,
+    pvRangeMax: tempSensor7224Config.SP_LIM_HI ?? 450,
+    alarmActive: ts7224AlarmActive,
+    alarmColor: ts7224AlarmColor,
+    alarmLL: ts7224LLLim,
+    alarmL: ts7224LLim,
+    alarmH: ts7224HLim,
+    alarmHH: ts7224HHLim,
+  };
+
+  const tempSensor7224SecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: tempSensor7224PV,
+    SP: tempSensor7224SyncState.syncedSP,
+    TSP: tempSensor7224SyncState.syncedSP,
+    OUT_PCT: tempSensor7224SyncState.syncedOUT,
+    MODE_AUTOMAN: tempSensor7224SyncState.syncedMode === 'AUTO' || tempSensor7224SyncState.syncedMode === 'MAN' ? tempSensor7224SyncState.syncedMode : 'AUTO',
+    ALM_HH_ACT: ts7224AlarmHH,
+    ALM_H_ACT: ts7224AlarmH,
+    ALM_L_ACT: ts7224AlarmL,
+    ALM_LL_ACT: ts7224AlarmLL,
+  };
+
+  const tempSensor7224SecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: tempSensor7224Config.TAGNAME || '1540-T-7224',
+    DESC: tempSensor7224Config.DESC || 'Interpass Tower Gas Inlet Temperature',
+    EU: tempSensor7224Config.EU || '°F',
+    PV_SCALE_LO: tempSensor7224Config.PV_SCALE_LO ?? 250,
+    PV_SCALE_HI: tempSensor7224Config.PV_SCALE_HI ?? 450,
+    SP_LIM_LO: tempSensor7224Config.SP_LIM_LO ?? 250,
+    SP_LIM_HI: tempSensor7224Config.SP_LIM_HI ?? 450,
+    ALM_LL_LIM: tempSensor7224Config.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: tempSensor7224Config.ALM_L_LIM ?? 320,
+    ALM_H_LIM: tempSensor7224Config.ALM_H_LIM ?? 370,
+    ALM_HH_LIM: tempSensor7224Config.ALM_HH_LIM ?? 0,
+    UNIT: tempSensor7224Config.UNIT || '1540',
+  };
+
   // Build Hand Controller 1540-H-4030 secondary faceplate data
   const handControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
@@ -1863,10 +3053,10 @@ const HomeScreen = () => {
   // Build Jug Valve Hand Controller 1540-H-4282 secondary faceplate data
   const jugValveHandControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: jugValveHandControllerSyncState.syncedPV,
+    PV: jugValveHandControllerSyncState.syncedSP,
     SP: jugValveHandControllerSyncState.syncedSP,
     TSP: jugValveHandControllerSyncState.syncedSP,
-    OUT_PCT: jugValveHandControllerSyncState.syncedOUT,
+    OUT_PCT: jugValveHandControllerSyncState.syncedSP,
     MODE_AUTOMAN: jugValveHandControllerSyncState.syncedMode === 'AUTO' || jugValveHandControllerSyncState.syncedMode === 'MAN'
       ? jugValveHandControllerSyncState.syncedMode
       : 'AUTO',
@@ -1898,10 +3088,10 @@ const HomeScreen = () => {
   // Build WHB Hand Controller 1540-H-4283 secondary faceplate data
   const whbHandControllerSecondaryData: SecondaryControllerData = {
     ...defaultSecondaryData,
-    PV: whbHandControllerSyncState.syncedPV,
+    PV: whbHandControllerSyncState.syncedSP,
     SP: whbHandControllerSyncState.syncedSP,
     TSP: whbHandControllerSyncState.syncedSP,
-    OUT_PCT: whbHandControllerSyncState.syncedOUT,
+    OUT_PCT: whbHandControllerSyncState.syncedSP,
     MODE_AUTOMAN: whbHandControllerSyncState.syncedMode === 'AUTO' || whbHandControllerSyncState.syncedMode === 'MAN'
       ? whbHandControllerSyncState.syncedMode
       : 'AUTO',
@@ -1928,6 +3118,102 @@ const HomeScreen = () => {
     ALM_H_LIM: whbHandControllerConfig.ALM_H_LIM ?? 0,
     ALM_HH_LIM: whbHandControllerConfig.ALM_HH_LIM ?? 0,
     UNIT: whbHandControllerConfig.UNIT || 'U-505',
+  };
+
+  const pass2ControllerSecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: pass2PV,
+    SP: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    TSP: loadedCaseValuePass2Temp ?? orchestratorPass2Temp ?? pass2ControllerSyncState.syncedSP,
+    OUT_PCT: selectedMode === 'Static' ? 50 : pass2ControllerSyncState.syncedOUT,
+    MODE_AUTOMAN: pass2ControllerSyncState.syncedMode === 'AUTO' || pass2ControllerSyncState.syncedMode === 'MAN' 
+      ? pass2ControllerSyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: pass2AlarmHH,
+    ALM_H_ACT: pass2AlarmH,
+    ALM_L_ACT: pass2AlarmL,
+    ALM_LL_ACT: pass2AlarmLL,
+  };
+  const pass2ControllerSecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: pass2ControllerConfig.TAGNAME || '1540-T-4822',
+    DESC: pass2ControllerConfig.DESC || 'Pass 2 Inlet Temperature',
+    EU: pass2ControllerConfig.EU || '°F',
+    PV_SCALE_LO: pass2ControllerConfig.PV_SCALE_LO ?? 700,
+    PV_SCALE_HI: pass2ControllerConfig.PV_SCALE_HI ?? 900,
+    SP_LIM_LO: pass2ControllerConfig.SP_LIM_LO ?? 700,
+    SP_LIM_HI: pass2ControllerConfig.SP_LIM_HI ?? 900,
+    ALM_LL_LIM: pass2ControllerConfig.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: pass2ControllerConfig.ALM_L_LIM ?? 797,
+    ALM_DL_LIM: 0,
+    ALM_DH_LIM: 0,
+    ALM_H_LIM: pass2ControllerConfig.ALM_H_LIM ?? 824,
+    ALM_HH_LIM: pass2ControllerConfig.ALM_HH_LIM ?? 0,
+    UNIT: pass2ControllerConfig.UNIT || 'U-505',
+  };
+
+  const pass3ControllerSecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: pass3PV,
+    SP: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    TSP: loadedCaseValuePass3Temp ?? orchestratorPass3Temp ?? pass3ControllerSyncState.syncedSP,
+    OUT_PCT: selectedMode === 'Static' ? 50 : pass3ControllerSyncState.syncedOUT,
+    MODE_AUTOMAN: pass3ControllerSyncState.syncedMode === 'AUTO' || pass3ControllerSyncState.syncedMode === 'MAN' 
+      ? pass3ControllerSyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: pass3AlarmHH,
+    ALM_H_ACT: pass3AlarmH,
+    ALM_L_ACT: pass3AlarmL,
+    ALM_LL_ACT: pass3AlarmLL,
+  };
+  const pass3ControllerSecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: pass3ControllerConfig.TAGNAME || '1540-T-5220',
+    DESC: pass3ControllerConfig.DESC || 'Pass 3 Inlet Temperature',
+    EU: pass3ControllerConfig.EU || '°F',
+    PV_SCALE_LO: pass3ControllerConfig.PV_SCALE_LO ?? 700,
+    PV_SCALE_HI: pass3ControllerConfig.PV_SCALE_HI ?? 900,
+    SP_LIM_LO: pass3ControllerConfig.SP_LIM_LO ?? 700,
+    SP_LIM_HI: pass3ControllerConfig.SP_LIM_HI ?? 900,
+    ALM_LL_LIM: pass3ControllerConfig.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: pass3ControllerConfig.ALM_L_LIM ?? 797,
+    ALM_DL_LIM: 0,
+    ALM_DH_LIM: 0,
+    ALM_H_LIM: pass3ControllerConfig.ALM_H_LIM ?? 824,
+    ALM_HH_LIM: pass3ControllerConfig.ALM_HH_LIM ?? 0,
+    UNIT: pass3ControllerConfig.UNIT || 'U-505',
+  };
+
+  const pass4ControllerSecondaryData: SecondaryControllerData = {
+    ...defaultSecondaryData,
+    PV: pass4PV,
+    SP: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    TSP: loadedCaseValuePass4Temp ?? orchestratorPass4Temp ?? pass4ControllerSyncState.syncedSP,
+    OUT_PCT: selectedMode === 'Static' ? 50 : pass4ControllerSyncState.syncedOUT,
+    MODE_AUTOMAN: pass4ControllerSyncState.syncedMode === 'AUTO' || pass4ControllerSyncState.syncedMode === 'MAN' 
+      ? pass4ControllerSyncState.syncedMode 
+      : 'AUTO',
+    ALM_HH_ACT: pass4AlarmHH,
+    ALM_H_ACT: pass4AlarmH,
+    ALM_L_ACT: pass4AlarmL,
+    ALM_LL_ACT: pass4AlarmLL,
+  };
+  const pass4ControllerSecondaryConfig: SecondaryControllerConfig = {
+    ...defaultSecondaryConfig,
+    TAGNAME: pass4ControllerConfig.TAGNAME || '1540-T-5224',
+    DESC: pass4ControllerConfig.DESC || 'Pass 4 Inlet Temperature',
+    EU: pass4ControllerConfig.EU || '°F',
+    PV_SCALE_LO: pass4ControllerConfig.PV_SCALE_LO ?? 680,
+    PV_SCALE_HI: pass4ControllerConfig.PV_SCALE_HI ?? 880,
+    SP_LIM_LO: pass4ControllerConfig.SP_LIM_LO ?? 680,
+    SP_LIM_HI: pass4ControllerConfig.SP_LIM_HI ?? 880,
+    ALM_LL_LIM: pass4ControllerConfig.ALM_LL_LIM ?? 0,
+    ALM_L_LIM: pass4ControllerConfig.ALM_L_LIM ?? 770,
+    ALM_DL_LIM: 0,
+    ALM_DH_LIM: 0,
+    ALM_H_LIM: pass4ControllerConfig.ALM_H_LIM ?? 797,
+    ALM_HH_LIM: pass4ControllerConfig.ALM_HH_LIM ?? 0,
+    UNIT: pass4ControllerConfig.UNIT || 'U-505',
   };
 
   // Fetch saved layout positions from database
@@ -2001,6 +3287,60 @@ const HomeScreen = () => {
     if (jugValveHcL4) {
       setJugValveHandControllerL4Position({ x: jugValveHcL4.x, y: jugValveHcL4.y });
       setJugValveHandControllerL4Size({ width: jugValveHcL4.width, height: jugValveHcL4.height });
+    }
+
+    const kppL4 = positionMap.get('kpp_faceplate_l4');
+    if (kppL4) {
+      setKppFaceplateL4Position({ x: kppL4.x, y: kppL4.y });
+      setKppFaceplateL4Size({ width: kppL4.width, height: kppL4.height });
+    }
+
+    const ts4820L4 = positionMap.get('temp_sensor_4820_l4');
+    if (ts4820L4) {
+      setTempSensor4820L4Position({ x: ts4820L4.x, y: ts4820L4.y });
+      setTempSensor4820L4Size({ width: ts4820L4.width, height: ts4820L4.height });
+    }
+
+    const fp4822L4 = positionMap.get('faceplate4822_l4');
+    if (fp4822L4) {
+      setFaceplate4822L4Position({ x: fp4822L4.x, y: fp4822L4.y });
+      setFaceplate4822L4Size({ width: fp4822L4.width, height: fp4822L4.height });
+    }
+
+    const fp5220L4 = positionMap.get('faceplate5220_l4');
+    if (fp5220L4) {
+      setFaceplate5220L4Position({ x: fp5220L4.x, y: fp5220L4.y });
+      setFaceplate5220L4Size({ width: fp5220L4.width, height: fp5220L4.height });
+    }
+
+    const fp5224L4 = positionMap.get('faceplate5224_l4');
+    if (fp5224L4) {
+      setFaceplate5224L4Position({ x: fp5224L4.x, y: fp5224L4.y });
+      setFaceplate5224L4Size({ width: fp5224L4.width, height: fp5224L4.height });
+    }
+
+    const fp4827L4 = positionMap.get('faceplate4827_l4');
+    if (fp4827L4) {
+      setFaceplate4827L4Position({ x: fp4827L4.x, y: fp4827L4.y });
+      setFaceplate4827L4Size({ width: fp4827L4.width, height: fp4827L4.height });
+    }
+
+    const fp4841L4 = positionMap.get('faceplate4841_l4');
+    if (fp4841L4) {
+      setFaceplate4841L4Position({ x: fp4841L4.x, y: fp4841L4.y });
+      setFaceplate4841L4Size({ width: fp4841L4.width, height: fp4841L4.height });
+    }
+
+    const fp5231L4 = positionMap.get('faceplate5231_l4');
+    if (fp5231L4) {
+      setFaceplate5231L4Position({ x: fp5231L4.x, y: fp5231L4.y });
+      setFaceplate5231L4Size({ width: fp5231L4.width, height: fp5231L4.height });
+    }
+
+    const fp7225L4 = positionMap.get('faceplate7225_l4');
+    if (fp7225L4) {
+      setFaceplate7225L4Position({ x: fp7225L4.x, y: fp7225L4.y });
+      setFaceplate7225L4Size({ width: fp7225L4.width, height: fp7225L4.height });
     }
 
     // Restore vertical arrows for L4-Converter
@@ -2211,6 +3551,24 @@ const HomeScreen = () => {
       setTempSensor4200AL2Size({ width: tempSensor4200AL2.width, height: tempSensor4200AL2.height });
     }
 
+    const tempSensor4820L2 = positionMap.get('temp_sensor_4820_l2');
+    if (tempSensor4820L2) {
+      setTempSensor4820L2Position({ x: tempSensor4820L2.x, y: tempSensor4820L2.y });
+      setTempSensor4820L2Size({ width: tempSensor4820L2.width, height: tempSensor4820L2.height });
+    }
+
+    const processDataPanel = positionMap.get('process_data_panel_l2');
+    if (processDataPanel) {
+      setProcessDataPanelL2Position({ x: processDataPanel.x, y: processDataPanel.y });
+      setProcessDataPanelL2Size({ width: processDataPanel.width, height: processDataPanel.height });
+    }
+
+    const kppFaceplate = positionMap.get('kpp_faceplate_l2');
+    if (kppFaceplate) {
+      setKppFaceplateL2Position({ x: kppFaceplate.x, y: kppFaceplate.y });
+      setKppFaceplateL2Size({ width: kppFaceplate.width, height: kppFaceplate.height });
+    }
+
     const handController = positionMap.get('hand_controller_l2');
     if (handController) {
       setHandControllerL2Position({ x: handController.x, y: handController.y });
@@ -2247,6 +3605,80 @@ const HomeScreen = () => {
       setJugValveHcvL2Size({ width: jugValveHcv.width, height: jugValveHcv.height });
     }
   }, [layoutDataL2, isL2Dirty]);
+
+  const { data: layoutDataL21520 } = useQuery<{ layouts: Array<{
+    elementId: string;
+    positionX: number;
+    positionY: number;
+    width: number;
+    height: number;
+    rotation: number;
+  }> }>({
+    queryKey: ['/api/homescreen-layout/L2_1520'],
+  });
+
+  useEffect(() => {
+    if (!layoutDataL21520?.layouts || layoutDataL21520.layouts.length === 0) return;
+    if (isL21520Dirty) return;
+
+    const positionMap = new Map<string, { x: number; y: number; width: number; height: number }>();
+    layoutDataL21520.layouts.forEach((item) => {
+      positionMap.set(item.elementId, {
+        x: item.positionX,
+        y: item.positionY,
+        width: item.width,
+        height: item.height,
+      });
+    });
+
+    const acidBoiler = positionMap.get('acid_boiler_l2_1520');
+    if (acidBoiler) {
+      setAcidBoilerPosition({ x: acidBoiler.x, y: acidBoiler.y });
+      setAcidBoilerSize({ width: acidBoiler.width, height: acidBoiler.height });
+    }
+
+    const acidTower1 = positionMap.get('acid_tower_1_l2_1520');
+    if (acidTower1) {
+      setAcidTower1Position({ x: acidTower1.x, y: acidTower1.y });
+      setAcidTower1Size({ width: acidTower1.width, height: acidTower1.height });
+    }
+
+    const acidTower2 = positionMap.get('acid_tower_2_l2_1520');
+    if (acidTower2) {
+      setAcidTower2Position({ x: acidTower2.x, y: acidTower2.y });
+      setAcidTower2Size({ width: acidTower2.width, height: acidTower2.height });
+    }
+
+    const kppFaceplate = positionMap.get('kpp_faceplate_l2_1520');
+    if (kppFaceplate) {
+      setKppFaceplateL21520Position({ x: kppFaceplate.x, y: kppFaceplate.y });
+      setKppFaceplateL21520Size({ width: kppFaceplate.width, height: kppFaceplate.height });
+    }
+
+    const fp6623 = positionMap.get('faceplate6623_l2_1520');
+    if (fp6623) {
+      setFaceplate6623L21520Position({ x: fp6623.x, y: fp6623.y });
+      setFaceplate6623L21520Size({ width: fp6623.width, height: fp6623.height });
+    }
+
+    const fp8464 = positionMap.get('faceplate8464_l2_1520');
+    if (fp8464) {
+      setFaceplate8464L21520Position({ x: fp8464.x, y: fp8464.y });
+      setFaceplate8464L21520Size({ width: fp8464.width, height: fp8464.height });
+    }
+
+    const fp7221 = positionMap.get('faceplate7221_l2_1520');
+    if (fp7221) {
+      setFaceplate7221L21520Position({ x: fp7221.x, y: fp7221.y });
+      setFaceplate7221L21520Size({ width: fp7221.width, height: fp7221.height });
+    }
+
+    const fp7224 = positionMap.get('faceplate7224_l2_1520');
+    if (fp7224) {
+      setFaceplate7224L21520Position({ x: fp7224.x, y: fp7224.y });
+      setFaceplate7224L21520Size({ width: fp7224.width, height: fp7224.height });
+    }
+  }, [layoutDataL21520, isL21520Dirty]);
 
   // Apply loaded positions to state when data arrives
   useEffect(() => {
@@ -2579,6 +4011,15 @@ const HomeScreen = () => {
         { elementId: 'converter4_l4', positionX: Math.round(converter4L4Position.x), positionY: Math.round(converter4L4Position.y), width: converter4L4Size.width, height: converter4L4Size.height, rotation: 0 },
         { elementId: 'faceplate4825_l4', positionX: Math.round(faceplate4825L4Position.x), positionY: Math.round(faceplate4825L4Position.y), width: faceplate4825L4Size.width, height: faceplate4825L4Size.height, rotation: 0 },
         { elementId: 'jug_valve_hc_l4', positionX: Math.round(jugValveHandControllerL4Position.x), positionY: Math.round(jugValveHandControllerL4Position.y), width: jugValveHandControllerL4Size.width, height: jugValveHandControllerL4Size.height, rotation: 0 },
+        { elementId: 'kpp_faceplate_l4', positionX: Math.round(kppFaceplateL4Position.x), positionY: Math.round(kppFaceplateL4Position.y), width: kppFaceplateL4Size.width, height: kppFaceplateL4Size.height, rotation: 0 },
+        { elementId: 'temp_sensor_4820_l4', positionX: Math.round(tempSensor4820L4Position.x), positionY: Math.round(tempSensor4820L4Position.y), width: tempSensor4820L4Size.width, height: tempSensor4820L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4822_l4', positionX: Math.round(faceplate4822L4Position.x), positionY: Math.round(faceplate4822L4Position.y), width: faceplate4822L4Size.width, height: faceplate4822L4Size.height, rotation: 0 },
+        { elementId: 'faceplate5220_l4', positionX: Math.round(faceplate5220L4Position.x), positionY: Math.round(faceplate5220L4Position.y), width: faceplate5220L4Size.width, height: faceplate5220L4Size.height, rotation: 0 },
+        { elementId: 'faceplate5224_l4', positionX: Math.round(faceplate5224L4Position.x), positionY: Math.round(faceplate5224L4Position.y), width: faceplate5224L4Size.width, height: faceplate5224L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4827_l4', positionX: Math.round(faceplate4827L4Position.x), positionY: Math.round(faceplate4827L4Position.y), width: faceplate4827L4Size.width, height: faceplate4827L4Size.height, rotation: 0 },
+        { elementId: 'faceplate4841_l4', positionX: Math.round(faceplate4841L4Position.x), positionY: Math.round(faceplate4841L4Position.y), width: faceplate4841L4Size.width, height: faceplate4841L4Size.height, rotation: 0 },
+        { elementId: 'faceplate5231_l4', positionX: Math.round(faceplate5231L4Position.x), positionY: Math.round(faceplate5231L4Position.y), width: faceplate5231L4Size.width, height: faceplate5231L4Size.height, rotation: 0 },
+        { elementId: 'faceplate7225_l4', positionX: Math.round(faceplate7225L4Position.x), positionY: Math.round(faceplate7225L4Position.y), width: faceplate7225L4Size.width, height: faceplate7225L4Size.height, rotation: 0 },
         // Add vertical arrows for L4-Converter screen
         ...verticalArrows.filter(va => va.screen === 'L4-Converter').map(va => ({
           elementId: va.id,
@@ -2647,6 +4088,9 @@ const HomeScreen = () => {
         { elementId: 'cyan_vert_line_2_l2', positionX: Math.round(cyanVertLine2L2Position.x), positionY: Math.round(cyanVertLine2L2Position.y), width: cyanVertLine2L2Size.width, height: cyanVertLine2L2Size.height, rotation: 0 },
         { elementId: 'black_vert_line_l2', positionX: Math.round(blackVertLineL2Position.x), positionY: Math.round(blackVertLineL2Position.y), width: blackVertLineL2Size.width, height: blackVertLineL2Size.height, rotation: 0 },
         { elementId: 'temp_sensor_4200a_l2', positionX: Math.round(tempSensor4200AL2Position.x), positionY: Math.round(tempSensor4200AL2Position.y), width: tempSensor4200AL2Size.width, height: tempSensor4200AL2Size.height, rotation: 0 },
+        { elementId: 'temp_sensor_4820_l2', positionX: Math.round(tempSensor4820L2Position.x), positionY: Math.round(tempSensor4820L2Position.y), width: tempSensor4820L2Size.width, height: tempSensor4820L2Size.height, rotation: 0 },
+        { elementId: 'process_data_panel_l2', positionX: Math.round(processDataPanelL2Position.x), positionY: Math.round(processDataPanelL2Position.y), width: processDataPanelL2Size.width, height: processDataPanelL2Size.height, rotation: 0 },
+        { elementId: 'kpp_faceplate_l2', positionX: Math.round(kppFaceplateL2Position.x), positionY: Math.round(kppFaceplateL2Position.y), width: kppFaceplateL2Size.width, height: kppFaceplateL2Size.height, rotation: 0 },
         // Add vertical arrows for L2-Furnace Area screen
         ...verticalArrows.filter(va => va.screen === 'L2 – Furnace Area').map(va => ({
           elementId: va.id,
@@ -2681,6 +4125,31 @@ const HomeScreen = () => {
     }
   };
 
+  const handleSaveL21520Layout = async () => {
+    setIsSavingL21520(true);
+    try {
+      const layouts = [
+        { elementId: 'acid_boiler_l2_1520', positionX: Math.round(acidBoilerPosition.x), positionY: Math.round(acidBoilerPosition.y), width: acidBoilerSize.width, height: acidBoilerSize.height, rotation: 0 },
+        { elementId: 'acid_tower_1_l2_1520', positionX: Math.round(acidTower1Position.x), positionY: Math.round(acidTower1Position.y), width: acidTower1Size.width, height: acidTower1Size.height, rotation: 0 },
+        { elementId: 'acid_tower_2_l2_1520', positionX: Math.round(acidTower2Position.x), positionY: Math.round(acidTower2Position.y), width: acidTower2Size.width, height: acidTower2Size.height, rotation: 0 },
+        { elementId: 'kpp_faceplate_l2_1520', positionX: Math.round(kppFaceplateL21520Position.x), positionY: Math.round(kppFaceplateL21520Position.y), width: kppFaceplateL21520Size.width, height: kppFaceplateL21520Size.height, rotation: 0 },
+        { elementId: 'faceplate6623_l2_1520', positionX: Math.round(faceplate6623L21520Position.x), positionY: Math.round(faceplate6623L21520Position.y), width: faceplate6623L21520Size.width, height: faceplate6623L21520Size.height, rotation: 0 },
+        { elementId: 'faceplate8464_l2_1520', positionX: Math.round(faceplate8464L21520Position.x), positionY: Math.round(faceplate8464L21520Position.y), width: faceplate8464L21520Size.width, height: faceplate8464L21520Size.height, rotation: 0 },
+        { elementId: 'faceplate7221_l2_1520', positionX: Math.round(faceplate7221L21520Position.x), positionY: Math.round(faceplate7221L21520Position.y), width: faceplate7221L21520Size.width, height: faceplate7221L21520Size.height, rotation: 0 },
+        { elementId: 'faceplate7224_l2_1520', positionX: Math.round(faceplate7224L21520Position.x), positionY: Math.round(faceplate7224L21520Position.y), width: faceplate7224L21520Size.width, height: faceplate7224L21520Size.height, rotation: 0 },
+      ];
+
+      await apiRequest('PUT', '/api/homescreen-layout/L2_1520', { layouts });
+      setIsL21520Dirty(false);
+      await queryClient.invalidateQueries({ queryKey: ['/api/homescreen-layout/L2_1520'] });
+      toast({ title: "Layout saved", description: "L2_1520 ACID layout saved to database." });
+    } catch (error) {
+      console.error('Failed to save L2_1520 layout:', error);
+      toast({ title: "Error", description: "Failed to save L2_1520 layout positions.", variant: "destructive" });
+    } finally {
+      setIsSavingL21520(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -2793,164 +4262,6 @@ const HomeScreen = () => {
     const lastLine = screenLines[screenLines.length - 1];
     handleDeleteVerticalLine(lastLine.id);
   };
-
-  const windowsWidth = window.innerWidth;
-  const windowsHeight = window.innerHeight;
-  useEffect(() => {
-    if (selectedScreen === 'L1 – System Overview') {
-      // Main Equipment
-      setFilterPosition({ x: 60, y: 325 });
-      setFilterSize({ width: 60, height: 70 });
-      
-      setDt2Position({ x: 180, y: 330 });
-      setDt2Size({ width: 134, height: 327 });
-
-      setCompressorPosition({ x: 425, y: 337 });
-      setCompressorSize({ width: 250, height: 200 });
-
-      setFurnacePosition({ x: 500, y: 550 });
-      setFurnaceSize({ width: 350, height: 180 });
-
-      setSh1bPosition({ x: 750, y: 350 });
-      setSh1bSize({ width: 100, height: 150 });
-
-      setConverter4Position({ x: 900, y: 50 });
-      setConverter4Size({ width: 180, height: 700 });
-
-      setHip1Position({ x: 1150, y: 320 });
-      setHip1Size({ width: 100, height: 150 });
-
-      setCipPosition({ x: 1300, y: 320 });
-      setCipSize({ width: 100, height: 150 });
-
-      setSh4aPosition({ x: 1450, y: 120 });
-      setSh4aSize({ width: 100, height: 150 });
-
-      setFat1Position({ x: 1950, y: 120 });
-      setFat1Size({ width: 120, height: 300 });
-
-      setEc3bPosition({ x: 1300, y: 600 });
-      setEc3bSize({ width: 100, height: 150 });
-
-      setIpat1Position({ x: 1950, y: 550 });
-      setIpat1Size({ width: 120, height: 300 });
-
-      setTurboGeneratorPosition({ x: 900, y: 800 });
-      setTurboGeneratorSize({ width: 300, height: 150 });
-
-      // Controllers & Valves
-      setHandControllerPosition({ x: 450, y: 80 }); // Compressor Controller
-      setHandControllerSize({ width: 180, height: 140 });
-
-      setSulfurFlowPosition({ x: 350, y: 550 });
-      setSulfurFlowSize({ width: 140, height: 100 });
-
-      setSulfurValvePosition({ x: 350, y: 538 });
-      setSulfurValveSize({ width: 124, height: 180 });
-
-      setJugValvePosition({ x: 637, y: 487 }); // Approx above WHB
-      setJugValveSize({ width: 80, height: 162 });
-
-      setJugValvePositionerPosition({ x: 650, y: 380 });
-      setJugValvePositionerSize({ width: 140, height: 170 });
-
-      setJugValveHandControllerPosition({ x: 750, y: 380 });
-      setJugValveHandControllerSize({ width: 140, height: 100 });
-
-      setWhbHandControllerPosition({ x: 750, y: 650 });
-      setWhbHandControllerSize({ width: 140, height: 100 });
-
-      // Sensors
-      setTempSensorPosition({ x: 800, y: 650 }); // Furnace Outlet
-      setTempSensorSize({ width: 140, height: 80 });
-
-      setTempSensor4200APosition({ x: 1100, y: 150 }); // Pass 1/2 Area
-      setTempSensor4200ASize({ width: 140, height: 80 });
-
-      setTempSensor4200BPosition({ x: 1100, y: 470 }); // Pass 3 Area
-      setTempSensor4200BSize({ width: 140, height: 80 });
-
-      setTempSensor4200CPosition({ x: 1450, y: 470 }); // Pass 4 Area
-      setTempSensor4200CSize({ width: 140, height: 80 });
-
-      // Lines
-      setDashedLine1Position({ x: 0, y: 0 }); // Reset or remove if not needed immediately
-      setDashedLine1Size({ width: 0, height: 0 });
-      setDashedLine2Position({ x: 0, y: 0 });
-      setDashedLine2Size({ width: 0, height: 0 });
-      setDashedLine3Position({ x: 0, y: 0 });
-      setDashedLine3Size({ width: 0, height: 0 });
-      setDashedLine4Position({ x: 0, y: 0 });
-      setDashedLine4Size({ width: 0, height: 0 });
-
-      setArrows([
-        // === Air Feed ===
-        { id: '1', x: 0, y: 410, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        { id: '1.1', x: 0, y: 380, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        { id: '1.2', x: 0, y: 440, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        { id: '2', x: 150, y: 410, width: 60, height: 20, rotation: 0, color: 'blue' as const },
-        // DT -> Compressor
-        { id: '3', x: 280, y: 400, width: 200, height: 20, rotation: 0, color: 'blue' as const },
-        
-        // === Sulfur Feed ===
-        { id: '5', x: 163, y: 657, width: 230, height: 20, rotation: 0, color: 'yellow' as const },
-        { id: '6', x: 423, y: 540, width: 96, height: 20, rotation: 0, color: 'yellow' as const },
-        
-        // === WHB Outlet & SH1B Bypass Logic ===
-        // WHB Exit (Vertical Up) -> Split to Jug/SH1B
-        // Line exiting WHB Top-Right (x~830)
-        
-        // Horizontal: Split -> Jug Valve Inlet (Left)
-        { id: 'whb_to_jug', x: 677, y: 560, width: 160, height: 20, rotation: 180, color: 'blue' as const },
-        
-        // Horizontal: Jug Valve Outlet -> Join SH1B Inlet (Right)
-        { id: 'jug_out_to_join', x: 677, y: 320, width: 160, height: 20, rotation: 0, color: 'blue' as const },
-        
-        // Horizontal: Join Point -> SH1B Inlet (Right)
-        { id: 'join_to_sh1b_in', x: 620, y: 560, width: 40, height: 20, rotation: 180, color: 'blue' as const },
-
-        // Horizontal: SH1B Outlet -> Main Line
-        { id: 'sh1b_out_horiz', x: 800, y: 500, width: 90, height: 20, rotation: 0, color: 'blue' as const },
-        
-        // Horizontal: Main Line -> Converter Pass 1
-        { id: 'to_conv_pass1', x: 890, y: 150, width: 30, height: 20, rotation: 0, color: 'blue' as const },
-
-        // === Interpass Logic (Right Side) ===
-        // Converter Out 1 -> Hip Inlet
-        { id: 'conv_out1_horiz', x: 1080, y: 200, width: 70, height: 20, rotation: 0, color: 'blue' as const },
-        // Hip Outlet -> Converter In 2
-        { id: 'hip_out_horiz', x: 1080, y: 380, width: 70, height: 20, rotation: 180, color: 'blue' as const },
-        
-        // Converter Out 2 -> Cip Inlet
-        { id: 'conv_out2_horiz', x: 1080, y: 550, width: 220, height: 20, rotation: 0, color: 'blue' as const },
-        
-        // Cip Outlet -> Converter In 3
-        { id: 'cip_out_horiz', x: 1400, y: 550, width: 50, height: 20, rotation: 0, color: 'blue' as const },
-        
-        // Converter Out 3 -> Exit
-        { id: 'final_out', x: 1080, y: 700, width: 220, height: 20, rotation: 0, color: 'blue' as const },
-      ]);
-
-      setVerticalLines([
-        // Compressor OUT Down
-        { id: 'vl_comp_out', x: 700, y: 350, width: 10, height: 200, screen: 'L1 – System Overview' },
-        
-        // WHB Rising Main Line
-        { id: 'vl_whb_rise', x: 837, y: 320, width: 10, height: 240, screen: 'L1 – System Overview' },
-        
-        // Jug Valve Vertical Line
-        { id: 'vl_jug', x: 677, y: 320, width: 10, height: 240, screen: 'L1 – System Overview' },
-
-        // SH1B Outlet Down
-        { id: 'vl_sh1b_out', x: 800, y: 500, width: 10, height: 200, screen: 'L1 – System Overview' },
-        
-        // Converter Inlet Rise
-        { id: 'vl_conv_in', x: 890, y: 150, width: 10, height: 550, screen: 'L1 – System Overview' },
-      ]);
-      
-      setVerticalArrows([]);
-    }
-  }, [selectedScreen]);
 
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
@@ -3106,13 +4417,15 @@ const HomeScreen = () => {
                       setIsLockedL4(!isLockedL4);
                     } else if (selectedScreen === "L2 – Furnace Area") {
                       setIsLockedL2(!isLockedL2);
+                    } else if (selectedScreen === "L2_1520 ACID") {
+                      setIsLockedL21520(!isLockedL21520);
                     } else {
                       setIsLocked(!isLocked);
                     }
                   }}
                   data-testid="button-lock-toggle"
                 >
-                  {(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? (
+                  {(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : selectedScreen === "L2_1520 ACID" ? isLockedL21520 : isLocked) ? (
                     <Lock className="h-5 w-5 text-yellow-600" />
                   ) : (
                     <LockOpen className="h-5 w-5 text-gray-500" />
@@ -3120,7 +4433,7 @@ const HomeScreen = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isLockedL4 : selectedScreen === "L2 – Furnace Area" ? isLockedL2 : selectedScreen === "L2_1520 ACID" ? isLockedL21520 : isLocked) ? "Unlock Icons" : "Lock Icons"}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -3136,18 +4449,20 @@ const HomeScreen = () => {
                       handleSaveL4Layout();
                     } else if (selectedScreen === "L2 – Furnace Area") {
                       handleSaveL2Layout();
+                    } else if (selectedScreen === "L2_1520 ACID") {
+                      handleSaveL21520Layout();
                     } else {
                       handleSaveLayout();
                     }
                   }}
-                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving}
+                  disabled={selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : selectedScreen === "L2_1520 ACID" ? isSavingL21520 : isSaving}
                   data-testid="button-save-layout"
                 >
-                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
+                  <Save className={`h-5 w-5 ${(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : selectedScreen === "L2_1520 ACID" ? isSavingL21520 : isSaving) ? 'text-gray-400' : 'text-green-600'}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : isSaving) ? "Saving..." : "Save Layout"}</p>
+                <p>{(selectedScreen === "L4-Converter" ? isSavingL4 : selectedScreen === "L2 – Furnace Area" ? isSavingL2 : selectedScreen === "L2_1520 ACID" ? isSavingL21520 : isSaving) ? "Saving..." : "Save Layout"}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -3265,28 +4580,6 @@ const HomeScreen = () => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Start Button - runs static simulation in Static mode */}
-          <Button
-            variant="default"
-            size="sm"
-            className={`gap-2 ${staticSimulationRunning ? 'bg-yellow-600 border-yellow-600' : 'bg-green-600 border border-green-600'} text-white hover:bg-green-700`}
-            data-testid="button-toolbar-start"
-            onClick={runStaticSimulation}
-            disabled={staticSimulationRunning || selectedMode !== "Static"}
-          >
-            {staticSimulationRunning ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Running...
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Start
-              </>
-            )}
-          </Button>
 
           {/* PFDs Dropdown Menu */}
           <DropdownMenu>
@@ -3434,27 +4727,6 @@ const HomeScreen = () => {
       {/* Simulation Toolbar - visible in Dynamic, Start-Up, and Emergency modes */}
       {(selectedMode === "Dynamic" || selectedMode === "Start-Up" || selectedMode === "Emergency Scenarios") && (
         <div className="flex-shrink-0 bg-gray-800 border-b border-gray-600 px-3 py-2 flex flex-wrap items-center gap-6">
-          {/* Start/Stop Button */}
-          <Button
-            onClick={() => setDynamicRunning(!dynamicRunning)}
-            variant={dynamicRunning ? "destructive" : "default"}
-            size="sm"
-            className={`gap-2 ${!dynamicRunning ? 'bg-green-600' : ''}`}
-            data-testid="button-dynamic-start-stop"
-          >
-            {dynamicRunning ? (
-              <>
-                <Pause className="h-4 w-4" />
-                Stop
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Start
-              </>
-            )}
-          </Button>
-
           {/* Reset Button */}
           <Button
             onClick={handleDynamicReset}
@@ -3576,7 +4848,7 @@ const HomeScreen = () => {
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
             >
               <div 
                 className="flex flex-col items-center gap-1 w-full h-full cursor-pointer" 
@@ -3624,7 +4896,7 @@ const HomeScreen = () => {
               disableDragging={isLockedL4}
               enableResizing={!isLockedL4}
               className={isLockedL4 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
               data-testid="jug-valve-hc-l4-rnd"
             >
               <div 
@@ -3639,6 +4911,120 @@ const HomeScreen = () => {
                   data={jugValveHandControllerData}
                   isTransparent={true}
                   controllerId="1540-H-4282"
+                />
+              </div>
+            </Rnd>
+
+            <Rnd
+              key="faceplate4822-l4"
+              position={faceplate4822L4Position}
+              size={faceplate4822L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4822L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4822L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate4822L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
+              data-testid="faceplate4822-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handlePass2ControllerClick}
+                style={{
+                  transform: `scale(${Math.min(faceplate4822L4Size.width / 220, faceplate4822L4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={pass2ControllerData}
+                  isTransparent={true}
+                  controllerId="1540-T-4822"
+                />
+              </div>
+            </Rnd>
+
+            <Rnd
+              key="faceplate5220-l4"
+              position={faceplate5220L4Position}
+              size={faceplate5220L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate5220L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate5220L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate5220L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
+              data-testid="faceplate5220-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handlePass3ControllerClick}
+                style={{
+                  transform: `scale(${Math.min(faceplate5220L4Size.width / 220, faceplate5220L4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={pass3ControllerData}
+                  isTransparent={true}
+                  controllerId="1540-T-5220"
+                />
+              </div>
+            </Rnd>
+
+            <Rnd
+              key="faceplate5224-l4"
+              position={faceplate5224L4Position}
+              size={faceplate5224L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate5224L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate5224L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate5224L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={100}
+              minHeight={90}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
+              data-testid="faceplate5224-l4-rnd"
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={handlePass4ControllerClick}
+                style={{
+                  transform: `scale(${Math.min(faceplate5224L4Size.width / 220, faceplate5224L4Size.height / 200)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <ControllerFaceplate 
+                  data={pass4ControllerData}
+                  isTransparent={true}
+                  controllerId="1540-T-5224"
                 />
               </div>
             </Rnd>
@@ -3772,8 +5158,107 @@ const HomeScreen = () => {
               </Rnd>
             ))}
 
+            {orchestratorResult?.kpp && (
+              <Rnd
+                key="kpp-faceplate-l4"
+                data-testid="rnd-kpp-faceplate-l4"
+                position={kppFaceplateL4Position}
+                size={kppFaceplateL4Size}
+                onDragStop={(e, d) => {
+                  setKppFaceplateL4Position({ x: d.x, y: d.y });
+                  setIsL4Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setKppFaceplateL4Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setKppFaceplateL4Position(position);
+                  setIsL4Dirty(true);
+                }}
+                minWidth={200}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL4}
+                enableResizing={!isLockedL4}
+                resizeHandleStyles={!isLockedL4 ? resizeHandleStyles : undefined}
+                className={isLockedL4 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
+                <div className="w-full h-full" data-testid="l4-kpp-faceplate">
+                <KPPFaceplate className="w-full h-full" data={(() => {
+                  const kpp = orchestratorResult.kpp;
+                  const s24 = orchestratorResult.streams?.["24"];
+                  const stpd = kpp.H2SO4_production_STPD;
+                  const so2TailScfm = s24?.SO2 ?? 0;
+                  const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                  const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                  const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                  const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                  const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                  return {
+                    plantRate: stpd,
+                    conversion: kpp.overall_SO2_conversion_pct,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                      const s9 = orchestratorResult.streams?.["9"];
+                      return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
+                    })(),
+                    o2TailGas: o2Pct,
+                    emissionsPpmv: kpp.SO2_ppm_stack ?? null,
+                    emissions: emissionsLbPerST,
+                    steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                    grossPowerMW: grossMW,
+                    powerRatio: 243,
+                  };
+                })()} />
+                </div>
+              </Rnd>
+            )}
+
+            {/* Temperature Sensor 1540-TI-4820 (Pass 1 Duct) for L4 */}
+            <Rnd
+              key="temp-sensor-4820-l4"
+              position={tempSensor4820L4Position}
+              size={tempSensor4820L4Size}
+              onDragStop={(e, d) => {
+                setTempSensor4820L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setTempSensor4820L4Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setTempSensor4820L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={80}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              resizeHandleStyles={!isLockedL4 ? resizeHandleStyles : undefined}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 40, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL4 ? 'cursor-pointer' : ''}`}
+                onClick={() => { if (isLockedL4) setIsTempSensor4820ModalOpen(true); }}
+                data-testid="faceplate-4820-l4-container"
+                style={{
+                  transform: `scale(${Math.min(tempSensor4820L4Size.width / 180, tempSensor4820L4Size.height / 120)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor4820Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
             {/* Secondary Faceplate Dialog for 1540-TI-4825 on L4-Converter */}
-            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4}>
+            <Dialog open={showSecondaryConverter4L4} onOpenChange={setShowSecondaryConverter4L4} modal={false}>
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
                 <VisuallyHidden>
                   <DialogTitle>1540-TI-4825 Pass 1 Catalyst Temperature</DialogTitle>
@@ -3783,6 +5268,198 @@ const HomeScreen = () => {
                   config={tempSensor4825SecondaryConfig}
                   sensorId="1540-TI-4825"
                   onClose={() => setShowSecondaryConverter4L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-4827 Primary Faceplate (Pass 1 Catalyst Out A) */}
+            <Rnd
+              key="faceplate4827-l4"
+              position={faceplate4827L4Position}
+              size={faceplate4827L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4827L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4827L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate4827L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-4827-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary4827L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor4827Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary4827L4} onOpenChange={setShowSecondary4827L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4827 Pass 1 Catalyst Out A</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4827SecondaryData}
+                  config={tempSensor4827SecondaryConfig}
+                  sensorId="1540-TI-4827"
+                  onClose={() => setShowSecondary4827L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-4841 Primary Faceplate (Pass 2 Catalyst Out) */}
+            <Rnd
+              key="faceplate4841-l4"
+              position={faceplate4841L4Position}
+              size={faceplate4841L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate4841L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate4841L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate4841L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-4841-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary4841L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor4841Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary4841L4} onOpenChange={setShowSecondary4841L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-4841 Pass 2 Catalyst Out</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor4841SecondaryData}
+                  config={tempSensor4841SecondaryConfig}
+                  sensorId="1540-TI-4841"
+                  onClose={() => setShowSecondary4841L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-5231 Primary Faceplate (Pass 3 Duct Outlet) */}
+            <Rnd
+              key="faceplate5231-l4"
+              position={faceplate5231L4Position}
+              size={faceplate5231L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate5231L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate5231L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate5231L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-5231-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary5231L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor5231Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary5231L4} onOpenChange={setShowSecondary5231L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-5231 Pass 3 Duct Outlet</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor5231SecondaryData}
+                  config={tempSensor5231SecondaryConfig}
+                  sensorId="1540-TI-5231"
+                  onClose={() => setShowSecondary5231L4(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-TI-7225 Primary Faceplate (Pass 4 Catalyst Out) */}
+            <Rnd
+              key="faceplate7225-l4"
+              position={faceplate7225L4Position}
+              size={faceplate7225L4Size}
+              onDragStop={(e, d) => {
+                setFaceplate7225L4Position({ x: d.x, y: d.y });
+                setIsL4Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate7225L4Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate7225L4Position(position);
+                setIsL4Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL4}
+              enableResizing={!isLockedL4}
+              className={isLockedL4 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-7225-l4-container"
+                onClick={isLockedL4 ? () => setShowSecondary7225L4(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate
+                  data={tempSensor7225Data}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            <Dialog open={showSecondary7225L4} onOpenChange={setShowSecondary7225L4} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-TI-7225 Pass 4 Catalyst Out</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor7225SecondaryData}
+                  config={tempSensor7225SecondaryConfig}
+                  sensorId="1540-TI-7225"
+                  onClose={() => setShowSecondary7225L4(false)}
                 />
               </DialogContent>
             </Dialog>
@@ -3949,7 +5626,7 @@ const HomeScreen = () => {
               disableDragging={isLockedL2}
               enableResizing={!isLockedL2}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -3991,7 +5668,7 @@ const HomeScreen = () => {
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4004,6 +5681,7 @@ const HomeScreen = () => {
                 <PrimaryCompressorFaceplate
                   data={compressorData}
                   transparentBackground={vfdConfig?.transparentBackground ?? true}
+                  onToggleTransparency={(transparent) => updateVFDConfig({ transparentBackground: transparent })}
                   configTagName={vfdConfig?.tagName}
                   configDescription={vfdConfig?.description}
                   configUnit={vfdConfig?.unit}
@@ -4035,7 +5713,7 @@ const HomeScreen = () => {
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4078,7 +5756,7 @@ const HomeScreen = () => {
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4119,7 +5797,7 @@ const HomeScreen = () => {
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4161,7 +5839,7 @@ const HomeScreen = () => {
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: controllerVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4530,8 +6208,8 @@ const HomeScreen = () => {
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
               style={{ zIndex: 30 }}
             >
-              <div
-                className={`w-full h-full ${isLockedL2 ? 'cursor-pointer' : ''}`}
+              <div 
+                className={`w-full h-full relative ${isLockedL2 ? 'cursor-pointer' : ''}`}
                 onClick={handleFurnaceClick}
               >
                 <img
@@ -4540,7 +6218,14 @@ const HomeScreen = () => {
                   className="w-full h-full object-contain"
                   draggable={false}
                   data-testid="img-metal-tank-l2"
+                  style={furnaceAlarmHH ? { filter: 'brightness(0.5) sepia(1) saturate(10) hue-rotate(-10deg)' } : undefined}
                 />
+                {furnaceAlarmHH && (
+                  <div
+                    className="absolute inset-0 bg-red-600/30 animate-pulse pointer-events-none rounded"
+                    data-testid="overlay-furnace-alarm"
+                  />
+                )}
               </div>
             </Rnd>
 
@@ -4832,6 +6517,154 @@ const HomeScreen = () => {
               />
             </Rnd>
 
+            {/* Furnace Area Orchestrator Outputs */}
+            {orchestratorResult?.sensor_tags && (
+              <Rnd
+                key="process-data-panel-l2"
+                data-testid="rnd-process-data-panel-l2"
+                position={processDataPanelL2Position}
+                size={processDataPanelL2Size}
+                onDragStop={(e, d) => {
+                  setProcessDataPanelL2Position({ x: d.x, y: d.y });
+                  setIsL2Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setProcessDataPanelL2Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setProcessDataPanelL2Position(position);
+                  setIsL2Dirty(true);
+                }}
+                minWidth={280}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL2}
+                enableResizing={!isLockedL2}
+                resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+                className={isLockedL2 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
+              <div
+                className="w-full h-full bg-gray-900/95 border border-gray-600 rounded-md p-3 overflow-auto"
+                data-testid="furnace-orchestrator-outputs"
+              >
+                <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 border-b border-gray-600 pb-1">
+                  Furnace Area — Process Data
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div className="text-gray-400">1540-TI-4010 Furnace T</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-furnace-temp">
+                    {orchestratorResult.sensor_tags["1540-TI-4010"]?.toFixed(0) ?? "—"} °F
+                  </div>
+                  <div className="text-gray-400">1540-PI-4010 Furnace P</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-furnace-pressure">
+                    {orchestratorResult.sensor_tags["1540-PI-4010"]?.toFixed(1) ?? "—"} inwc
+                  </div>
+                  <div className="text-gray-400">1540-TI-4021 WHB Mixed T</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-whb-mixed-temp">
+                    {orchestratorResult.sensor_tags["1540-TI-4021"]?.toFixed(0) ?? "—"} °F
+                  </div>
+                  <div className="text-gray-400">1540-ZI-4020 Jug Valve</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-jug-valve-pos">
+                    {orchestratorResult.sensor_tags["1540-ZI-4020"]?.toFixed(1) ?? "—"} %
+                  </div>
+                  <div className="text-gray-400">1530-FIC-2602 Sulfur Flow</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-sulfur-flow">
+                    {orchestratorResult.sensor_tags["1530-FIC-2602"]?.toFixed(1) ?? "—"} gpm
+                  </div>
+                  <div className="text-gray-400">1540-FI-4030 Air Flow</div>
+                  <div className="text-yellow-300 font-mono text-right" data-testid="value-air-flow">
+                    {orchestratorResult.sensor_tags["1540-FI-4030"]?.toFixed(0) ?? "—"} scfm
+                  </div>
+                </div>
+                {orchestratorResult.streams?.["5"] && (
+                  <>
+                    <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider mt-2 mb-1 border-t border-gray-600 pt-2">
+                      Stream 5 — Furnace Outlet Gas
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div className="text-gray-400">SO2</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-so2">
+                        {orchestratorResult.streams["5"].SO2?.toFixed(1)} scfm
+                      </div>
+                      <div className="text-gray-400">SO3</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-so3">
+                        {orchestratorResult.streams["5"].SO3?.toFixed(1)} scfm
+                      </div>
+                      <div className="text-gray-400">O2</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-o2">
+                        {orchestratorResult.streams["5"].O2?.toFixed(1)} scfm
+                      </div>
+                      <div className="text-gray-400">N2</div>
+                      <div className="text-green-400 font-mono text-right" data-testid="value-s5-n2">
+                        {orchestratorResult.streams["5"].N2?.toFixed(0)} scfm
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              </Rnd>
+            )}
+
+            {/* KPP Faceplate for L2 Furnace Area */}
+            {orchestratorResult?.kpp && (
+              <Rnd
+                key="kpp-faceplate-l2"
+                data-testid="rnd-kpp-faceplate-l2"
+                position={kppFaceplateL2Position}
+                size={kppFaceplateL2Size}
+                onDragStop={(e, d) => {
+                  setKppFaceplateL2Position({ x: d.x, y: d.y });
+                  setIsL2Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setKppFaceplateL2Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setKppFaceplateL2Position(position);
+                  setIsL2Dirty(true);
+                }}
+                minWidth={200}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL2}
+                enableResizing={!isLockedL2}
+                resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+                className={isLockedL2 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
+                <div className="w-full h-full" data-testid="l2-kpp-faceplate">
+                <KPPFaceplate className="w-full h-full" data={(() => {
+                  const kpp = orchestratorResult.kpp;
+                  const s24 = orchestratorResult.streams?.["24"];
+                  const stpd = kpp.H2SO4_production_STPD;
+                  const so2TailScfm = s24?.SO2 ?? 0;
+                  const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                  const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                  const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                  const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                  const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                  return {
+                    plantRate: stpd,
+                    conversion: kpp.overall_SO2_conversion_pct,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                      const s9 = orchestratorResult.streams?.["9"];
+                      return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
+                    })(),
+                    o2TailGas: o2Pct,
+                    emissionsPpmv: kpp.SO2_ppm_stack ?? null,
+                    emissions: emissionsLbPerST,
+                    steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                    grossPowerMW: grossMW,
+                    powerRatio: 243,
+                  };
+                })()} />
+                </div>
+              </Rnd>
+            )}
+
             {/* Temperature Sensor 1540-TI-4200A Faceplate for L2 */}
             <Rnd
               key="temp-sensor-4200a-l2"
@@ -4857,7 +6690,7 @@ const HomeScreen = () => {
               enableResizing={!isLockedL2}
               resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
               className={isLockedL2 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 40 }}
+              style={{ zIndex: 40, visibility: sensorVisible ? 'visible' : 'hidden' }}
             >
               <div
                 className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
@@ -4869,6 +6702,48 @@ const HomeScreen = () => {
               >
                 <TempSensorPrimaryFaceplate
                   data={tempSensor4200AData}
+                  isTransparent={true}
+                />
+              </div>
+            </Rnd>
+
+            {/* Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) for L2 */}
+            <Rnd
+              key="temp-sensor-4820-l2"
+              position={tempSensor4820L2Position}
+              size={tempSensor4820L2Size}
+              onDragStop={(e, d) => {
+                setTempSensor4820L2Position({ x: d.x, y: d.y });
+                setIsL2Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setTempSensor4820L2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setTempSensor4820L2Position(position);
+                setIsL2Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={80}
+              bounds="parent"
+              disableDragging={isLockedL2}
+              enableResizing={!isLockedL2}
+              resizeHandleStyles={!isLockedL2 ? resizeHandleStyles : undefined}
+              className={isLockedL2 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 40, visibility: sensorVisible ? 'visible' : 'hidden' }}
+            >
+              <div 
+                className={`w-full h-full flex items-center justify-center overflow-hidden ${isLockedL2 ? 'cursor-pointer' : ''}`}
+                onClick={handleTempSensor4820Click}
+                data-testid="faceplate-4820-l2-container"
+                style={{
+                  transform: `scale(${Math.min(tempSensor4820L2Size.width / 180, tempSensor4820L2Size.height / 120)})`,
+                  transformOrigin: 'center center'
+                }}
+              >
+                <TempSensorPrimaryFaceplate 
+                  data={tempSensor4820Data}
                   isTransparent={true}
                 />
               </div>
@@ -5089,7 +6964,7 @@ const HomeScreen = () => {
               disableDragging={isLocked61}
               enableResizing={!isLocked61}
               className={isLocked61 ? "cursor-default" : "cursor-move"}
-              style={{ zIndex: 20 }}
+              style={{ zIndex: 20, visibility: sensorVisible ? 'visible' : 'hidden' }}
               data-testid="faceplate-4825-61-rnd"
             >
               <div
@@ -5116,7 +6991,7 @@ const HomeScreen = () => {
             </Rnd>
 
             {/* Secondary Faceplate Dialog for 1540-TI-4825 */}
-            <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61}>
+            <Dialog open={showSecondary4825_61} onOpenChange={setShowSecondary4825_61} modal={false}>
               <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
                 <VisuallyHidden>
                   <DialogTitle>1540-TI-4825 Secondary Faceplate</DialogTitle>
@@ -5133,18 +7008,400 @@ const HomeScreen = () => {
           </div>
         )}
 
-        {/* L1 - System Overview - Fixed-size canvas for scrollable content */}
-        
-        {selectedScreen === "L1 – System Overview" && <L1SystemOverview simulationTriggerRef={l1SimTriggerRef} />}
+        {/* L1 - System Overview */}
+        {selectedScreen === "L1 – System Overview" && <L1SystemOverview 
+        // orchestratorResult={orchestratorResult}
+         />}
+        {selectedScreen === "L2 – Converter" && <L2Converter />}
+        {selectedScreen === "L2 1520 ACID" && <L2_1520_ACID />}
+
+        {/* L2_1520 ACID View */}
+        {selectedScreen === "L2_1520 ACID" && (
+          <div className="relative bg-white" style={{ width: '3680px', height: '1130px', minWidth: '3680px', minHeight: '1130px' }}>
+            {/* Lock/Unlock and Save Buttons for L2_1520 */}
+            <div className="absolute top-4 right-4 z-50 flex gap-2">
+              {!isLockedL21520 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveL21520Layout}
+                  disabled={isSavingL21520}
+                  className="bg-green-500/20 border-green-500 text-green-400"
+                  data-testid="button-save-layout-l2-1520"
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsLockedL21520(!isLockedL21520)}
+                className={`${isLockedL21520 ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-green-500/20 border-green-500 text-green-400'}`}
+                data-testid="button-lock-toggle-l2-1520"
+              >
+                {isLockedL21520 ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <LockOpen className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Acid Boiler Equipment Image */}
+            <Rnd
+              key="acid-boiler-l2-1520"
+              data-testid="rnd-acid-boiler-l2-1520"
+              position={acidBoilerPosition}
+              size={acidBoilerSize}
+              onDragStop={(e, d) => {
+                setAcidBoilerPosition({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidBoilerSize({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidBoilerPosition(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidBoilerImg} 
+                alt="Acid Boiler Heat Exchanger" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-boiler-l2-1520"
+              />
+            </Rnd>
+
+            {/* Acid Tower 1 Equipment Image */}
+            <Rnd
+              key="acid-tower-1-l2-1520"
+              data-testid="rnd-acid-tower-1-l2-1520"
+              position={acidTower1Position}
+              size={acidTower1Size}
+              onDragStop={(e, d) => {
+                setAcidTower1Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidTower1Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidTower1Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidTower1Img} 
+                alt="Acid Tower 1" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-tower-1-l2-1520"
+              />
+            </Rnd>
+
+            {/* Acid Tower 2 Equipment Image */}
+            <Rnd
+              key="acid-tower-2-l2-1520"
+              data-testid="rnd-acid-tower-2-l2-1520"
+              position={acidTower2Position}
+              size={acidTower2Size}
+              onDragStop={(e, d) => {
+                setAcidTower2Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setAcidTower2Size({
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height)
+                });
+                setAcidTower2Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={200}
+              minHeight={100}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 10 }}
+            >
+              <img 
+                src={acidTower2Img} 
+                alt="Acid Tower 2" 
+                className="w-full h-full object-contain"
+                draggable={false}
+                data-testid="img-acid-tower-2-l2-1520"
+              />
+            </Rnd>
+
+            {/* 1520-TI-6623 FAT Acid Temp Faceplate */}
+            <Rnd
+              key="faceplate6623-l2-1520"
+              data-testid="rnd-faceplate-6623-l2-1520"
+              position={faceplate6623L21520Position}
+              size={faceplate6623L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate6623L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate6623L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate6623L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-6623-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary6623L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor6623Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary6623L21520} onOpenChange={setShowSecondary6623L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1520-TI-6623 FAT Acid Temp</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor6623SecondaryData}
+                  config={tempSensor6623SecondaryConfig}
+                  sensorId="1520-TI-6623"
+                  onClose={() => setShowSecondary6623L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1520-TI-8464 IPAT Acid Temp Faceplate */}
+            <Rnd
+              key="faceplate8464-l2-1520"
+              data-testid="rnd-faceplate-8464-l2-1520"
+              position={faceplate8464L21520Position}
+              size={faceplate8464L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate8464L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate8464L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate8464L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-8464-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary8464L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor8464Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary8464L21520} onOpenChange={setShowSecondary8464L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1520-TI-8464 IPAT Acid Temp</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor8464SecondaryData}
+                  config={tempSensor8464SecondaryConfig}
+                  sensorId="1520-TI-8464"
+                  onClose={() => setShowSecondary8464L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-T-7221 Final Tower Gas Inlet Temperature Faceplate */}
+            <Rnd
+              key="faceplate7221-l2-1520"
+              data-testid="rnd-faceplate-7221-l2-1520"
+              position={faceplate7221L21520Position}
+              size={faceplate7221L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate7221L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate7221L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate7221L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-7221-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary7221L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor7221Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary7221L21520} onOpenChange={setShowSecondary7221L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-T-7221 Final Tower Gas Inlet Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor7221SecondaryData}
+                  config={tempSensor7221SecondaryConfig}
+                  sensorId="1540-T-7221"
+                  onClose={() => setShowSecondary7221L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {/* 1540-T-7224 Interpass Tower Gas Inlet Temperature Faceplate */}
+            <Rnd
+              key="faceplate7224-l2-1520"
+              data-testid="rnd-faceplate-7224-l2-1520"
+              position={faceplate7224L21520Position}
+              size={faceplate7224L21520Size}
+              onDragStop={(e, d) => {
+                setFaceplate7224L21520Position({ x: d.x, y: d.y });
+                setIsL21520Dirty(true);
+              }}
+              onResizeStop={(e, dir, ref, delta, position) => {
+                setFaceplate7224L21520Size({ width: parseInt(ref.style.width), height: parseInt(ref.style.height) });
+                setFaceplate7224L21520Position(position);
+                setIsL21520Dirty(true);
+              }}
+              minWidth={120}
+              minHeight={180}
+              bounds="parent"
+              disableDragging={isLockedL21520}
+              enableResizing={!isLockedL21520}
+              className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+              style={{ zIndex: 20 }}
+            >
+              <div
+                className="flex flex-col items-center gap-1 w-full h-full cursor-pointer"
+                data-testid="faceplate-7224-l2-1520-container"
+                onClick={isLockedL21520 ? () => setShowSecondary7224L21520(true) : undefined}
+              >
+                <TempSensorPrimaryFaceplate data={tempSensor7224Data} isTransparent={true} />
+              </div>
+            </Rnd>
+            <Dialog open={showSecondary7224L21520} onOpenChange={setShowSecondary7224L21520} modal={false}>
+              <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+                <VisuallyHidden>
+                  <DialogTitle>1540-T-7224 Interpass Tower Gas Inlet Temperature</DialogTitle>
+                </VisuallyHidden>
+                <TempSensorSecondaryFaceplate
+                  data={tempSensor7224SecondaryData}
+                  config={tempSensor7224SecondaryConfig}
+                  sensorId="1540-T-7224"
+                  onClose={() => setShowSecondary7224L21520(false)}
+                />
+              </DialogContent>
+            </Dialog>
+
+            {orchestratorResult?.kpp && (
+              <Rnd
+                key="kpp-faceplate-l2-1520"
+                data-testid="rnd-kpp-faceplate-l2-1520"
+                position={kppFaceplateL21520Position}
+                size={kppFaceplateL21520Size}
+                onDragStop={(e, d) => {
+                  setKppFaceplateL21520Position({ x: d.x, y: d.y });
+                  setIsL21520Dirty(true);
+                }}
+                onResizeStop={(e, dir, ref, delta, position) => {
+                  setKppFaceplateL21520Size({
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height)
+                  });
+                  setKppFaceplateL21520Position(position);
+                  setIsL21520Dirty(true);
+                }}
+                minWidth={200}
+                minHeight={200}
+                bounds="parent"
+                disableDragging={isLockedL21520}
+                enableResizing={!isLockedL21520}
+                resizeHandleStyles={!isLockedL21520 ? resizeHandleStyles : undefined}
+                className={isLockedL21520 ? "cursor-default" : "cursor-move"}
+                style={{ zIndex: 50 }}
+              >
+                <div className="w-full h-full" data-testid="l2-1520-kpp-faceplate">
+                <KPPFaceplate className="w-full h-full" data={(() => {
+                  const kpp = orchestratorResult.kpp;
+                  const s24 = orchestratorResult.streams?.["24"];
+                  const stpd = kpp.H2SO4_production_STPD;
+                  const so2TailScfm = s24?.SO2 ?? 0;
+                  const so2LbDay = (so2TailScfm / 5.984) * 64.064 * 24;
+                  const emissionsLbPerST = stpd > 0 ? so2LbDay / stpd : null;
+                  const o2Pct = s24 ? (s24.O2 / Math.max(s24.TOTAL, 1e-9)) * 100 : null;
+                  const steamSTPD = stpd != null ? stpd * 1.3 : null;
+                  const grossMW = stpd != null ? (stpd / 24 * 1.3 * 243) / 1000 : null;
+                  return {
+                    plantRate: stpd,
+                    conversion: kpp.overall_SO2_conversion_pct,
+                    pass1Strength: orchestratorResult.sensor_tags?.["1540-AI-4825"] ?? (() => {
+                      const s9 = orchestratorResult.streams?.["9"];
+                      return s9 ? (s9.SO2 / Math.max(s9.TOTAL, 1e-9)) * 100 : null;
+                    })(),
+                    o2TailGas: o2Pct,
+                    emissionsPpmv: kpp.SO2_ppm_stack ?? null,
+                    emissions: emissionsLbPerST,
+                    steamGen: steamSTPD != null ? Math.round(steamSTPD) : null,
+                    grossPowerMW: grossMW,
+                    powerRatio: 243,
+                  };
+                })()} />
+                </div>
+              </Rnd>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Alarm Banner - always visible at bottom */}
       <div className="flex-shrink-0">
-        <AlarmBanner />
+        <AlarmBanner alarms={orchestratorResult?.alarms ?? []} />
       </div>
 
       {/* VFD Faceplate Modal */}
-      <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen}>
+      <Dialog open={isVFDModalOpen} onOpenChange={setIsVFDModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>VFD Faceplate</DialogTitle>
@@ -5165,7 +7422,7 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Sulfur Flow Controller Secondary Faceplate Modal */}
-      <Dialog open={isSulfurFlowModalOpen} onOpenChange={setIsSulfurFlowModalOpen}>
+      <Dialog open={isSulfurFlowModalOpen} onOpenChange={setIsSulfurFlowModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Sulfur Flow Controller</DialogTitle>
@@ -5180,16 +7437,16 @@ const HomeScreen = () => {
             onBypassChange={(active) => setSulfurFlowBypass(active)}
             onSpChange={(value) => {
               updateSulfurSP(value);
-              // In Static mode, also update the loaded case value so both faceplates stay in sync
               if (useStaticSulfurFlow) {
                 setLoadedCaseValueSulfurFlow(value);
+                savePVCaseValue('1530-F-2602', value);
               }
             }}
             onOutChange={(value) => {
               updateSulfurOUT(value);
-              // In Static mode, also update the loaded case value so both faceplates stay in sync
               if (useStaticSulfurFlow) {
                 setLoadedCaseValueSulfurFlow(value);
+                savePVCaseValue('1530-F-2602', value);
               }
             }}
             onModelockOverrideChange={(active) => setSulfurFlowModelockOverride(active)}
@@ -5230,6 +7487,21 @@ const HomeScreen = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Temperature Sensor 1540-TI-4820 (Pass 1 Inlet Duct) Secondary Faceplate Modal */}
+      <Dialog open={isTempSensor4820ModalOpen} onOpenChange={setIsTempSensor4820ModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Temperature Sensor 1540-TI-4820</DialogTitle>
+          </VisuallyHidden>
+          <TempSensorSecondaryFaceplate
+            data={tempSensor4820SecondaryData}
+            config={tempSensor4820SecondaryConfig}
+            sensorId="1540-TI-4820"
+            onClose={() => setIsTempSensor4820ModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Temperature Sensor 1540-TI-4200B Secondary Faceplate Modal */}
       <Dialog open={isTempSensor4200BModalOpen} onOpenChange={setIsTempSensor4200BModalOpen}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
@@ -5261,7 +7533,7 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Hand Controller 1540-H-4030 Secondary Faceplate Modal */}
-      <Dialog open={isHandControllerModalOpen} onOpenChange={setIsHandControllerModalOpen}>
+      <Dialog open={isHandControllerModalOpen} onOpenChange={setIsHandControllerModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Hand Controller 1540-H-4030</DialogTitle>
@@ -5276,12 +7548,14 @@ const HomeScreen = () => {
               updateHandControllerSP(value);
               if (selectedMode === 'Static') {
                 setLoadedCaseValue1540H4030(value);
+                savePVCaseValue('1540-H-4030', value);
               }
             }}
             onOutChange={(value) => {
               updateHandControllerOUT(value);
               if (selectedMode === 'Static') {
                 setLoadedCaseValue1540H4030(value);
+                savePVCaseValue('1540-H-4030', value);
               }
             }}
             fromSource="home-screen"
@@ -5293,7 +7567,7 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* Jug Valve Hand Controller 1540-H-4282 Secondary Faceplate Modal */}
-      <Dialog open={isJugValveHandControllerModalOpen} onOpenChange={setIsJugValveHandControllerModalOpen}>
+      <Dialog open={isJugValveHandControllerModalOpen} onOpenChange={setIsJugValveHandControllerModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>Jug Valve Hand Controller 1540-H-4282</DialogTitle>
@@ -5304,8 +7578,20 @@ const HomeScreen = () => {
             controllerId="1540-H-4282"
             onClose={() => setIsJugValveHandControllerModalOpen(false)}
             onModeChange={(mode) => updateJugValveHandControllerMode(mode)}
-            onSpChange={(value) => updateJugValveHandControllerSP(value)}
-            onOutChange={(value) => updateJugValveHandControllerOUT(value)}
+            onSpChange={(value) => {
+              updateJugValveHandControllerSP(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueJugValve(value);
+                savePVCaseValue('1540-H-4282', value);
+              }
+            }}
+            onOutChange={(value) => {
+              updateJugValveHandControllerOUT(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueJugValve(value);
+                savePVCaseValue('1540-H-4282', value);
+              }
+            }}
             fromSource="home-screen"
             selectedMode={selectedMode}
             loadedCaseValue={useStaticJugValve ? loadedCaseValueJugValve : null}
@@ -5315,7 +7601,7 @@ const HomeScreen = () => {
       </Dialog>
 
       {/* WHB Hand Controller 1540-H-4283 Secondary Faceplate Modal */}
-      <Dialog open={isWhbHandControllerModalOpen} onOpenChange={setIsWhbHandControllerModalOpen}>
+      <Dialog open={isWhbHandControllerModalOpen} onOpenChange={setIsWhbHandControllerModalOpen} modal={false}>
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
             <DialogTitle>WHB Outlet dP Hand Controller 1540-H-4283</DialogTitle>
@@ -5326,12 +7612,92 @@ const HomeScreen = () => {
             controllerId="1540-H-4283"
             onClose={() => setIsWhbHandControllerModalOpen(false)}
             onModeChange={(mode) => updateWhbHandControllerMode(mode)}
-            onSpChange={(value) => updateWhbHandControllerSP(value)}
-            onOutChange={(value) => updateWhbHandControllerOUT(value)}
+            onSpChange={(value) => {
+              updateWhbHandControllerSP(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueWHBdP(value);
+                savePVCaseValue('1540-H-4283', value);
+              }
+            }}
+            onOutChange={(value) => {
+              updateWhbHandControllerOUT(value);
+              if (selectedMode === 'Static') {
+                setLoadedCaseValueWHBdP(value);
+                savePVCaseValue('1540-H-4283', value);
+              }
+            }}
             fromSource="home-screen"
             selectedMode={selectedMode}
-            loadedCaseValue={null}
-            onModelockOverrideChange={setWhbHandControllerModelockOverride}
+            loadedCaseValue={loadedCaseValueWHBdP}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPass2ControllerModalOpen} onOpenChange={setIsPass2ControllerModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Pass 2 Inlet Temperature Controller 1540-T-4822</DialogTitle>
+          </VisuallyHidden>
+          <SecondaryControllerFaceplate
+            data={pass2ControllerSecondaryData}
+            config={pass2ControllerSecondaryConfig}
+            controllerId="1540-T-4822"
+            onClose={() => setIsPass2ControllerModalOpen(false)}
+            onModeChange={(mode) => updatePass2ControllerMode(mode)}
+            onSpChange={(value) => {
+              updatePass2ControllerSP(value);
+              setLoadedCaseValuePass2Temp(value);
+            }}
+            onOutChange={(value) => updatePass2ControllerOUT(value)}
+            fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={loadedCaseValuePass2Temp}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPass3ControllerModalOpen} onOpenChange={setIsPass3ControllerModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Pass 3 Inlet Temperature Controller 1540-T-5220</DialogTitle>
+          </VisuallyHidden>
+          <SecondaryControllerFaceplate
+            data={pass3ControllerSecondaryData}
+            config={pass3ControllerSecondaryConfig}
+            controllerId="1540-T-5220"
+            onClose={() => setIsPass3ControllerModalOpen(false)}
+            onModeChange={(mode) => updatePass3ControllerMode(mode)}
+            onSpChange={(value) => {
+              updatePass3ControllerSP(value);
+              setLoadedCaseValuePass3Temp(value);
+            }}
+            onOutChange={(value) => updatePass3ControllerOUT(value)}
+            fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={loadedCaseValuePass3Temp}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPass4ControllerModalOpen} onOpenChange={setIsPass4ControllerModalOpen} modal={false}>
+        <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+          <VisuallyHidden>
+            <DialogTitle>Pass 4 Inlet Temperature Controller 1540-T-5224</DialogTitle>
+          </VisuallyHidden>
+          <SecondaryControllerFaceplate
+            data={pass4ControllerSecondaryData}
+            config={pass4ControllerSecondaryConfig}
+            controllerId="1540-T-5224"
+            onClose={() => setIsPass4ControllerModalOpen(false)}
+            onModeChange={(mode) => updatePass4ControllerMode(mode)}
+            onSpChange={(value) => {
+              updatePass4ControllerSP(value);
+              setLoadedCaseValuePass4Temp(value);
+            }}
+            onOutChange={(value) => updatePass4ControllerOUT(value)}
+            fromSource="home-screen"
+            selectedMode={selectedMode}
+            loadedCaseValue={loadedCaseValuePass4Temp}
           />
         </DialogContent>
       </Dialog>
@@ -5419,4 +7785,3 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
-

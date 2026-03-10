@@ -190,6 +190,11 @@ import TempSensor4841Faceplate3C from "@/delta-v/pages/TempSensor4841Faceplate3C
 import TempSensor4841Faceplate3D from "@/delta-v/pages/TempSensor4841Faceplate3D";
 import TempSensor4841Faceplate3E from "@/delta-v/pages/TempSensor4841Faceplate3E";
 import TempSensor4841Faceplate3F from "@/delta-v/pages/TempSensor4841Faceplate3F";
+import TempSensor5231Faceplate3E from "@/delta-v/pages/TempSensor5231Faceplate3E";
+import TempSensor7225Faceplate3E from "@/delta-v/pages/TempSensor7225Faceplate3E";
+import TempSensor8421Faceplate3E from "@/delta-v/pages/TempSensor8421Faceplate3E";
+import TempSensor8464Faceplate3E from "@/delta-v/pages/TempSensor8464Faceplate3E";
+import TempSensor6624Faceplate3E from "@/delta-v/pages/TempSensor6624Faceplate3E";
 import {
   PFD5001ProcessGas,
   PFD5002StrongAcid,
@@ -226,12 +231,16 @@ import ConverterPass2 from "@/pages/unit-operation/converter-pass-2";
 import ConverterPass3 from "@/pages/unit-operation/converter-pass-3";
 import ConverterPass4 from "@/pages/unit-operation/converter-pass-4";
 import GasGasHeatExchanger from "@/pages/unit-operation/gas-gas-heat-exchanger";
+import GasGasHxSystemParameters from "@/pages/unit-operation/gas-gas-hx-system-parameters";
+import CipShellGeometry from "@/pages/unit-operation/cip-shell-geometry";
+import HipShellGeometry from "@/pages/unit-operation/hip-shell-geometry";
 import KeyPerformanceParameters from "@/pages/unit-operation/key-performance-parameters";
 import SulfuricAcidTower from "@/pages/unit-operation/sulfuric-acid-tower";
 import WasteHeatBoiler from "@/pages/unit-operation/waste-heat-boiler";
 import Superheater from "@/pages/unit-operation/superheater";
 import AcidCooler from "@/pages/unit-operation/acid-cooler";
 import Economizer from "@/pages/unit-operation/economizer";
+import Superheater4AEconomizer from "@/pages/unit-operation/superheater-4a-economizer";
 import TailGasScrubber from "@/pages/unit-operation/tail-gas-scrubber";
 import SulfurFurnace from "@/pages/unit-operation/sulfur-furnace";
 import Deaerator from "@/pages/unit-operation/deaerator";
@@ -358,11 +367,15 @@ function Router() {
       <Route path="/unit-operation/converter-pass-4" component={ConverterPass4} />
       <Route path="/unit-operation/catalytic-reactor" component={CatalyticReactor} />
       <Route path="/unit-operation/gas-gas-heat-exchanger" component={GasGasHeatExchanger} />
+      <Route path="/unit-operation/gas-gas-hx-system-parameters" component={GasGasHxSystemParameters} />
+      <Route path="/unit-operation/cip-shell-geometry" component={CipShellGeometry} />
+      <Route path="/unit-operation/hip-shell-geometry" component={HipShellGeometry} />
       <Route path="/unit-operation/sulfuric-acid-tower" component={SulfuricAcidTower} />
       <Route path="/unit-operation/waste-heat-boiler" component={WasteHeatBoiler} />
       <Route path="/unit-operation/superheater" component={Superheater} />
       <Route path="/unit-operation/acid-cooler" component={AcidCooler} />
       <Route path="/unit-operation/economizer" component={Economizer} />
+      <Route path="/unit-operation/superheater-4a-economizer" component={Superheater4AEconomizer} />
       <Route path="/unit-operation/tail-gas-scrubber" component={TailGasScrubber} />
       <Route path="/unit-operation/sulfur-furnace" component={SulfurFurnace} />
       <Route path="/unit-operation/deaerator" component={Deaerator} />
@@ -380,10 +393,10 @@ function Router() {
       <Route path="/unit-operation/inlet-air-filter/simulation-code" component={InletAirFilterSimCode} />
       <Route path="/unit-operation/acid-hydraulics/absorbing-tower-circuit" component={AbsorbingTowerCircuit} />
       <Route path="/unit-operation/acid-hydraulics/drying-tower-circuit/python-code" component={DryingTowerCircuitPythonCode} />
-      <Route path="/unit-operation/sulfur-control-hydraulics" component={SulfurControlHydraulics} />
-      <Route path="/unit-operation/sulfur-control-hydraulics/python-code/gui" component={SulfurControlPythonCodeGui} />
-      <Route path="/unit-operation/sulfur-control-hydraulics/python-code/static" component={SulfurControlPythonCodeStatic} />
-      <Route path="/unit-operation/sulfur-control-hydraulics/python-code/dynamic" component={SulfurControlPythonCodeDynamic} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id" component={SulfurControlHydraulics} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id/python-code/gui" component={SulfurControlPythonCodeGui} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id/python-code/static" component={SulfurControlPythonCodeStatic} />
+      <Route path="/unit-operation/sulfur-control-hydraulics/:id/python-code/dynamic" component={SulfurControlPythonCodeDynamic} />
       <Route path="/unit-operation/acid-hydraulics/drying-tower-circuit" component={DryingTowerCircuit} />
       <Route path="/unit-operation/acid-hydraulics" component={AcidHydraulics} />
       <Route path="/unit-operation/drying-tower/python-code" component={DryingTowerPythonCode} />
@@ -648,6 +661,11 @@ function Router() {
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3d" component={TempSensor4841Faceplate3D} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3e" component={TempSensor4841Faceplate3E} />
       <Route path="/settings/controller-outputs/faceplates/temp-sensor-4841-faceplate-3f" component={TempSensor4841Faceplate3F} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-5231-faceplate-3e" component={TempSensor5231Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-7225-faceplate-3e" component={TempSensor7225Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-8421-faceplate-3e" component={TempSensor8421Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-8464-faceplate-3e" component={TempSensor8464Faceplate3E} />
+      <Route path="/settings/controller-outputs/faceplates/temp-sensor-6624-faceplate-3e" component={TempSensor6624Faceplate3E} />
       
       {/* Delta-V Valve Faceplates */}
       <Route path="/settings/controller-outputs/faceplates/valve/:valveType" component={ValveTypeDetail} />

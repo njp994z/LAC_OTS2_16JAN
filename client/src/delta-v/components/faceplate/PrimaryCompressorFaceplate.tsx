@@ -1,10 +1,12 @@
 import { cn } from "@/lib/utils";
 import type { CompressorData } from "@/delta-v/types/compressor";
 import compressorEquipment from "@assets/delta-v/icons/compressor-equipment.png";
+import { Eye, EyeOff } from "lucide-react";
 
 interface PrimaryCompressorFaceplateProps {
   data: CompressorData;
   transparentBackground?: boolean;
+  onToggleTransparency?: (transparent: boolean) => void;
   configTagName?: string;
   configDescription?: string;
   configUnit?: string;
@@ -13,6 +15,7 @@ interface PrimaryCompressorFaceplateProps {
 export const PrimaryCompressorFaceplate = ({ 
   data, 
   transparentBackground = false,
+  onToggleTransparency,
   configTagName,
   configDescription,
   configUnit,
@@ -20,7 +23,6 @@ export const PrimaryCompressorFaceplate = ({
   const isRunning = data.state === "RUNNING" || data.state === "STARTING";
   const isStopped = data.state === "STOPPED" || data.state === "STOPPING";
   
-  // Use config values if provided, otherwise fall back to data values
   const displayTag = configTagName || data.tag;
   const displayDescription = configDescription || data.description;
 
@@ -33,6 +35,24 @@ export const PrimaryCompressorFaceplate = ({
           : "linear-gradient(135deg, hsl(220 15% 18%) 0%, hsl(220 15% 12%) 100%)",
       }}
     >
+      {onToggleTransparency && (
+        <button
+          data-testid="button-toggle-vfd-transparency"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleTransparency(!transparentBackground);
+          }}
+          className={cn(
+            "absolute top-1 right-1 z-20 rounded p-0.5 transition-colors",
+            transparentBackground
+              ? "text-slate-400 hover:text-slate-600 hover:bg-slate-200/60"
+              : "text-slate-500 hover:text-slate-300 hover:bg-slate-700/60"
+          )}
+          title={transparentBackground ? "Switch to dark background" : "Switch to transparent background"}
+        >
+          {transparentBackground ? <EyeOff size={10} /> : <Eye size={10} />}
+        </button>
+      )}
       {/* Equipment Graphic */}
       <img 
         src={compressorEquipment} 
@@ -61,7 +81,7 @@ export const PrimaryCompressorFaceplate = ({
           <div className={cn("h-3 rounded border relative overflow-hidden", transparentBackground ? "bg-slate-200 border-slate-300" : "bg-slate-900 border-slate-700")}>
             <div 
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300"
-              style={{ width: `${Math.min((data.currentPV / 50) * 100, 100)}%` }}
+              style={{ width: `${Math.min((data.currentPV / 672) * 100, 100)}%` }}
             />
             <span className={cn("absolute inset-0 flex items-center justify-center text-[7px] font-mono z-10 font-bold", transparentBackground ? "text-slate-800" : "text-white")}>
               {data.currentPV.toFixed(1)}A

@@ -88,7 +88,6 @@ export default function InterpassAbsorptionTower() {
   const [isRunningDynamic, setIsRunningDynamic] = useState(false);
   const isRunningDynamicRef = useRef(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const currentFlowRef = useRef<number>(0);
 
   const [acidInputs, setAcidInputs] = useState<AcidInputs>({
     x_H2SO4_AI0: "0.985",
@@ -150,8 +149,8 @@ export default function InterpassAbsorptionTower() {
   const [systemParams, setSystemParams] = useState<SystemParams>({
     Tower_Diameter_ft: "28.0",
     Packing_Depth_ft: "12.0",
-    dP_BME_inWC: "6.0",
-    Barometric_P_psia: "14.3",
+    dP_BME_inWC: "12.0",
+    Barometric_P_psia: "12.5",
     Weather_ZIP_Code: "89801",
   });
 
@@ -213,11 +212,17 @@ export default function InterpassAbsorptionTower() {
         m_Total_AI1: formatValue(data.m_Total_AI1, 1),
         Pressure_AIX0: formatValue(data.Pressure_AIX0, 1),
         Pressure_AI1: formatValue(data.Pressure_AI1, 1),
-        Temp_AIX0: formatValue(data.Temp_AIX0, 0),
+        Temp_AIX0: formatValue(parseFloat(acidInputs.Temp_AI0) || data.Temp_AIX0, 0),
         Temp_AI1: formatValue(data.Temp_AI1, 0),
         Flow_AIX0: formatValue(data.Flow_AIX0, 1),
         Flow_AI1: formatValue(data.Flow_AI1, 1),
       });
+
+      const inletPressure = parseFloat(gasInputs.PRESSURE_GI0) || 0;
+      const packingDrop = typeof data.PRESSURE_GIX0 === 'number' ? data.PRESSURE_GIX0 : parseFloat(data.PRESSURE_GIX0) || 0;
+      const outletDrop = typeof data.PRESSURE_GI1 === 'number' ? data.PRESSURE_GI1 : parseFloat(data.PRESSURE_GI1) || 0;
+      const packingGaugePressure = inletPressure + packingDrop;
+      const outletGaugePressure = inletPressure + outletDrop;
 
       setGasOutputs({
         SO2_GIX0: formatValue(data.SO2_GIX0, 0),
@@ -234,10 +239,10 @@ export default function InterpassAbsorptionTower() {
         H2SO4_GI1: formatValue(data.H2SO4_GI1, 0),
         TOTAL_GIX0: formatValue(data.TOTAL_GIX0, 0),
         TOTAL_GI1: formatValue(data.TOTAL_GI1, 0),
-        PRESSURE_GIX0: formatValue(data.PRESSURE_GIX0, 1),
-        PRESSURE_GI1: formatValue(data.PRESSURE_GI1, 1),
-        TEMPERATURE_GIX0: formatValue(data.TEMPERATURE_GIX0, 0),
-        TEMPERATURE_GI1: formatValue(data.TEMPERATURE_GI1, 0),
+        PRESSURE_GIX0: formatValue(packingGaugePressure, 1),
+        PRESSURE_GI1: formatValue(outletGaugePressure, 1),
+        TEMPERATURE_GIX0: formatValue(parseFloat(acidInputs.Temp_AI0), 0),
+        TEMPERATURE_GI1: formatValue(parseFloat(acidInputs.Temp_AI0), 0),
       });
 
       if (!isRunningDynamic) {
@@ -268,29 +273,30 @@ export default function InterpassAbsorptionTower() {
 
     setIsRunningDynamic(true);
     isRunningDynamicRef.current = true;
-    currentFlowRef.current = parseFloat(acidInputs.Flow_AI0) || 0;
-
+    const baseSO3 = parseFloat(gasInputs.SO3_GI0) || 12148;
+    const baseSO2 = parseFloat(gasInputs.SO2_GI0) || 480;
+    const baseTotal = parseFloat(gasInputs.TOTAL_GI0) || 103736;
+    const baseTemp = parseFloat(gasInputs.TEMPERATURE_GI0) || 330;
+const basePress = parseFloat(gasInputs.PRESSURE_GI0) || 92;
+    let t = 0;
     const updateDynamic = async () => {
       if (!isRunningDynamicRef.current) return;
 
-      const target = 1500.0;
-      const tau = parseFloat(dynamicParams.tau) || 6.0;
       const dt = parseFloat(dynamicParams.dt) || 0.5;
-
-      currentFlowRef.current += (target - currentFlowRef.current) * (1 - Math.exp(-dt / tau));
-
-      setAcidInputs(prev => ({
+      t += dt;
+      const so3Perturb = baseSO3 * (1 + 0.02 * Math.sin(t / 8) + 0.01 * (Math.random() - 0.5));
+      const so2Perturb = baseSO2 * (1 + 0.015 * Math.sin(t / 12 + 1) + 0.01 * (Math.random() - 0.5));
+      const totalPerturb = baseTotal * (1 + 0.01 * Math.sin(t / 10 + 2) + 0.005 * (Math.random() - 0.5));
+      const tempPerturb = baseTemp + 5 * Math.sin(t / 15) + 2 * (Math.random() - 0.5);
+      const pressPerturb = basePress + 1.5 * Math.sin(t / 20 + 0.5) + 0.5 * (Math.random() - 0.5);
+      setGasInputs(prev => ({
         ...prev,
-        Flow_AI0: currentFlowRef.current.toFixed(1)
+        SO3_GI0: so3Perturb.toFixed(0),
+        SO2_GI0: so2Perturb.toFixed(0),
+        TOTAL_GI0: totalPerturb.toFixed(0),
+        TEMPERATURE_GI0: tempPerturb.toFixed(1),
+        PRESSURE_GI0: pressPerturb.toFixed(1),
       }));
-
-      // In dynamic mode, we run calculation immediately after updating values
-      // This ensures requests are sequential
-      await runCalculation();
-
-      if (isRunningDynamicRef.current) {
-        timerRef.current = setTimeout(updateDynamic, Math.max(dt * 1000, 100));
-      }
     };
 
     updateDynamic();
@@ -307,8 +313,6 @@ export default function InterpassAbsorptionTower() {
 
   const resetDynamic = () => {
     pauseDynamic();
-    currentFlowRef.current = 0;
-    setAcidInputs(prev => ({ ...prev, Flow_AI0: "0" }));
     runCalculation();
   };
 
@@ -318,9 +322,10 @@ export default function InterpassAbsorptionTower() {
     if (isRunningDynamic) {
         runCalculation();
     }
-  }, [acidInputs.Flow_AI0, isRunningDynamic, runCalculation]);
-  */
+  }, [gasInputs.SO3_GI0, gasInputs.SO2_GI0, gasInputs.TOTAL_GI0, isRunningDynamic, runCalculation]);
 
+  */
+ 
   useEffect(() => {
     if (mode === "Static" && isRunningDynamic) {
       pauseDynamic();

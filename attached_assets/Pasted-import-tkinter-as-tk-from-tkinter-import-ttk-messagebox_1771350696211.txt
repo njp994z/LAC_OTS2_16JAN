@@ -1,0 +1,230 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+root = tk.Tk()
+root.title("Sulfur Interpass HX Valve & Stream Simulator")
+root.geometry("1450x1150")
+root.configure(bg="#1e1e1e")
+
+style = ttk.Style()
+style.theme_use("clam")
+style.configure("TLabel", background="#1e1e1e", foreground="#e0e0e0", font=("Segoe UI", 10))
+style.configure("TEntry", fieldbackground="#2d2d2d", foreground="#ffffff", insertbackground="#ffffff")
+style.configure("Treeview", background="#2d2d2d", foreground="#e0e0e0", fieldbackground="#2d2d2d")
+style.configure("Treeview.Heading", background="#3a3a3a", foreground="#ffffff")
+style.map("Treeview", background=[("selected", "#4a6a8a")])
+
+# ── Header ───────────────────────────────────────────────────────
+header_frame = ttk.Frame(root)
+header_frame.pack(fill="x", padx=20, pady=10)
+tk.Label(header_frame, text="Sulfur Interpass HX Valve & Stream Simulator", font=("Segoe UI", 14, "bold"), bg="#1e1e1e", fg="#00ccff").pack(side="left")
+tk.Label(header_frame, text="Three valves - Split-range - Full stream tables", font=("Segoe UI", 10), bg="#1e1e1e", fg="#a0a0a0").pack(side="left", padx=20)
+
+# ── Mode & Targets ───────────────────────────────────────────────
+top_frame = ttk.Frame(root)
+top_frame.pack(fill="x", padx=20, pady=10)
+
+# Simulation Mode
+mode_frame = ttk.LabelFrame(top_frame, text="Simulation Mode", padding=10)
+mode_frame.pack(side="left", fill="y", padx=(0,10))
+mode_var = tk.StringVar(value="Static")
+ttk.Radiobutton(mode_frame, text="Static Calculation", variable=mode_var, value="Static").pack(anchor="w")
+ttk.Radiobutton(mode_frame, text="Dynamic Simulation", variable=mode_var, value="Dynamic").pack(anchor="w")
+
+# Target Temperatures (Static only)
+target_frame = ttk.LabelFrame(top_frame, text="Target Temperatures (Static Mode)", padding=10)
+target_frame.pack(side="left", fill="both", expand=True)
+ttk.Label(target_frame, text="Target Pass 3 Outlet Temp").grid(row=0, column=0, sticky="e", padx=10, pady=4)
+pass3_target = ttk.Entry(target_frame, width=12)
+pass3_target.insert(0, "806")
+pass3_target.grid(row=0, column=1, padx=10, pady=4, sticky="w")
+
+ttk.Label(target_frame, text="Target Pass 4 Outlet Temp").grid(row=1, column=0, sticky="e", padx=10, pady=4)
+pass4_target = ttk.Entry(target_frame, width=12)
+pass4_target.insert(0, "779")
+pass4_target.grid(row=1, column=1, padx=10, pady=4, sticky="w")
+
+# ── Dynamic Control Panel (hidden until Dynamic mode) ────────────
+dynamic_panel = ttk.LabelFrame(root, text="Dynamic Control", padding=12)
+
+# mA and timestep
+tk.Label(dynamic_panel, text="Dynamic Control (mA)", bg="#1e1e1e", fg="#e0e0e0").grid(row=0, column=0, sticky="w", padx=5, pady=4)
+ma_entry = ttk.Entry(dynamic_panel, width=10)
+ma_entry.insert(0, "0.5")
+ma_entry.grid(row=0, column=1, padx=5, pady=4, sticky="w")
+
+tk.Label(dynamic_panel, text="Timestep dt (s)", bg="#1e1e1e", fg="#e0e0e0").grid(row=0, column=2, sticky="w", padx=5, pady=4)
+dt_entry = ttk.Entry(dynamic_panel, width=10)
+dt_entry.insert(0, "0.5")
+dt_entry.grid(row=0, column=3, padx=5, pady=4, sticky="w")
+
+# Tau and Theta
+tk.Label(dynamic_panel, text="Tau Low Pass Filter (s)", bg="#1e1e1e", fg="#e0e0e0").grid(row=1, column=0, sticky="w", padx=5, pady=4)
+tau_filter = ttk.Entry(dynamic_panel, width=10)
+tau_filter.insert(0, "2.0")
+tau_filter.grid(row=1, column=1, padx=5, pady=4, sticky="w")
+
+tk.Label(dynamic_panel, text="Theta Dead-Lag (s)", bg="#1e1e1e", fg="#e0e0e0").grid(row=1, column=2, sticky="w", padx=5, pady=4)
+theta_lag = ttk.Entry(dynamic_panel, width=10)
+theta_lag.insert(0, "8.0")
+theta_lag.grid(row=1, column=3, padx=5, pady=4, sticky="w")
+
+# TCV Tau
+tk.Label(dynamic_panel, text="Tau TCV-5224 (s)", bg="#1e1e1e", fg="#e0e0e0").grid(row=2, column=0, sticky="w", padx=5, pady=4)
+tau_5224 = ttk.Entry(dynamic_panel, width=10)
+tau_5224.insert(0, "3.0")
+tau_5224.grid(row=2, column=1, padx=5, pady=4, sticky="w")
+
+tk.Label(dynamic_panel, text="Tau TCV-5220A (s)", bg="#1e1e1e", fg="#e0e0e0").grid(row=2, column=2, sticky="w", padx=5, pady=4)
+tau_5220a = ttk.Entry(dynamic_panel, width=10)
+tau_5220a.insert(0, "3.0")
+tau_5220a.grid(row=2, column=3, padx=5, pady=4, sticky="w")
+
+tk.Label(dynamic_panel, text="Tau TCV-5220B (s)", bg="#1e1e1e", fg="#e0e0e0").grid(row=2, column=4, sticky="w", padx=5, pady=4)
+tau_5220b = ttk.Entry(dynamic_panel, width=10)
+tau_5220b.insert(0, "3.0")
+tau_5220b.grid(row=2, column=5, padx=5, pady=4, sticky="w")
+
+# Setpoints
+tk.Label(dynamic_panel, text="HIP TIC-5224 Set-Point Pass 3", bg="#1e1e1e", fg="#e0e0e0").grid(row=3, column=0, sticky="w", padx=5, pady=4)
+hip_setpoint = ttk.Entry(dynamic_panel, width=10)
+hip_setpoint.insert(0, "806")
+hip_setpoint.grid(row=3, column=1, padx=5, pady=4, sticky="w")
+
+tk.Label(dynamic_panel, text="CIP TIC-5220 Set-Point Pass 4", bg="#1e1e1e", fg="#e0e0e0").grid(row=3, column=2, sticky="w", padx=5, pady=4)
+cip_setpoint = ttk.Entry(dynamic_panel, width=10)
+cip_setpoint.insert(0, "779")
+cip_setpoint.grid(row=3, column=3, padx=5, pady=4, sticky="w")
+
+# ── System Parameters ────────────────────────────────────────────
+sys_frame = ttk.LabelFrame(root, text="System Parameters", padding=12)
+sys_frame.pack(fill="x", padx=20, pady=10)
+
+sys_params = [
+    ("CIP Tube OD (in)", "2.565"), ("CIP Tube Number", "2,148"), ("CIP Tube Thickness (in)", "0.218"), ("CIP Tube Length (ft)", "30.9375"),
+    ("HIP Tube OD (in)", "2.565"), ("HIP Tube Number", "1,150"), ("HIP Tube Thickness (in)", "0.218"), ("HIP Tube Length (ft)", "25.0"),
+    ("CIP Cv_Max 36\"", "100,000.0"), ("HIP Cv_Max 48\"", "200,000.0"), ("CIP Cv_Max 78\"", "700,000.0"),
+    ("Barometric P (psia)", "14.696"), ("Weather ZIP Code", "89801"), ("k_304 SS (BTU/hr*ft*°F)", "8.7"),
+    ("CIP; Number of Baffles", "5"), ("HIP; Number of Baffles", "1"),
+    ("CIP h_H #1 (BTU/hr*ft²*°F)", "10.0"), ("CIP h_C #1 (BTU/hr*ft²*°F)", "10.0"),
+    ("HIP h_H #1 (BTU/hr*ft²*°F)", "10.0"), ("HIP h_C #1 (BTU/hr*ft²*°F)", "10.0"),
+    ("CIP h_H #2 (BTU/hr*ft²*°F)", "10.0"), ("CIP h_C #2 (BTU/hr*ft²*°F)", "10.0"),
+    ("HIP h_H #2 (BTU/hr*ft²*°F)", "10.0"), ("HIP h_C #2 (BTU/hr*ft²*°F)", "10.0"),
+]
+
+sys_entries = {}
+row = 0
+col = 0
+for label, default in sys_params:
+    ttk.Label(sys_frame, text=label).grid(row=row, column=col*2, sticky="e", padx=5, pady=3)
+    e = ttk.Entry(sys_frame, width=15)
+    e.insert(0, default)
+    e.grid(row=row, column=col*2+1, padx=5, pady=3, sticky="w")
+    sys_entries[label] = e
+    col = (col + 1) % 3
+    if col == 0: row += 1
+
+# ── Editable Inlet Streams (now using Entry fields) ──────────────
+inlet_frame = ttk.LabelFrame(root, text="Editable Inlet Streams", padding=12)
+inlet_frame.pack(fill="x", padx=20, pady=10)
+
+# Parameters list (same as before)
+inlet_params = [
+    "SO2", "SO3", "O2", "N2", "H2O", "H2SO4", "TOTAL", "PRESSURE", "TEMPERATURE"
+]
+units = ["scfm", "scfm", "scfm", "scfm", "scfm", "scfm", "scfm", "in. wc.", "°F"]
+
+inlet_entries = {p: {} for p in inlet_params}
+
+row = 0
+for param, unit in zip(inlet_params, units):
+    ttk.Label(inlet_frame, text=param).grid(row=row, column=0, sticky="e", padx=10, pady=4)
+    ttk.Label(inlet_frame, text=unit, width=8).grid(row=row, column=1, sticky="w", padx=5, pady=4)
+
+    # Stream #12
+    ttk.Label(inlet_frame, text="Stream #12", width=15).grid(row=row, column=2, sticky="e", padx=5)
+    e12 = ttk.Entry(inlet_frame, width=14)
+    e12.insert(0, "1335" if param == "SO2" else "11293" if param == "SO3" else "4728" if param == "O2" else "86808" if param == "N2" else "0" if param in ["H2O", "H2SO4"] else "104164" if param == "TOTAL" else "119" if param == "PRESSURE" else "965")
+    e12.grid(row=row, column=3, padx=5, pady=4)
+    inlet_entries[param]["#12"] = e12
+
+    # Stream #14
+    ttk.Label(inlet_frame, text="Stream #14", width=15).grid(row=row, column=4, sticky="e", padx=5)
+    e14 = ttk.Entry(inlet_frame, width=14)
+    e14.insert(0, "480" if param in ["SO2", "SO3"] else "4300" if param in ["O2"] else "86808" if param == "N2" else "0" if param in ["H2O", "H2SO4"] else "103736" if param == "TOTAL" else "113" if param == "PRESSURE" else "847")
+    e14.grid(row=row, column=5, padx=5, pady=4)
+    inlet_entries[param]["#14"] = e14
+
+    # Stream #17A
+    ttk.Label(inlet_frame, text="Stream #17A", width=15).grid(row=row, column=6, sticky="e", padx=5)
+    e17a = ttk.Entry(inlet_frame, width=14)
+    e17a.insert(0, "480" if param == "SO2" else "0" if param == "SO3" else "4300" if param == "O2" else "86808" if param == "N2" else "0" if param in ["H2O", "H2SO4"] else "91588" if param == "TOTAL" else "113" if param == "PRESSURE" else "180")
+    e17a.grid(row=row, column=7, padx=5, pady=4)
+    inlet_entries[param]["#17A"] = e17a
+
+    row += 1
+
+# ── Calculated Output Streams ────────────────────────────────────
+output_frame = ttk.LabelFrame(root, text="Calculated Output Streams", padding=12)
+output_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+# HIP Streams
+tk.Label(output_frame, text="HIP Streams", bg="#2d2d2d", fg="#00ccff", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0,5))
+hip_columns = ("Parameter", "Units", "#12", "#13", "#18A", "#18B", "#18C", "#18D", "#18E", "#19")
+hip_tree = ttk.Treeview(output_frame, columns=hip_columns, show="headings", height=12)
+for col in hip_columns:
+    hip_tree.heading(col, text=col)
+    hip_tree.column(col, width=110, anchor="center")
+hip_tree.pack(fill="x")
+
+# CIP Streams
+tk.Label(output_frame, text="CIP Streams", bg="#2d2d2d", fg="#00ccff", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(15,5))
+cip_columns = ("Parameter", "Units", "#14", "#15", "#17A", "#17B", "#17C", "#17D", "#17E", "#18")
+cip_tree = ttk.Treeview(output_frame, columns=cip_columns, show="headings", height=12)
+for col in cip_columns:
+    cip_tree.heading(col, text=col)
+    cip_tree.column(col, width=110, anchor="center")
+cip_tree.pack(fill="x")
+
+# Extra rows
+extra_frame = ttk.Frame(output_frame)
+extra_frame.pack(fill="x", pady=15)
+extra_rows = [
+    ("HIP 48\" Valve Position", "% open", "---"),
+    ("CIP 36\" Valve Position", "% open", "---"),
+    ("CIP 78\" Valve Position", "% open", "---"),
+    ("HIP HX / Bypass ratio", "fraction", "---"),
+    ("CIP HX / Bypass ratio", "fraction", "---"),
+    ("HIP HX Duty", "MMBTU/hr", "---"),
+    ("CIP HX Duty", "MMBTU/hr", "---"),
+    ("HIP LMTD", "°F", "---"),
+    ("CIP LMTD", "°F", "---"),
+]
+for label, unit, val in extra_rows:
+    f = ttk.Frame(extra_frame)
+    f.pack(fill="x", pady=2)
+    ttk.Label(f, text=label, width=30, anchor="w").pack(side="left", padx=10)
+    ttk.Label(f, text=unit, width=12, anchor="w").pack(side="left", padx=10)
+    ttk.Label(f, text=val, width=20, relief="sunken", anchor="center").pack(side="left", padx=10)
+
+# ── Buttons ──────────────────────────────────────────────────────
+btn_frame = ttk.Frame(root)
+btn_frame.pack(pady=20)
+
+ttk.Button(btn_frame, text="Reset", command=lambda: messagebox.showinfo("Reset", "Not implemented yet")).pack(side="left", padx=30)
+ttk.Button(btn_frame, text="Calculate Static", command=lambda: messagebox.showinfo("Calculate", "Static calculation placeholder")).pack(side="left", padx=30)
+
+# ── Mode toggle ──────────────────────────────────────────────────
+def toggle_mode(*args):
+    mode = mode_var.get()
+    if mode == "Static":
+        target_frame.pack(fill="x", padx=20, pady=6)
+        dynamic_panel.pack_forget()
+    else:
+        target_frame.pack_forget()
+        dynamic_panel.pack(fill="x", padx=20, pady=6)
+
+mode_var.trace("w", toggle_mode)
+toggle_mode()
+
+root.mainloop()

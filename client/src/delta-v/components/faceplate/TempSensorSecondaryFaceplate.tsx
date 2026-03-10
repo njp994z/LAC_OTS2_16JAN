@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { SecondaryControllerData, SecondaryControllerConfig } from '@/delta-v/types/secondaryController';
 import { X, History, Settings, Activity, Link2, Sliders, Bell } from 'lucide-react';
-import { Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
 
 // Base path for all faceplate routes
@@ -77,7 +77,87 @@ const getRouteForSensor = (basePath: string, sensorId?: string): string => {
     };
     return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
   }
-  return `/${basePath}${sensorId ? `/${sensorId}` : ''}`;
+  if (sensorId === '1540-TI-7823') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-7823-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1540-TI-4840') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-4840-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1540-TI-5231') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-5231-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1540-TI-7225') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-7225-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1520-TI-8421') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-8421-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1520-TI-8464') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-8464-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId === '1520-TI-6624') {
+    const routeMap: Record<string, string> = {
+      'faceplate-3a': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3a`,
+      'faceplate-3b': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3b`,
+      'faceplate-3c': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3c`,
+      'faceplate-3d': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3d`,
+      'faceplate-3e': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3e`,
+      'faceplate-3f': `${FACEPLATE_BASE}/temp-sensor-6624-faceplate-3f`,
+    };
+    return routeMap[basePath] || `${FACEPLATE_BASE}/${basePath}/${sensorId}`;
+  }
+  if (sensorId) {
+    return `${FACEPLATE_BASE}/temperature-sensor/${sensorId}/${basePath}`;
+  }
+  return `/${basePath}`;
 };
 
 interface TempSensorSecondaryFaceplateProps {
@@ -102,6 +182,7 @@ export const TempSensorSecondaryFaceplate = ({
   onClose,
   isTransparent = false
 }: TempSensorSecondaryFaceplateProps) => {
+  const [, navigate] = useLocation();
 
   const localData = useControllerSync(sensorId!);
 
@@ -316,12 +397,12 @@ export const TempSensorSecondaryFaceplate = ({
 
         {/* Bottom Toolbar */}
         <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-border/30">
-          <ToolbarButton icon={<Settings size={14} />} title="Sensor Details" to={getRouteForSensor('faceplate-3a', sensorId)} />
-          <ToolbarButton icon={<History size={14} />} title="Primary Control" to={getRouteForSensor('faceplate-3b', sensorId)} />
-          <ToolbarButton icon={<Activity size={14} />} title="Trend" to={getRouteForSensor('faceplate-3c', sensorId)} />
-          <ToolbarButton icon={<Link2 size={14} />} title="Control Studio" to={getRouteForSensor('faceplate-3d', sensorId)} />
-          <ToolbarButton icon={<Sliders size={14} />} title="Sensor Input" to={getRouteForSensor('faceplate-3e', sensorId)} />
-          <ToolbarButton icon={<Bell size={14} />} title="Acknowledge Alarm" to={getRouteForSensor('faceplate-3f', sensorId)} />
+          <ToolbarButton icon={<Settings size={14} />} title="Sensor Details" to={getRouteForSensor('faceplate-3a', sensorId)} navigate={navigate} onClose={onClose} />
+          <ToolbarButton icon={<History size={14} />} title="Primary Control" to={getRouteForSensor('faceplate-3b', sensorId)} navigate={navigate} onClose={onClose} />
+          <ToolbarButton icon={<Activity size={14} />} title="Trend" to={getRouteForSensor('faceplate-3c', sensorId)} navigate={navigate} onClose={onClose} />
+          <ToolbarButton icon={<Link2 size={14} />} title="Control Studio" to={getRouteForSensor('faceplate-3d', sensorId)} navigate={navigate} onClose={onClose} />
+          <ToolbarButton icon={<Sliders size={14} />} title="Sensor Input" to={getRouteForSensor('faceplate-3e', sensorId)} navigate={navigate} onClose={onClose} />
+          <ToolbarButton icon={<Bell size={14} />} title="Acknowledge Alarm" to={getRouteForSensor('faceplate-3f', sensorId)} navigate={navigate} onClose={onClose} />
         </div>
       </div>
     </div>
@@ -351,19 +432,27 @@ const AlarmDot = ({
   </div>
 );
 
-// Toolbar Button Component
 const ToolbarButton = ({
   icon,
   title,
-  to
+  to,
+  navigate,
+  onClose
 }: {
   icon: React.ReactNode;
   title: string;
   to: string;
+  navigate: (to: string) => void;
+  onClose?: () => void;
 }) => (
-  <Link 
-    href={to}
-    title={title} 
+  <button 
+    type="button"
+    title={title}
+    data-testid={`button-toolbar-${title.toLowerCase().replace(/\s+/g, '-')}`}
+    onClick={() => {
+      onClose?.();
+      requestAnimationFrame(() => navigate(to));
+    }}
     className={cn(
       "w-8 h-8 flex items-center justify-center rounded",
       "bg-card hover:bg-muted",
@@ -372,5 +461,5 @@ const ToolbarButton = ({
     )}
   >
     {icon}
-  </Link>
+  </button>
 );

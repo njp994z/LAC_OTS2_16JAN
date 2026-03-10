@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ interface StreamData {
 }
 
 export default function InletAirFilter() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [realtimeBaro, setRealtimeBaro] = useState<string>("yes");
@@ -253,7 +254,7 @@ export default function InletAirFilter() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => window.history.back()}
+              onClick={() => setLocation("/unit-operation-simulator")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />

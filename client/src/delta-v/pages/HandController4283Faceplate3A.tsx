@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { useControllerSync } from '@/delta-v/contexts/ControllerSyncContext';
-import PIDControlLoopDiagram from '@/delta-v/components/faceplate/PIDControlLoopDiagram';
+import sulfurFlowPidDiagram from '@assets/image_1772637863894.png';
 import {
   PIDHxBypassConfig,
   defaultPIDHxBypassConfig,
@@ -326,7 +326,15 @@ const HandController4283Faceplate3A = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="bg-slate-900/50 rounded-lg p-4 border border-border/50">
-              <PIDControlLoopDiagram />
+              <div className="w-full">
+                <img
+                  src={sulfurFlowPidDiagram}
+                  alt="PID Control Loop Block Diagram for Sulfur Flow Controller FIC-2602"
+                  className="w-full h-auto rounded-lg"
+                  style={{ maxHeight: '400px', objectFit: 'contain' }}
+                  data-testid="img-sulfur-flow-pid-diagram"
+                />
+              </div>
             </div>
           </CollapsibleContent>
         </Collapsible>

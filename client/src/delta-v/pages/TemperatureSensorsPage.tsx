@@ -24,7 +24,7 @@ const temperatureSensors = [
   { tag: '1540-TI-4826', description: 'Pass 1 Catalyst Temp. Top B', mode: MODE.DYNAMIC, active: true },
   { tag: '1540-TI-4828', description: 'Pass 1 Catalyst Temp. Bottom B', mode: MODE.DYNAMIC, active: true },
 
-    { tag: '1540-TI-7821', description: 'SH 1A Inlet temp', mode: MODE.DYNAMIC },
+    { tag: '1540-TI-7821', description: 'SH 1B Inlet temp', mode: MODE.DYNAMIC },
   { tag: '1540-TI-7823', description: 'SH 1B Outlet temp', mode: MODE.DYNAMIC, active: true },
 
 

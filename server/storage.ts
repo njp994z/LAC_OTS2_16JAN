@@ -43,6 +43,7 @@ export interface IStorage {
   // Process Variables
   getAllProcessVariables(): Promise<ProcessVariable[]>;
   upsertProcessVariables(vars: InsertProcessVariable[]): Promise<ProcessVariable[]>;
+  updateProcessVariableCaseValue(tag: string, caseId: string, value: string): Promise<void>;
   
   // Process Variable Case Columns
   getAllProcessVariableCaseColumns(): Promise<ProcessVariableCaseColumn[]>;
@@ -256,6 +257,20 @@ export class DatabaseStorage implements IStorage {
     if (vars.length === 0) return [];
     const results = await db.insert(processVariables).values(vars).returning();
     return results;
+  }
+
+  async updateProcessVariableCaseValue(tag: string, caseId: string, value: string): Promise<void> {
+    const existing = await db.select().from(processVariables).where(eq(processVariables.tag, tag));
+    if (existing.length > 0) {
+      const row = existing[0];
+      const cases = (typeof row.cases === 'object' && row.cases !== null ? row.cases : {}) as Record<string, unknown>;
+      cases[caseId] = value;
+      await db.update(processVariables).set({ cases, updatedAt: new Date() }).where(eq(processVariables.tag, tag));
+    } else {
+      const cases: Record<string, string> = {};
+      cases[caseId] = value;
+      await db.insert(processVariables).values({ count: '', tag, description: tag, cases });
+    }
   }
 
   // Process Variable Case Columns methods
