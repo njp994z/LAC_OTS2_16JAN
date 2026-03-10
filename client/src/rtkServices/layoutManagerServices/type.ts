@@ -46,6 +46,7 @@ export interface FlowEdge {
     color: string;
     hasPointer?: boolean;
     style?: 'solid' | 'dashed';
+    strokeWidth?: number;
     from?: string;
     to?: string;
 }
