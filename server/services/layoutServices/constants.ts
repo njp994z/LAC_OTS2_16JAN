@@ -3,6 +3,7 @@ export enum HomeScreenLabels {
   L2 = "L2 – Furnace Area",
   L3 = "L3 – Compressor Area",
   L4 = "L4-Converter",
+  L2Converter = "L2 – Converter",
   L2_1500_SULFUR_UTILITY = "L2_1500 SULFUR UTILITY",
   _2_1 = "2.1 L3_1520 Fin Fan Coolers",
   _2_2 = "2.2 L3_1520 Fin Fan Expansion Tank",
@@ -41,6 +42,7 @@ export const layoutOptions: Array<{ id: string, label: HomeScreenLabels }> = [
   { id: "L2", label: HomeScreenLabels.L2 },
   { id: "L3", label: HomeScreenLabels.L3 },
   { id: "L4", label: HomeScreenLabels.L4 },
+  { id: "L2Converter", label: HomeScreenLabels.L2Converter },
   // L2_1500 SULFUR UTILITY
   { id: "L2_1500_SULFUR_UTILITY", label: HomeScreenLabels.L2_1500_SULFUR_UTILITY },
   { id: "2.1", label: HomeScreenLabels._2_1 },
