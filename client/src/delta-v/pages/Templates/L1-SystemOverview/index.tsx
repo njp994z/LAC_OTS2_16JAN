@@ -74,23 +74,26 @@ export enum Mode {
 const L1SystemOverview = ({
   defaultMode = Mode.View,
   simulationTriggerRef,
+  highlightBlock,
 }: {
   defaultMode?: Mode;
   /** Optional ref that HomeScreen can populate with the L1 start-simulation function */
   simulationTriggerRef?: React.MutableRefObject<(() => void) | null>;
+  highlightBlock?: string | null;
 }) => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const [commonSecondaryControllerDialog, setCommonSecondaryControllerDialog] = useState<{
-    isModalOpen: boolean;
-    data?: SecondaryControllerData;
-    config?: SecondaryControllerConfig;
-    controllerId?: string;
-    description?: string;
-  }>({
-    isModalOpen: false,
-  });
+  const [commonSecondaryControllerDialog, setCommonSecondaryControllerDialog] =
+    useState<{
+      isModalOpen: boolean;
+      data?: SecondaryControllerData;
+      config?: SecondaryControllerConfig;
+      controllerId?: string;
+      description?: string;
+    }>({
+      isModalOpen: false,
+    });
 
   const searchString = useSearch();
   const searchParams = new URLSearchParams(searchString);
@@ -481,9 +484,9 @@ const L1SystemOverview = ({
       prev.map((e) =>
         e.id === id
           ? {
-            ...e,
-            hasPointer: e.hasPointer === undefined ? false : !e.hasPointer,
-          }
+              ...e,
+              hasPointer: e.hasPointer === undefined ? false : !e.hasPointer,
+            }
           : e,
       ),
     );
@@ -719,13 +722,11 @@ const L1SystemOverview = ({
   return (
     <>
       <div className="w-full h-screen flex flex-col pt-10 relative">
-        {
-          (isUpdatingLayout || isLoading) && (
-            <div className="absolute inset-0 w-full h-full flex justify-center items-center bg-white/50 backdrop-blur-sm z-50">
-              <Loader2 className="animate-spin" size={50} color="#000" />
-            </div>
-          )
-        }
+        {(isUpdatingLayout || isLoading) && (
+          <div className="absolute inset-0 w-full h-full flex justify-center items-center bg-white/50 backdrop-blur-sm z-50">
+            <Loader2 className="animate-spin" size={50} color="#000" />
+          </div>
+        )}
         {mode !== Mode.Static && (
           <div className="w-full flex justify-between items-center h-fit max-h-[70px] px-4 py-2 border-b bg-white shadow-sm">
             {mode === Mode.Edit ? (
@@ -837,11 +838,11 @@ const L1SystemOverview = ({
                     isShiftHeldRef.current
                       ? `M ${drawingEdge.x1} ${drawingEdge.y1} L ${drawingEdge.x2} ${drawingEdge.y2}`
                       : orthogonalPath(
-                        drawingEdge.x1,
-                        drawingEdge.y1,
-                        drawingEdge.x2,
-                        drawingEdge.y2,
-                      )
+                          drawingEdge.x1,
+                          drawingEdge.y1,
+                          drawingEdge.x2,
+                          drawingEdge.y2,
+                        )
                   }
                   stroke="gray"
                   strokeDasharray="5 5"
@@ -914,23 +915,35 @@ const L1SystemOverview = ({
                 );
               };
 
+              const isHighlighted =
+                highlightBlock === element || highlightBlock === elData.tag;
+
               return (
                 <div
                   key={`${elData.tag}-${index}`}
-                  className="absolute pointer-events-auto"
+                  className={`absolute pointer-events-auto ${
+                    isHighlighted
+                      ? "ring-4 ring-purple-600 ring-offset-2 ring-opacity-100 shadow-[0_0_25px_rgba(147,51,234,0.6)] animate-pulse z-[100] rounded-md"
+                      : ""
+                  }`}
                   style={{
-                    display: (instBlockFilter === "all" ||
-                      (instBlockFilter === "controllers" && elData?.blockType !== BlockType.Sensor) ||
-                      (instBlockFilter === "sensors" && elData?.blockType !== BlockType.Controller))
-                      ? "block"
-                      : "none",
+                    display:
+                      instBlockFilter === "all" ||
+                      (instBlockFilter === "controllers" &&
+                        elData.blockType === BlockType.Controller) ||
+                      (instBlockFilter === "sensors" &&
+                        elData.blockType === BlockType.Sensor)
+                        ? "block"
+                        : "none",
                     left: pos.x,
                     top: pos.y,
-                    zIndex: pos.z || 1,
+                    zIndex: isHighlighted ? 100 : pos.z || 1,
                     width: pos.w ? pos.w : undefined,
                     height: pos.h ? pos.h : undefined,
-                    boxSizing: 'border-box',
-                    outline: inComponentEdit ? '1.5px dashed #93c5fd' : undefined,
+                    boxSizing: "border-box",
+                    outline: inComponentEdit
+                      ? "1.5px dashed #93c5fd"
+                      : undefined,
                   }}
                   onMouseDown={(e) => {
                     if (inComponentEdit) {
@@ -942,70 +955,82 @@ const L1SystemOverview = ({
                   <div
                     className="bg-transparent rounded flex flex-col items-center w-full h-full"
                     style={{
-                      cursor: inComponentEdit ? 'move' : 'pointer',
-                      overflow: pos.w || pos.h ? 'hidden' : undefined
+                      cursor: inComponentEdit ? "move" : "pointer",
+                      overflow: pos.w || pos.h ? "hidden" : undefined,
                     }}
                   >
                     <div
                       className={[
-                        inComponentEdit ? "pointer-events-none w-full h-full" : "cursor-pointer",
+                        inComponentEdit
+                          ? "pointer-events-none w-full h-full"
+                          : "cursor-pointer",
                         // When a custom size is set, force all child images/SVGs to fill the container
-                        (pos.w || pos.h)
+                        pos.w || pos.h
                           ? "[&_img]:!w-full [&_img]:!h-full [&_img]:object-contain [&_img]:max-w-none [&_svg]:!w-full [&_svg]:!h-full [&_video]:!w-full [&_video]:!h-full w-full h-full"
-                          : ""
+                          : "",
                       ].join(" ")}
-                      style={{ width: '100%', height: '100%' }}
+                      style={{ width: "100%", height: "100%" }}
                       onClick={(e) => {
-                        if (elData.tag === '1540-H-4030') {
+                        if (elData.tag === "1540-H-4030") {
                           setIsHandControllerModalOpen(true);
-                        }
-                        else if (elData.tag === '1540-H-4282') {
+                        } else if (elData.tag === "1540-H-4282") {
                           setIsJugValveHandControllerModalOpen(true);
-                        }
-                        else if (elData.tag === '1540-HCV-4282') {
-                          setLocation('/unit-operation/jug-valve-whb');
-                        }
-                        else if (elData.tag === L1SystemElement['1540-FCV-2602']) {
-                          setLocation('/unit-operation/sulfur-control-hydraulics/1540-FCV-2602');
-                        }
-                        else if (elData?.type === ElementType.TemparatureSensor || elData?.type === ElementType.PressureSensor) {
+                        } else if (elData.tag === "1540-HCV-4282") {
+                          setLocation("/unit-operation/jug-valve-whb");
+                        } else if (
+                          elData.tag === L1SystemElement["1540-FCV-2602"]
+                        ) {
+                          setLocation(
+                            "/unit-operation/sulfur-control-hydraulics/1540-FCV-2602",
+                          );
+                        } else if (
+                          elData?.type === ElementType.TemparatureSensor ||
+                          elData?.type === ElementType.PressureSensor
+                        ) {
                           setTempSensor({
                             id: element,
                             data: (elData as any)?.data,
                             config: (elData as any)?.config,
                           });
-                        }
-                        else if (elData?.type === ElementType.TurboGenerator) {
-                          setLocation('/settings/controller-outputs/faceplates/turbo-generator-faceplate');
-                        }
-                        else if (elData?.type === ElementType.KPI) {
-                          setLocation('/settings/controller-outputs/faceplates/kpi');
-                        }
-                        else if (elData?.type === ElementType.SulfurFurnace) {
-                          setLocation('/unit-operation/sulfur-furnace?sulfurFlowGpm');
-                        }
-                        else if (elData?.type === ElementType.Compressor) {
+                        } else if (
+                          elData?.type === ElementType.TurboGenerator
+                        ) {
+                          setLocation(
+                            "/settings/controller-outputs/faceplates/turbo-generator-faceplate",
+                          );
+                        } else if (elData?.type === ElementType.KPI) {
+                          setLocation(
+                            "/settings/controller-outputs/faceplates/kpi",
+                          );
+                        } else if (elData?.type === ElementType.SulfurFurnace) {
+                          setLocation(
+                            "/unit-operation/sulfur-furnace?sulfurFlowGpm",
+                          );
+                        } else if (elData?.type === ElementType.Compressor) {
                           setIsVFDModalOpen(true);
-                        }
-                        else if (elData?.type === ElementType.SulfurFlowController) {
+                        } else if (
+                          elData?.type === ElementType.SulfurFlowController
+                        ) {
                           setIsSulfurFlowModalOpen(true);
-                        }
-                        else if (elData?.type === ElementType.HandController) {
+                        } else if (
+                          elData?.type === ElementType.HandController
+                        ) {
                           setIsHandControllerModalOpen(true);
-                        }
-                        else if (elData?.type === ElementType.JugValveHandController) {
+                        } else if (
+                          elData?.type === ElementType.JugValveHandController
+                        ) {
                           setIsJugValveHandControllerModalOpen(true);
-                        }
-                        else if (elData?.type === ElementType.WhbHandController) {
+                        } else if (
+                          elData?.type === ElementType.WhbHandController
+                        ) {
                           setIsWhbHandControllerModalOpen(true);
-                        }
-                        else if (elData?.blockType === BlockType.Controller) {
+                        } else if (elData?.blockType === BlockType.Controller) {
                           setCommonSecondaryControllerDialog({
                             isModalOpen: true,
                             data: (elData as any)?.data,
                             config: (elData as any)?.config,
                             controllerId: elData?.tag,
-                            description: elData?.description
+                            description: elData?.description,
                           });
                         }
                       }}
@@ -1111,32 +1136,50 @@ const L1SystemOverview = ({
       </Dialog>
 
       {/* Common Secondary Controllers Faceplate Modal */}
-      <Dialog open={commonSecondaryControllerDialog.isModalOpen} onOpenChange={(open) => setCommonSecondaryControllerDialog({ isModalOpen: open, data: undefined, config: undefined })}>
+      <Dialog
+        open={commonSecondaryControllerDialog.isModalOpen}
+        onOpenChange={(open) =>
+          setCommonSecondaryControllerDialog({
+            isModalOpen: open,
+            data: undefined,
+            config: undefined,
+          })
+        }
+      >
         <DialogContent className="max-w-fit p-0 bg-transparent border-none shadow-none [&>button]:hidden">
           <VisuallyHidden>
-            <DialogTitle>{commonSecondaryControllerDialog.description}</DialogTitle>
+            <DialogTitle>
+              {commonSecondaryControllerDialog.description}
+            </DialogTitle>
           </VisuallyHidden>
-          {commonSecondaryControllerDialog.data && commonSecondaryControllerDialog.config && commonSecondaryControllerDialog.controllerId && (
-            <SecondaryControllerFaceplate
-              data={commonSecondaryControllerDialog.data}
-              config={commonSecondaryControllerDialog.config}
-              controllerId={commonSecondaryControllerDialog.controllerId}
-              onClose={() => {
-                setCommonSecondaryControllerDialog({ isModalOpen: false, data: undefined, config: undefined });
-              }}
-              onModeChange={(mode) => {
-                // updateJugValveHandControllerMode(mode)
-              }}
-              onSpChange={(value) => {
-                // updateJugValveHandControllerSP(value);
-                // setJugValveHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
-              }}
-              onOutChange={(value) => {
-                // updateJugValveHandControllerOUT(value);
-                // setJugValveHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
-              }}
-              fromSource="home-screen"
-            />)}
+          {commonSecondaryControllerDialog.data &&
+            commonSecondaryControllerDialog.config &&
+            commonSecondaryControllerDialog.controllerId && (
+              <SecondaryControllerFaceplate
+                data={commonSecondaryControllerDialog.data}
+                config={commonSecondaryControllerDialog.config}
+                controllerId={commonSecondaryControllerDialog.controllerId}
+                onClose={() => {
+                  setCommonSecondaryControllerDialog({
+                    isModalOpen: false,
+                    data: undefined,
+                    config: undefined,
+                  });
+                }}
+                onModeChange={(mode) => {
+                  // updateJugValveHandControllerMode(mode)
+                }}
+                onSpChange={(value) => {
+                  // updateJugValveHandControllerSP(value);
+                  // setJugValveHandControllerSecondaryData(prev => ({ ...prev, SP: value, TSP: value }));
+                }}
+                onOutChange={(value) => {
+                  // updateJugValveHandControllerOUT(value);
+                  // setJugValveHandControllerSecondaryData(prev => ({ ...prev, OUT_PCT: value }));
+                }}
+                fromSource="home-screen"
+              />
+            )}
         </DialogContent>
       </Dialog>
 

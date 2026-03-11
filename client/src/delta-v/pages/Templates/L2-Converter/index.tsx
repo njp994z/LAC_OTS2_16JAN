@@ -25,11 +25,7 @@ import {
   FlowEdge,
   DrawingEdge,
 } from "@/rtkServices/layoutManagerServices/type";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/SecondaryControllerFaceplate";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -37,6 +33,7 @@ import {
   type SecondaryControllerData,
   type SecondaryControllerConfig,
 } from "@/delta-v/types/secondaryController";
+import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -66,7 +63,11 @@ export enum Mode {
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-const L2Converter = () => {
+interface L2ConverterProps {
+  highlightBlock?: string | null;
+}
+
+const L2Converter = ({ highlightBlock }: L2ConverterProps = {}) => {
   const { toast } = useToast();
 
   // ── common secondary controller dialog ──────────────────────────────────
@@ -81,7 +82,9 @@ const L2Converter = () => {
 
   const [tempSensor, setTempSensor] = useState<TempSensor | null>(null);
   const [mode, setMode] = useState<Mode>(Mode.View);
-  const [editMode, setEditMode] = useState<"components" | "edges">("components");
+  const [editMode, setEditMode] = useState<"components" | "edges">(
+    "components",
+  );
 
   // ── layout persistence ──────────────────────────────────────────────────
   const {
@@ -92,9 +95,13 @@ const L2Converter = () => {
 
   const [updateLayout, { isLoading: isUpdatingLayout }] =
     useUpdateLayoutMutation();
+  const { getControllerConfig } = useControllerConfig();
 
   // ── elements ────────────────────────────────────────────────────────────
-  const L2ConverterElements_map = L2ConverterElementsMap();
+  const L2ConverterElements_map = L2ConverterElementsMap(
+    getControllerConfig,
+    false,
+  );
 
   // ── canvas state ────────────────────────────────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -134,7 +141,8 @@ const L2Converter = () => {
     }
 
     if (resizingRef.current) {
-      const { id, startX, startY, startW, startH, handle } = resizingRef.current;
+      const { id, startX, startY, startW, startH, handle } =
+        resizingRef.current;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
       setPositions((prev) => {
@@ -245,7 +253,10 @@ const L2Converter = () => {
     setEdges((prev) =>
       prev.map((e) =>
         e.id === id
-          ? { ...e, hasPointer: e.hasPointer === undefined ? false : !e.hasPointer }
+          ? {
+              ...e,
+              hasPointer: e.hasPointer === undefined ? false : !e.hasPointer,
+            }
           : e,
       ),
     );
@@ -290,9 +301,9 @@ const L2Converter = () => {
       if (!arrowKeys.includes(e.key)) return;
       e.preventDefault();
       const dist = e.shiftKey ? step * 10 : step;
-      if (e.key === "ArrowUp")    moveEdge(selectedEdge, 0, -dist);
-      if (e.key === "ArrowDown")  moveEdge(selectedEdge, 0, dist);
-      if (e.key === "ArrowLeft")  moveEdge(selectedEdge, -dist, 0);
+      if (e.key === "ArrowUp") moveEdge(selectedEdge, 0, -dist);
+      if (e.key === "ArrowDown") moveEdge(selectedEdge, 0, dist);
+      if (e.key === "ArrowLeft") moveEdge(selectedEdge, -dist, 0);
       if (e.key === "ArrowRight") moveEdge(selectedEdge, dist, 0);
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -349,7 +360,10 @@ const L2Converter = () => {
       return (
         <ContextMenu key={edge.id}>
           <ContextMenuTrigger asChild>
-            <g style={{ zIndex: edge?.z ?? 10 }} id={`edge-${edge.id}-${index}`}>
+            <g
+              style={{ zIndex: edge?.z ?? 10 }}
+              id={`edge-${edge.id}-${index}`}
+            >
               <path
                 d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
                 fill="none"
@@ -366,7 +380,9 @@ const L2Converter = () => {
                   d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
                   fill="none"
                   stroke="#3b82f6"
-                  strokeWidth={String((edge.strokeWidth ?? (edge.style === "dashed" ? 3 : 6)) + 6)}
+                  strokeWidth={String(
+                    (edge.strokeWidth ?? (edge.style === "dashed" ? 3 : 6)) + 6,
+                  )}
                   strokeDasharray="6 4"
                   className="pointer-events-none"
                   opacity={0.5}
@@ -376,9 +392,13 @@ const L2Converter = () => {
                 d={orthogonalPath(edge.x1, edge.y1, edge.x2, edge.y2)}
                 fill="none"
                 stroke={getColorFill(edge.color)}
-                strokeWidth={String(edge.strokeWidth ?? (edge.style === "dashed" ? 3 : 6))}
+                strokeWidth={String(
+                  edge.strokeWidth ?? (edge.style === "dashed" ? 3 : 6),
+                )}
                 strokeDasharray={edge.style === "dashed" ? "12 8" : undefined}
-                filter={edge.style === "dashed" ? undefined : "url(#black-outline)"}
+                filter={
+                  edge.style === "dashed" ? undefined : "url(#black-outline)"
+                }
                 markerEnd={
                   edge.hasPointer !== false
                     ? `url(#arrow-${edge.color})`
@@ -408,7 +428,9 @@ const L2Converter = () => {
                   <ContextMenuItem
                     key={c.id}
                     onClick={(e) =>
-                      handleStopPropagation(e, () => changeEdgeColor(edge.id, c.id))
+                      handleStopPropagation(e, () =>
+                        changeEdgeColor(edge.id, c.id),
+                      )
                     }
                   >
                     <div
@@ -493,14 +515,18 @@ const L2Converter = () => {
               <ContextMenuSubContent>
                 <ContextMenuItem
                   onClick={(e) =>
-                    handleStopPropagation(e, () => setEdgeStyle(edge.id, "solid"))
+                    handleStopPropagation(e, () =>
+                      setEdgeStyle(edge.id, "solid"),
+                    )
                   }
                 >
                   Solid Line
                 </ContextMenuItem>
                 <ContextMenuItem
                   onClick={(e) =>
-                    handleStopPropagation(e, () => setEdgeStyle(edge.id, "dashed"))
+                    handleStopPropagation(e, () =>
+                      setEdgeStyle(edge.id, "dashed"),
+                    )
                   }
                 >
                   Dashed Line
@@ -562,7 +588,9 @@ const L2Converter = () => {
         <div className="w-full flex justify-between items-center h-fit max-h-[70px] px-4 py-2 border-b bg-white shadow-sm">
           {mode === Mode.Edit ? (
             <div className="flex gap-4 items-center">
-              <span className="text-sm font-semibold text-gray-700">Editing:</span>
+              <span className="text-sm font-semibold text-gray-700">
+                Editing:
+              </span>
               <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
                 <button
                   className={`px-4 py-1.5 text-sm transition-colors ${editMode === "components" ? "bg-blue-600 text-white font-medium" : "bg-gray-50 text-gray-600 hover:bg-gray-100"}`}
@@ -588,8 +616,8 @@ const L2Converter = () => {
             {isLoading || isUpdatingLayout
               ? "Saving..."
               : mode === Mode.Edit
-              ? "Save Layout"
-              : "Edit Layout"}
+                ? "Save Layout"
+                : "Edit Layout"}
           </button>
         </div>
 
@@ -690,7 +718,8 @@ const L2Converter = () => {
                 x: (index % 5) * 200,
                 y: Math.floor(index / 5) * 200,
               };
-              const inComponentEdit = mode === Mode.Edit && editMode === "components";
+              const inComponentEdit =
+                mode === Mode.Edit && editMode === "components";
 
               const ResizeHandle = ({ handle }: { handle: string }) => {
                 const styles: React.CSSProperties = {
@@ -715,8 +744,14 @@ const L2Converter = () => {
                     (styles.transform ? styles.transform + " " : "") +
                     "translateX(-50%)";
                 const cursor: Record<string, string> = {
-                  n: "n-resize", s: "s-resize", e: "e-resize", w: "w-resize",
-                  ne: "ne-resize", nw: "nw-resize", se: "se-resize", sw: "sw-resize",
+                  n: "n-resize",
+                  s: "s-resize",
+                  e: "e-resize",
+                  w: "w-resize",
+                  ne: "ne-resize",
+                  nw: "nw-resize",
+                  se: "se-resize",
+                  sw: "sw-resize",
                 };
                 styles.cursor = cursor[handle] || "default";
                 return (
@@ -738,18 +773,27 @@ const L2Converter = () => {
                 );
               };
 
+              const isHighlighted =
+                highlightBlock === element || highlightBlock === elData.tag;
+
               return (
                 <div
                   key={`${elData.tag}-${index}`}
-                  className="absolute pointer-events-auto"
+                  className={`absolute pointer-events-auto ${
+                    isHighlighted
+                      ? "ring-4 ring-purple-600 ring-offset-2 ring-opacity-100 shadow-[0_0_25px_rgba(147,51,234,0.6)] animate-pulse z-[100] rounded-md"
+                      : ""
+                  }`}
                   style={{
                     left: pos.x,
                     top: pos.y,
-                    zIndex: pos.z || 1,
+                    zIndex: isHighlighted ? 100 : pos.z || 1,
                     width: pos.w ? pos.w : undefined,
                     height: pos.h ? pos.h : undefined,
                     boxSizing: "border-box",
-                    outline: inComponentEdit ? "1.5px dashed #93c5fd" : undefined,
+                    outline: inComponentEdit
+                      ? "1.5px dashed #93c5fd"
+                      : undefined,
                   }}
                   onMouseDown={(e) => {
                     if (inComponentEdit) {
@@ -839,7 +883,10 @@ const L2Converter = () => {
                           className="w-4 h-4 flex items-center justify-center hover:bg-gray-600 rounded"
                           onClick={(e) => {
                             e.stopPropagation();
-                            changeComponentZ(element, Math.max(1, (pos.z ?? 1) - 1));
+                            changeComponentZ(
+                              element,
+                              Math.max(1, (pos.z ?? 1) - 1),
+                            );
                           }}
                         >
                           -
