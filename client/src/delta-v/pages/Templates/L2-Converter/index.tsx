@@ -29,11 +29,14 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { TempSensorSecondaryFaceplate } from "@/delta-v/components/faceplate/TempSensorSecondaryFaceplate";
 import { SecondaryControllerFaceplate } from "@/delta-v/components/faceplate/SecondaryControllerFaceplate";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useSearch } from "wouter";
+
 import {
   type SecondaryControllerData,
   type SecondaryControllerConfig,
 } from "@/delta-v/types/secondaryController";
 import { useControllerConfig } from "@/delta-v/contexts/ControllerConfigContext";
+import { defaultPositionL2Converter } from "./defalutPosition.constant";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -65,6 +68,12 @@ export enum Mode {
 // ---------------------------------------------------------------------------
 const L2Converter = () => {
   const { toast } = useToast();
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
+  const rawFilter = searchParams.get("filter");
+  const instBlockFilter: "all" | "controllers" | "sensors" =
+    rawFilter === "controllers" || rawFilter === "sensors" ? rawFilter : "all";
+
 
   // ── common secondary controller dialog ──────────────────────────────────
   const [commonSecondaryControllerDialog, setCommonSecondaryControllerDialog] =
@@ -336,8 +345,8 @@ const L2Converter = () => {
     if (layoutData) {
       handleLoad();
     } else if (!isLoading && !isUninitialized) {
-      setPositions({});
-      setEdges([]);
+      setPositions(defaultPositionL2Converter.positions);
+      setEdges(defaultPositionL2Converter.edges);
       setMode(Mode.Edit);
     }
   }, [layoutData, isLoading, isUninitialized]);
@@ -774,6 +783,14 @@ const L2Converter = () => {
                   key={`${elData.tag}-${index}`}
                   className="absolute pointer-events-auto"
                   style={{
+                    display:
+                      instBlockFilter === "all" ||
+                      (instBlockFilter === "controllers" &&
+                        elData?.blockType !== BlockType.Sensor) ||
+                      (instBlockFilter === "sensors" &&
+                        elData?.blockType !== BlockType.Controller)
+                        ? "block"
+                        : "none",
                     left: pos.x,
                     top: pos.y,
                     zIndex: pos.z || 1,

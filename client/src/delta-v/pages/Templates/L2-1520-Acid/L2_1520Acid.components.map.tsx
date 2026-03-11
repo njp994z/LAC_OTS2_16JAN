@@ -199,7 +199,7 @@ const L2AcidElementsMap = (
       tag: L2AcidElement["KPICard"],
       description: "KPI Card",
       type: ElementType.KPI,
-      blockType: BlockType.Text,
+      blockType: BlockType.Sensor,
       component: (
         <div className="scale-75 origin-top-left">
           <KPICard />
@@ -423,7 +423,7 @@ const L2AcidElementsMap = (
       tag: L2AcidElement["1540-TIC-7221"],
       description: "Econ 4A Outlet Temp.",
       type: ElementType.TemperatureController,
-      blockType: BlockType.Sensor,
+      blockType: BlockType.Controller,
       ...tic7221,
       component: getFaceplate(
         "1540-TIC-7221",
@@ -438,7 +438,7 @@ const L2AcidElementsMap = (
       tag: L2AcidElement["1540-TIC-7224"],
       description: "Econ 3B Outlet Temp.",
       type: ElementType.TemperatureController,
-      blockType: BlockType.Sensor,
+      blockType: BlockType.Controller,
       ...tic7224,
       component: getFaceplate(
         "1540-TIC-7224",

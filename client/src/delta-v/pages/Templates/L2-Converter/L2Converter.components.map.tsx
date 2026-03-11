@@ -278,7 +278,7 @@ const L2ConverterElementsMap = (
       tag: L2ConverterElement["1540-TIC-5224"],
       description: "Pass 4 Inlet Temp Controller",
       type: ElementType.TemperatureController,
-      blockType: BlockType.Sensor,
+      blockType: BlockType.Controller,
       ...tic5224,
       component: getFaceplate(
         "1540-TIC-5224",
@@ -293,7 +293,7 @@ const L2ConverterElementsMap = (
       tag: L2ConverterElement["1540-TIC-5220"],
       description: "Pass 3 Inlet Temp Controller",
       type: ElementType.TemperatureController,
-      blockType: BlockType.Sensor,
+      blockType: BlockType.Controller,
       ...tic5220,
       component: getFaceplate(
         "1540-TIC-5220",
@@ -308,7 +308,7 @@ const L2ConverterElementsMap = (
       tag: L2ConverterElement["1540-TIC-4822"],
       description: "Pass 2 Inlet Temperature",
       type: ElementType.TemperatureController,
-      blockType: BlockType.Sensor,
+      blockType: BlockType.Controller,
       ...tic4822,
       component: getFaceplate(
         "1540-TIC-4822",
@@ -323,7 +323,7 @@ const L2ConverterElementsMap = (
       tag: L2ConverterElement["1540-H-4282"],
       description: "Jug Valve Controller",
       type: ElementType.TemperatureController,
-      blockType: BlockType.Sensor,
+      blockType: BlockType.Controller,
       ...h4282,
       component: getFaceplate(
         "1540-H-4282",
